@@ -1,0 +1,278 @@
+<div class="relative">
+    <button onclick="toggleDateFilter('{{ $filterId }}')" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+        <i class="fas fa-calendar-alt mr-2"></i>
+        Date
+    </button>
+    <div id="{{ $filterId }}" class="hidden absolute left-0 right-0 md:left-auto md:right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 sm:p-5 border border-gray-200 w-full md:w-96 mx-auto md:mx-0 z-50" onclick="event.stopPropagation()">
+        <!-- Enter range label -->
+        <div class="text-xs text-gray-500 mb-2">Enter range</div>
+        
+        <!-- Date Range Display -->
+        <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 transition-all duration-300">
+            <div class="text-lg sm:text-2xl font-semibold text-gray-800" id="dateRangeDisplay{{ $filterId }}">Select dates</div>
+            <i class="fas fa-calendar text-lg sm:text-xl text-gray-400"></i>
+        </div>
+        
+        <!-- Start and End Inputs -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <!-- Start Date -->
+            <div>
+                <label class="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 block text-gray-700">Start</label>
+                <div class="relative">
+                    <input type="text" 
+                           id="startInput{{ $filterId }}" 
+                           placeholder="MM/DD/YYYY"
+                           readonly
+                           inputmode="none"
+                           onfocus="this.blur(); showCalendar('{{ $filterId }}', 'start')"
+                           onclick="event.preventDefault(); showCalendar('{{ $filterId }}', 'start')"
+                           class="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border-2 rounded-lg focus:outline-none focus:ring-2 cursor-pointer transition-all duration-300 hover:border-orange-400 border-gray-300 focus:ring-orange-300">
+                </div>
+            </div>
+            
+            <!-- End Date -->
+            <div>
+                <label class="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 block text-gray-700">End</label>
+                <div class="relative">
+                    <input type="text" 
+                           id="endInput{{ $filterId }}" 
+                           placeholder="MM/DD/YYYY"
+                           readonly
+                           inputmode="none"
+                           onfocus="this.blur(); showCalendar('{{ $filterId }}', 'end')"
+                           onclick="event.preventDefault(); showCalendar('{{ $filterId }}', 'end')"
+                           class="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border-2 rounded-lg focus:outline-none focus:ring-2 cursor-pointer transition-all duration-300 hover:border-orange-400 border-gray-300 focus:ring-orange-300">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Calendar Picker (Hidden by default) -->
+        <div id="calendarPicker{{ $filterId }}" class="hidden mb-3 p-2 sm:p-4 bg-gray-50 rounded-lg transition-all duration-300" style="opacity: 0; transform: translateY(-10px);">
+            <!-- Calendar Header -->
+            <div class="flex items-center justify-between mb-3">
+                <button onclick="changeMonth('{{ $filterId }}', -1)" class="p-1.5 sm:p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i class="fas fa-chevron-left text-sm sm:text-base text-gray-600"></i>
+                </button>
+                <div id="headerLabel{{ $filterId }}" class="text-sm sm:text-base font-semibold text-gray-800">December 2024</div>
+                <button onclick="changeMonth('{{ $filterId }}', 1)" class="p-1.5 sm:p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                    <i class="fas fa-chevron-right text-sm sm:text-base text-gray-600"></i>
+                </button>
+            </div>
+        
+        <!-- Calendar Days Header -->
+        <div class="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">M</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">T</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">W</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">T</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">F</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">S</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">S</div>
+        </div>
+        
+        <!-- Calendar Days -->
+        <div id="calendarDays{{ $filterId }}" class="grid grid-cols-7 gap-0.5 sm:gap-1 mb-3">
+            <!-- Days will be generated by JavaScript -->
+        </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex gap-2 pt-2 sm:pt-3 border-t border-gray-100">
+            <button onclick="event.stopPropagation(); clearDates('{{ $filterId }}')" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors" style="color: #F81611;" onmouseover="this.style.color='#F0B100'" onmouseout="this.style.color='#F81611'">
+                Clear
+            </button>
+            <div class="flex-1"></div>
+            <button onclick="event.stopPropagation(); closeDateFilter('{{ $filterId }}')" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors" style="color: #F81611;" onmouseover="this.style.color='#F0B100'" onmouseout="this.style.color='#F81611'">
+                Cancel
+            </button>
+            <button onclick="event.stopPropagation(); applyDateFilter('{{ $filterId }}')" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300">
+                OK
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Calendar state for each filter
+    const calendarState = {};
+    
+    function showCalendar(filterId, type) {
+        const calendar = document.getElementById('calendarPicker' + filterId);
+        
+        // Smooth show animation
+        calendar.classList.remove('hidden');
+        setTimeout(() => {
+            calendar.style.opacity = '1';
+            calendar.style.transform = 'translateY(0)';
+        }, 10);
+        
+        // Initialize state if not exists (no default selection)
+        if (!calendarState[filterId]) {
+            const today = new Date();
+            calendarState[filterId] = {
+                currentMonth: today.getMonth(),
+                currentYear: today.getFullYear(),
+                selectingFor: type,
+                startDate: null,
+                endDate: null
+            };
+        } else {
+            calendarState[filterId].selectingFor = type;
+        }
+        updateCalendar(filterId);
+    }
+    
+    function changeMonth(filterId, delta) {
+        const state = calendarState[filterId];
+        state.currentMonth += delta;
+        if (state.currentMonth > 11) { state.currentMonth = 0; state.currentYear++; }
+        if (state.currentMonth < 0) { state.currentMonth = 11; state.currentYear--; }
+        updateCalendar(filterId);
+    }
+    
+    function updateCalendar(filterId) {
+        const state = calendarState[filterId];
+        const monthsFull = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        // Update header label
+        const header = document.getElementById('headerLabel' + filterId);
+        if (header) header.textContent = monthsFull[state.currentMonth] + ' ' + state.currentYear;
+        
+        const firstDay = new Date(state.currentYear, state.currentMonth, 1);
+        const lastDay = new Date(state.currentYear, state.currentMonth + 1, 0);
+        const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // Monday = 0
+        const daysInMonth = lastDay.getDate();
+        
+        const calendarDays = document.getElementById('calendarDays' + filterId);
+        calendarDays.innerHTML = '';
+        
+        // Empty cells before first day
+        for (let i = 0; i < startDayOfWeek; i++) {
+            const emptyDiv = document.createElement('div');
+            calendarDays.appendChild(emptyDiv);
+        }
+        
+        // Days of month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'text-xs sm:text-sm text-gray-700 transition-all duration-200 aspect-square flex items-center justify-center rounded-lg cursor-pointer hover:bg-gray-100';
+            dayDiv.textContent = day;
+            dayDiv.addEventListener('click', (e) => { e.stopPropagation(); selectDate(filterId, day); });
+            
+            // Check if this day is selected (only start and end)
+            const currentDate = new Date(state.currentYear, state.currentMonth, day);
+            if (state.startDate && currentDate.getTime() === stripTime(state.startDate).getTime()) {
+                dayDiv.classList.add('bg-gradient-to-r','from-[#F81611]','to-[#F0B100]','text-white','font-semibold');
+            }
+            if (state.endDate && currentDate.getTime() === stripTime(state.endDate).getTime()) {
+                dayDiv.classList.add('bg-gradient-to-r','from-[#F81611]','to-[#F0B100]','text-white','font-semibold');
+            }
+            
+            calendarDays.appendChild(dayDiv);
+        }
+    }
+    
+    function selectDate(filterId, day) {
+        const state = calendarState[filterId];
+        const selectedDate = new Date(state.currentYear, state.currentMonth, day);
+        const formattedDate = `${String(state.currentMonth + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}/${state.currentYear}`;
+        
+        // If both dates already set, start a new range from clicked date
+        if (state.startDate && state.endDate) {
+            state.startDate = selectedDate;
+            state.endDate = null;
+            document.getElementById('startInput' + filterId).value = formattedDate;
+            document.getElementById('endInput' + filterId).value = '';
+            state.selectingFor = 'end';
+            updateRangeDisplay(filterId);
+            updateCalendar(filterId);
+            return;
+        }
+
+        if (state.selectingFor === 'start') {
+            state.startDate = selectedDate;
+            state.endDate = state.endDate && state.endDate < state.startDate ? null : state.endDate;
+            document.getElementById('startInput' + filterId).value = formattedDate;
+            state.selectingFor = 'end'; // keep calendar open for end selection
+        } else {
+            // Ensure end is not before start; if no start, set start first
+            if (!state.startDate || selectedDate < state.startDate) {
+                state.startDate = selectedDate;
+                document.getElementById('startInput' + filterId).value = formattedDate;
+                state.selectingFor = 'end';
+            } else {
+                state.endDate = selectedDate;
+                document.getElementById('endInput' + filterId).value = formattedDate;
+            }
+        }
+        
+        updateRangeDisplay(filterId);
+        updateCalendar(filterId); // refresh highlights
+    }
+    
+    function updateRangeDisplay(filterId) {
+        const state = calendarState[filterId];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        let displayText = 'Select dates';
+        
+        if (state.startDate && state.endDate) {
+            const startMonth = months[state.startDate.getMonth()];
+            const startDay = state.startDate.getDate();
+            const endMonth = months[state.endDate.getMonth()];
+            const endDay = state.endDate.getDate();
+            
+            displayText = `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+        } else if (state.startDate && !state.endDate) {
+            const startMonth = months[state.startDate.getMonth()];
+            const startDay = state.startDate.getDate();
+            displayText = `${startMonth} ${startDay}`;
+        }
+        
+        document.getElementById('dateRangeDisplay' + filterId).textContent = displayText;
+    }
+    
+    function clearDates(filterId) {
+        const state = calendarState[filterId] || (calendarState[filterId] = {});
+        document.getElementById('startInput' + filterId).value = '';
+        document.getElementById('endInput' + filterId).value = '';
+        document.getElementById('dateRangeDisplay' + filterId).textContent = 'Select dates';
+        state.startDate = null;
+        state.endDate = null;
+        updateCalendar(filterId);
+    }
+    
+    function applyDateFilter(filterId) {
+        // Close directly to avoid flicker/reopen
+        const dropdown = document.getElementById(filterId);
+        if (!dropdown) return;
+        dropdown.style.transition = 'opacity .15s ease, transform .15s ease';
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+            dropdown.style.transition = '';
+            dropdown.style.opacity = '';
+            dropdown.style.transform = '';
+        }, 150);
+    }
+
+    function closeDateFilter(filterId) {
+        const dropdown = document.getElementById(filterId);
+        if (!dropdown) return;
+        dropdown.style.transition = 'opacity .15s ease, transform .15s ease';
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+            dropdown.style.transition = '';
+            dropdown.style.opacity = '';
+            dropdown.style.transform = '';
+        }, 150);
+    }
+
+    // Helpers
+    function stripTime(date) {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        return d;
+    }
+</script>

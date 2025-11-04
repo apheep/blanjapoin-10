@@ -1,140 +1,705 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BlanjaPoin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  @vite(['resources/css/app.css','resources/js/app.js'])
 
-        <title>Laravel</title>
-
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
-
-        <!-- Styles -->
-        <style>
-            /* ! tailwindcss v3.2.4 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Figtree, sans-serif;font-feature-settings:normal}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;font-weight:inherit;line-height:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]{display:none}*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: }::-webkit-backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: }.relative{position:relative}.mx-auto{margin-left:auto;margin-right:auto}.mx-6{margin-left:1.5rem;margin-right:1.5rem}.ml-4{margin-left:1rem}.mt-16{margin-top:4rem}.mt-6{margin-top:1.5rem}.mt-4{margin-top:1rem}.-mt-px{margin-top:-1px}.mr-1{margin-right:0.25rem}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.h-16{height:4rem}.h-7{height:1.75rem}.h-6{height:1.5rem}.h-5{height:1.25rem}.min-h-screen{min-height:100vh}.w-auto{width:auto}.w-16{width:4rem}.w-7{width:1.75rem}.w-6{width:1.5rem}.w-5{width:1.25rem}.max-w-7xl{max-width:80rem}.shrink-0{flex-shrink:0}.scale-100{--tw-scale-x:1;--tw-scale-y:1;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.items-center{align-items:center}.justify-center{justify-content:center}.gap-6{gap:1.5rem}.gap-4{gap:1rem}.self-center{align-self:center}.rounded-lg{border-radius:0.5rem}.rounded-full{border-radius:9999px}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity))}.bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242 / var(--tw-bg-opacity))}.bg-dots-darker{background-image:url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(0,0,0,0.07)'/%3E%3C/svg%3E")}.from-gray-700\/50{--tw-gradient-from:rgb(55 65 81 / 0.5);--tw-gradient-to:rgb(55 65 81 / 0);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.via-transparent{--tw-gradient-to:rgb(0 0 0 / 0);--tw-gradient-stops:var(--tw-gradient-from), transparent, var(--tw-gradient-to)}.bg-center{background-position:center}.stroke-red-500{stroke:#ef4444}.stroke-gray-400{stroke:#9ca3af}.p-6{padding:1.5rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.text-center{text-align:center}.text-right{text-align:right}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.font-semibold{font-weight:600}.leading-relaxed{line-height:1.625}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity))}.underline{-webkit-text-decoration-line:underline;text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-gray-500\/20{--tw-shadow-color:rgb(107 114 128 / 0.2);--tw-shadow:var(--tw-shadow-colored)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.selection\:bg-red-500 *::selection{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity))}.selection\:text-white *::selection{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity))}.selection\:bg-red-500::selection{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity))}.selection\:text-white::selection{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity))}.hover\:text-gray-900:hover{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity))}.hover\:text-gray-700:hover{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity))}.focus\:rounded-sm:focus{border-radius:0.125rem}.focus\:outline:focus{outline-style:solid}.focus\:outline-2:focus{outline-width:2px}.focus\:outline-red-500:focus{outline-color:#ef4444}.group:hover .group-hover\:stroke-gray-600{stroke:#4b5563}@media (prefers-reduced-motion: no-preference){.motion-safe\:hover\:scale-\[1\.01\]:hover{--tw-scale-x:1.01;--tw-scale-y:1.01;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}}@media (prefers-color-scheme: dark){.dark\:bg-gray-900{--tw-bg-opacity:1;background-color:rgb(17 24 39 / var(--tw-bg-opacity))}.dark\:bg-gray-800\/50{background-color:rgb(31 41 55 / 0.5)}.dark\:bg-red-800\/20{background-color:rgb(153 27 27 / 0.2)}.dark\:bg-dots-lighter{background-image:url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(255,255,255,0.07)'/%3E%3C/svg%3E")}.dark\:bg-gradient-to-bl{background-image:linear-gradient(to bottom left, var(--tw-gradient-stops))}.dark\:stroke-gray-600{stroke:#4b5563}.dark\:text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity))}.dark\:text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity))}.dark\:shadow-none{--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.dark\:ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.dark\:ring-inset{--tw-ring-inset:inset}.dark\:ring-white\/5{--tw-ring-color:rgb(255 255 255 / 0.05)}.dark\:hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity))}.group:hover .dark\:group-hover\:stroke-gray-400{stroke:#9ca3af}}@media (min-width: 640px){.sm\:fixed{position:fixed}.sm\:top-0{top:0px}.sm\:right-0{right:0px}.sm\:ml-0{margin-left:0px}.sm\:flex{display:flex}.sm\:items-center{align-items:center}.sm\:justify-center{justify-content:center}.sm\:justify-between{justify-content:space-between}.sm\:text-left{text-align:left}.sm\:text-right{text-align:right}}@media (min-width: 768px){.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}@media (min-width: 1024px){.lg\:gap-8{gap:2rem}.lg\:p-8{padding:2rem}}
-        </style>
-    </head>
-    <body class="antialiased">
-        <div class="relative sm:flex sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-100 dark:bg-dots-lighter dark:bg-gray-900 selection:bg-red-500 selection:text-white">
-            @if (Route::has('login'))
-                <div class="sm:fixed sm:top-0 sm:right-0 p-6 text-right">
-                    @auth
-                        <a href="{{ url('/home') }}" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Home</a>
-                    @else
-                        <a href="{{ route('login') }}" class="font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Log in</a>
-
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="ml-4 font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Register</a>
-                        @endif
-                    @endauth
-                </div>
-            @endif
-
-            <div class="max-w-7xl mx-auto p-6 lg:p-8">
-                <div class="flex justify-center">
-                    <svg viewBox="0 0 62 65" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-16 w-auto bg-gray-100 dark:bg-gray-900">
-                        <path d="M61.8548 14.6253C61.8778 14.7102 61.8895 14.7978 61.8897 14.8858V28.5615C61.8898 28.737 61.8434 28.9095 61.7554 29.0614C61.6675 29.2132 61.5409 29.3392 61.3887 29.4265L49.9104 36.0351V49.1337C49.9104 49.4902 49.7209 49.8192 49.4118 49.9987L25.4519 63.7916C25.3971 63.8227 25.3372 63.8427 25.2774 63.8639C25.255 63.8714 25.2338 63.8851 25.2101 63.8913C25.0426 63.9354 24.8666 63.9354 24.6991 63.8913C24.6716 63.8838 24.6467 63.8689 24.6205 63.8589C24.5657 63.8389 24.5084 63.8215 24.456 63.7916L0.501061 49.9987C0.348882 49.9113 0.222437 49.7853 0.134469 49.6334C0.0465019 49.4816 0.000120578 49.3092 0 49.1337L0 8.10652C0 8.01678 0.0124642 7.92953 0.0348998 7.84477C0.0423783 7.8161 0.0598282 7.78993 0.0697995 7.76126C0.0884958 7.70891 0.105946 7.65531 0.133367 7.6067C0.152063 7.5743 0.179485 7.54812 0.20192 7.51821C0.230588 7.47832 0.256763 7.43719 0.290416 7.40229C0.319084 7.37362 0.356476 7.35243 0.388883 7.32751C0.425029 7.29759 0.457436 7.26518 0.498568 7.2415L12.4779 0.345059C12.6296 0.257786 12.8015 0.211853 12.9765 0.211853C13.1515 0.211853 13.3234 0.257786 13.475 0.345059L25.4531 7.2415H25.4556C25.4955 7.26643 25.5292 7.29759 25.5653 7.32626C25.5977 7.35119 25.6339 7.37362 25.6625 7.40104C25.6974 7.43719 25.7224 7.47832 25.7523 7.51821C25.7735 7.54812 25.8021 7.5743 25.8196 7.6067C25.8483 7.65656 25.8645 7.70891 25.8844 7.76126C25.8944 7.78993 25.9118 7.8161 25.9193 7.84602C25.9423 7.93096 25.954 8.01853 25.9542 8.10652V33.7317L35.9355 27.9844V14.8846C35.9355 14.7973 35.948 14.7088 35.9704 14.6253C35.9792 14.5954 35.9954 14.5692 36.0053 14.5405C36.0253 14.4882 36.0427 14.4346 36.0702 14.386C36.0888 14.3536 36.1163 14.3274 36.1375 14.2975C36.1674 14.2576 36.1923 14.2165 36.2272 14.1816C36.2559 14.1529 36.292 14.1317 36.3244 14.1068C36.3618 14.0769 36.3942 14.0445 36.4341 14.0208L48.4147 7.12434C48.5663 7.03694 48.7383 6.99094 48.9133 6.99094C49.0883 6.99094 49.2602 7.03694 49.4118 7.12434L61.3899 14.0208C61.4323 14.0457 61.4647 14.0769 61.5021 14.1055C61.5333 14.1305 61.5694 14.1529 61.5981 14.1803C61.633 14.2165 61.6579 14.2576 61.6878 14.2975C61.7103 14.3274 61.7377 14.3536 61.7551 14.386C61.7838 14.4346 61.8 14.4882 61.8199 14.5405C61.8312 14.5692 61.8474 14.5954 61.8548 14.6253ZM59.893 27.9844V16.6121L55.7013 19.0252L49.9104 22.3593V33.7317L59.8942 27.9844H59.893ZM47.9149 48.5566V37.1768L42.2187 40.4299L25.953 49.7133V61.2003L47.9149 48.5566ZM1.99677 9.83281V48.5566L23.9562 61.199V49.7145L12.4841 43.2219L12.4804 43.2194L12.4754 43.2169C12.4368 43.1945 12.4044 43.1621 12.3682 43.1347C12.3371 43.1097 12.3009 43.0898 12.2735 43.0624L12.271 43.0586C12.2386 43.0275 12.2162 42.9888 12.1887 42.9539C12.1638 42.9203 12.1339 42.8916 12.114 42.8567L12.1127 42.853C12.0903 42.8156 12.0766 42.7707 12.0604 42.7283C12.0442 42.6909 12.023 42.656 12.013 42.6161C12.0005 42.5688 11.998 42.5177 11.9931 42.4691C11.9881 42.4317 11.9781 42.3943 11.9781 42.3569V15.5801L6.18848 12.2446L1.99677 9.83281ZM12.9777 2.36177L2.99764 8.10652L12.9752 13.8513L22.9541 8.10527L12.9752 2.36177H12.9777ZM18.1678 38.2138L23.9574 34.8809V9.83281L19.7657 12.2459L13.9749 15.5801V40.6281L18.1678 38.2138ZM48.9133 9.14105L38.9344 14.8858L48.9133 20.6305L58.8909 14.8846L48.9133 9.14105ZM47.9149 22.3593L42.124 19.0252L37.9323 16.6121V27.9844L43.7219 31.3174L47.9149 33.7317V22.3593ZM24.9533 47.987L39.59 39.631L46.9065 35.4555L36.9352 29.7145L25.4544 36.3242L14.9907 42.3482L24.9533 47.987Z" fill="#FF2D20"/>
-                    </svg>
-                </div>
-
-                <div class="mt-16">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-                        <a href="https://laravel.com/docs" class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                            <div>
-                                <div class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                                    </svg>
-                                </div>
-
-                                <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Documentation</h2>
-
-                                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                    Laravel has wonderful documentation covering every aspect of the framework. Whether you are a newcomer or have prior experience with Laravel, we recommend reading our documentation from beginning to end.
-                                </p>
-                            </div>
-
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="self-center shrink-0 stroke-red-500 w-6 h-6 mx-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-                            </svg>
-                        </a>
-
-                        <a href="https://laracasts.com" class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                            <div>
-                                <div class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                        <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-                                    </svg>
-                                </div>
-
-                                <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Laracasts</h2>
-
-                                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                    Laracasts offers thousands of video tutorials on Laravel, PHP, and JavaScript development. Check them out, see for yourself, and massively level up your development skills in the process.
-                                </p>
-                            </div>
-
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="self-center shrink-0 stroke-red-500 w-6 h-6 mx-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-                            </svg>
-                        </a>
-
-                        <a href="https://laravel-news.com" class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                            <div>
-                                <div class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
-                                    </svg>
-                                </div>
-
-                                <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Laravel News</h2>
-
-                                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                    Laravel News is a community driven portal and newsletter aggregating all of the latest and most important news in the Laravel ecosystem, including new package releases and tutorials.
-                                </p>
-                            </div>
-
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="self-center shrink-0 stroke-red-500 w-6 h-6 mx-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
-                            </svg>
-                        </a>
-
-                        <div class="scale-100 p-6 bg-white dark:bg-gray-800/50 dark:bg-gradient-to-bl from-gray-700/50 via-transparent dark:ring-1 dark:ring-inset dark:ring-white/5 rounded-lg shadow-2xl shadow-gray-500/20 dark:shadow-none flex motion-safe:hover:scale-[1.01] transition-all duration-250 focus:outline focus:outline-2 focus:outline-red-500">
-                            <div>
-                                <div class="h-16 w-16 bg-red-50 dark:bg-red-800/20 flex items-center justify-center rounded-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-7 h-7 stroke-red-500">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.115 5.19l.319 1.913A6 6 0 008.11 10.36L9.75 12l-.387.775c-.217.433-.132.956.21 1.298l1.348 1.348c.21.21.329.497.329.795v1.089c0 .426.24.815.622 1.006l.153.076c.433.217.956.132 1.298-.21l.723-.723a8.7 8.7 0 002.288-4.042 1.087 1.087 0 00-.358-1.099l-1.33-1.108c-.251-.21-.582-.299-.905-.245l-1.17.195a1.125 1.125 0 01-.98-.314l-.295-.295a1.125 1.125 0 010-1.591l.13-.132a1.125 1.125 0 011.3-.21l.603.302a.809.809 0 001.086-1.086L14.25 7.5l1.256-.837a4.5 4.5 0 001.528-1.732l.146-.292M6.115 5.19A9 9 0 1017.18 4.64M6.115 5.19A8.965 8.965 0 0112 3c1.929 0 3.716.607 5.18 1.64" />
-                                    </svg>
-                                </div>
-
-                                <h2 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Vibrant Ecosystem</h2>
-
-                                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                                    Laravel's robust library of first-party tools and libraries, such as <a href="https://forge.laravel.com" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Forge</a>, <a href="https://vapor.laravel.com" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Vapor</a>, <a href="https://nova.laravel.com" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Nova</a>, and <a href="https://envoyer.io" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Envoyer</a> help you take your projects to the next level. Pair them with powerful open source libraries like <a href="https://laravel.com/docs/billing" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Cashier</a>, <a href="https://laravel.com/docs/dusk" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Dusk</a>, <a href="https://laravel.com/docs/broadcasting" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Echo</a>, <a href="https://laravel.com/docs/horizon" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Horizon</a>, <a href="https://laravel.com/docs/sanctum" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Sanctum</a>, <a href="https://laravel.com/docs/telescope" class="underline hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">Telescope</a>, and more.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-center mt-16 px-0 sm:items-center sm:justify-between">
-                    <div class="text-center text-sm text-gray-500 dark:text-gray-400 sm:text-left">
-                        <div class="flex items-center gap-4">
-                            <a href="https://github.com/sponsors/taylorotwell" class="group inline-flex items-center hover:text-gray-700 dark:hover:text-white focus:outline focus:outline-2 focus:rounded-sm focus:outline-red-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="-mt-px mr-1 w-5 h-5 stroke-gray-400 dark:stroke-gray-600 group-hover:stroke-gray-600 dark:group-hover:stroke-gray-400">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                                </svg>
-                                Sponsor
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="ml-4 text-center text-sm text-gray-500 dark:text-gray-400 sm:text-right sm:ml-0">
-                        Laravel v{{ Illuminate\Foundation\Application::VERSION }} (PHP v{{ PHP_VERSION }})
-                    </div>
-                </div>
-            </div>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+ </head>
+ <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
+  <!-- Loading Spinner -->
+  <div id="loadingSpinner" class="fixed inset-0 bg-white z-50 flex items-center justify-center" style="opacity: 1; display: flex;">
+   <div class="flex flex-col items-center gap-4">
+    <div class="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+    <div class="text-sm font-semibold text-neutral-600">Loading Please wait...</div>
+   </div>
+  </div>
+   <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
+    <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
+     <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+       <div class="flex items-center gap-1.5 md:gap-2 rounded-full bg-gradient-to-r from-amber-50 to-orange-50 px-3 md:px-4 py-1.5 md:py-2 shadow-lg drop-shadow-md ring-1 ring-amber-200/50 transition-all hover:shadow-xl hover:drop-shadow-lg hover:scale-105">
+        <span class="inline-flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[10px] md:text-xs font-bold shadow-sm">P</span>
+        <span class="text-xs md:text-sm font-bold text-neutral-800">1,289</span>
+       </div>
+       <div class="relative">
+        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg shadow-orange-300/50 drop-shadow-lg ring-1 ring-white/30 transition-all hover:shadow-xl hover:shadow-orange-400/50 hover:drop-shadow-xl hover:scale-105 active:scale-95">
+         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 md:h-4 md:w-4 opacity-95">
+          <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
+         </svg>
+         <span class="tracking-tight">Willy</span>
+         <svg id="userDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3 w-3 md:h-3.5 md:w-3.5 opacity-95 transition-transform duration-300">
+          <path d="M7 10l5 5 5-5z"/>
+         </svg>
+        </button>
+        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-50 backdrop-blur-sm">
+         <div class="py-1">
+          <form method="POST" action="{{ route('logout') }}">
+           @csrf
+           <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+             <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clip-rule="evenodd" />
+            </svg>
+            <span>Logout</span>
+           </button>
+          </form>
+         </div>
         </div>
-    </body>
+       </div>
+      </div>
+     </div>
+    </div>
+   </nav>
+
+  <div class="mx-auto max-w-[1120px]">
+   <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+    <section class="mt-1 md:mt-1 opacity-0 translate-y-8 transition-all duration-700 ease-out" id="bannerSection">
+     <div class="relative group">
+      <!-- Navigation Arrows -->
+      <button onclick="prevSlide()" class="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 md:h-14 md:w-14 place-items-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl transition-all hover:bg-white hover:scale-110 active:scale-95 text-neutral-700 font-bold text-xl md:text-3xl">
+       ‹
+      </button>
+      
+      <button onclick="nextSlide()" class="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 md:h-14 md:w-14 place-items-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl transition-all hover:bg-white hover:scale-110 active:scale-95 text-neutral-700 font-bold text-xl md:text-3xl">
+       ›
+      </button>
+      
+      <div class="relative h-56 sm:h-64 md:h-80 lg:h-96 rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl md:shadow-3xl shadow-neutral-400/20 drop-shadow-2xl md:drop-shadow-3xl ring-1 ring-white/20 transition-all duration-300 hover:shadow-3xl hover:scale-[1.02]">
+
+      <!-- Background Image -->
+      <img id="bannerImage"
+          src="{{ asset('storage/iklan/iklan1.jpeg') }}"
+          alt="Banner Promo"
+          class="w-full h-full object-cover transition-all duration-700 rounded-3xl md:rounded-[2.5rem]"
+          loading="lazy">
+
+      <!-- Gradient Overlay 1 -->
+      <div class="absolute inset-0 bg-gradient-to-br from-black/20 via-black/10 to-transparent rounded-3xl md:rounded-[2.5rem]"></div>
+
+      <!-- Gradient Overlay 2 -->
+      <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent rounded-3xl md:rounded-[2.5rem]"></div>
+
+      </div>
+
+      
+      <!-- Carousel Dots -->
+      <div class="mt-8 md:mt-10 flex items-center justify-center gap-4 md:gap-5">
+       <span onclick="goToSlide(0)" class="carousel-dot h-4 w-4 md:h-5 md:w-5 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+       <span onclick="goToSlide(1)" class="carousel-dot h-4 w-4 md:h-5 md:w-5 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+       <span onclick="goToSlide(2)" class="carousel-dot h-4 w-4 md:h-5 md:w-5 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+      </div>
+     </div>
+    </section>
+
+    <section class="mt-8 md:mt-10 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200" id="categorySection">
+     <div class="grid grid-cols-3 gap-2.5 md:gap-4 sm:grid-cols-6">
+      <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+       </span>
+       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Food & Beverage</span>
+      </button>
+      <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+       </span>
+       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Entertain</span>
+      </button>
+      <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+       </span>
+       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Vacation</span>
+      </button>
+      <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+       </span>
+       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Beauty & Care</span>
+      </button>
+      <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/shop.png') }}" alt="Shop" class="w-full h-full object-contain">
+       </span>
+       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Shop</span>
+      </button>
+      <button onclick="filterCategory('telkomsel')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-red-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/telkomsel.png') }}" alt="telkomsel" class="w-20 h-20 md:w-15 md:h-15 object-contain mx-auto">
+       </span>
+       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-red-600 transition-colors leading-tight">Telkomsel Data</span>
+      </button>
+     </div>
+    </section>
+
+    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400" id="searchSection">
+     <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl">
+      <div class="flex-1 rounded-lg md:rounded-xl bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
+       <div class="flex items-center gap-2 text-neutral-500">
+        <span class="text-base md:text-lg">🔍</span>
+        <input class="w-full bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold" placeholder="Cari produk atau voucher..." />
+       </div>
+      </div>
+      <div class="relative rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md">
+       <div class="flex items-center gap-2 text-neutral-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-400">
+         <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+        </svg>
+        <input id="locationInput" autocomplete="off" class="bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold w-32" placeholder="Location" />
+       </div>
+       <div id="locationDropdown" class="absolute left-0 right-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-56 overflow-auto hidden backdrop-blur-sm"></div>
+      </div>
+      <div class="relative">
+       <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px]">
+        <span id="sortSelectedText">According To Your Point</span>
+        <svg id="sortDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-neutral-500 transition-transform duration-300">
+         <path d="M7 10l5 5 5-5z"/>
+        </svg>
+       </button>
+       <div id="sortDropdown" class="absolute left-0 right-0 mt-1 w-full rounded-lg md:rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top transition-all duration-300 ease-out z-50 backdrop-blur-sm">
+        <div class="py-1">
+         <button onclick="selectSortOption('Lowest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-green-500">
+           <path d="M7 14l5-5 5 5z"/>
+          </svg>
+          <span>Lowest</span>
+         </button>
+         <button onclick="selectSortOption('Highest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-red-500">
+           <path d="M7 10l5 5 5-5z"/>
+          </svg>
+          <span>Highest</span>
+         </button>
+        </div>
+       </div>
+      </div>
+     </div>
+    </section>
+
+    <!-- shop Section -->
+    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="shopSection">
+     @include('merchant.shop')
+    </div>
+ 
+    <!-- food Section -->
+    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="foodSection">
+     @include('merchant.food')
+    </div>
+ 
+    <!-- telkomsel Section -->
+    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="telkomselSection">
+     @include('merchant.telkomsel')
+    </div>
+ 
+    <!-- entertain Section -->
+    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="entertainSection">
+     @include('merchant.entertain')
+    </div>
+ 
+    <!-- vacation Section -->
+    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="vacationSection">
+     @include('merchant.vacation')
+    </div>
+ 
+    <!-- beauty Section -->
+    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-350" id="beautySection">
+     @include('merchant.beautyncare')
+    </div>
+   
+
+    <footer class="mt-16 pb-12 text-center">
+     <div class="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-50 to-rose-50 shadow-sm ring-1 ring-neutral-200/50 mb-4">
+      <div class="text-sm font-semibold text-neutral-700">✨ Redeem Poin Telkomsel</div>
+     </div>
+     <div class="text-xs text-neutral-500 font-medium"> 2025 BelanjaPoin. All rights reserved.</div>
+    </footer>
+   </main>
+  </div>
+
+  <script>
+   // Page Load Animation
+   document.addEventListener('DOMContentLoaded', function() {
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const pageBody = document.getElementById('pageBody');
+    
+    // Show spinner immediately
+    if (loadingSpinner) {
+     loadingSpinner.style.opacity = '1';
+     loadingSpinner.style.display = 'flex';
+    }
+    
+    // Hide spinner after 800ms
+    setTimeout(() => {
+     if (loadingSpinner) {
+      loadingSpinner.style.opacity = '0';
+      loadingSpinner.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+       loadingSpinner.style.display = 'none';
+      }, 500);
+     }
+    }, 300);
+    
+    // Animate sections with intersection observer
+    const sections = [
+     'bannerSection',
+     'categorySection', 
+     'searchSection',
+     'shopSection',
+     'foodSection',
+     'telkomselSection',
+     'entertainSection',
+     'vacationSection',
+     'beautySection'
+    ];
+    
+    const observerOptions = {
+     threshold: 0.1,
+     rootMargin: '0px 0px -20px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+     entries.forEach(entry => {
+      if (entry.isIntersecting) {
+       entry.target.style.opacity = '1';
+       entry.target.style.transform = 'translateY(0)';
+       observer.unobserve(entry.target);
+      }
+     });
+    }, observerOptions);
+    
+    sections.forEach(sectionId => {
+     const section = document.getElementById(sectionId);
+     if (section) {
+      observer.observe(section);
+     }
+    });
+    
+    // Animate cards within sections with faster timing
+    const cardObserver = new IntersectionObserver((entries) => {
+     entries.forEach(entry => {
+      if (entry.isIntersecting) {
+       entry.target.style.opacity = '1';
+       entry.target.style.transform = 'translateY(0)';
+       cardObserver.unobserve(entry.target);
+      }
+     });
+    }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
+    
+    // Observe all cards
+    const cards = document.querySelectorAll('article[class*="opacity-0"]');
+    cards.forEach(card => {
+     cardObserver.observe(card);
+    });
+   });
+
+   // Carousel configuration
+   const slides = [
+    '{{ asset("storage/iklan/iklan1.jpeg") }}',
+    '{{ asset("storage/iklan/iklan2.jpeg") }}',
+    '{{ asset("storage/iklan/iklan3.jpeg") }}'
+   ];
+   
+   let currentSlide = 0;
+   let autoSlideInterval;
+   
+   // Get elements
+   const bannerImage = document.getElementById('bannerImage');
+   const dots = document.querySelectorAll('.carousel-dot');
+   
+   // Update slide
+   function updateSlide(index) {
+    currentSlide = index;
+    
+    // Fade effect
+    bannerImage.style.opacity = '0';
+    
+    setTimeout(() => {
+     bannerImage.src = slides[currentSlide];
+     bannerImage.style.opacity = '1';
+    }, 250);
+    
+    // Update dots
+    dots.forEach((dot, i) => {
+     if (i === currentSlide) {
+      dot.classList.remove('bg-neutral-300', 'w-2', 'md:w-2.5');
+      dot.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-rose-500', 'w-8', 'md:w-10', 'shadow-md');
+     } else {
+      dot.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-rose-500', 'w-8', 'md:w-10', 'shadow-md');
+      dot.classList.add('bg-neutral-300', 'w-2', 'md:w-2.5');
+     }
+    });
+   }
+   
+   // Next slide
+   function nextSlide() {
+    currentSlide = (currentSlide + 1) % slides.length;
+    updateSlide(currentSlide);
+    resetAutoSlide();
+   }
+   
+   // Previous slide
+   function prevSlide() {
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    updateSlide(currentSlide);
+    resetAutoSlide();
+   }
+   
+   // Go to specific slide
+   function goToSlide(index) {
+    updateSlide(index);
+    resetAutoSlide();
+   }
+   
+   // Auto slide
+   function startAutoSlide() {
+    autoSlideInterval = setInterval(() => {
+     nextSlide();
+    }, 2000); // Change slide every 5 seconds
+   }
+   
+   // Reset auto slide
+   function resetAutoSlide() {
+    clearInterval(autoSlideInterval);
+    startAutoSlide();
+   }
+   
+   // Initialize
+   updateSlide(0);
+   startAutoSlide();
+   
+   // Pause on hover
+   const carouselSection = document.querySelector('section');
+   carouselSection.addEventListener('mouseenter', () => {
+    clearInterval(autoSlideInterval);
+   });
+   
+   carouselSection.addEventListener('mouseleave', () => {
+    startAutoSlide();
+   });
+
+   // Toggle Shop Cards
+   let shopCardsExpanded = false;
+   
+   function toggleShopCards() {
+    const extraCard = document.getElementById('extraShopCard');
+    const arrow = document.getElementById('shopSeeAllArrow');
+    const text = document.getElementById('shopSeeAllText');
+    
+    if (!shopCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     shopCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     shopCardsExpanded = false;
+    }
+   }
+
+   // Toggle Food Cards
+   let foodCardsExpanded = false;
+   
+   function toggleFoodCards() {
+    const extraCard = document.getElementById('extraFoodCard');
+    const arrow = document.getElementById('foodSeeAllArrow');
+    const text = document.getElementById('foodSeeAllText');
+    
+    if (!foodCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     foodCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     foodCardsExpanded = false;
+    }
+   }
+
+   // Toggle Telkomsel Cards
+   let telkomselCardsExpanded = false;
+   
+   function toggleTelkomselCards() {
+    const extraCard = document.getElementById('extraTelkomselCard');
+    const arrow = document.getElementById('telkomselSeeAllArrow');
+    const text = document.getElementById('telkomselSeeAllText');
+    
+    if (!telkomselCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     telkomselCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     telkomselCardsExpanded = false;
+    }
+   }
+
+   // Toggle Entertain Cards
+   let entertainCardsExpanded = false;
+   
+   function toggleEntertainCards() {
+    const extraCard = document.getElementById('extraEntertainCard');
+    const arrow = document.getElementById('entertainSeeAllArrow');
+    const text = document.getElementById('entertainSeeAllText');
+    
+    if (!entertainCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     entertainCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     entertainCardsExpanded = false;
+    }
+   }
+
+   // Toggle Vacation Cards
+   let vacationCardsExpanded = false;
+   
+   function toggleVacationCards() {
+    const extraCard = document.getElementById('extraVacationCard');
+    const arrow = document.getElementById('vacationSeeAllArrow');
+    const text = document.getElementById('vacationSeeAllText');
+    
+    if (!vacationCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     vacationCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     vacationCardsExpanded = false;
+    }
+   }
+
+   // Toggle Beauty Cards
+   let beautyCardsExpanded = false;
+   
+   function toggleBeautyCards() {
+    const extraCard = document.getElementById('extraBeautyCard');
+    const arrow = document.getElementById('beautySeeAllArrow');
+    const text = document.getElementById('beautySeeAllText');
+    
+    if (!beautyCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     beautyCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     beautyCardsExpanded = false;
+    }
+   }
+
+   // Filter Category - Scroll to section
+   function filterCategory(category) {
+    const selectedSection = document.getElementById('section-' + category);
+    if (selectedSection) {
+     selectedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+   }
+
+   // Toggle User Dropdown
+   let userDropdownOpen = false;
+
+   function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    const arrow = document.getElementById('userDropdownArrow');
+    
+    if (!userDropdownOpen) {
+     dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
+     dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+     arrow.classList.add('rotate-180');
+     userDropdownOpen = true;
+    } else {
+     dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+     dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+     arrow.classList.remove('rotate-180');
+     userDropdownOpen = false;
+    }
+   }
+
+   // Close dropdown when clicking outside
+   document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('userDropdown');
+    const button = document.getElementById('userDropdownBtn');
+    const arrow = document.getElementById('userDropdownArrow');
+    
+    if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
+     if (userDropdownOpen) {
+      dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+      dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+      arrow.classList.remove('rotate-180');
+      userDropdownOpen = false;
+     }
+    }
+   });
+
+   // Toggle Sort Dropdown
+   let sortDropdownOpen = false;
+
+   function toggleSortDropdown() {
+    const dropdown = document.getElementById('sortDropdown');
+    const arrow = document.getElementById('sortDropdownArrow');
+    
+    if (!sortDropdownOpen) {
+     dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
+     dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+     arrow.classList.add('rotate-180');
+     sortDropdownOpen = true;
+    } else {
+     dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+     dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+     arrow.classList.remove('rotate-180');
+     sortDropdownOpen = false;
+    }
+   }
+
+   function selectSortOption(option) {
+    const selectedText = document.getElementById('sortSelectedText');
+    const dropdown = document.getElementById('sortDropdown');
+    const arrow = document.getElementById('sortDropdownArrow');
+    
+    selectedText.textContent = option;
+    
+    // Close dropdown
+    dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+    dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+    arrow.classList.remove('rotate-180');
+    sortDropdownOpen = false;
+    
+    // Here you can add logic to actually sort the content based on the selected option
+    console.log('Sort by:', option);
+   }
+
+   // Close sort dropdown when clicking outside
+   document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('sortDropdown');
+    const button = document.getElementById('sortDropdownBtn');
+    const arrow = document.getElementById('sortDropdownArrow');
+    
+    if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
+     if (sortDropdownOpen) {
+      dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+      dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+      arrow.classList.remove('rotate-180');
+      sortDropdownOpen = false;
+     }
+    }
+   });
+
+   // Add shadow to navbar on scroll
+   window.addEventListener('scroll', function() {
+    const navbar = document.getElementById('navbar');
+    if (window.scrollY > 0) {
+     navbar.classList.add('shadow-lg');
+    } else {
+     navbar.classList.remove('shadow-lg');
+    }
+   });
+
+   // Location searchable select (combobox)
+   const locations = ['All','Surabaya','Sidoarja','Malang','Madiun','Jakarta','Jogja','Bandung','Bali'];
+   const locationInput = document.getElementById('locationInput');
+   const locationDropdown = document.getElementById('locationDropdown');
+
+   function renderLocationOptions(filter = '') {
+    const f = filter.trim().toLowerCase();
+    const options = locations.filter(l => f === '' ? true : l.toLowerCase().startsWith(f));
+    if (options.length === 0) {
+     locationDropdown.innerHTML = '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>';
+     return;
+    }
+    locationDropdown.innerHTML = options.map(l => `
+     <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l}</div>
+    `).join('');
+   }
+
+   function openLocationDropdown() {
+    locationDropdown.classList.remove('hidden');
+   }
+
+   function closeLocationDropdown() {
+    locationDropdown.classList.add('hidden');
+   }
+
+   if (locationInput && locationDropdown) {
+    locationInput.addEventListener('focus', () => {
+     renderLocationOptions(locationInput.value);
+     openLocationDropdown();
+    });
+    locationInput.addEventListener('input', () => {
+     renderLocationOptions(locationInput.value);
+     openLocationDropdown();
+    });
+    locationDropdown.addEventListener('click', (e) => {
+     const item = e.target.closest('[data-value]');
+     if (!item) return;
+     locationInput.value = item.getAttribute('data-value');
+     closeLocationDropdown();
+    });
+    document.addEventListener('click', (e) => {
+     if (!locationDropdown.contains(e.target) && e.target !== locationInput) {
+      closeLocationDropdown();
+     }
+    });
+   }
+  </script>
+ </body>
 </html>
