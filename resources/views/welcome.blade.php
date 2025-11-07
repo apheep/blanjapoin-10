@@ -140,12 +140,36 @@
      </div>
     </section>
 
-    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400" id="searchSection">
-     <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl">
+    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection">
+     <!-- Mobile Version -->
+     <div class="md:hidden flex items-center gap-2">
+      <div class="flex-1 rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
+       <div class="flex items-center gap-2 text-neutral-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-neutral-400">
+         <circle cx="11" cy="11" r="8"></circle>
+         <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input id="mobileSearchInput" class="w-full bg-transparent text-xs outline-none placeholder:text-neutral-400 font-semibold" placeholder="Search Product" />
+       </div>
+      </div>
+      <button onclick="openMobilePointSheet()" id="mobilePointBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+        <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
+       </svg>
+      </button>
+      <button onclick="openMobileLocationSheet()" id="mobileLocationBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+        <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+       </svg>
+      </button>
+     </div>
+
+     <!-- Desktop Version -->
+     <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl">
       <div class="flex-1 rounded-lg md:rounded-xl bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
        <div class="flex items-center gap-2 text-neutral-500">
         <span class="text-base md:text-lg">🔍</span>
-        <input class="w-full bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold" placeholder="Cari produk atau voucher..." />
+        <input id="desktopSearchInput" class="w-full bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold" placeholder="Cari produk atau voucher..." />
        </div>
       </div>
       <div class="relative rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md">
@@ -182,6 +206,7 @@
        </div>
       </div>
      </div>
+
     </section>
 
     <!-- shop Section -->
@@ -222,6 +247,27 @@
      <div class="text-xs text-neutral-500 font-medium"> 2025 BelanjaPoin. All rights reserved.</div>
     </footer>
    </main>
+  </div>
+
+  <!-- Bottom Sheet (Reusable for Mobile) - Placed at body level for proper z-index -->
+  <div id="bottomSheet" class="md:hidden fixed inset-0 z-[9999] hidden">
+   <div id="bottomSheetOverlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300" onclick="closeBottomSheet()" style="opacity: 0;"></div>
+   <div id="bottomSheetPanel" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out" style="height: 55vh; transform: translateY(100%);">
+    <!-- Drag Indicator Bar -->
+    <div class="w-full flex justify-center pt-2 pb-1">
+     <div class="w-12 h-1 bg-neutral-300 rounded-full"></div>
+    </div>
+    <!-- Header -->
+    <div class="bg-white px-5 py-3 flex items-center">
+     <button onclick="closeBottomSheet()" class="text-neutral-700 hover:text-neutral-900 p-1">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+       <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+     </button>
+     <h3 id="bottomSheetTitle" class="flex-1 text-center text-lg font-bold text-neutral-800 pr-7">Pilihan</h3>
+    </div>
+    <div id="bottomSheetContent" class="overflow-y-auto" style="height: calc(55vh - 70px);"></div>
+   </div>
   </div>
 
   <script>
@@ -659,45 +705,197 @@
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');
 
-   function renderLocationOptions(filter = '') {
+   function renderLocationOptions(filter = '', dropdownElement, inputElement) {
     const f = filter.trim().toLowerCase();
     const options = locations.filter(l => f === '' ? true : l.toLowerCase().startsWith(f));
     if (options.length === 0) {
-     locationDropdown.innerHTML = '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>';
+     dropdownElement.innerHTML = '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>';
      return;
     }
-    locationDropdown.innerHTML = options.map(l => `
+    dropdownElement.innerHTML = options.map(l => `
      <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l}</div>
     `).join('');
    }
 
-   function openLocationDropdown() {
-    locationDropdown.classList.remove('hidden');
+   function openLocationDropdown(dropdownElement) {
+    dropdownElement.classList.remove('hidden');
    }
 
-   function closeLocationDropdown() {
-    locationDropdown.classList.add('hidden');
+   function closeLocationDropdown(dropdownElement) {
+    dropdownElement.classList.add('hidden');
    }
 
    if (locationInput && locationDropdown) {
     locationInput.addEventListener('focus', () => {
-     renderLocationOptions(locationInput.value);
-     openLocationDropdown();
+     renderLocationOptions(locationInput.value, locationDropdown, locationInput);
+     openLocationDropdown(locationDropdown);
     });
     locationInput.addEventListener('input', () => {
-     renderLocationOptions(locationInput.value);
-     openLocationDropdown();
+     renderLocationOptions(locationInput.value, locationDropdown, locationInput);
+     openLocationDropdown(locationDropdown);
     });
     locationDropdown.addEventListener('click', (e) => {
      const item = e.target.closest('[data-value]');
      if (!item) return;
      locationInput.value = item.getAttribute('data-value');
-     closeLocationDropdown();
+     closeLocationDropdown(locationDropdown);
     });
     document.addEventListener('click', (e) => {
      if (!locationDropdown.contains(e.target) && e.target !== locationInput) {
-      closeLocationDropdown();
+      closeLocationDropdown(locationDropdown);
      }
+    });
+   }
+
+   // Bottom Sheet (mobile)
+  function openBottomSheet(title, contentHTML) {
+   const sheet = document.getElementById('bottomSheet');
+   const overlay = document.getElementById('bottomSheetOverlay');
+   const panel = document.getElementById('bottomSheetPanel');
+   const titleEl = document.getElementById('bottomSheetTitle');
+   const contentEl = document.getElementById('bottomSheetContent');
+   
+   if (!sheet || !overlay || !panel || !titleEl || !contentEl) return;
+   
+   titleEl.textContent = title;
+   contentEl.innerHTML = contentHTML;
+   
+   // Show sheet
+   sheet.classList.remove('hidden');
+   document.body.style.overflow = 'hidden';
+   
+   // Trigger animation
+   setTimeout(() => {
+    overlay.style.opacity = '1';
+    panel.style.transform = 'translateY(0)';
+   }, 10);
+  }
+
+  function closeBottomSheet() {
+   const sheet = document.getElementById('bottomSheet');
+   const overlay = document.getElementById('bottomSheetOverlay');
+   const panel = document.getElementById('bottomSheetPanel');
+   const contentEl = document.getElementById('bottomSheetContent');
+   
+   if (!sheet || !overlay || !panel) return;
+   
+   // Animate out
+   overlay.style.opacity = '0';
+   panel.style.transform = 'translateY(100%)';
+   
+   // Hide after animation
+   setTimeout(() => {
+    sheet.classList.add('hidden');
+    document.body.style.overflow = '';
+    if (contentEl) contentEl.innerHTML = '';
+   }, 300);
+  }
+
+  // Helpers to render radio list
+  function buildRadioList(options, selectedValue) {
+   return `
+    <div class="py-2">
+     ${options.map(o => `
+      <button type="button" class="w-full flex items-center justify-between px-6 py-4 text-base text-neutral-800 hover:bg-neutral-50" data-value="${o}">
+       <span>${o}</span>
+       <span class="inline-flex items-center justify-center w-5 h-5 rounded-full border ${o===selectedValue? 'border-green-600':'border-neutral-300'}">
+        <span class="w-3 h-3 rounded-full ${o===selectedValue? 'bg-green-600':'bg-transparent'}"></span>
+       </span>
+      </button>
+     `).join('')}
+    </div>
+   `;
+  }
+
+  // Mobile Sort -> open sheet like screenshot "Urutkan"
+  function toggleMobileSortDropdown() {
+   const options = ['Paling Sesuai','Ulasan','Terbaru','Harga Tertinggi','Harga Terendah','Terlaris'];
+   const html = buildRadioList(options, 'Paling Sesuai');
+   openBottomSheet('Urutkan', html);
+   const holder = document.getElementById('bottomSheetContent');
+   holder.addEventListener('click', function onClick(e){
+    const btn = e.target.closest('[data-value]');
+    if (!btn) return;
+    const val = btn.getAttribute('data-value');
+    console.log('Mobile Sort by:', val);
+    closeBottomSheet();
+    holder.removeEventListener('click', onClick);
+   });
+  }
+
+
+   // Mobile Point -> open sheet radios
+  let mobilePointFilter = 'Lowest'; // Store selected filter
+  function openMobilePointSheet() {
+   const options = ['Lowest','Highest'];
+   const html = buildRadioList(options, mobilePointFilter);
+   openBottomSheet('Filter Poin', html);
+   const holder = document.getElementById('bottomSheetContent');
+   holder.addEventListener('click', function onClick(e){
+    const btn = e.target.closest('[data-value]');
+    if (!btn) return;
+    const val = btn.getAttribute('data-value');
+    mobilePointFilter = val;
+    console.log('Mobile Point Filter:', val);
+    closeBottomSheet();
+    holder.removeEventListener('click', onClick);
+   });
+  }
+
+   // Mobile Location via bottom sheet
+  window.openMobileLocationSheet = function() {
+   const searchId = 'mobileLocationSearchField';
+   const listId = 'mobileLocationListHolder';
+   const listHtml = `
+    <div class="p-4">
+     <div class="flex items-center gap-2 rounded-xl border border-neutral-200 px-4 py-2.5">
+      <span>🔍</span>
+      <input id="${searchId}" class="w-full bg-transparent outline-none text-sm" placeholder="Cari lokasi" />
+     </div>
+    </div>
+    <div id="${listId}" class="pb-4"></div>
+   `;
+   openBottomSheet('Pilih Lokasi', listHtml);
+   const renderList = (q='') => {
+    const holder = document.getElementById(listId);
+    const f = q.trim().toLowerCase();
+    const opts = locations.filter(l => f===''? true : l.toLowerCase().includes(f));
+    holder.innerHTML = opts.map(l => `
+     <button type="button" class="w-full text-left px-6 py-4 text-base hover:bg-neutral-50" data-value="${l}">${l}</button>
+    `).join('') || '<div class="px-6 py-4 text-neutral-500">Tidak ada hasil</div>';
+   };
+   renderList();
+   const search = document.getElementById(searchId);
+   search?.addEventListener('input', (e) => renderList(e.target.value));
+   const content = document.getElementById('bottomSheetContent');
+   content.addEventListener('click', function onClick(e){
+    const item = e.target.closest('[data-value]');
+    if (!item) return;
+    console.log('Mobile Location Selected:', item.getAttribute('data-value'));
+    closeBottomSheet();
+    content.removeEventListener('click', onClick);
+   });
+  }
+
+
+   // Search functionality (sync mobile and desktop)
+   const mobileSearchInput = document.getElementById('mobileSearchInput');
+   const desktopSearchInput = document.getElementById('desktopSearchInput');
+
+   function handleSearch(value) {
+    console.log('Searching for:', value);
+    // Here you can add logic to actually search the content
+   }
+
+   if (mobileSearchInput) {
+    mobileSearchInput.addEventListener('input', (e) => {
+     handleSearch(e.target.value);
+    });
+   }
+
+   if (desktopSearchInput) {
+    desktopSearchInput.addEventListener('input', (e) => {
+     handleSearch(e.target.value);
     });
    }
   </script>
