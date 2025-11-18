@@ -45,13 +45,13 @@
                         <!-- 1. Nama Merchant -->
                         <div class="md:col-span-2">
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                                Nama Merchant
+                                Nama Produk 
                             </label>
                             <input
                                 type="text"
                                 name="nama"
                                 class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0"
-                                placeholder="Enter merchant name"
+                                placeholder="Enter product name"
                             >
                         </div>
 

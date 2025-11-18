@@ -5,7 +5,7 @@
         <!-- Sticky Header -->
         <div class="sticky top-0 z-10 flex justify-between items-center px-4 py-3 md:px-6 md:py-4 border-b bg-white rounded-t-xl">
             <h3 class="text-xl font-semibold text-gray-800 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                Edit Merchant Data
+                Edit Product Data
             </h3>
             <button
                 type="button"
