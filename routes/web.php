@@ -2,52 +2,59 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
 
-// Routes for guests only (not logged in users)
-    Route::middleware(['guest'])->group(function () {
-    // Login page as homepage
-    Route::get('/', [LoginController::class, 'index'])->name('home');
-    
+// Tampilan awal untuk semua pengunjung
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');
+
+// Routes untuk tamu (belum login)
+Route::middleware(['guest'])->group(function () {
     // Login routes
     Route::get('/login', [LoginController::class, 'index'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.post');
 
-    // Minimal forgot-password route to satisfy login view link
+    // Minimal forgot-password route
     Route::get('/forgot-password', function () {
         return response('Fitur lupa password belum tersedia.', 200);
     })->name('password.request');
 });
-// Routes for authenticated users
+
+// Routes untuk user yang sudah login
 Route::middleware(['auth'])->group(function () {
-    // Post-login landing for regular users
+    // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
         return view('welcome');
     })->name('welcome');
 
-    // Post-login landing for admins
+    // Halaman admin
     Route::get('/admin', function () {
         return view('admin');
     })->name('admin');
 
-    // Dashboard alias to support existing links
+    // Dashboard (alias admin)
     Route::get('/dashboard', function () {
         return view('admin');
     })->name('dashboard');
 
+    // Halaman approval
+    Route::get('/approval', function () {
+        return view('approval');
+    })->name('approval');
 
-    // Root redirect for authenticated users based on role
-    Route::get('/', function () {
-        $user = Auth::user();
-        if ($user && $user->role === 'admin') {
-            return redirect()->route('admin');
-        }
-        return redirect()->route('welcome');
-    });
+    // Manajemen user
+    Route::get('/user-management', function () {
+        return view('usermng');
+    })->name('user.management');
 
-    // Fallback for frameworks that redirect authenticated users to /home
+    // Halaman profil
+    Route::get('/profile', function () {
+        return response('Halaman profil belum tersedia.', 200);
+    })->name('profile');
+
+    // Redirect setelah login berdasarkan role
     Route::get('/home', function () {
         $user = Auth::user();
         if ($user && $user->role === 'admin') {
@@ -55,7 +62,6 @@ Route::middleware(['auth'])->group(function () {
         }
         return redirect()->route('welcome');
     });
-    
 
     // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

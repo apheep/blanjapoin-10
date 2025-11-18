@@ -31,12 +31,22 @@
 </head>
 
 <body class="min-h-screen bg-white font-poppins">
+
     <!-- Header -->
    <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
-    <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
+    <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
      <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-6">
        <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
+      </div>
+
+      <!-- Centered primary navigation -->
+      <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      @if(Auth::check() && Auth::user()->can_approve == 1) 
+        <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
+        <a href="{{ route('approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Approval</a>
+        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>
+       @endif
       </div>
 
        <div class="relative">
@@ -689,18 +699,15 @@
                 // Store the current active tab
                 currentActiveTab = tab;
                 window.currentActiveTab = tab;
-                
                 // Reset all tabs
                 const tabs = ['all', 'merchant', 'merchandise', 'telkom'];
                 tabs.forEach(t => {
                     const btn = document.getElementById('tab-' + t);
                     btn.className = 'px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors';
                 });
-                
                 // Activate selected tab
                 const activeBtn = document.getElementById('tab-' + tab);
                 activeBtn.className = 'px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg';
-                
                 // Hide non-active sections with Tailwind utilities
                 const sections = ['all', 'merchant', 'merchandise', 'telkom'];
                 sections.forEach(s => {
@@ -713,7 +720,6 @@
                         }
                     }
                 });
-                
                 // Show and activate selected section
                 const activeSection = document.getElementById('section-' + tab);
                 if (activeSection) {
@@ -729,7 +735,6 @@
 
             // Keep track of selected category per table for toggle behavior
             const selectedCategory = { merchant: 'All', merchandise: 'All', telkom: 'All' };
-
             // Function to filter table based on category
             function filterTable(tableType, category) {
                 // Close the dropdown after selection
@@ -748,7 +753,6 @@
                     else if (tableType === 'merchandise') buttonId = 'kategoriBtnMerchandise';
                     else if (tableType === 'telkom') buttonId = 'kategoriBtnTelkom';
                 }
-                
                 // Toggle: clicking the same category again resets to All
                 if (selectedCategory[tableType] === category) {
                     category = 'All';
@@ -758,10 +762,8 @@
                 const button = document.getElementById(buttonId);
                 if (button) {
                     const label = category === 'All' ? 'Kategori' : category;
-                    
                     // Reset button classes
                     button.className = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300';
-                    
                     // Apply category-specific styling
                     if (category === 'All') {
                         button.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
@@ -818,7 +820,7 @@
         </script>
 
         <!-- All Tables Section -->
-        <div id="section-all" class="transition-all duration-300 opacity-100 translate-y-0">
+         <div id="section-all" class="transition-all duration-300 opacity-100 translate-y-0"> 
             <!-- Merchant Table -->
             <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 mt-4 sm:mt-8">Merchant</h2>
             
@@ -937,7 +939,7 @@
                     <div class="relative">
                         <button id="kategoriBtnMerchant" onclick="toggleKategoriDropdownMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-list mr-2"></i>
-                            Kategori
+                            Kategori 
                             <i class="fas fa-chevron-down ml-2 text-xs"></i>
                         </button>
                         <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
@@ -1038,6 +1040,7 @@
             
             @include('partials.table-talkompackages')
         </div>
+
     </main>
     
     @include('partials.upload-modal-merchant')
@@ -1047,5 +1050,6 @@
     @include('partials.edit-modal-merchandise')
     @include('partials.edit-modal-telkom')
     @include('partials.delete-confirmation-modal')
+    @include('partials.approve-confirmation-modal')
 </body>
 </html>

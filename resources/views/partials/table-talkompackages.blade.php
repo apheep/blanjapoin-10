@@ -5,6 +5,12 @@
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Approve</th>
+                    @endif
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Uploader</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Paket</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SKB</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem Point</th>
@@ -13,7 +19,6 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Gambar Paket</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Images</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
 
@@ -21,6 +26,35 @@
                 <!-- Row 1 -->
                 <tr class="hover:bg-gray-50 transition-colors telkom-row" data-category="Telkomsel Packet">
                     <td class="px-4 py-4 text-sm font-medium text-gray-900">1</td>
+                    <td class="px-4 py-4">
+                        <div class="flex space-x-2">
+                            <button onclick="openEditTelkom(1)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
+                            <button onclick="showDeleteConfirmation('Telkom Package','Unlimited Data 10GB','1','Package Unlimited Data 10GB akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
+                    <td class="px-4 py-4">
+                        <button onclick="showApproveConfirmation('Telkom Package','Unlimited Data 10GB',1)" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
+                    </td>
+                    @endif
+                    @php
+                        $statuses = ['submitted', 'approved', 'rejected'];
+                        $randomStatus = $statuses[array_rand($statuses)];
+                        $statusClasses = [
+                            'submitted' => 'bg-yellow-100 text-yellow-800',
+                            'approved' => 'bg-green-100 text-green-800',
+                            'rejected' => 'bg-red-100 text-red-800'
+                        ];
+                        $statusDisplay = [
+                            'submitted' => 'Submitted',
+                            'approved' => 'Approved',
+                            'rejected' => 'Rejected'
+                        ];
+                    @endphp
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClasses[$randomStatus] }}">{{ ucfirst($statusDisplay[$randomStatus]) }}</span>
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900">John Doe</td>
                     <td class="px-4 py-4 text-sm">
                         <div class="font-medium text-gray-900">Unlimited Data 10GB</div>
                     </td>
@@ -31,17 +65,40 @@
                     <td class="px-4 py-4 text-sm"><a href="https://example.com/data10gb" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
                     <td class="px-4 py-4"><img src="{{ asset('storage/telkom/data10gb.jpg') }}" class="h-10 w-16 object-cover rounded"></td>
                     <td class="px-4 py-4 text-gray-500"><div class="flex space-x-1"><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div></div></td>
-                    <td class="px-4 py-4">
-                        <div class="flex space-x-2">
-                            <button onclick="openEditTelkom(1)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
-                            <button onclick="showDeleteConfirmation('Telkom Package','Unlimited Data 10GB','1','Package Unlimited Data 10GB akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
                 </tr>
 
                 <!-- Row 2 -->
                 <tr class="hover:bg-gray-50 transition-colors telkom-row" data-category="Telkomsel Packet">
                     <td class="px-4 py-4 text-sm font-medium text-gray-900">2</td>
+                    <td class="px-4 py-4">
+                        <div class="flex space-x-2">
+                            <button onclick="openEditTelkom(2)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
+                            <button onclick="showDeleteConfirmation('Telkom Package','Unlimited Calls 500min','2','Package Unlimited Calls 500min akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
+                    <td class="px-4 py-4">
+                        <button onclick="showApproveConfirmation('Telkom Package','Unlimited Calls 500min',2)" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
+                    </td>
+                    @endif
+                    @php
+                        $statuses = ['submitted', 'approved', 'rejected'];
+                        $randomStatus = $statuses[array_rand($statuses)];
+                        $statusClasses = [
+                            'submitted' => 'bg-yellow-100 text-yellow-800',
+                            'approved' => 'bg-green-100 text-green-800',
+                            'rejected' => 'bg-red-100 text-red-800'
+                        ];
+                        $statusDisplay = [
+                            'submitted' => 'Submitted',
+                            'approved' => 'Approved',
+                            'rejected' => 'Rejected'
+                        ];
+                    @endphp
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClasses[$randomStatus] }}">{{ ucfirst($statusDisplay[$randomStatus]) }}</span>
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900">Jane Smith</td>
                     <td class="px-4 py-4 text-sm">
                         <div class="font-medium text-gray-900">Unlimited Calls 500min</div>
                     </td>
@@ -52,17 +109,40 @@
                     <td class="px-4 py-4 text-sm"><a href="https://example.com/calls500min" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
                     <td class="px-4 py-4"><img src="{{ asset('storage/telkom/calls500min.jpg') }}" class="h-10 w-16 object-cover rounded"></td>
                     <td class="px-4 py-4 text-gray-500"><div class="flex space-x-1"><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div></div></td>
-                    <td class="px-4 py-4">
-                        <div class="flex space-x-2">
-                            <button onclick="openEditTelkom(2)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
-                            <button onclick="showDeleteConfirmation('Telkom Package','Unlimited Calls 500min','2','Package Unlimited Calls 500min akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
                 </tr>
 
                 <!-- Row 3 -->
                 <tr class="hover:bg-gray-50 transition-colors telkom-row" data-category="Telkomsel Packet">
                     <td class="px-4 py-4 text-sm font-medium text-gray-900">3</td>
+                    <td class="px-4 py-4">
+                        <div class="flex space-x-2">
+                            <button onclick="openEditTelkom(3)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
+                            <button onclick="showDeleteConfirmation('Telkom Package','Combo Package 5GB+300min','3','Package Combo Package 5GB+300min akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
+                    <td class="px-4 py-4">
+                        <button onclick="showApproveConfirmation('Telkom Package','Combo Package 5GB+300min',3)" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
+                    </td>
+                    @endif
+                    @php
+                        $statuses = ['submitted', 'approved', 'rejected'];
+                        $randomStatus = $statuses[array_rand($statuses)];
+                        $statusClasses = [
+                            'submitted' => 'bg-yellow-100 text-yellow-800',
+                            'approved' => 'bg-green-100 text-green-800',
+                            'rejected' => 'bg-red-100 text-red-800'
+                        ];
+                        $statusDisplay = [
+                            'submitted' => 'Submitted',
+                            'approved' => 'Approved',
+                            'rejected' => 'Rejected'
+                        ];
+                    @endphp
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClasses[$randomStatus] }}">{{ ucfirst($statusDisplay[$randomStatus]) }}</span>
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900">Bob Johnson</td>
                     <td class="px-4 py-4 text-sm">
                         <div class="font-medium text-gray-900">Combo Package 5GB+300min</div>
                     </td>
@@ -73,17 +153,40 @@
                     <td class="px-4 py-4 text-sm"><a href="https://example.com/combo5gb" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
                     <td class="px-4 py-4"><img src="{{ asset('storage/telkom/combo5gb.jpg') }}" class="h-10 w-16 object-cover rounded"></td>
                     <td class="px-4 py-4 text-gray-500"><div class="flex space-x-1"><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div></div></td>
-                    <td class="px-4 py-4">
-                        <div class="flex space-x-2">
-                            <button onclick="openEditTelkom(3)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
-                            <button onclick="showDeleteConfirmation('Telkom Package','Combo Package 5GB+300min','3','Package Combo Package 5GB+300min akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
                 </tr>
 
                 <!-- Row 4 -->
                 <tr class="hover:bg-gray-50 transition-colors telkom-row" data-category="Telkomsel Packet">
                     <td class="px-4 py-4 text-sm font-medium text-gray-900">4</td>
+                    <td class="px-4 py-4">
+                        <div class="flex space-x-2">
+                            <button onclick="openEditTelkom(4)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
+                            <button onclick="showDeleteConfirmation('Telkom Package','Unlimited Data 20GB','4','Package Unlimited Data 20GB akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
+                    <td class="px-4 py-4">
+                        <button onclick="showApproveConfirmation('Telkom Package','Unlimited Data 20GB',4)" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
+                    </td>
+                    @endif
+                    @php
+                        $statuses = ['submitted', 'approved', 'rejected'];
+                        $randomStatus = $statuses[array_rand($statuses)];
+                        $statusClasses = [
+                            'submitted' => 'bg-yellow-100 text-yellow-800',
+                            'approved' => 'bg-green-100 text-green-800',
+                            'rejected' => 'bg-red-100 text-red-800'
+                        ];
+                        $statusDisplay = [
+                            'submitted' => 'Submitted',
+                            'approved' => 'Approved',
+                            'rejected' => 'Rejected'
+                        ];
+                    @endphp
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClasses[$randomStatus] }}">{{ ucfirst($statusDisplay[$randomStatus]) }}</span>
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900">Alice Brown</td>
                     <td class="px-4 py-4 text-sm">
                         <div class="font-medium text-gray-900">Unlimited Data 20GB</div>
                     </td>
@@ -94,17 +197,40 @@
                     <td class="px-4 py-4 text-sm"><a href="https://example.com/data20gb" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
                     <td class="px-4 py-4"><img src="{{ asset('storage/telkom/data20gb.jpg') }}" class="h-10 w-16 object-cover rounded"></td>
                     <td class="px-4 py-4 text-gray-500"><div class="flex space-x-1"><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div></div></td>
-                    <td class="px-4 py-4">
-                        <div class="flex space-x-2">
-                            <button onclick="openEditTelkom(4)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
-                            <button onclick="showDeleteConfirmation('Telkom Package','Unlimited Data 20GB','4','Package Unlimited Data 20GB akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
                 </tr>
 
                 <!-- Row 5 -->
                 <tr class="hover:bg-gray-50 transition-colors telkom-row" data-category="Telkomsel Packet">
                     <td class="px-4 py-4 text-sm font-medium text-gray-900">5</td>
+                    <td class="px-4 py-4">
+                        <div class="flex space-x-2">
+                            <button onclick="openEditTelkom(5)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
+                            <button onclick="showDeleteConfirmation('Telkom Package','Premium Package 50GB','5','Package Premium Package 50GB akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
+                    <td class="px-4 py-4">
+                        <button onclick="showApproveConfirmation('Telkom Package','Premium Package 50GB',5)" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
+                    </td>
+                    @endif
+                    @php
+                        $statuses = ['submitted', 'approved', 'rejected'];
+                        $randomStatus = $statuses[array_rand($statuses)];
+                        $statusClasses = [
+                            'submitted' => 'bg-yellow-100 text-yellow-800',
+                            'approved' => 'bg-green-100 text-green-800',
+                            'rejected' => 'bg-red-100 text-red-800'
+                        ];
+                        $statusDisplay = [
+                            'submitted' => 'Submitted',
+                            'approved' => 'Approved',
+                            'rejected' => 'Rejected'
+                        ];
+                    @endphp
+                    <td class="px-4 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClasses[$randomStatus] }}">{{ ucfirst($statusDisplay[$randomStatus]) }}</span>
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-900">Charlie Wilson</td>
                     <td class="px-4 py-4 text-sm">
                         <div class="font-medium text-gray-900">Premium Package 50GB</div>
                     </td>
@@ -115,12 +241,6 @@
                     <td class="px-4 py-4 text-sm"><a href="https://example.com/data50gb" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
                     <td class="px-4 py-4"><img src="{{ asset('storage/telkom/data50gb.jpg') }}" class="h-10 w-16 object-cover rounded"></td>
                     <td class="px-4 py-4 text-gray-500"><div class="flex space-x-1"><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div></div></td>
-                    <td class="px-4 py-4">
-                        <div class="flex space-x-2">
-                            <button onclick="openEditTelkom(5)" class="text-blue-600 hover:text-blue-900"><i class="fas fa-edit"></i></button>
-                            <button onclick="showDeleteConfirmation('Telkom Package','Premium Package 50GB','5','Package Premium Package 50GB akan dihapus dari sistem')" class="text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
                 </tr>
             </tbody>
         </table>
@@ -150,18 +270,22 @@
 <!-- ======================= MOBILE CARD VIEW ======================= -->
 <div class="md:hidden space-y-4 mt-4">
     @foreach([
-        ['id'=>1,'nama'=>'Unlimited Data 10GB','desc'=>'Paket data internet','pts'=>'500 pts','stock'=>200,'periode'=>'01/01/2025 – 31/12/2025','img'=>'telkomsel.png','cta'=>'https://example.com/data10gb'],
-        ['id'=>2,'nama'=>'Unlimited Calls 500min','desc'=>'Paket telepon unlimited','pts'=>'300 pts','stock'=>150,'periode'=>'02/01/2025 – 30/11/2025','img'=>'telkomsel.png','cta'=>'https://example.com/calls500min'],
-        ['id'=>3,'nama'=>'Combo Package 5GB+300min','desc'=>'Paket combo data dan telepon','pts'=>'700 pts','stock'=>100,'periode'=>'01/03/2025 – 31/10/2025','img'=>'telkomsel.png','cta'=>'https://example.com/combo5gb'],
-        ['id'=>4,'nama'=>'Unlimited Data 20GB','desc'=>'Paket data internet premium','pts'=>'900 pts','stock'=>75,'periode'=>'01/04/2025 – 30/09/2025','img'=>'telkomsel.png','cta'=>'https://example.com/data20gb'],
-        ['id'=>5,'nama'=>'Premium Package 50GB','desc'=>'Paket data super premium','pts'=>'1500 pts','stock'=>50,'periode'=>'01/05/2025 – 31/08/2025','img'=>'telkomsel.png','cta'=>'https://example.com/data50gb'],
+        ['id'=>1,'nama'=>'Unlimited Data 10GB','desc'=>'Paket data internet','pts'=>'500 pts','stock'=>200,'periode'=>'01/01/2025 – 31/12/2025','img'=>'telkomsel.png','cta'=>'https://example.com/data10gb','uploader'=>'John Doe'],
+        ['id'=>2,'nama'=>'Unlimited Calls 500min','desc'=>'Paket telepon unlimited','pts'=>'300 pts','stock'=>150,'periode'=>'02/01/2025 – 30/11/2025','img'=>'telkomsel.png','cta'=>'https://example.com/calls500min','uploader'=>'Jane Smith'],
+        ['id'=>3,'nama'=>'Combo Package 5GB+300min','desc'=>'Paket combo data dan telepon','pts'=>'700 pts','stock'=>100,'periode'=>'01/03/2025 – 31/10/2025','img'=>'telkomsel.png','cta'=>'https://example.com/combo5gb','uploader'=>'Bob Johnson'],
+        ['id'=>4,'nama'=>'Unlimited Data 20GB','desc'=>'Paket data internet premium','pts'=>'900 pts','stock'=>75,'periode'=>'01/04/2025 – 30/09/2025','img'=>'telkomsel.png','cta'=>'https://example.com/data20gb','uploader'=>'Alice Brown'],
+        ['id'=>5,'nama'=>'Premium Package 50GB','desc'=>'Paket data super premium','pts'=>'1500 pts','stock'=>50,'periode'=>'01/05/2025 – 31/08/2025','img'=>'telkomsel.png','cta'=>'https://example.com/data50gb','uploader'=>'Charlie Wilson'],
     ] as $p)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow telkom-row">
         <div class="flex items-start space-x-3">
             <img src="{{ asset('storage/logo/'.$p['img']) }}" alt="Telkomsel Package" class="h-12 w-16 rounded object-contain">
-            <div>
+            <div class="flex-1">
                 <h3 class="text-sm font-semibold text-gray-900 leading-tight">{{ $p['nama'] }}</h3>
                 <p class="text-xs text-gray-500">{{ $p['desc'] }}</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                    <span class="text-[10px] text-gray-500">Uploader: <span class="font-medium text-gray-700">{{ $p['uploader'] }}</span></span>
+                </div>
             </div>
         </div>
 
@@ -183,6 +307,9 @@
         <div class="flex items-center justify-between mt-4 border-t pt-3">
             <a href="{{ $p['cta'] }}" target="_blank" class="text-sm font-medium text-blue-600 hover:underline">Lihat Paket</a>
             <div class="flex items-center space-x-3">
+                @if(Auth::check() && Auth::user()->can_approve == 1)
+                <button onclick="showApproveConfirmation('Telkom Package','{{ $p['nama'] }}',{{ $p['id'] }})" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200 text-xs font-semibold" title="Approve"><i class="fas fa-check-circle mr-1"></i>Approve</button>
+                @endif
                 <button onclick="openEditTelkom({{ $p['id'] }}, {nama:'{{ $p['nama'] }}'})" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit text-sm"></i></button>
                 <button onclick="showDeleteConfirmation('Telkom Package','{{ $p['nama'] }}','{{ $p['id'] }}','Hapus {{ $p['nama'] }}?')" class="text-red-600 hover:text-red-800"><i class="fas fa-trash text-sm"></i></button>
             </div>

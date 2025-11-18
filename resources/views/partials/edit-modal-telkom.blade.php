@@ -26,7 +26,7 @@
                         </div>
                         <div>
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Deskripsi</label>
-                            <textarea id="editTelkomDeskripsi" name="deskripsi" rows="5" class="w-full px-4 pt-3 h-[140px] border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0 resize-none" placeholder="Enter description"></textarea>
+                            <textarea id="editTelkomSKB" name="SKB" rows="5" class="w-full px-4 pt-3 h-[140px] border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0 resize-none" placeholder="Enter description"></textarea>
                         </div>
                         <!-- Row 2: Stock -->
                         <div>
@@ -147,7 +147,7 @@ function openEditTelkom(id, data) {
 
     // Populate form with existing data
     document.getElementById('editTelkomNama').value = data.nama || '';
-    document.getElementById('editTelkomDeskripsi').value = data.deskripsi || '';
+    document.getElementById('editTelkomDSKB').value = data.SKB || '';
     document.getElementById('editTelkomRedeemPoint').value = data.redeem_point || '';
     document.getElementById('editTelkomStock').value = data.stock || '';
     document.getElementById('editTelkomStartDate').value = data.start_date || '';

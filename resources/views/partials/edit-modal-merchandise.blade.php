@@ -26,7 +26,7 @@
                         </div>
                         <div>
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">SKB</label>
-                            <textarea id="editMerchandiseDeskripsi" name="deskripsi" rows="5" class="w-full px-4 pt-3 h-[140px] border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0 resize-none" placeholder="Enter SKB"></textarea>
+                            <textarea id="editMerchandiseSKB" name="SKB" rows="5" class="w-full px-4 pt-3 h-[140px] border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0 resize-none" placeholder="Enter SKB"></textarea>
                         </div>
                         <!-- Row 2: Stock -->
                         <div>
@@ -172,7 +172,7 @@ function openEditMerchandise(id, data) {
     
     // Populate form with existing data
     document.getElementById('editMerchandiseNama').value = data.nama || '';
-    document.getElementById('editMerchandiseDeskripsi').value = data.deskripsi || '';
+    document.getElementById('editMerchandiseSKB').value = data.SKB || '';
     document.getElementById('editMerchandiseRedeemPoint').value = data.redeem_point || '';
     document.getElementById('editMerchandiseStock').value = data.stock || '';
     document.getElementById('editMerchandiseStartDate').value = data.start_date || '';

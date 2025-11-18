@@ -25,36 +25,6 @@
       <div class="flex items-center gap-3">
        <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
       </div>
-      <div class="flex items-center gap-2 md:gap-3">
-       <div class="flex items-center gap-1.5 md:gap-2 rounded-full bg-gradient-to-r from-amber-50 to-orange-50 px-3 md:px-4 py-1.5 md:py-2 shadow-lg drop-shadow-md ring-1 ring-amber-200/50 transition-all hover:shadow-xl hover:drop-shadow-lg hover:scale-105">
-        <span class="inline-flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[10px] md:text-xs font-bold shadow-sm">P</span>
-        <span class="text-xs md:text-sm font-bold text-neutral-800">1,289</span>
-       </div>
-       <div class="relative">
-        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg shadow-orange-300/50 drop-shadow-lg ring-1 ring-white/30 transition-all hover:shadow-xl hover:shadow-orange-400/50 hover:drop-shadow-xl hover:scale-105 active:scale-95">
-         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 md:h-4 md:w-4 opacity-95">
-          <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
-         </svg>
-         <span class="tracking-tight">Willy</span>
-         <svg id="userDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3 w-3 md:h-3.5 md:w-3.5 opacity-95 transition-transform duration-300">
-          <path d="M7 10l5 5 5-5z"/>
-         </svg>
-        </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-50 backdrop-blur-sm">
-         <div class="py-1">
-          <form method="POST" action="{{ route('logout') }}">
-           @csrf
-           <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-             <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clip-rule="evenodd" />
-            </svg>
-            <span>Logout</span>
-           </button>
-          </form>
-         </div>
-        </div>
-       </div>
-      </div>
      </div>
     </div>
    </nav>
@@ -64,11 +34,11 @@
     <section class="mt-1 md:mt-1 opacity-0 translate-y-8 transition-all duration-700 ease-out" id="bannerSection">
      <div class="relative group">
       <!-- Navigation Arrows -->
-      <button onclick="prevSlide()" class="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 md:h-14 md:w-14 place-items-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl transition-all hover:bg-white hover:scale-110 active:scale-95 text-neutral-700 font-bold text-xl md:text-3xl">
+      <button onclick="prevSlide()" class="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 md:h-14 md:w-14 place-items-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl transition-all hover:bg-white hover:scale-110 active:scale-95 text-neutral-700 font-bold text-xl md:text-3xl">
        ‹
       </button>
       
-      <button onclick="nextSlide()" class="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 md:h-14 md:w-14 place-items-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl transition-all hover:bg-white hover:scale-110 active:scale-95 text-neutral-700 font-bold text-xl md:text-3xl">
+      <button onclick="nextSlide()" class="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 md:h-14 md:w-14 place-items-center rounded-full bg-white/95 backdrop-blur-sm shadow-xl transition-all hover:bg-white hover:scale-110 active:scale-95 text-neutral-700 font-bold text-xl md:text-3xl">
        ›
       </button>
       
@@ -91,51 +61,86 @@
 
       
       <!-- Carousel Dots -->
-      <div class="mt-8 md:mt-10 flex items-center justify-center gap-4 md:gap-5">
-       <span onclick="goToSlide(0)" class="carousel-dot h-4 w-4 md:h-5 md:w-5 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
-       <span onclick="goToSlide(1)" class="carousel-dot h-4 w-4 md:h-5 md:w-5 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
-       <span onclick="goToSlide(2)" class="carousel-dot h-4 w-4 md:h-5 md:w-5 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+      <div class="mt-2 md:mt-3/2 flex items-center justify-center gap-3 md:gap-3">
+       <span onclick="goToSlide(0)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+       <span onclick="goToSlide(1)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+       <span onclick="goToSlide(2)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
       </div>
      </div>
     </section>
 
     <section class="mt-8 md:mt-10 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200" id="categorySection">
-     <div class="grid grid-cols-3 gap-2.5 md:gap-4 sm:grid-cols-6">
-      <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
-       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+     <!-- Mobile Version: 5 columns (4 categories + See All) -->
+     <div class="grid grid-cols-5 gap-2 md:hidden">
+      <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
+       <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
         <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
        </span>
-       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Food & Beverage</span>
+       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
       </button>
-      <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
-       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+      <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-indigo-300 active:scale-95">
+       <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
         <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
        </span>
-       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Entertain</span>
+       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Lifestyle</span>
       </button>
-      <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
-       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+      <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
+       <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
         <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
        </span>
-       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Vacation</span>
+       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
       </button>
-      <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
-       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+      <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-pink-300 active:scale-95">
+       <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
         <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
        </span>
-       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Beauty & Care</span>
+       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
       </button>
-      <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
-       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+      <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-orange-300 active:scale-95">
+       <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+        <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
+       </span>
+       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
+      </button>
+     </div>
+
+     <!-- Desktop Version: 6 columns (5 categories + See All) -->
+     <div class="hidden md:grid grid-cols-6 gap-4">
+      <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+       </span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
+      </button>
+      <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+       </span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Lifestyle</span>
+      </button>
+      <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+       </span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
+      </button>
+      <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+       </span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kesehatan & Kecantikan</span>
+      </button>
+      <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
         <img src="{{ asset('images/categories/shop.png') }}" alt="Shop" class="w-full h-full object-contain">
        </span>
-       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Shop</span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Belanja</span>
       </button>
-      <button onclick="filterCategory('telkomsel')" class="group flex flex-col items-center gap-2 md:gap-3 rounded-xl md:rounded-2xl bg-white p-3 md:p-5 text-center shadow-md md:shadow-lg drop-shadow-sm md:drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-red-300 hover:-translate-y-1 active:scale-95">
-       <span class="grid h-12 w-12 md:h-16 md:w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-        <img src="{{ asset('images/categories/telkomsel.png') }}" alt="telkomsel" class="w-20 h-20 md:w-15 md:h-15 object-contain mx-auto">
+      <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+       <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+        <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
        </span>
-       <span class="text-[10px] md:text-xs font-bold text-neutral-700 group-hover:text-red-600 transition-colors leading-tight">Telkomsel Data</span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
       </button>
      </div>
     </section>
@@ -249,10 +254,12 @@
    </main>
   </div>
 
-  <!-- Bottom Sheet (Reusable for Mobile) - Placed at body level for proper z-index -->
-  <div id="bottomSheet" class="md:hidden fixed inset-0 z-[9999] hidden">
+  <!-- Bottom Sheet / Modal (Responsive) - Placed at body level for proper z-index -->
+  <div id="bottomSheet" class="fixed inset-0 z-[9999] hidden">
    <div id="bottomSheetOverlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300" onclick="closeBottomSheet()" style="opacity: 0;"></div>
-   <div id="bottomSheetPanel" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out" style="height: 55vh; transform: translateY(100%);">
+   
+   <!-- Mobile: Bottom Sheet -->
+   <div id="bottomSheetPanel" class="md:hidden absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out" style="height: 55vh; transform: translateY(100%);">
     <!-- Drag Indicator Bar -->
     <div class="w-full flex justify-center pt-2 pb-1">
      <div class="w-12 h-1 bg-neutral-300 rounded-full"></div>
@@ -267,6 +274,20 @@
      <h3 id="bottomSheetTitle" class="flex-1 text-center text-lg font-bold text-neutral-800 pr-7">Pilihan</h3>
     </div>
     <div id="bottomSheetContent" class="overflow-y-auto" style="height: calc(55vh - 70px);"></div>
+   </div>
+
+   <!-- Desktop: Modal Popup -->
+   <div id="desktopModal" class="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-out w-full max-w-2xl" style="opacity: 0; transform: translate(-50%, -50%) scale(0.95);">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-orange-50 to-rose-50 px-6 py-4 flex items-center justify-between border-b border-neutral-200">
+     <h3 id="desktopModalTitle" class="text-xl font-bold text-neutral-800">Pilihan</h3>
+     <button onclick="closeBottomSheet()" class="text-neutral-700 hover:text-neutral-900 p-1 rounded-lg hover:bg-white/50 transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+       <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+     </button>
+    </div>
+    <div id="desktopModalContent" class="overflow-y-auto p-6 max-h-[70vh]"></div>
    </div>
   </div>
 
@@ -597,7 +618,19 @@
    function filterCategory(category) {
     const selectedSection = document.getElementById('section-' + category);
     if (selectedSection) {
-     selectedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+     // Get navbar height to calculate offset
+     const navbar = document.getElementById('navbar');
+     const navbarHeight = navbar ? navbar.offsetHeight : 0;
+     
+     // Calculate position with offset (navbar height + extra spacing)
+     const elementPosition = selectedSection.getBoundingClientRect().top + window.pageYOffset;
+     const offsetPosition = elementPosition - navbarHeight - 20; // 20px extra spacing
+     
+     // Smooth scroll to calculated position
+     window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+     });
     }
    }
 
@@ -747,27 +780,41 @@
     });
    }
 
-   // Bottom Sheet (mobile)
+   // Bottom Sheet / Modal (responsive)
   function openBottomSheet(title, contentHTML) {
    const sheet = document.getElementById('bottomSheet');
    const overlay = document.getElementById('bottomSheetOverlay');
+   
+   // Mobile elements
    const panel = document.getElementById('bottomSheetPanel');
    const titleEl = document.getElementById('bottomSheetTitle');
    const contentEl = document.getElementById('bottomSheetContent');
    
-   if (!sheet || !overlay || !panel || !titleEl || !contentEl) return;
+   // Desktop elements
+   const modal = document.getElementById('desktopModal');
+   const modalTitleEl = document.getElementById('desktopModalTitle');
+   const modalContentEl = document.getElementById('desktopModalContent');
    
-   titleEl.textContent = title;
-   contentEl.innerHTML = contentHTML;
+   if (!sheet || !overlay) return;
    
-   // Show sheet
+   // Set content for both mobile and desktop
+   if (titleEl) titleEl.textContent = title;
+   if (contentEl) contentEl.innerHTML = contentHTML;
+   if (modalTitleEl) modalTitleEl.textContent = title;
+   if (modalContentEl) modalContentEl.innerHTML = contentHTML;
+   
+   // Show sheet/modal
    sheet.classList.remove('hidden');
    document.body.style.overflow = 'hidden';
    
    // Trigger animation
    setTimeout(() => {
     overlay.style.opacity = '1';
-    panel.style.transform = 'translateY(0)';
+    if (panel) panel.style.transform = 'translateY(0)';
+    if (modal) {
+     modal.style.opacity = '1';
+     modal.style.transform = 'translate(-50%, -50%) scale(1)';
+    }
    }, 10);
   }
 
@@ -775,19 +822,26 @@
    const sheet = document.getElementById('bottomSheet');
    const overlay = document.getElementById('bottomSheetOverlay');
    const panel = document.getElementById('bottomSheetPanel');
+   const modal = document.getElementById('desktopModal');
    const contentEl = document.getElementById('bottomSheetContent');
+   const modalContentEl = document.getElementById('desktopModalContent');
    
-   if (!sheet || !overlay || !panel) return;
+   if (!sheet || !overlay) return;
    
    // Animate out
    overlay.style.opacity = '0';
-   panel.style.transform = 'translateY(100%)';
+   if (panel) panel.style.transform = 'translateY(100%)';
+   if (modal) {
+    modal.style.opacity = '0';
+    modal.style.transform = 'translate(-50%, -50%) scale(0.95)';
+   }
    
    // Hide after animation
    setTimeout(() => {
     sheet.classList.add('hidden');
     document.body.style.overflow = '';
     if (contentEl) contentEl.innerHTML = '';
+    if (modalContentEl) modalContentEl.innerHTML = '';
    }, 300);
   }
 
@@ -875,6 +929,42 @@
     closeBottomSheet();
     content.removeEventListener('click', onClick);
    });
+  }
+
+  // Open Category Bottom Sheet
+  window.openCategorySheet = function() {
+   const baseAssetPath = '{{ asset("images/categories") }}';
+   const categories = [
+    { id: 'food', name: 'Kuliner', icon: 'food.png', color: 'rose' },
+    { id: 'entertain', name: 'Lifestyle', icon: 'entertain.png', color: 'indigo' },
+    { id: 'vacation', name: 'Liburan', icon: 'vacation.png', color: 'purple' },
+    { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
+    { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
+    { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' }
+   ];
+   
+   const categoryHtml = `
+    <div class="grid grid-cols-3 gap-3 p-4">
+     ${categories.map(cat => `
+      <button onclick="selectCategoryFromSheet('${cat.id}')" class="group flex flex-col items-center gap-2 rounded-xl bg-white p-4 text-center shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-lg hover:scale-105 hover:ring-${cat.color}-300 active:scale-95">
+       <span class="grid h-14 w-14 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+        <img src="${baseAssetPath}/${cat.icon}" alt="${cat.name}" class="${cat.id==='telkomsel' ? 'w-17 h-17' : 'w-full h-full'} object-contain">
+       </span>
+       <span class="text-[10px] font-bold text-neutral-700 group-hover:text-${cat.color}-600 transition-colors leading-tight text-center">${cat.name}</span>
+      </button>
+     `).join('')}
+    </div>
+   `;
+   
+   openBottomSheet('Kategori Merchant', categoryHtml);
+  }
+
+  // Select category from bottom sheet
+  window.selectCategoryFromSheet = function(category) {
+   closeBottomSheet();
+   setTimeout(() => {
+    filterCategory(category);
+   }, 300);
   }
 
 

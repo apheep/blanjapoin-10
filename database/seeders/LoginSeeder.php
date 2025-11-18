@@ -17,9 +17,22 @@ class LoginSeeder extends Seeder
             [
                 'username' => 'admin',
                 'password' => bcrypt('admin123'),
+                'role' => 'admin',
+                'can_approve' => '1'
+            ],
+            
+            [
+                'username' => 'admin1',
+                'password' => bcrypt('admin123'),
+                'role' => 'admin',
+                'can_approve' => '0'
+            ],
+            [
+                'username' => 'admin2',
+                'password' => bcrypt('admin123'),
                 'role' => 'admin'
             ],
-
+            
             [
                 'username' => 'user',
                 'password' => bcrypt('user123'),
