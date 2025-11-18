@@ -461,16 +461,18 @@
     const text = document.getElementById('shopSeeAllText');
     
     if (!shopCardsExpanded) {
-     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
-     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
+     extraCard.classList.remove('opacity-0', 'scale-y-0');
+     extraCard.classList.add('opacity-100', 'scale-y-100');
      arrow.textContent = '↑';
      text.textContent = 'Show Less';
      arrow.classList.remove('group-hover:translate-y-1');
      arrow.classList.add('group-hover:-translate-y-1');
      shopCardsExpanded = true;
     } else {
-     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
-     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.style.maxHeight = '0px';
+     extraCard.classList.remove('opacity-100', 'scale-y-100');
+     extraCard.classList.add('opacity-0', 'scale-y-0');
      arrow.textContent = '↓';
      text.textContent = 'See All';
      arrow.classList.remove('group-hover:-translate-y-1');
@@ -488,16 +490,18 @@
     const text = document.getElementById('foodSeeAllText');
     
     if (!foodCardsExpanded) {
-     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
-     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
+     extraCard.classList.remove('opacity-0', 'scale-y-0');
+     extraCard.classList.add('opacity-100', 'scale-y-100');
      arrow.textContent = '↑';
      text.textContent = 'Show Less';
      arrow.classList.remove('group-hover:translate-y-1');
      arrow.classList.add('group-hover:-translate-y-1');
      foodCardsExpanded = true;
     } else {
-     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
-     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.style.maxHeight = '0px';
+     extraCard.classList.remove('opacity-100', 'scale-y-100');
+     extraCard.classList.add('opacity-0', 'scale-y-0');
      arrow.textContent = '↓';
      text.textContent = 'See All';
      arrow.classList.remove('group-hover:-translate-y-1');
@@ -515,16 +519,18 @@
     const text = document.getElementById('telkomselSeeAllText');
     
     if (!telkomselCardsExpanded) {
-     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
-     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
+     extraCard.classList.remove('opacity-0', 'scale-y-0');
+     extraCard.classList.add('opacity-100', 'scale-y-100');
      arrow.textContent = '↑';
      text.textContent = 'Show Less';
      arrow.classList.remove('group-hover:translate-y-1');
      arrow.classList.add('group-hover:-translate-y-1');
      telkomselCardsExpanded = true;
     } else {
-     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
-     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.style.maxHeight = '0px';
+     extraCard.classList.remove('opacity-100', 'scale-y-100');
+     extraCard.classList.add('opacity-0', 'scale-y-0');
      arrow.textContent = '↓';
      text.textContent = 'See All';
      arrow.classList.remove('group-hover:-translate-y-1');
@@ -542,16 +548,18 @@
     const text = document.getElementById('entertainSeeAllText');
     
     if (!entertainCardsExpanded) {
-     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
-     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
+     extraCard.classList.remove('opacity-0', 'scale-y-0');
+     extraCard.classList.add('opacity-100', 'scale-y-100');
      arrow.textContent = '↑';
      text.textContent = 'Show Less';
      arrow.classList.remove('group-hover:translate-y-1');
      arrow.classList.add('group-hover:-translate-y-1');
      entertainCardsExpanded = true;
     } else {
-     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
-     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.style.maxHeight = '0px';
+     extraCard.classList.remove('opacity-100', 'scale-y-100');
+     extraCard.classList.add('opacity-0', 'scale-y-0');
      arrow.textContent = '↓';
      text.textContent = 'See All';
      arrow.classList.remove('group-hover:-translate-y-1');
@@ -569,16 +577,18 @@
     const text = document.getElementById('vacationSeeAllText');
     
     if (!vacationCardsExpanded) {
-     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
-     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
+     extraCard.classList.remove('opacity-0', 'scale-y-0');
+     extraCard.classList.add('opacity-100', 'scale-y-100');
      arrow.textContent = '↑';
      text.textContent = 'Show Less';
      arrow.classList.remove('group-hover:translate-y-1');
      arrow.classList.add('group-hover:-translate-y-1');
      vacationCardsExpanded = true;
     } else {
-     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
-     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.style.maxHeight = '0px';
+     extraCard.classList.remove('opacity-100', 'scale-y-100');
+     extraCard.classList.add('opacity-0', 'scale-y-0');
      arrow.textContent = '↓';
      text.textContent = 'See All';
      arrow.classList.remove('group-hover:-translate-y-1');
@@ -596,16 +606,18 @@
     const text = document.getElementById('beautySeeAllText');
     
     if (!beautyCardsExpanded) {
-     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
-     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
+     extraCard.classList.remove('opacity-0', 'scale-y-0');
+     extraCard.classList.add('opacity-100', 'scale-y-100');
      arrow.textContent = '↑';
      text.textContent = 'Show Less';
      arrow.classList.remove('group-hover:translate-y-1');
      arrow.classList.add('group-hover:-translate-y-1');
      beautyCardsExpanded = true;
     } else {
-     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
-     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.style.maxHeight = '0px';
+     extraCard.classList.remove('opacity-100', 'scale-y-100');
+     extraCard.classList.add('opacity-0', 'scale-y-0');
      arrow.textContent = '↓';
      text.textContent = 'See All';
      arrow.classList.remove('group-hover:-translate-y-1');
