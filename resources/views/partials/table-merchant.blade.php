@@ -20,7 +20,6 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Periode</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Logo Merchant</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Images</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200" id="merchant-table-body">
@@ -66,8 +65,7 @@
                     <td class="px-4 py-4"><span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">100</span></td>
                     <td class="px-4 py-4 text-xs text-gray-500"><div>01/01/2025</div><div>31/12/2025</div></td>
                     <td class="px-4 py-4 text-sm"><a href="https://example.com" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
-                    <td class="px-4 py-4"><img src="{{ asset('storage/logo/merchant1.png') }}" class="h-10 w-16 object-cover rounded"></td>
-                    <td class="px-4 py-4 text-gray-500"><div class="flex space-x-1"><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div></div></td>
+                    <td class="px-4 py-4"><img src="{{ asset('storage/logo/merchant1.png') }}" class="h-10 w-16 object-cover rounded"></td> 
                 </tr>
 
                 <!-- Row 2 -->
@@ -111,7 +109,6 @@
                     <td class="px-4 py-4 text-xs text-gray-500"><div>01/01/2025</div><div>31/12/2025</div></td>
                     <td class="px-4 py-4 text-sm"><a href="https://example.com" target="_blank" class="text-blue-600 hover:underline">Link</a></td>
                     <td class="px-4 py-4"><img src="{{ asset('storage/logo/merchant2.png') }}" class="h-10 w-16 object-cover rounded"></td>
-                    <td class="px-4 py-4 text-gray-500"><div class="flex space-x-1"><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div><div class="bg-gray-200 border-2 border-dashed rounded w-8 h-8"></div></div></td>
                 </tr>
             </tbody>
         </table>

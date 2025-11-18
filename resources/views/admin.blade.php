@@ -83,10 +83,10 @@
         <!-- Navigation Tabs -->
         <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto">
             <div class="flex space-x-3 px-4 sm:px-0 min-w-max">
-                <button onclick="switchTab('all')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">All</button>
-                <button onclick="switchTab('merchant')" id="tab-merchant" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchant</button>
-                <button onclick="switchTab('merchandise')" id="tab-merchandise" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchandise</button>
-                <button onclick="switchTab('telkom')" id="tab-telkom" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Telkom Packages</button>
+                <button onclick="switchTab('all')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">Merchant</button>
+                <button onclick="switchTab('merchant')" id="tab-merchant" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Keyword</button>
+                <!-- <button onclick="switchTab('merchandise')" id="tab-merchandise" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchandise</button>
+                <button onclick="switchTab('telkom')" id="tab-telkom" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Telkom Packages</button> -->
             </div>
         </div>
 
@@ -779,7 +779,10 @@
                         button.classList.add('border-pink-300', 'text-pink-800', 'bg-gradient-to-r', 'from-pink-100', 'to-rose-100', 'hover:from-pink-200', 'hover:to-rose-200');
                     } else if (category === 'Telkomsel Packet') {
                         button.classList.add('border-indigo-300', 'text-indigo-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100', 'hover:from-indigo-200', 'hover:to-blue-200');
+                    } else if (category === 'Merchandise') {
+                        button.classList.add('border-indigo-300', 'text-red-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100', 'hover:from-indigo-200', 'hover:to-blue-200');
                     }
+
                     
                     button.innerHTML = `<i class="fas fa-list mr-2"></i>${label}<i class=\"fas fa-chevron-down ml-2 text-xs\"></i>`;
                 }
@@ -842,6 +845,7 @@
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Shopping'); return false;">Shopping</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Beauty & Care'); return false;">Beauty & Care</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Merchandise'); return false;">Merchandise</a>
                             </div>
                         </div>
                     </div>
@@ -850,7 +854,7 @@
                     <div class="relative">
                         <button type="button" onclick="openUploadMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-upload mr-2"></i>
-                            Upload
+                            Add
                         </button>
                     </div>
                 </div>
@@ -879,7 +883,7 @@
                     <div class="relative">
                         <button type="button" onclick="openUploadMerchandise()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-upload mr-2"></i>
-                            Upload
+                            Add
                         </button>
                     </div>
                 </div>
@@ -908,7 +912,7 @@
                     <div class="relative">
                         <button type="button" onclick="openUploadTelkom()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-upload mr-2"></i>
-                            Upload
+                            Add
                         </button>
                     </div>
                 </div>
@@ -951,6 +955,7 @@
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Shopping'); return false;">Shopping</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Beauty & Care'); return false;">Beauty & Care</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merhandise'); return false;">Merchandise</a>
                             </div>
                         </div>
                     </div>
