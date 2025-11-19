@@ -22,6 +22,7 @@ class Merchant extends Model
         'daerah',
         'nama_merchant',
         'kategori',
+        'logo_merchant'
     ];
 
     public function keywords()
