@@ -1,0 +1,60 @@
+   
+   function toggleShopCards() {
+    const extraCard = document.getElementById('extraShopCard');
+    const arrow = document.getElementById('shopSeeAllArrow');
+    const text = document.getElementById('shopSeeAllText');
+    
+    if (!shopCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     shopCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     shopCardsExpanded = false;
+    }
+   }
+
+   // Toggle Food Cards
+   let foodCardsExpanded = false;
+   
+   function toggleFoodCards() {
+    const extraCard = document.getElementById('extraFoodCard');
+    const arrow = document.getElementById('foodSeeAllArrow');
+    const text = document.getElementById('foodSeeAllText');
+    
+    if (!foodCardsExpanded) {
+     extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+     extraCard.classList.add('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     arrow.textContent = '↑';
+     text.textContent = 'Show Less';
+     arrow.classList.remove('group-hover:translate-y-1');
+     arrow.classList.add('group-hover:-translate-y-1');
+     foodCardsExpanded = true;
+    } else {
+     extraCard.classList.remove('max-h-[1000px]', 'opacity-100', 'scale-y-100');
+     extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+     arrow.textContent = '↓';
+     text.textContent = 'See All';
+     arrow.classList.remove('group-hover:-translate-y-1');
+     arrow.classList.add('group-hover:translate-y-1');
+     foodCardsExpanded = false;
+    }
+   }
+
+   // Toggle Telkomsel Cards
+   let telkomselCardsExpanded = false;
+   
+   function toggleTelkomselCards() {
+    const extraCard = document.getElementById('extraTelkomselCard');
+    const arrow = document.getElementById('telkomselSeeAllArrow');
+    const text = document.getElementById('telkomselSeeAllText');
+    

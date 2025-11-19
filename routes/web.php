@@ -4,10 +4,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
+use App\Models\Keyword;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
-    return view('welcome');
+    $keywords = Keyword::with('merchant')->get();
+    return view('welcome', compact('keywords'));
 })->name('home');
 
 // Routes untuk tamu (belum login)
@@ -26,7 +28,8 @@ Route::middleware(['guest'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
-        return view('welcome');
+        $keywords = Keyword::with('merchant')->get();
+        return view('welcome', compact('keywords'));
     })->name('welcome');
 
     // Halaman admin
