@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('skb')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
-            $table->string('link_kv_google')->nullable();
+            $table->string('image')->nullable();
             $table->integer('stock')->default(0);
 
             $table->timestamps(); // created_at & updated_at
