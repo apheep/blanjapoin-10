@@ -12,6 +12,7 @@ class Keyword extends Model
     protected $fillable = [
         'merchant_key',
         'nama_produk',
+        'cta_link',
         'redeem',
         'diskon',
         'skb',
@@ -19,6 +20,7 @@ class Keyword extends Model
         'end_date',
         'image',
         'stock',
+        'status',
     ];
 
     public function merchant()

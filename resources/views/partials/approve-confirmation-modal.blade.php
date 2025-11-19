@@ -136,18 +136,12 @@ function confirmApprove() {
         // Close verification modal
         closeApproveVerificationModal();
         
-        // Show success modal after a short delay
-        setTimeout(() => {
-            showApproveSuccessModal(approveItemData.name);
-        }, 500);
+        // Make AJAX call to backend
+        const endpoint = approveItemData.type === 'Keyword' 
+            ? `/keywords/${approveItemData.id}/approve`
+            : `/merchants/${approveItemData.id}/approve`;
         
-        // Here you would implement actual approve logic
-        // Example: Make an AJAX call to your backend
-        console.log('Approving:', approveItemData);
-        
-        // Example AJAX call (uncomment and modify as needed):
-        /*
-        fetch('/api/approve', {
+        fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -161,13 +155,22 @@ function confirmApprove() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showApproveSuccessModal(approveItemData.name);
+                // Store success message in sessionStorage
+                sessionStorage.setItem('approveSuccess', JSON.stringify({
+                    name: approveItemData.name,
+                    type: approveItemData.type
+                }));
+                
+                // Reload the page
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Gagal menyetujui item'));
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            alert('Terjadi kesalahan saat menyetujui item');
         });
-        */
     }
 }
 
@@ -211,5 +214,22 @@ function closeApproveSuccessModal() {
         }
     }, 300);
 }
+
+// Check for success message after page reload
+document.addEventListener('DOMContentLoaded', function() {
+    const successData = sessionStorage.getItem('approveSuccess');
+    if (successData) {
+        const data = JSON.parse(successData);
+        // Show success modal
+        showApproveSuccessModal(data.name);
+        // Clear the stored message
+        sessionStorage.removeItem('approveSuccess');
+        
+        // Auto close after 3 seconds
+        setTimeout(() => {
+            closeApproveSuccessModal();
+        }, 3000);
+    }
+});
 </script>
 

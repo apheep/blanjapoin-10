@@ -136,10 +136,17 @@ function confirmDelete() {
         // Close verification modal
         closeDeleteVerificationModal();
         
-        // Perform delete via AJAX
-        const merchantId = deleteItemData.id;
+        // Determine the endpoint based on item type
+        let endpoint = '';
+        if (deleteItemData.type === 'Merchant') {
+            endpoint = `/merchants/${deleteItemData.id}`;
+        } else if (deleteItemData.type === 'Keyword') {
+            endpoint = `/keywords/${deleteItemData.id}`;
+        } else {
+            endpoint = `/merchants/${deleteItemData.id}`; // Default to merchant
+        }
         
-        fetch(`/merchants/${merchantId}`, {
+        fetch(endpoint, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),

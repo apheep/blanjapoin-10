@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Merchant;
+use App\Models\Keyword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -12,7 +13,8 @@ class MerchantController extends Controller
     public function index()
     {
         $merchants = Merchant::orderBy('id')->paginate(15);
-        return view('admin', compact('merchants'));
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(15);
+        return view('admin', compact('merchants', 'keywords'));
     }
 
     public function store(Request $request)
@@ -41,6 +43,15 @@ class MerchantController extends Controller
             'logo_merchant' => $logoPath, // path-nya disimpan ke DB
             'kategori'      => $request->kategori,
         ]);
+    
+        // Jika request dari AJAX, return JSON
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Merchant berhasil ditambahkan!',
+                'merchant' => $merchant
+            ], 201);
+        }
     
         return redirect()->route('admin')->with('success', 'Merchant berhasil ditambahkan!');
     }
