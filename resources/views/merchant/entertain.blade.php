@@ -6,7 +6,8 @@
   @php
     $entertainCategory = 'hiburan';
     $entertainKeywords = $keywords->filter(function ($keyword) use ($entertainCategory) {
-      return $keyword->merchant && $keyword->merchant->kategori === $entertainCategory;
+      return $keyword->merchant && $keyword->merchant->kategori === $entertainCategory
+      && $keyword->status === 'approve';
     })->values();
     $visibleKeywords = $entertainKeywords->take(2);
     $extraKeywords   = $entertainKeywords->slice(2);

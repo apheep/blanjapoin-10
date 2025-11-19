@@ -5,7 +5,8 @@
      @php
        $shopCategory = 'belanja';
        $shopKeywords = $keywords->filter(function ($keyword) use ($shopCategory) {
-       return $keyword->merchant && $keyword->merchant->kategori === $shopCategory;
+       return $keyword->merchant && $keyword->merchant->kategori === $shopCategory
+       && $keyword->status === 'approve';
         })->values();
       $visibleKeywords = $shopKeywords->take(2);
       $extraKeywords = $shopKeywords->slice(2);

@@ -6,7 +6,8 @@
  @php
   $telkomselCategory = 'Telkomsel';
   $telkomselKeywords = $keywords->filter(function ($keyword) use ($telkomselCategory) {
-   return $keyword->merchant && $keyword->merchant->kategori === $telkomselCategory;
+   return $keyword->merchant && $keyword->merchant->kategori === $telkomselCategory
+    && $keyword->status === 'approve';
   })->values();
   $visibleKeywords = $telkomselKeywords->take(2);
   $extraKeywords = $telkomselKeywords->slice(2);
