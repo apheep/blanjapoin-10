@@ -84,8 +84,8 @@
         <!-- Navigation Tabs -->
         <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto">
             <div class="flex space-x-3 px-4 sm:px-0 min-w-max">
-                <button onclick="switchTab('all')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">Merchant</button>
-                <button onclick="switchTab('merchant')" id="tab-merchant" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Keyword</button>
+                <button onclick="switchTab('Mercchant')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">Merchant</button>
+                <button onclick="switchTab('keyword')" id="tab-merchant" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Keyword</button>
                 <!-- <button onclick="switchTab('merchandise')" id="tab-merchandise" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchandise</button>
                 <button onclick="switchTab('telkom')" id="tab-telkom" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Telkom Packages</button> -->
             </div>

@@ -138,21 +138,76 @@ function confirmUpload() {
         // Close verification modal
         closeUploadVerificationModal();
         
-        // Close upload modal based on type
-        setTimeout(() => {
-            if (uploadDataType === 'Merchant' && typeof closeUploadMerchant === 'function') {
-                closeUploadMerchant();
-            } else if (uploadDataType === 'Merchandise' && typeof closeUploadMerchandise === 'function') {
-                closeUploadMerchandise();
-            } else if (uploadDataType === 'Telkom Package' && typeof closeUploadTelkom === 'function') {
-                closeUploadTelkom();
-            }
-            
-            // Show success modal after a short delay
+        // Handle Merchant upload - submit form via AJAX
+        if (uploadDataType === 'Merchant') {
             setTimeout(() => {
-                showUploadSuccessModal(uploadDataType);
-            }, 500);
-        }, 300);
+                const form = document.getElementById('formUploadMerchant');
+                if (form) {
+                    // Get CSRF token
+                    const csrfInput = form.querySelector('input[name="_token"]');
+                    const csrfToken = csrfInput ? csrfInput.value : null;
+                    
+                    // Ensure CSRF token is in the FormData
+                    if (csrfToken && !uploadVerificationData.has('_token')) {
+                        uploadVerificationData.append('_token', csrfToken);
+                    }
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: uploadVerificationData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Store success message in sessionStorage
+                            sessionStorage.setItem('uploadSuccess', 'Merchant');
+                            
+                            // Close upload modal
+                            if (typeof closeUploadMerchant === 'function') {
+                                closeUploadMerchant();
+                            }
+                            
+                            // Reload page
+                            setTimeout(() => {
+                                location.reload();
+                            }, 300);
+                        } else {
+                            alert('Gagal menyimpan data: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan saat menyimpan data.\n\n' + error.message);
+                    });
+                }
+            }, 300);
+        } else {
+            // Handle other types (Merchandise, Telkom Package)
+            setTimeout(() => {
+                if (uploadDataType === 'Merchandise' && typeof closeUploadMerchandise === 'function') {
+                    closeUploadMerchandise();
+                } else if (uploadDataType === 'Telkom Package' && typeof closeUploadTelkom === 'function') {
+                    closeUploadTelkom();
+                }
+                
+                // Show success modal after a short delay
+                setTimeout(() => {
+                    showUploadSuccessModal(uploadDataType);
+                }, 500);
+            }, 300);
+        }
     }
 }
 
@@ -201,4 +256,18 @@ function closeUploadSuccessModal() {
         }
     }, 300);
 }
+
+// Check for success message after page reload
+document.addEventListener('DOMContentLoaded', function() {
+    const successType = sessionStorage.getItem('uploadSuccess');
+    if (successType) {
+        // Clear the stored message
+        sessionStorage.removeItem('uploadSuccess');
+        
+        // Show success modal
+        setTimeout(() => {
+            showUploadSuccessModal(successType);
+        }, 500);
+    }
+});
 </script>

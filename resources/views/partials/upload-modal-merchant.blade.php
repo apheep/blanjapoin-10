@@ -372,9 +372,18 @@ document.addEventListener('click', function (event) {
 // ======================
 // Submit & overlay click
 // ======================
+let pendingFormData = null;
+let csrfToken = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formUploadMerchant');
     if (form) {
+        // Get CSRF token from form
+        const csrfInput = form.querySelector('input[name="_token"]');
+        if (csrfInput) {
+            csrfToken = csrfInput.value;
+        }
+        
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -388,8 +397,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Submit form normally to server
-            form.submit();
+            // Store form data and show verification modal
+            pendingFormData = new FormData(form);
+            // Use the shared verification modal from upload-verification-modal.blade.php
+            showUploadVerification(pendingFormData, 'Merchant');
         });
     }
 
@@ -400,4 +411,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
 </script>

@@ -42,6 +42,15 @@ class MerchantController extends Controller
             'kategori'      => $request->kategori,
         ]);
     
+        // Jika request dari AJAX, return JSON
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Merchant berhasil ditambahkan!',
+                'merchant' => $merchant
+            ], 201);
+        }
+    
         return redirect()->route('admin')->with('success', 'Merchant berhasil ditambahkan!');
     }
     
