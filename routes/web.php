@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
 use App\Http\Controllers\MerchantController;
+use App\Http\Controllers\KeywordController;
 use App\Models\Keyword;
 
 // Tampilan awal untuk semua pengunjung
@@ -43,6 +44,13 @@ Route::middleware(['auth'])->group(function () {
 
     // Resource CRUD merchant (index sudah dipakai di atas)
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
+
+    // Keywords routes
+    Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
+    Route::post('/keywords', [KeywordController::class, 'store'])->name('keywords.store');
+    Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
+    Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
+    Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
 
     // Halaman approval
     Route::get('/approval', function () {

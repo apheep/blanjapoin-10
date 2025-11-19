@@ -84,8 +84,8 @@
         <!-- Navigation Tabs -->
         <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto">
             <div class="flex space-x-3 px-4 sm:px-0 min-w-max">
-                <button onclick="switchTab('Mercchant')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">Merchant</button>
-                <button onclick="switchTab('keyword')" id="tab-merchant" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Keyword</button>
+                <button onclick="switchTab('all')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">Merchant</button>
+                <button onclick="switchTab('keyword')" id="tab-keyword" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Keyword</button>
                 <!-- <button onclick="switchTab('merchandise')" id="tab-merchandise" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchandise</button>
                 <button onclick="switchTab('telkom')" id="tab-telkom" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Telkom Packages</button> -->
             </div>
@@ -461,6 +461,46 @@
             // Image Preview Functions
             ////////////////////////////////////////////////////////////////////
 
+            // Function to preview merchant logo
+            function previewMerchantLogo(imageUrl, fileName) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">${fileName}</h3>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <img src="${imageUrl}" alt="${fileName}" class="w-full h-auto rounded-lg">
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            // Function to preview keyword image
+            function previewKeywordImage(imageUrl, fileName) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">${fileName}</h3>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <img src="${imageUrl}" alt="${fileName}" class="w-full h-auto rounded-lg">
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
             // Function to preview single image
             function previewImage(event, previewId) {
                 const file = event.target.files[0];
@@ -701,16 +741,20 @@
                 currentActiveTab = tab;
                 window.currentActiveTab = tab;
                 // Reset all tabs
-                const tabs = ['all', 'merchant', 'merchandise', 'telkom'];
+                const tabs = ['all', 'keyword', 'merchant', 'merchandise', 'telkom'];
                 tabs.forEach(t => {
                     const btn = document.getElementById('tab-' + t);
-                    btn.className = 'px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors';
+                    if (btn) {
+                        btn.className = 'shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors';
+                    }
                 });
                 // Activate selected tab
                 const activeBtn = document.getElementById('tab-' + tab);
-                activeBtn.className = 'px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg';
+                if (activeBtn) {
+                    activeBtn.className = 'shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg';
+                }
                 // Hide non-active sections with Tailwind utilities
-                const sections = ['all', 'merchant', 'merchandise', 'telkom'];
+                const sections = ['all', 'keyword', 'merchant', 'merchandise', 'telkom'];
                 sections.forEach(s => {
                     const section = document.getElementById('section-' + s);
                     if (section) {
@@ -821,6 +865,15 @@
             // Modal Functions
             ////////////////////////////////////////////////////////////////////
             // Note: toggleMerchantUploadModal() has been moved to upload-modal.blade.php
+
+            // Placeholder functions for keyword upload modal (to be implemented)
+            function openUploadKeyword() {
+                alert('Upload Keyword functionality akan segera ditambahkan');
+            }
+
+            function closeUploadKeyword() {
+                // Placeholder for closing keyword upload modal
+            }
         </script>
 
         <!-- All Tables Section -->
@@ -940,6 +993,37 @@
             </div>
             
             @include('partials.table-talkompackages')
+        </div>
+
+        <!-- Keyword Only Section -->
+        <div id="section-keyword" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Keyword</h2>
+            
+            <!-- Keyword Controls -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div class="flex space-x-3">
+                    <!-- Upload Button with File Input -->
+                    <div class="relative">
+                        <button type="button" onclick="openUploadKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-upload mr-2"></i>
+                            Upload
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-auto">
+                        <input type="text" id="keywordSearch" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                        <div class="absolute left-3 top-2.5 text-gray-400">
+                            <i class="fas fa-search text-sm"></i>
+                        </div>
+                    </div>
+                    
+                    @include('partials.date-filter', ['filterId' => 'dateFilter6'])
+                </div>
+            </div>
+            
+            @include('partials.table-keyword')
         </div>
 
         <!-- Merchant Only Section -->
