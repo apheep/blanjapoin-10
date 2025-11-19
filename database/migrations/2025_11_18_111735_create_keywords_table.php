@@ -8,29 +8,33 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('keywords', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            Schema::create('keywords', function (Blueprint $table) {
+                $table->bigIncrements('id');
 
-            // foreign key ke merchants.id
-            $table->unsignedBigInteger('merchant_key');
+                // foreign key ke merchants.id
+                $table->unsignedBigInteger('merchant_key');
 
-            $table->string('nama_produk');
-            $table->string('cta_link')->nullable();
-            $table->string('redeem')->nullable();
-            $table->string('diskon')->nullable();       // bisa diganti decimal kalau mau
-            $table->text('skb')->nullable();
-            $table->date('start_date')->nullable();
-            $table->date('end_date')->nullable();
-            $table->string('image')->nullable();
-            $table->integer('stock')->default(0);
+                $table->string('nama_produk');
+                $table->string('cta_link')->nullable();
+                $table->string('redeem')->nullable();
+                $table->string('diskon')->nullable();
+                $table->text('skb')->nullable();
+                $table->date('start_date')->nullable();
+                $table->date('end_date')->nullable();
+                $table->string('image')->nullable();
+                $table->integer('stock')->default(0);
 
-            $table->timestamps(); // created_at & updated_at
+                // kolom status
+                $table->enum('status', ['approve', 'pending', 'reject'])->default('pending');
 
-            $table->foreign('merchant_key')
-                ->references('id')
-                ->on('merchants')
-                ->onDelete('cascade');
-        });
+                $table->timestamps();
+
+                $table->foreign('merchant_key')
+                    ->references('id')
+                    ->on('merchants')
+                    ->onDelete('cascade');
+            });
+
     }
 
     public function down(): void
