@@ -1,9 +1,12 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
+use App\Http\Controllers\MerchantController;
+use App\Http\Controllers\KeywordController;
 use App\Models\Keyword;
 
 // Tampilan awal untuk semua pengunjung
@@ -14,15 +17,16 @@ Route::get('/', function () {
 
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
-    // Login routes
     Route::get('/login', [LoginController::class, 'index'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.post');
 
-    // Minimal forgot-password route
     Route::get('/forgot-password', function () {
         return response('Fitur lupa password belum tersedia.', 200);
     })->name('password.request');
 });
+
+// Route untuk download/view storage files
+Route::get('/storage/{path}', [MerchantController::class, 'downloadFile'])->name('storage.download')->where('path', '.*');
 
 // Routes untuk user yang sudah login
 Route::middleware(['auth'])->group(function () {
@@ -32,15 +36,21 @@ Route::middleware(['auth'])->group(function () {
         return view('welcome', compact('keywords'));
     })->name('welcome');
 
-    // Halaman admin
-    Route::get('/admin', function () {
-        return view('admin');
-    })->name('admin');
+    // ======================= ADMIN / DASHBOARD =======================
+    // Sekarang admin & dashboard pakai MerchantController@index
+    Route::get('/admin', [MerchantController::class, 'index'])->name('admin');
+    Route::get('/dashboard', [MerchantController::class, 'index'])->name('dashboard');
+    Route::get('/merchants/search', [MerchantController::class, 'search'])->name('merchants.search');
 
-    // Dashboard (alias admin)
-    Route::get('/dashboard', function () {
-        return view('admin');
-    })->name('dashboard');
+    // Resource CRUD merchant (index sudah dipakai di atas)
+    Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
+
+    // Keywords routes
+    Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
+    Route::post('/keywords', [KeywordController::class, 'store'])->name('keywords.store');
+    Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
+    Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
+    Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
 
     // Halaman approval
     Route::get('/approval', function () {

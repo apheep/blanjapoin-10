@@ -6,7 +6,8 @@
  @php
   $vacationCategory = 'liburan';
   $vacationKeywords = $keywords->filter(function ($keyword) use ($vacationCategory) {
-   return $keyword->merchant && $keyword->merchant->kategori === $vacationCategory;
+   return $keyword->merchant && $keyword->merchant->kategori === $vacationCategory
+    && $keyword->status === 'approve';
   })->values();
   $visibleKeywords = $vacationKeywords->take(2);
   $extraKeywords = $vacationKeywords->slice(2);
