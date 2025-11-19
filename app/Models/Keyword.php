@@ -17,7 +17,7 @@ class Keyword extends Model
         'skb',
         'start_date',
         'end_date',
-        'link_kv_google',
+        'image',
         'stock',
     ];
 

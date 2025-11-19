@@ -136,13 +136,38 @@ function confirmDelete() {
         // Close verification modal
         closeDeleteVerificationModal();
         
-        // Show success modal after a short delay
-        setTimeout(() => {
-            showDeleteSuccessModal(deleteItemData.name);
-        }, 500);
+        // Perform delete via AJAX
+        const merchantId = deleteItemData.id;
         
-        // Here you would implement actual delete logic
-        console.log('Deleting:', deleteItemData);
+        fetch(`/merchants/${merchantId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Close verification modal
+                closeDeleteVerificationModal();
+                
+                // Store success message in sessionStorage
+                sessionStorage.setItem('deleteSuccess', deleteItemData.name);
+                
+                // Reload page immediately
+                setTimeout(() => {
+                    location.reload();
+                }, 300);
+            } else {
+                throw new Error('Delete failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Gagal menghapus data. Silakan coba lagi.');
+            closeDeleteSuccessModal();
+        });
     }
 }
 
@@ -186,4 +211,18 @@ function closeDeleteSuccessModal() {
         }
     }, 300);
 }
+
+// Check for success message after page reload
+document.addEventListener('DOMContentLoaded', function() {
+    const successItemName = sessionStorage.getItem('deleteSuccess');
+    if (successItemName) {
+        // Clear the stored message
+        sessionStorage.removeItem('deleteSuccess');
+        
+        // Show success modal
+        setTimeout(() => {
+            showDeleteSuccessModal(successItemName);
+        }, 500);
+    }
+});
 </script>
