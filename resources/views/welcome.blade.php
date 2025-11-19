@@ -116,7 +116,7 @@
        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
         <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
        </span>
-       <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Lifestyle</span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
       </button>
       <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
@@ -186,9 +186,9 @@
        </div>
        <div id="locationDropdown" class="absolute left-0 right-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-56 overflow-auto hidden backdrop-blur-sm"></div>
       </div>
-      <div class="relative">
-       <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px]">
-        <span id="sortSelectedText">According To Your Point</span>
+     <div class="relative">
+      <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px]">
+       <span id="sortSelectedText">According To Your Point</span>
         <svg id="sortDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-neutral-500 transition-transform duration-300">
          <path d="M7 10l5 5 5-5z"/>
         </svg>
@@ -208,9 +208,13 @@
           <span>Highest</span>
          </button>
         </div>
-       </div>
       </div>
      </div>
+    </div>
+
+    <div id="searchEmptyState" class="hidden mt-4 text-center text-xs md:text-sm font-semibold text-neutral-500">
+     Voucher yang kamu cari belum ditemukan.
+    </div>
 
     </section>
 
@@ -749,10 +753,15 @@
    const locations = ['All','Surabaya','Sidoarja','Malang','Madiun','Jakarta','Jogja','Bandung','Bali'];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');
+   const voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
+   const totalVoucherCards = voucherCards.length;
+   const searchEmptyState = document.getElementById('searchEmptyState');
+   let currentSearchQuery = '';
+   let currentLocationFilter = '';
 
    function renderLocationOptions(filter = '', dropdownElement, inputElement) {
     const f = filter.trim().toLowerCase();
-    const options = locations.filter(l => f === '' ? true : l.toLowerCase().startsWith(f));
+    const options = locations.filter(l => f === '' ? true : l.toLowerCase().includes(f));
     if (options.length === 0) {
      dropdownElement.innerHTML = '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>';
      return;
@@ -767,7 +776,40 @@
    }
 
    function closeLocationDropdown(dropdownElement) {
-    dropdownElement.classList.add('hidden');
+   dropdownElement.classList.add('hidden');
+  }
+
+   function normalizeQuery(value) {
+    return (value ?? '').toString().toLowerCase().trim();
+   }
+
+   function applyVoucherFilters() {
+    const nameQuery = normalizeQuery(currentSearchQuery);
+    const locationQuery = normalizeQuery(currentLocationFilter);
+    let visibleCount = 0;
+
+    voucherCards.forEach(card => {
+     const cardName = card.dataset.searchName || '';
+     const cardLocation = card.dataset.searchLocation || '';
+     const matchesName = nameQuery === '' || cardName.includes(nameQuery);
+     const matchesLocation = locationQuery === '' || cardLocation.includes(locationQuery);
+     const shouldShow = matchesName && matchesLocation;
+     card.style.display = shouldShow ? '' : 'none';
+     if (shouldShow) {
+      visibleCount++;
+     }
+    });
+
+    if (searchEmptyState) {
+     const shouldHideEmpty = visibleCount !== 0 || totalVoucherCards === 0;
+     searchEmptyState.classList.toggle('hidden', shouldHideEmpty);
+    }
+   }
+
+   function updateLocationFilter(value) {
+    const normalizedValue = normalizeQuery(value);
+    currentLocationFilter = normalizedValue === 'all' ? '' : normalizedValue;
+    applyVoucherFilters();
    }
 
    if (locationInput && locationDropdown) {
@@ -778,11 +820,13 @@
     locationInput.addEventListener('input', () => {
      renderLocationOptions(locationInput.value, locationDropdown, locationInput);
      openLocationDropdown(locationDropdown);
+     updateLocationFilter(locationInput.value);
     });
     locationDropdown.addEventListener('click', (e) => {
      const item = e.target.closest('[data-value]');
      if (!item) return;
      locationInput.value = item.getAttribute('data-value');
+     updateLocationFilter(locationInput.value);
      closeLocationDropdown(locationDropdown);
     });
     document.addEventListener('click', (e) => {
@@ -937,7 +981,11 @@
    content.addEventListener('click', function onClick(e){
     const item = e.target.closest('[data-value]');
     if (!item) return;
-    console.log('Mobile Location Selected:', item.getAttribute('data-value'));
+    const selectedLocation = item.getAttribute('data-value');
+    if (locationInput) {
+     locationInput.value = selectedLocation;
+    }
+    updateLocationFilter(selectedLocation);
     closeBottomSheet();
     content.removeEventListener('click', onClick);
    });
@@ -985,8 +1033,15 @@
    const desktopSearchInput = document.getElementById('desktopSearchInput');
 
    function handleSearch(value) {
-    console.log('Searching for:', value);
-    // Here you can add logic to actually search the content
+    const textValue = (value ?? '').toString();
+    currentSearchQuery = textValue;
+    if (mobileSearchInput && mobileSearchInput.value !== textValue) {
+     mobileSearchInput.value = textValue;
+    }
+    if (desktopSearchInput && desktopSearchInput.value !== textValue) {
+     desktopSearchInput.value = textValue;
+    }
+    applyVoucherFilters();
    }
 
    if (mobileSearchInput) {
@@ -1000,6 +1055,8 @@
      handleSearch(e.target.value);
     });
    }
+
+   applyVoucherFilters();
   </script>
  </body>
 </html>

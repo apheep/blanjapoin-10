@@ -15,7 +15,14 @@
      <!-- Card utama (2 pertama) -->
      <div id="shopCardContainer" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch px-1">
       @forelse($visibleKeywords as $keyword)
-      <article onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
+      @php
+       $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
+       $productName = $keyword->nama_produk ?? '';
+       $locationName = optional($keyword->merchant)->daerah ?? '';
+       $searchName = strtolower(trim($merchantName . ' ' . $productName));
+       $searchLocation = strtolower($locationName);
+      @endphp
+      <article data-voucher-card="true" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
        <!-- Mobile Layout -->
        <div class="lg:hidden flex flex-col h-full">
         <div class="relative">
@@ -115,7 +122,14 @@
      <div id="extraShopCard" class="group max-h-0 overflow-hidden opacity-0 scale-y-0 origin-top transition-all duration-500 ease-in-out mt-6 md:mt-10">
       <div class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch px-1">
        @foreach($extraKeywords as $keyword)
-       <article onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
+       @php
+        $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
+        $productName = $keyword->nama_produk ?? '';
+        $locationName = optional($keyword->merchant)->daerah ?? '';
+        $searchName = strtolower(trim($merchantName . ' ' . $productName));
+        $searchLocation = strtolower($locationName);
+       @endphp
+       <article data-voucher-card="true" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
         <!-- Mobile Layout -->
         <div class="lg:hidden flex flex-col h-full">
          <div class="relative">
