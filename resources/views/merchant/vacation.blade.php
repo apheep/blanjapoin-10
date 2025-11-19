@@ -1,10 +1,10 @@
 <section id="section-vacation" class="mt-10 md:mt-14">
  <div class="mb-4 md:mb-6 flex items-center justify-between">
-  <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🏖️ Vacation</h2>
+  <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🏖️ Liburan</h2>
  </div>
 
  @php
-  $vacationCategory = 'Vacation';
+  $vacationCategory = 'liburan';
   $vacationKeywords = $keywords->filter(function ($keyword) use ($vacationCategory) {
    return $keyword->merchant && $keyword->merchant->kategori === $vacationCategory;
   })->values();
@@ -30,7 +30,7 @@
      <div class="text-sm text-neutral-600 leading-relaxed">
       @if(!is_null($keyword->diskon))
       <div class="font-bold text-neutral-800">
-       Diskon <span class="text-xl font-bold text-neutral-800">{{ $keyword->diskon }}%</span>
+       Diskon <span class="text-xl font-bold text-neutral-800">{{ $keyword->diskon }}</span>
       </div>
       @endif
       @if($keyword->skb)
@@ -79,7 +79,7 @@
       <div class="mb-2">
        <div class="text-xl font-bold text-neutral-900 mb-1">Diskon</div>
        <div class="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 leading-none mb-1">
-        {{ $keyword->diskon }}<span class="text-2xl font-bold">%</span>
+        {{ $keyword->diskon }}<span class="text-2xl font-bold"></span>
        </div>
       </div>
       @endif
@@ -97,10 +97,10 @@
    </div>
 
    <div class="hidden lg:flex flex-col md:flex-row items-start md:items-center justify-between px-3 md:px-4 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600 gap-1.5 md:gap-0">
-    <span class="font-medium">Stock �?� {{ $keyword->stok }}</span>
+    <span class="font-medium">Stock {{ $keyword->stok }}</span>
     @if($keyword->end_date)
     <span class="font-medium">
-     Valid until �?� {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
+     Valid until {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
     </span>
     @endif
    </div>
@@ -132,7 +132,7 @@
       <div class="text-sm text-neutral-600 leading-relaxed">
        @if(!is_null($keyword->diskon))
        <div class="font-bold text-neutral-800">
-        Diskon <span class="text-xl font-bold text-neutral-800">{{ $keyword->diskon }}%</span>
+        Diskon <span class="text-xl font-bold text-neutral-800">{{ $keyword->diskon }}</span>
        </div>
        @endif
        @if($keyword->skb)
@@ -181,7 +181,7 @@
        <div class="mb-2">
         <div class="text-xl font-bold text-neutral-900 mb-1">Diskon</div>
         <div class="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 leading-none mb-1">
-         {{ $keyword->diskon }}<span class="text-2xl font-bold">%</span>
+         {{ $keyword->diskon }}<span class="text-2xl font-bold"></span>
         </div>
        </div>
        @endif
@@ -199,10 +199,10 @@
     </div>
 
     <div class="hidden lg:flex flex-col md:flex-row items-start md:items-center justify-between px-3 md:px-4 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600 gap-1.5 md:gap-0">
-     <span class="font-medium">Stock �?� {{ $keyword->stok }}</span>
+     <span class="font-medium">Stock {{ $keyword->stok }}</span>
      @if($keyword->end_date)
      <span class="font-medium">
-      Valid until �?� {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
+      Valid until {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
      </span>
      @endif
     </div>

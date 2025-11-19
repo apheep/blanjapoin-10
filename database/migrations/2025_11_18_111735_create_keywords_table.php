@@ -6,38 +6,33 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-      Schema::create('keywords', function (Blueprint $table) {
-    $table->id();
+        Schema::create('keywords', function (Blueprint $table) {
+            $table->bigIncrements('id');
 
-    // foreign key custom ke merchants.no
-    $table->integer('merchant_key');
-    $table->foreign('merchant_key')
-          ->references('no')->on('merchants')
-          ->onDelete('cascade');
+            // foreign key ke merchants.id
+            $table->unsignedBigInteger('merchant_key');
 
-    $table->string('nama_produk');
-    $table->string('cta_link');
-    $table->integer('redeem')->default(0);
-    $table->integer('diskon')->nullable();
-    $table->string('skb')->nullable();
-    $table->date('start_date')->nullable();
-    $table->date('end_date')->nullable();
-    $table->string('image')->nullable();
-    $table->integer('stok')->default(0);
+            $table->string('nama_produk');
+            $table->string('cta_link')->nullable();
+            $table->string('redeem')->nullable();
+            $table->string('diskon')->nullable();       // bisa diganti decimal kalau mau
+            $table->text('skb')->nullable();
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->string('image')->nullable();
+            $table->integer('stock')->default(0);
 
-    $table->timestamps();
-});
+            $table->timestamps(); // created_at & updated_at
 
+            $table->foreign('merchant_key')
+                ->references('id')
+                ->on('merchants')
+                ->onDelete('cascade');
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('keywords');

@@ -11,25 +11,22 @@ class Merchant extends Model
 
     protected $table = 'merchants';
 
-    protected $primaryKey = 'no';
+    protected $primaryKey = 'id';
 
     public $incrementing = false;
 
     protected $keyType = 'int';
 
     protected $fillable = [
-        'no',
+        'id',
         'daerah',
         'nama_merchant',
-        'link_kv_google',
         'kategori',
-        'poin',
-        'promo',
     ];
 
     public function keywords()
     {
-        return $this->hasMany(Keyword::class, 'merchant_key', 'no');
+        return $this->hasMany(Keyword::class, 'merchant_key', 'id');
     }
 }
 

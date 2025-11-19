@@ -17,12 +17,12 @@ class Keyword extends Model
         'skb',
         'start_date',
         'end_date',
-        'image',
-        'stok',
+        'link_kv_google',
+        'stock',
     ];
 
     public function merchant()
     {
-        return $this->belongsTo(Merchant::class, 'merchant_key', 'no');
+        return $this->belongsTo(Merchant::class, 'merchant_key', 'id');
     }
 }
