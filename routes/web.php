@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
 use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\KeywordController;
 use App\Models\Keyword;
 
 // Tampilan awal untuk semua pengunjung
