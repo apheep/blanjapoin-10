@@ -1,4 +1,8 @@
-<!-- ======================= DESKTOP / TABLE VIEW (DINAMIS) ======================= -->
+@php
+    // gabungkan query yg sudah ada (misal search/filter) + paksa tab=keyword
+    $keywordPaginator = $keywords->appends(array_merge(request()->query(), ['tab' => 'keyword']));
+@endphp
+
 <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -7,8 +11,7 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     @if(Auth::check() && Auth::user()->can_approve == 1)
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">approve</th>
-
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Approve</th>
                     @endif
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
@@ -23,17 +26,24 @@
             </thead>
 
             <tbody class="bg-white divide-y divide-gray-200" id="keyword-table-body">
-                @forelse($keywords as $keyword)
+                @forelse($keywordPaginator as $keyword)
                     <tr class="hover:bg-gray-50 transition-colors keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}">
 
                         {{-- No --}}
                         <td class="px-4 py-4 text-sm font-medium text-gray-900">
-                            {{ ($keywords->currentPage() - 1) * $keywords->perPage() + $loop->iteration }}
+                            {{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}
                         </td>
 
-                        {{-- Actions --}}
+                        {{-- Actions (EDIT & DELETE) --}}
                         <td class="px-4 py-4">
                             <div class="flex space-x-2">
+                                <button type="button"
+                                        onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
+                                        class="text-blue-600 hover:text-blue-900 transition-colors"
+                                        title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
                                 <button type="button"
                                         onclick="showDeleteConfirmation('Keyword', '{{ $keyword->nama_produk }}', {{ $keyword->id }})"
                                         class="text-red-600 hover:text-red-900 transition-colors"
@@ -43,17 +53,18 @@
                             </div>
                         </td>
 
+                        {{-- Approve Button (Desktop) --}}
                         @if(Auth::check() && Auth::user()->can_approve == 1)
-                        <td class="px-4 py-4">
-                            @if($keyword->status === 'approve')
-                                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
-                                    <i class="fas fa-check-circle text-green-600"></i>
-                                    <span>Approved</span>
-                                </div>
-                            @else
-                                <button onclick="showApproveConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
-                            @endif
-                        </td>
+                            <td class="px-4 py-4">
+                                @if($keyword->status === 'approve')
+                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
+                                        <i class="fas fa-check-circle text-green-600"></i>
+                                        <span>Approved</span>
+                                    </div>
+                                @else
+                                    <button onclick="showApproveConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
+                                @endif
+                            </td>
                         @endif
 
                         {{-- Merchant --}}
@@ -119,7 +130,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="12" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data keyword.
                         </td>
                     </tr>
@@ -128,64 +139,70 @@
         </table>
     </div>
     
-    <!-- Pagination -->
-    @if($keywords->hasPages())
-    <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
-        <div class="text-sm text-gray-600">
-            Menampilkan <span class="font-semibold">{{ $keywords->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywords->lastItem() }}</span> dari <span class="font-semibold">{{ $keywords->total() }}</span> data
-        </div>
-        
-        <div class="flex items-center space-x-2">
-            {{-- Previous Page Link --}}
-            @if ($keywords->onFirstPage())
-                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            @else
-                <a href="{{ $keywords->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            @endif
-
-            {{-- Pagination Elements --}}
-            @foreach ($keywords->getUrlRange(1, $keywords->lastPage()) as $page => $url)
-                @if ($page == $keywords->currentPage())
-                    <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                        {{ $page }}
+    @if($keywordPaginator->hasPages())
+        <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div class="text-sm text-gray-600">
+                Menampilkan <span class="font-semibold">{{ $keywordPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywordPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $keywordPaginator->total() }}</span> data
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                {{-- Previous Page Link --}}
+                @if ($keywordPaginator->onFirstPage())
+                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                        <i class="fas fa-chevron-left"></i>
                     </button>
                 @else
-                    <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        {{ $page }}
+                    <a href="{{ $keywordPaginator->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-chevron-left"></i>
                     </a>
                 @endif
-            @endforeach
 
-            {{-- Next Page Link --}}
-            @if ($keywords->hasMorePages())
-                <a href="{{ $keywords->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            @else
-                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            @endif
+                {{-- Pagination Elements --}}
+                @foreach ($keywordPaginator->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
+                    @if ($page == $keywordPaginator->currentPage())
+                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                            {{ $page }}
+                        </button>
+                    @else
+                        <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            {{ $page }}
+                        </a>
+                    @endif
+                @endforeach
+
+                {{-- Next Page Link --}}
+                @if ($keywordPaginator->hasMorePages())
+                    <a href="{{ $keywordPaginator->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                @else
+                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                @endif
+            </div>
         </div>
-    </div>
     @endif
 </div>
 
-<!-- ======================= MOBILE / CARD VIEW (DINAMIS) ======================= -->
+{{-- MOBILE VERSION --}}
 <div class="md:hidden space-y-3" id="keyword-cards-container">
-    @forelse($keywords as $keyword)
+    @forelse($keywordPaginator as $keyword)
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}">
-            {{-- Header dengan No dan Actions --}}
+            {{-- Header dengan No dan Actions (EDIT & DELETE) --}}
             <div class="flex items-start justify-between pb-3 border-b border-gray-200">
                 <div>
                     <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">No</p>
-                    <p class="text-sm font-medium text-gray-900 mt-1">{{ ($keywords->currentPage() - 1) * $keywords->perPage() + $loop->iteration }}</p>
+                    <p class="text-sm font-medium text-gray-900 mt-1">{{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}</p>
                 </div>
-                <div class="flex items-center">
+                <div class="flex items-center space-x-3">
+                    <button type="button"
+                            onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
+                            class="text-blue-600 hover:text-blue-900 transition-colors"
+                            title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+
                     <button type="button"
                             onclick="showDeleteConfirmation('Keyword', '{{ $keyword->nama_produk }}', {{ $keyword->id }})"
                             class="text-red-600 hover:text-red-900 transition-colors"
@@ -266,20 +283,20 @@
 
             {{-- Approve Button (Mobile) --}}
             @if(Auth::check() && Auth::user()->can_approve == 1)
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Action</p>
-                @if($keyword->status === 'approve')
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
-                        <i class="fas fa-check-circle text-green-600"></i>
-                        <span>Approved</span>
-                    </div>
-                @else
-                    <button onclick="showApproveConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="justify-center w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200 font-medium text-sm" title="Approve">
-                        <i class="fas fa-check-circle mr-2"></i>
-                        Approve
-                    </button>
-                @endif
-            </div>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Action</p>
+                    @if($keyword->status === 'approve')
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                            <span>Approved</span>
+                        </div>
+                    @else
+                        <button onclick="showApproveConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="justify-center w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200 font-medium text-sm" title="Approve">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Approve
+                        </button>
+                    @endif
+                </div>
             @endif
 
             {{-- Image --}}
@@ -305,49 +322,48 @@
         <p class="text-sm text-center text-gray-500">Belum ada data keyword.</p>
     @endforelse
     
-    <!-- Mobile Pagination -->
-    @if($keywords->hasPages())
-    <div class="bg-white px-4 py-4 border-t border-gray-200 flex flex-col items-center justify-center space-y-3 rounded-xl">
-        <div class="text-sm text-gray-600 text-center">
-            Menampilkan <span class="font-semibold">{{ $keywords->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywords->lastItem() }}</span> dari <span class="font-semibold">{{ $keywords->total() }}</span> data
-        </div>
-        
-        <div class="flex items-center space-x-2">
-            {{-- Previous Page Link --}}
-            @if ($keywords->onFirstPage())
-                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            @else
-                <a href="{{ $keywords->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            @endif
-
-            {{-- Pagination Elements (simplified for mobile) --}}
-            @foreach ($keywords->getUrlRange(1, $keywords->lastPage()) as $page => $url)
-                @if ($page == $keywords->currentPage())
-                    <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                        {{ $page }}
+    @if($keywordPaginator->hasPages())
+        <div class="bg-white px-4 py-4 border-t border-gray-200 flex flex-col items-center justify-center space-y-3 rounded-xl">
+            <div class="text-sm text-gray-600 text-center">
+                Menampilkan <span class="font-semibold">{{ $keywordPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywordPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $keywordPaginator->total() }}</span> data
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                {{-- Previous Page Link --}}
+                @if ($keywordPaginator->onFirstPage())
+                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                        <i class="fas fa-chevron-left"></i>
                     </button>
                 @else
-                    <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        {{ $page }}
+                    <a href="{{ $keywordPaginator->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-chevron-left"></i>
                     </a>
                 @endif
-            @endforeach
 
-            {{-- Next Page Link --}}
-            @if ($keywords->hasMorePages())
-                <a href="{{ $keywords->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            @else
-                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            @endif
+                {{-- Pagination Elements (Simplified for Mobile) --}}
+                @foreach ($keywordPaginator->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
+                    @if ($page == $keywordPaginator->currentPage())
+                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                            {{ $page }}
+                        </button>
+                    @else
+                        <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            {{ $page }}
+                        </a>
+                    @endif
+                @endforeach
+
+                {{-- Next Page Link --}}
+                @if ($keywordPaginator->hasMorePages())
+                    <a href="{{ $keywordPaginator->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                @else
+                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                @endif
+            </div>
         </div>
-    </div>
     @endif
 </div>

@@ -12,8 +12,8 @@ class MerchantController extends Controller
 {
     public function index()
     {
-        $merchants = Merchant::orderBy('id')->paginate(15);
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(15);
+        $merchants = Merchant::orderBy('id')->paginate(10);
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
         return view('admin', compact('merchants', 'keywords'));
     }
 
@@ -84,7 +84,7 @@ class MerchantController extends Controller
         }
     }
 
-    // edit, update menyusul seperti yang sudah aku kirim tadi
+    // edit, update menyusul
 
     public function downloadFile($path)
     {
