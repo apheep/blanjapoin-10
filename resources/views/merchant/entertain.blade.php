@@ -17,9 +17,19 @@
   <div class="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
     {{-- 2 card utama --}}
     @forelse($visibleKeywords as $keyword)
+      @php
+        $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
+        $productName = $keyword->nama_produk ?? '';
+        $locationName = optional($keyword->merchant)->daerah ?? '';
+        $searchName = strtolower(trim($merchantName . ' ' . $productName));
+        $searchLocation = strtolower($locationName);
+      @endphp
       <article
+        data-voucher-card="true"
+        data-search-name="{{ $searchName }}"
+        data-search-location="{{ $searchLocation }}"
         onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')"
-        class="group overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md
+        class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md
                transition-all hover:shadow-xl hover:scale-[1.01] hover:border-indigo-200 cursor-pointer
                opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]"
       >
@@ -141,11 +151,22 @@
     {{-- Extra card (See All) pakai CSS seperti contoh extracard kamu --}}
     @if($extraKeywords->isNotEmpty())
       @foreach($extraKeywords as $keyword)
+        @php
+          $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
+          $productName = $keyword->nama_produk ?? '';
+          $locationName = optional($keyword->merchant)->daerah ?? '';
+          $searchName = strtolower(trim($merchantName . ' ' . $productName));
+          $searchLocation = strtolower($locationName);
+        @endphp
         <article
           id="extraEntertainCard"
+          data-voucher-card="true"
+          data-search-name="{{ $searchName }}"
+          data-search-location="{{ $searchLocation }}"
           onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')"
           class="mt-2 group overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md
                  transition-all duration-500 ease-in-out hover:shadow-xl hover:scale-[1.01] hover:border-pink-200
+                 voucher-card
                  max-h-0 opacity-0 scale-y-0 origin-top cursor-pointer h-full min-h-[280px]"
         >
           <!-- Mobile Layout -->
