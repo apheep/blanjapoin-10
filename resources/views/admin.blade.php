@@ -807,83 +807,93 @@
                 return url.searchParams.get(name);
             }
 
-            // Keep track of selected category per table for toggle behavior
-            const selectedCategory = { merchant: 'All', telkom: 'All' };
-            // Function to filter table based on category
-            function filterTable(tableType, category) {
-                // Close the dropdown after selection
-                closeAllDropdowns();
-                
-                // Update the button text to show the selected category
-                let buttonId = '';
-                if (document.getElementById('section-all').classList.contains('hidden') === false) {
-                    // We are in the "All" section
-                    if (tableType === 'merchant') buttonId = 'kategoriBtnAll1';
-                    else if (tableType === 'telkom') buttonId = 'kategoriBtnAll3';
-                } else {
-                    // We are in a specific section
-                    if (tableType === 'merchant') buttonId = 'kategoriBtnMerchant';
-                    else if (tableType === 'telkom') buttonId = 'kategoriBtnTelkom';
-                }
-                // Toggle: clicking the same category again resets to All
-                if (selectedCategory[tableType] === category) {
-                    category = 'All';
-                }
-                selectedCategory[tableType] = category;
+           
+// Keep track of selected category per table for toggle behavior
+const selectedCategory = { merchant: 'Semua', telkom: 'Semua' };
 
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    const label = category === 'All' ? 'Kategori' : category;
-                    // Reset button classes
-                    button.className = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300';
-                    // Apply category-specific styling
-                    if (category === 'All') {
-                        button.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
-                    } else if (category === 'F&B') {
-                        button.classList.add('border-orange-300', 'text-orange-800', 'bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'hover:from-orange-200', 'hover:to-red-200');
-                    } else if (category === 'Entertain') {
-                        button.classList.add('border-purple-300', 'text-purple-800', 'bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'hover:from-purple-200', 'hover:to-pink-200');
-                    } else if (category === 'Vacation') {
-                        button.classList.add('border-blue-300', 'text-blue-800', 'bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'hover:from-blue-200', 'hover:to-cyan-200');
-                    } else if (category === 'Shopping') {
-                        button.classList.add('border-green-300', 'text-green-800', 'bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'hover:from-green-200', 'hover:to-emerald-200');
-                    } else if (category === 'Beauty & Care') {
-                        button.classList.add('border-pink-300', 'text-pink-800', 'bg-gradient-to-r', 'from-pink-100', 'to-rose-100', 'hover:from-pink-200', 'hover:to-rose-200');
-                    } else if (category === 'Telkomsel Packet') {
-                        button.classList.add('border-indigo-300', 'text-indigo-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100', 'hover:from-indigo-200', 'hover:to-blue-200');
-                    } else if (category === 'Merchandise') {
-                        button.classList.add('border-indigo-300', 'text-red-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100', 'hover:from-indigo-200', 'hover:to-blue-200');
-                    }
+function filterTable(tableType, category) {
+    // Close the dropdown setelah pilih
+    closeAllDropdowns();
 
-                    
-                    button.innerHTML = `<i class="fas fa-list mr-2"></i>${label}<i class=\"fas fa-chevron-down ml-2 text-xs\"></i>`;
-                }
-                
-                // Filter the table rows based on category
-                let tableBodyId = '';
-                let rowClass = '';
-                
-                if (tableType === 'merchant') {
-                    tableBodyId = 'merchant-table-body';
-                    rowClass = 'merchant-row';
-                } else if (tableType === 'telkom') {
-                    tableBodyId = 'telkom-table-body';
-                    rowClass = 'telkom-row';
-                }
-                
-                const tableBody = document.getElementById(tableBodyId);
-                if (tableBody) {
-                    const rows = tableBody.querySelectorAll(`.${rowClass}`);
-                    rows.forEach(row => {
-                        const rowCategory = row.getAttribute('data-category');
-                        if (category === 'All' || rowCategory === category) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
-                    });
-                }
+    // Normalisasi buat perbandingan (biar nggak sensitif besar/kecil huruf)
+    const incomingCategory = category || '';
+    const normalizedIncoming = incomingCategory.toLowerCase();
+
+    // Toggle: kalau klik kategori yang sama → balik ke "Semua"
+    const prev = selectedCategory[tableType] || 'Semua';
+    if ((prev || '').toLowerCase() === normalizedIncoming) {
+        category = 'Semua';
+    }
+    selectedCategory[tableType] = category;
+
+    // ====== (bagian update tombol tetap seperti punya kamu) ======
+    let buttonId = '';
+    if (document.getElementById('section-all').classList.contains('hidden') === false) {
+        if (tableType === 'merchant') buttonId = 'kategoriBtnAll1';
+        else if (tableType === 'telkom') buttonId = 'kategoriBtnAll3';
+    } else {
+        if (tableType === 'merchant') buttonId = 'kategoriBtnMerchant';
+        else if (tableType === 'telkom') buttonId = 'kategoriBtnTelkom';
+    }
+
+    const button = document.getElementById(buttonId);
+    if (button) {
+        const label = category === 'Semua' ? 'Kategori' : category;
+        button.className = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300';
+
+        if (category === 'Semua') {
+            button.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+        } else if (category === 'Kuliner') {
+            button.classList.add('border-orange-300', 'text-orange-800', 'bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'hover:from-orange-200', 'hover:to-red-200');
+        } else if (category === 'Hiburan') {
+            button.classList.add('border-purple-300', 'text-purple-800', 'bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'hover:from-purple-200', 'hover:to-pink-200');
+        } else if (category === 'Liburan') {
+            button.classList.add('border-blue-300', 'text-blue-800', 'bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'hover:from-blue-200', 'hover:to-cyan-200');
+        } else if (category === 'Belanja') {
+            button.classList.add('border-green-300', 'text-green-800', 'bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'hover:from-green-200', 'hover:to-emerald-200');
+        } else if (category === 'Kecantikan') {
+            button.classList.add('border-pink-300', 'text-pink-800', 'bg-gradient-to-r', 'from-pink-100', 'to-rose-100', 'hover:from-pink-200', 'hover:to-rose-200');
+        } else if (category === 'Telkomsel Packet') {
+            button.classList.add('border-indigo-300', 'text-indigo-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100', 'hover:from-indigo-200', 'hover:to-blue-200');
+        } else if (category === 'Telkomsel Merchandise') {
+            button.classList.add('border-indigo-300', 'text-red-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100', 'hover:from-indigo-200', 'hover:to-blue-200');
+        }
+
+        button.innerHTML = `<i class="fas fa-list mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
+    }
+
+    // ====== BAGIAN FILTER YANG DIUBAH (lebih fleksibel) ======
+    let tableBodyId = '';
+    let rowClass = '';
+
+    if (tableType === 'merchant') {
+        tableBodyId = 'merchant-table-body';
+        rowClass = 'merchant-row';
+    } else if (tableType === 'telkom') {
+        tableBodyId = 'telkom-table-body';
+        rowClass = 'telkom-row';
+    }
+
+    const normalizedSelected = (selectedCategory[tableType] || '').toLowerCase();
+    const tableBody = document.getElementById(tableBodyId);
+
+    if (tableBody) {
+        const rows = tableBody.querySelectorAll(`.${rowClass}`);
+        rows.forEach(row => {
+            const rowCategory = (row.getAttribute('data-category') || '').toLowerCase();
+
+            // Kalau "Semua" / "all" → tampilkan semua
+            if (!normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all') {
+                row.style.display = '';
+            } else if (rowCategory === normalizedSelected) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
             }
+        });
+    }
+}
+
 
             ////////////////////////////////////////////////////////////////////
             // Modal Functions
@@ -970,24 +980,24 @@
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div class="flex space-x-3">
                     <div class="relative">
-                        <button id="kategoriBtnAll1" onclick="toggleKategoriDropdownAll1()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-list mr-2"></i>
-                            Kategori
-                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                        </button>
-                        <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
-                            <div class="py-1">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Makanan'); return false;">Makanan</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Merchandise'); return false;">Merchandise</a>
-                            </div>
+                      <button id="kategoriBtnAll1" onclick="toggleKategoriDropdownAll1()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-list mr-2"></i>
+                        Kategori
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                    </button>
+                    <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
+                        <div class="py-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a> 
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kuliner'); return false;">Kuliner</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Merchandise'); return false;">Merchandise</a>
                         </div>
                     </div>
-                    
+                    </div>
                     <div class="relative">
                         <button
                             type="button"
@@ -1072,19 +1082,20 @@
                             Kategori 
                             <i class="fas fa-chevron-down ml-2 text-xs"></i>
                         </button>
-                        <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
+                        <div id="kategoriDropdownMerchant" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
                             <div class="py-1">
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Makanan'); return false;">Makanan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kuliner'); return false;">Kuliner</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'liburan'); return false;">Liburan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merhandise'); return false;">Merchandise</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Merchandise'); return false;">Merchandise</a>
                             </div>
                         </div>
                     </div>
+
                     
                     <div class="relative">
                         <button type="button" onclick="openUploadMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">

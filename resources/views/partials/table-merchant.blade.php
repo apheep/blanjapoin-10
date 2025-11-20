@@ -16,7 +16,8 @@
 
             <tbody class="bg-white divide-y divide-gray-200" id="merchant-table-body">
                 @forelse($merchants as $merchant)
-                    <tr class="hover:bg-gray-50 transition-colors merchant-row" data-category="{{ $merchant->kategori ?? 'All' }}">
+                    <tr class="hover:bg-gray-50 transition-colors merchant-row" data-category="{{ strtolower($merchant->kategori ?? 'all') }}">
+
 
                         {{-- No --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">
@@ -122,7 +123,8 @@
 <!-- ======================= MOBILE / CARD VIEW (DINAMIS) ======================= -->
 <div class="md:hidden space-y-3" id="merchant-cards-container">
     @forelse($merchants as $merchant)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row" data-category="{{ $merchant->kategori ?? 'All' }}">
+       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row" data-category="{{ strtolower($merchant->kategori ?? 'all') }}">
+
             {{-- Header dengan No dan Actions --}}
             <div class="flex items-start justify-between pb-3 border-b border-gray-200">
                 <div>
