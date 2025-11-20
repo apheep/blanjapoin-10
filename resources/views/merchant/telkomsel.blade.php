@@ -75,8 +75,7 @@
        <span class="text-sm font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
       </div>
       <div>
-       <img src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">
-      </div>
+   <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">      </div>
      </div>
      <div class="p-4 flex flex-col justify-center">
       <h3 class="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-3 leading-tight">
@@ -182,7 +181,7 @@
         <span class="text-sm font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
        </div>
        <div>
-        <img src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">
+   <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">      
        </div>
       </div>
       <div class="p-4 flex flex-col justify-center">
