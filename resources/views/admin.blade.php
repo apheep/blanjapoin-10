@@ -33,6 +33,17 @@
 
 <body class="min-h-screen bg-white font-poppins">
 
+    <!-- Flash Message Container -->
+    @if(session('success'))
+        <div data-flash-message="{{ session('success') }}" data-flash-type="success" class="hidden"></div>
+    @endif
+    @if(session('error'))
+        <div data-flash-message="{{ session('error') }}" data-flash-type="error" class="hidden"></div>
+    @endif
+    @if($errors->any())
+        <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
+    @endif
+
     <!-- Header -->
    <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
     <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
@@ -602,6 +613,119 @@
             });
 
             ////////////////////////////////////////////////////////////////////
+            // Keyword Status Filter Functions
+            ////////////////////////////////////////////////////////////////////
+
+            // Store current selected status for keyword
+            let selectedKeywordStatus = 'all';
+
+            function toggleStatusDropdownKeyword() {
+                const dropdown = document.getElementById('statusDropdownKeyword');
+                if (!dropdown) return;
+                
+                if (dropdown.classList.contains('hidden')) {
+                    // Close any other open dropdowns first
+                    closeAllDropdowns();
+                    dropdown.classList.remove('hidden');
+                    dropdown.style.opacity = '0';
+                    dropdown.style.transform = 'translateY(-6px)';
+                    requestAnimationFrame(() => {
+                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
+                        dropdown.style.opacity = '1';
+                        dropdown.style.transform = 'translateY(0)';
+                    });
+                } else {
+                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
+                    dropdown.style.opacity = '0';
+                    dropdown.style.transform = 'translateY(-6px)';
+                    setTimeout(() => {
+                        dropdown.classList.add('hidden');
+                        dropdown.style.transition = '';
+                        dropdown.style.opacity = '';
+                        dropdown.style.transform = '';
+                    }, 200);
+                }
+            }
+
+            function filterKeywordByStatus(status) {
+                // Close the dropdown after selection
+                closeAllDropdowns();
+                
+                // Update the button text to show the selected status
+                const button = document.getElementById('statusBtnKeyword');
+                if (button) {
+                    let label = 'Status';
+                    let buttonClasses = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300';
+                    
+                    // Toggle: clicking the same status again resets to All
+                    if (selectedKeywordStatus === status) {
+                        status = 'all';
+                    }
+                    selectedKeywordStatus = status;
+
+                    if (status === 'all') {
+                        label = 'Status';
+                        buttonClasses += ' border-gray-300 text-gray-700 hover:bg-gray-50';
+                    } else if (status === 'pending') {
+                        label = 'Pending';
+                        buttonClasses += ' border-yellow-300 text-yellow-800 bg-gradient-to-r from-yellow-100 to-amber-100 hover:from-yellow-200 hover:to-amber-200';
+                    } else if (status === 'reject') {
+                        label = 'Rejected';
+                        buttonClasses += ' border-red-300 text-red-800 bg-gradient-to-r from-red-100 to-rose-100 hover:from-red-200 hover:to-rose-200';
+                    } else if (status === 'approve') {
+                        label = 'Approved';
+                        buttonClasses += ' border-green-300 text-green-800 bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200';
+                    }
+                    
+                    button.className = buttonClasses;
+                    button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class=\"fas fa-chevron-down ml-2 text-xs\"></i>`;
+                }
+                
+                // Filter the keyword table rows based on status
+                const keywordTableBody = document.getElementById('keyword-table-body');
+                const keywordCardsContainer = document.getElementById('keyword-cards-container');
+                
+                if (keywordTableBody) {
+                    const rows = keywordTableBody.querySelectorAll('tr.keyword-row');
+                    rows.forEach(row => {
+                        // Get all td cells and find the Status column (should be around index 9-10 depending on approve column)
+                        const cells = row.querySelectorAll('td');
+                        let statusText = '';
+                        
+                        // Look for the status cell by finding the one with status badge
+                        cells.forEach(cell => {
+                            const statusSpan = cell.querySelector('span[class*="rounded-full"]');
+                            if (statusSpan && (statusSpan.textContent.includes('approve') || statusSpan.textContent.includes('pending') || statusSpan.textContent.includes('reject'))) {
+                                statusText = statusSpan.textContent.trim().toLowerCase();
+                            }
+                        });
+                        
+                        if (status === 'all' || statusText === status) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                }
+                
+                if (keywordCardsContainer) {
+                    const cards = keywordCardsContainer.querySelectorAll('.keyword-row');
+                    cards.forEach(card => {
+                        // Find the status span in the card
+                        const statusSpan = card.querySelector('span[class*="rounded-full"]');
+                        if (statusSpan) {
+                            const statusText = statusSpan.textContent.trim().toLowerCase();
+                            if (status === 'all' || statusText === status) {
+                                card.style.display = '';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        }
+                    });
+                }
+            }
+
+            ////////////////////////////////////////////////////////////////////
             // Event Listeners
             ////////////////////////////////////////////////////////////////////
 
@@ -693,6 +817,17 @@
                     toggleKategoriDropdownAll3();
                 }
                 
+                // Handle status dropdown for keyword section
+                const statusBtnKeyword = document.getElementById('statusBtnKeyword');
+                const statusDropdownKeyword = document.getElementById('statusDropdownKeyword');
+                
+                if (statusBtnKeyword && statusDropdownKeyword && 
+                    !statusBtnKeyword.contains(event.target) && 
+                    !statusDropdownKeyword.contains(event.target) &&
+                    !statusDropdownKeyword.classList.contains('hidden')) {
+                    toggleStatusDropdownKeyword();
+                }
+                
                 // Also close date filters if clicking outside
                 const dateFilterBtns = document.querySelectorAll('[onclick*="toggleDateFilter"]');
                 const dateFilterDropdowns = document.querySelectorAll('[id^="dateFilter"]');
@@ -737,6 +872,11 @@
 
             // Trigger file input for All section
             function switchTab(tab) {
+                // sync tab with URL
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tab);
+                window.history.replaceState({}, '', url);
+
                 // Store the current active tab
                 currentActiveTab = tab;
                 window.currentActiveTab = tab;
@@ -776,6 +916,12 @@
                         activeSection.classList.add('opacity-100','translate-y-0');
                     });
                 }
+            }
+
+            // Function to get URL parameter value
+            function getUrlParameter(name) {
+                const url = new URL(window.location);
+                return url.searchParams.get(name);
             }
 
             // Keep track of selected category per table for toggle behavior
@@ -866,14 +1012,78 @@
             ////////////////////////////////////////////////////////////////////
             // Note: toggleMerchantUploadModal() has been moved to upload-modal.blade.php
 
-            // Placeholder functions for keyword upload modal (to be implemented)
-            function openUploadKeyword() {
-                alert('Upload Keyword functionality akan segera ditambahkan');
-            }
+            // Keyword upload modal functions are now in upload-modal-keyword.blade.php
 
-            function closeUploadKeyword() {
-                // Placeholder for closing keyword upload modal
-            }
+            // Initialize tab based on URL parameter on page load
+            document.addEventListener('DOMContentLoaded', function () {
+                // baca parameter tab dari URL (default 'all' kalau nggak ada)
+                const initialTab = "{{ request('tab', 'all') }}";
+
+                // panggil switchTab sesuai tab
+                switchTab(initialTab);
+            });
+                        ////////////////////////////////////////////////////////////////////
+            // AJAX Pagination untuk SECTION KEYWORD
+            ////////////////////////////////////////////////////////////////////
+
+            document.addEventListener('click', function (event) {
+                // Cari <a> yang diklik di dalam #section-keyword
+                const link = event.target.closest('#section-keyword a');
+                if (!link) return;
+
+                const href = link.getAttribute('href');
+                // Kalau link-nya tidak mengandung "page=" → kemungkinan bukan pagination
+                if (!href || !href.includes('page=')) return;
+
+                event.preventDefault();
+
+                const url = link.href;
+
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Ambil ulang isi #section-keyword dari HTML yang di-fetch
+                    const newSection = doc.querySelector('#section-keyword');
+                    const currentSection = document.querySelector('#section-keyword');
+
+                    if (newSection && currentSection) {
+                        // Ganti seluruh isi section-keyword (tabel + pagination + cards mobile)
+                        currentSection.innerHTML = newSection.innerHTML;
+                    }
+
+                    // Pastikan tetap di tab keyword
+                    switchTab('keyword');
+
+                    // OPTIONAL: update URL di address bar (tanpa reload) supaya page & tab ikut berubah
+                    try {
+                        const newUrl = new URL(window.location.href);
+                        const fetchedUrl = new URL(url);
+                        const newPage = fetchedUrl.searchParams.get('page');
+
+                        if (newPage) {
+                            newUrl.searchParams.set('page', newPage);
+                        }
+                        newUrl.searchParams.set('tab', 'keyword');
+
+                        window.history.replaceState({}, '', newUrl);
+                    } catch (e) {
+                        console.warn('Tidak bisa update URL state:', e);
+                    }
+                })
+                .catch(error => {
+                    console.error('Keyword pagination AJAX error:', error);
+                    // fallback: kalau ada error, pakai behaviour normal (reload)
+                    window.location.href = url;
+                });
+            });
+
         </script>
 
         <!-- All Tables Section -->
@@ -1002,7 +1212,25 @@
             <!-- Keyword Controls -->
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div class="flex space-x-3">
-                    <!-- Upload Button with File Input -->
+
+                    <!-- Status Dropdown -->
+                    <div class="relative">
+                        <button id="statusBtnKeyword" onclick="toggleStatusDropdownKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-filter mr-2"></i>
+                            Status 
+                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                        </button>
+                        <div id="statusDropdownKeyword" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-56 z-50">
+                            <div class="py-1">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-yellow-100 hover:to-amber-100 hover:text-yellow-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                <!-- Upload Button with File Input -->
                     <div class="relative">
                         <button type="button" onclick="openUploadKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-upload mr-2"></i>
@@ -1145,6 +1373,7 @@
     @include('partials.upload-modal-merchant')
     @include('partials.upload-modal-merchandise')
     @include('partials.upload-modal-telkom')
+    @include('partials.upload-modal-keyword')
     @include('partials.edit-modal-merchant')
     @include('partials.edit-modal-merchandise')
     @include('partials.edit-modal-telkom')
