@@ -48,14 +48,10 @@ Route::middleware(['auth'])->group(function () {
     // Keywords routes
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
     Route::post('/keywords', [KeywordController::class, 'store'])->name('keywords.store');
+    Route::put('/keywords/{id}', [KeywordController::class, 'update'])->name('keywords.update');
     Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
-
-    // Halaman approval
-    Route::get('/approval', function () {
-        return view('approval');
-    })->name('approval');
 
     // Manajemen user
     Route::get('/user-management', [UserController::class, 'index'])->name('user.management');
