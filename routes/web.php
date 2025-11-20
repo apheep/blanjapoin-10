@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
 use App\Http\Controllers\MerchantController;
-use App\Http\Controllers\KeywordController;
+use App\Http\Controllers\UserController;
 use App\Models\Keyword;
 
 // Tampilan awal untuk semua pengunjung
@@ -58,9 +58,13 @@ Route::middleware(['auth'])->group(function () {
     })->name('approval');
 
     // Manajemen user
-    Route::get('/user-management', function () {
-        return view('usermng');
-    })->name('user.management');
+    Route::get('/user-management', [UserController::class, 'index'])->name('user.management');
+    Route::get('/api/users', [UserController::class, 'getUsers'])->name('users.get');
+    Route::post('/api/users', [UserController::class, 'store'])->name('users.store');
+    Route::patch('/api/users/{user}/toggle-approval', [UserController::class, 'toggleApproval'])->name('users.toggle-approval');
+    Route::delete('/api/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/api/users/bulk-delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
+    Route::post('/api/users/bulk-toggle-approval', [UserController::class, 'bulkToggleApproval'])->name('users.bulk-toggle-approval');
 
     // Halaman profil
     Route::get('/profile', function () {

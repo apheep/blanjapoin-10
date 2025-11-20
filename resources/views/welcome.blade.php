@@ -11,6 +11,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
  </head>
+ @include('partials.head')
  <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
   <!-- Loading Spinner -->
   <div id="loadingSpinner" class="fixed inset-0 bg-white z-50 flex items-center justify-center" style="opacity: 1; display: flex;">
