@@ -28,7 +28,7 @@
    <div class="lg:hidden flex flex-col h-full">
     <div class="relative">
      <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-      <img loading="lazy" src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
      </div>
     </div>
     <div class="flex flex-col p-3 space-y-2 flex-1">
@@ -75,7 +75,7 @@
        <span class="text-sm font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
       </div>
       <div>
-       <img loading="lazy" src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full">
+   <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">      
       </div>
      </div>
 
@@ -98,7 +98,7 @@
 
      <div class="card-image-wrapper p-2 max-w-[520px]">
       <div class="aspect-[6/3] md:h-full rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-       <img loading="lazy" src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
       </div>
      </div>
     </div>
@@ -137,7 +137,7 @@
     <div class="lg:hidden flex flex-col h-full">
      <div class="relative">
       <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-       <img loading="lazy" src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
       </div>
      </div>
      <div class="flex flex-col p-3 space-y-2 flex-1">
@@ -184,7 +184,7 @@
         <span class="text-sm font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
        </div>
        <div>
-        <img loading="lazy" src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full">
+   <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">      
        </div>
       </div>
 
@@ -207,7 +207,7 @@
 
       <div class="card-image-wrapper p-2 max-w-[520px]">
        <div class="aspect-[6/3] md:h-full rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-        <img loading="lazy" src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
        </div>
       </div>
      </div>

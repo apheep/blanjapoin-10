@@ -12,9 +12,10 @@ class MerchantController extends Controller
 {
     public function index()
     {
-        $merchants = Merchant::orderBy('id')->paginate(15);
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(15);
-        return view('admin', compact('merchants', 'keywords'));
+        $merchants = Merchant::orderBy('id')->paginate(10);
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        $allMerchants = Merchant::orderBy('nama_merchant')->get();
+        return view('admin', compact('merchants', 'keywords', 'allMerchants'));
     }
 
     public function store(Request $request)
@@ -84,7 +85,7 @@ class MerchantController extends Controller
         }
     }
 
-    // edit, update menyusul seperti yang sudah aku kirim tadi
+    // edit, update menyusul
 
     public function downloadFile($path)
     {
