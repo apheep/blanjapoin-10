@@ -14,7 +14,8 @@ class MerchantController extends Controller
     {
         $merchants = Merchant::orderBy('id')->paginate(10);
         $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
-        return view('admin', compact('merchants', 'keywords'));
+        $allMerchants = Merchant::orderBy('nama_merchant')->get();
+        return view('admin', compact('merchants', 'keywords', 'allMerchants'));
     }
 
     public function store(Request $request)
