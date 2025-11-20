@@ -5,7 +5,8 @@
      @php
        $shopCategory = 'belanja';
        $shopKeywords = $keywords->filter(function ($keyword) use ($shopCategory) {
-       return $keyword->merchant && $keyword->merchant->kategori === $shopCategory;
+       return $keyword->merchant && $keyword->merchant->kategori === $shopCategory
+       && $keyword->status === 'approve';
         })->values();
       $visibleKeywords = $shopKeywords->take(2);
       $extraKeywords = $shopKeywords->slice(2);
@@ -14,12 +15,19 @@
      <!-- Card utama (2 pertama) -->
      <div id="shopCardContainer" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch px-1">
       @forelse($visibleKeywords as $keyword)
-      <article onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
+      @php
+       $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
+       $productName = $keyword->nama_produk ?? '';
+       $locationName = optional($keyword->merchant)->daerah ?? '';
+       $searchName = strtolower(trim($merchantName . ' ' . $productName));
+       $searchLocation = strtolower($locationName);
+      @endphp
+      <article data-voucher-card="true" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
        <!-- Mobile Layout -->
        <div class="lg:hidden flex flex-col h-full">
         <div class="relative">
          <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-          <img src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
          </div>
         </div>
         <div class="flex flex-col p-3 space-y-2 flex-1">
@@ -66,7 +74,7 @@
            <span class="text-sm font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
           </div>
           <div>
-           <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">
+   <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">      
           </div>
          </div>
          <div class="p-4 flex flex-col justify-center">
@@ -87,7 +95,7 @@
          </div>
          <div class="card-image-wrapper p-2 max-w-[520px]">
           <div class="aspect-[6/3] md:h-full rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-           <img src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
           </div>
          </div>
         </div>
@@ -114,12 +122,19 @@
      <div id="extraShopCard" class="group max-h-0 overflow-hidden opacity-0 scale-y-0 origin-top transition-all duration-500 ease-in-out mt-6 md:mt-10">
       <div class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch px-1">
        @foreach($extraKeywords as $keyword)
-       <article onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
+       @php
+        $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
+        $productName = $keyword->nama_produk ?? '';
+        $locationName = optional($keyword->merchant)->daerah ?? '';
+        $searchName = strtolower(trim($merchantName . ' ' . $productName));
+        $searchLocation = strtolower($locationName);
+       @endphp
+       <article data-voucher-card="true" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:border-rose-200 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
         <!-- Mobile Layout -->
         <div class="lg:hidden flex flex-col h-full">
          <div class="relative">
           <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-           <img src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
           </div>
          </div>
          <div class="flex flex-col p-3 space-y-2 flex-1">
@@ -166,7 +181,7 @@
             <span class="text-sm font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
            </div>
            <div>
-            <img src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">
+   <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $keyword->nama_produk }}" class="w-[140px] h-[140px] object-contain rounded-full" loading="lazy">      
            </div>
           </div>
           <div class="p-4 flex flex-col justify-center">
@@ -187,7 +202,7 @@
           </div>
           <div class="card-image-wrapper p-2 max-w-[520px]">
            <div class="aspect-[6/3] md:h-full rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-            <img src="{{ $keyword->image ? asset($keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
+       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
            </div>
           </div>
          </div>
