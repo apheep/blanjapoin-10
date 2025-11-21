@@ -83,7 +83,7 @@
        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
         <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
        </span>
-       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Lifestyle</span>
+       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
       </button>
       <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
@@ -129,7 +129,7 @@
        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
         <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
        </span>
-       <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kesehatan & Kecantikan</span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
       </button>
       <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
@@ -158,19 +158,22 @@
         <input id="mobileSearchInput" class="w-full bg-transparent text-xs outline-none placeholder:text-neutral-400 font-semibold" placeholder="Search Product" />
        </div>
       </div>
-      <button onclick="openMobilePointSheet()" id="mobilePointBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
-       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
-        <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
-       </svg>
-      </button>
       <button onclick="openMobileLocationSheet()" id="mobileLocationBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
         <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
        </svg>
       </button>
+      <button onclick="openMobilePointSheet()" id="mobilePointBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+        <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
+       </svg>
+      </button>
      </div>
 
      <!-- Desktop Version -->
+     @php
+      $locationList = collect($locations ?? [])->filter()->values();
+     @endphp
      <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl">
       <div class="flex-1 rounded-lg md:rounded-xl bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
        <div class="flex items-center gap-2 text-neutral-500">
@@ -211,10 +214,6 @@
         </div>
       </div>
      </div>
-    </div>
-
-    <div id="searchEmptyState" class="hidden mt-4 text-center text-xs md:text-sm font-semibold text-neutral-500">
-     Voucher yang kamu cari belum ditemukan.
     </div>
 
     </section>
@@ -711,17 +710,16 @@
     const selectedText = document.getElementById('sortSelectedText');
     const dropdown = document.getElementById('sortDropdown');
     const arrow = document.getElementById('sortDropdownArrow');
-    
+
     selectedText.textContent = option;
-    
+    mobilePointFilter = option;
+    applyPointSort(option);
+
     // Close dropdown
     dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
     dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
     arrow.classList.remove('rotate-180');
     sortDropdownOpen = false;
-    
-    // Here you can add logic to actually sort the content based on the selected option
-    console.log('Sort by:', option);
    }
 
    // Close sort dropdown when clicking outside
@@ -751,14 +749,27 @@
    });
 
    // Location searchable select (combobox)
-   const locations = ['All','Surabaya','Sidoarja','Malang','Madiun','Jakarta','Jogja','Bandung','Bali'];
+   const serverLocations = @json($locationList);
+   const locations = ['All', ...serverLocations];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');
    const voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
-   const totalVoucherCards = voucherCards.length;
-   const searchEmptyState = document.getElementById('searchEmptyState');
-   let currentSearchQuery = '';
+   const voucherContainerMap = new Map();
+
+   voucherCards.forEach(card => {
+    const container = card.closest('[data-voucher-container="true"]');
+    if (!container) {
+     return;
+    }
+    if (!voucherContainerMap.has(container)) {
+     voucherContainerMap.set(container, []);
+    }
+    voucherContainerMap.get(container).push(card);
+   });
+
    let currentLocationFilter = '';
+   let currentPointSort = 'Lowest';
+   let mobilePointFilter = 'Lowest';
 
    function renderLocationOptions(filter = '', dropdownElement, inputElement) {
     const f = filter.trim().toLowerCase();
@@ -785,32 +796,38 @@
    }
 
    function applyVoucherFilters() {
-    const nameQuery = normalizeQuery(currentSearchQuery);
     const locationQuery = normalizeQuery(currentLocationFilter);
-    let visibleCount = 0;
 
     voucherCards.forEach(card => {
-     const cardName = card.dataset.searchName || '';
-     const cardLocation = card.dataset.searchLocation || '';
-     const matchesName = nameQuery === '' || cardName.includes(nameQuery);
+     const cardLocation = (card.dataset.searchLocation || '').toLowerCase();
      const matchesLocation = locationQuery === '' || cardLocation.includes(locationQuery);
-     const shouldShow = matchesName && matchesLocation;
-     card.style.display = shouldShow ? '' : 'none';
-     if (shouldShow) {
-      visibleCount++;
-     }
+     card.style.display = matchesLocation ? '' : 'none';
     });
-
-    if (searchEmptyState) {
-     const shouldHideEmpty = visibleCount !== 0 || totalVoucherCards === 0;
-     searchEmptyState.classList.toggle('hidden', shouldHideEmpty);
-    }
    }
 
    function updateLocationFilter(value) {
     const normalizedValue = normalizeQuery(value);
     currentLocationFilter = normalizedValue === 'all' ? '' : normalizedValue;
     applyVoucherFilters();
+   }
+
+   function applyPointSort(order = 'Lowest') {
+    currentPointSort = order === 'Highest' ? 'Highest' : 'Lowest';
+
+    voucherContainerMap.forEach((cards, container) => {
+     const sortedCards = [...cards].sort((a, b) => {
+      const aPoint = parseInt(cardPointValue(a), 10) || 0;
+      const bPoint = parseInt(cardPointValue(b), 10) || 0;
+      return currentPointSort === 'Lowest' ? aPoint - bPoint : bPoint - aPoint;
+     });
+
+     sortedCards.forEach(card => container.appendChild(card));
+     voucherContainerMap.set(container, sortedCards);
+    });
+   }
+
+   function cardPointValue(card) {
+    return card?.dataset?.point ?? '0';
    }
 
    if (locationInput && locationDropdown) {
@@ -828,7 +845,14 @@
      if (!item) return;
      locationInput.value = item.getAttribute('data-value');
      updateLocationFilter(locationInput.value);
+     goToLocationSearch(locationInput.value);
      closeLocationDropdown(locationDropdown);
+    });
+    locationInput.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter') {
+      e.preventDefault();
+      goToLocationSearch(e.target.value);
+     }
     });
     document.addEventListener('click', (e) => {
      if (!locationDropdown.contains(e.target) && e.target !== locationInput) {
@@ -936,7 +960,6 @@
 
 
    // Mobile Point -> open sheet radios
-  let mobilePointFilter = 'Lowest'; // Store selected filter
   function openMobilePointSheet() {
    const options = ['Lowest','Highest'];
    const html = buildRadioList(options, mobilePointFilter);
@@ -947,7 +970,11 @@
     if (!btn) return;
     const val = btn.getAttribute('data-value');
     mobilePointFilter = val;
-    console.log('Mobile Point Filter:', val);
+    const desktopSelectedText = document.getElementById('sortSelectedText');
+    if (desktopSelectedText) {
+     desktopSelectedText.textContent = val;
+    }
+    applyPointSort(val);
     closeBottomSheet();
     holder.removeEventListener('click', onClick);
    });
@@ -987,6 +1014,7 @@
      locationInput.value = selectedLocation;
     }
     updateLocationFilter(selectedLocation);
+    goToLocationSearch(selectedLocation);
     closeBottomSheet();
     content.removeEventListener('click', onClick);
    });
@@ -1032,32 +1060,44 @@
    // Search functionality (sync mobile and desktop)
    const mobileSearchInput = document.getElementById('mobileSearchInput');
    const desktopSearchInput = document.getElementById('desktopSearchInput');
+   const searchPageUrl = "{{ route('merchant.search') }}";
 
-   function handleSearch(value) {
-    const textValue = (value ?? '').toString();
-    currentSearchQuery = textValue;
-    if (mobileSearchInput && mobileSearchInput.value !== textValue) {
-     mobileSearchInput.value = textValue;
+   function goToSearchPage(query) {
+    const trimmedQuery = (query || '').trim();
+    if (trimmedQuery.length === 0) {
+     return;
     }
-    if (desktopSearchInput && desktopSearchInput.value !== textValue) {
-     desktopSearchInput.value = textValue;
-    }
-    applyVoucherFilters();
+    window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
    }
 
    if (mobileSearchInput) {
-    mobileSearchInput.addEventListener('input', (e) => {
-     handleSearch(e.target.value);
+    mobileSearchInput.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter') {
+      e.preventDefault();
+      goToSearchPage(e.target.value);
+     }
     });
    }
 
    if (desktopSearchInput) {
-    desktopSearchInput.addEventListener('input', (e) => {
-     handleSearch(e.target.value);
+    desktopSearchInput.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter') {
+      e.preventDefault();
+      goToSearchPage(e.target.value);
+     }
     });
    }
 
+   function goToLocationSearch(locationValue) {
+    const normalizedLocation = (locationValue || '').trim();
+    if (normalizedLocation.length === 0) {
+     return;
+    }
+    goToSearchPage(normalizedLocation);
+   }
+
    applyVoucherFilters();
+   applyPointSort(currentPointSort);
   </script>
  </body>
 </html>
