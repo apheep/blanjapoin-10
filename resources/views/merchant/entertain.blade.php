@@ -14,7 +14,7 @@
   @endphp
 
   <!-- Card utama + ekstra (See All) dalam satu grid -->
-  <div class="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch" data-voucher-container="true">
     {{-- 2 card utama --}}
     @forelse($visibleKeywords as $keyword)
       @php
@@ -27,6 +27,7 @@
       <article
         data-voucher-card="true"
         data-search-name="{{ $searchName }}"
+        data-point="{{ (int) $keyword->redeem }}"
         data-search-location="{{ $searchLocation }}"
         onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')"
         class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md
@@ -65,7 +66,7 @@
             <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100">
               <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
                 <span class="font-medium">Stock:</span>
-                <span class="font-semibold text-neutral-800">{{ $keyword->stok }}</span>
+                <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
               </div>
 
               @if($keyword->end_date)
@@ -119,7 +120,7 @@
         </div>
 
         <div class="hidden lg:flex flex-col md:flex-row items-start md:items-center justify-between px-3 md:px-4 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600 gap-1.5 md:gap-0">
-          <span class="font-medium">Stock: {{ $keyword->stok }}</span>
+          <span class="font-medium">Stock: {{ $keyword->stock }}</span>
           @if($keyword->end_date)
             <span class="font-medium">
               Valid until: {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
@@ -147,6 +148,7 @@
           id="extraEntertainCard"
           data-voucher-card="true"
           data-search-name="{{ $searchName }}"
+          data-point="{{ (int) $keyword->redeem }}"
           data-search-location="{{ $searchLocation }}"
           onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')"
           class="mt-2 group overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md
@@ -186,7 +188,7 @@
               <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100">
                 <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
                   <span class="font-medium">Stock:</span>
-                  <span class="font-semibold text-neutral-800">{{ $keyword->stok }}</span>
+                  <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
                 </div>
 
                 @if($keyword->end_date)
@@ -240,7 +242,7 @@
           </div>
 
           <div class="hidden lg:flex flex-col md:flex-row items-start md:items-center justify-between px-3 md:px-4 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600 gap-1.5 md:gap-0">
-            <span class="font-medium">Stock: {{ $keyword->stok }}</span>
+            <span class="font-medium">Stock: {{ $keyword->stock }}</span>
             @if($keyword->end_date)
               <span class="font-medium">
                 Valid until: {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}

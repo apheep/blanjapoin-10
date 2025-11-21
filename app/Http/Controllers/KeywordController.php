@@ -151,6 +151,37 @@ class KeywordController extends Controller
         return view('admin', compact('keywords'));
     }
 
+    public function publicSearch(Request $request)
+    {
+        $searchTerm = trim($request->get('q', ''));
+
+        $searchResults = Keyword::with('merchant')
+            ->where('status', 'approve')
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $query->where(function ($subQuery) use ($searchTerm) {
+                    $subQuery->where('nama_produk', 'like', "%{$searchTerm}%")
+                        ->orWhere('skb', 'like', "%{$searchTerm}%")
+                        ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
+                            $merchantQuery->where('nama_merchant', 'like', "%{$searchTerm}%")
+                                ->orWhere('kategori', 'like', "%{$searchTerm}%")
+                                ->orWhere('daerah', 'like', "%{$searchTerm}%");
+                        });
+                });
+            }, function ($query) {
+                $query->latest();
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        $totalPoint = optional($request->user())->point ?? 0;
+
+        return view('merchant.search', [
+            'searchResults' => $searchResults,
+            'searchTerm' => $searchTerm,
+            'totalPoint' => $totalPoint,
+        ]);
+    }
+
     public function approve($id)
     {
         try {
