@@ -624,6 +624,8 @@
             </div>
         </main>
         
+
+        <script>
         // Search functionality for Merchant table - AJAX search across all pages
         document.getElementById('merchantSearch').addEventListener('keyup', function(e) {
             clearTimeout(searchTimeout);
@@ -814,6 +816,8 @@
         @include('partials.edit-modal-merchant')
         @include('partials.edit-modal-merchandise')
         @include('partials.edit-modal-keyword')
-    </div>
+        @include('partials.delete-confirmation-modal')
+        @include('partials.approve-confirmation-modal')
+
 </body>
 </html>
