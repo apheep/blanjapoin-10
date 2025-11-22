@@ -789,19 +789,27 @@
    const locations = ['All', ...serverLocations];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');
-   const voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
-   const voucherContainerMap = new Map();
+   const voucherSections = new Map();
+   let voucherCards = [];
 
-   voucherCards.forEach(card => {
-    const container = card.closest('[data-voucher-container="true"]');
-    if (!container) {
-     return;
-    }
-    if (!voucherContainerMap.has(container)) {
-     voucherContainerMap.set(container, []);
-    }
-    voucherContainerMap.get(container).push(card);
-   });
+   function refreshVoucherCards() {
+    voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
+   }
+
+   function registerVoucherSections() {
+    voucherSections.clear();
+    let fallbackIndex = 0;
+    document.querySelectorAll('[data-voucher-container="true"]').forEach(container => {
+     const sectionKey = container.dataset.voucherSection || `container-${fallbackIndex++}`;
+     if (!voucherSections.has(sectionKey)) {
+      voucherSections.set(sectionKey, []);
+     }
+     voucherSections.get(sectionKey).push({
+      element: container,
+      slotCount: container.querySelectorAll('[data-voucher-card="true"]').length
+     });
+    });
+   }
 
    let currentLocationFilter = '';
    let currentPointSort = 'Lowest';
@@ -849,45 +857,38 @@
 
    function applyPointSort(order = 'Lowest') {
     currentPointSort = order === 'Highest' ? 'Highest' : 'Lowest';
+    if (voucherSections.size === 0) {
+     registerVoucherSections();
+    }
 
-    // Re-initialize voucherContainerMap to include all current cards
-    const allVoucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
-    const containerMap = new Map();
+    voucherSections.forEach(containerInfos => {
+     const cards = [];
+     containerInfos.forEach(info => {
+      cards.push(...info.element.querySelectorAll('[data-voucher-card="true"]'));
+     });
 
-    allVoucherCards.forEach(card => {
-     const container = card.closest('[data-voucher-container="true"]');
-     if (!container) {
+     if (cards.length === 0) {
       return;
      }
-     if (!containerMap.has(container)) {
-      containerMap.set(container, []);
-     }
-     containerMap.get(container).push(card);
-    });
 
-    // Update the global voucherContainerMap
-    voucherContainerMap.clear();
-    containerMap.forEach((cards, container) => {
-     voucherContainerMap.set(container, cards);
-    });
-
-    // Sort and reorder cards in each container
-    voucherContainerMap.forEach((cards, container) => {
-     const sortedCards = [...cards].sort((a, b) => {
+     const sortedCards = cards.slice().sort((a, b) => {
       const aPoint = parseFloat(cardPointValue(a)) || 0;
       const bPoint = parseFloat(cardPointValue(b)) || 0;
       return currentPointSort === 'Lowest' ? aPoint - bPoint : bPoint - aPoint;
      });
 
-     // Remove all cards from container
-     cards.forEach(card => card.remove());
-     
-     // Append sorted cards back to container
-     sortedCards.forEach(card => container.appendChild(card));
-     
-     // Update the map with sorted cards
-     voucherContainerMap.set(container, sortedCards);
+     let cursor = 0;
+     containerInfos.forEach(info => {
+      const slice = sortedCards.slice(cursor, cursor + info.slotCount);
+      cursor += info.slotCount;
+
+      info.element.innerHTML = '';
+      slice.forEach(card => info.element.appendChild(card));
+     });
     });
+
+    refreshVoucherCards();
+    applyVoucherFilters();
    }
 
    function cardPointValue(card) {
@@ -1165,22 +1166,8 @@
 
    // Initialize filters and sorting after DOM is ready
    function initializeFiltersAndSorting() {
-    // Re-initialize voucherContainerMap to ensure all cards are captured
-    const allVoucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
-    voucherContainerMap.clear();
-    
-    allVoucherCards.forEach(card => {
-     const container = card.closest('[data-voucher-container="true"]');
-     if (!container) {
-      return;
-     }
-     if (!voucherContainerMap.has(container)) {
-      voucherContainerMap.set(container, []);
-     }
-     voucherContainerMap.get(container).push(card);
-    });
-    
-    applyVoucherFilters();
+    refreshVoucherCards();
+    registerVoucherSections();
     applyPointSort(currentPointSort);
    }
    
