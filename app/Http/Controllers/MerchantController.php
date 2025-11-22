@@ -18,6 +18,20 @@ class MerchantController extends Controller
         return view('admin', compact('merchants', 'keywords', 'allMerchants'));
     }
 
+    public function show(Merchant $merchant)
+    {
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('id')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('merchant-detail', [
+            'merchant' => $merchant,
+            'keywords' => $keywords,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

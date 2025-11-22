@@ -565,6 +565,7 @@
                             </div>
                         </div>
                     </div>
+                    
                 </div>
 
                 @include('partials.table-keyword')
@@ -623,6 +624,190 @@
             </div>
         </main>
         
+        // Search functionality for Merchant table - AJAX search across all pages
+        document.getElementById('merchantSearch').addEventListener('keyup', function(e) {
+            clearTimeout(searchTimeout);
+            const searchTerm = e.target.value.trim();
+            
+            // If search is empty, reload the page to show all merchants
+            if (searchTerm === '') {
+                location.reload();
+                return;
+            }
+            
+            // Debounce the search request
+            searchTimeout = setTimeout(() => {
+                fetch(`/merchants/search?q=${encodeURIComponent(searchTerm)}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    updateMerchantTable(data);
+                })
+                .catch(error => console.error('Search error:', error));
+            }, 300);
+        });
+        
+        function updateMerchantTable(data) {
+            const merchants = data.merchants;
+            const pagination = data.pagination;
+            
+            // Update table body
+            const tableBody = document.getElementById('merchant-table-body');
+            if (tableBody) {
+                if (merchants.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
+                } else {
+                    tableBody.innerHTML = merchants.map((merchant, index) => `
+                        <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
+                            onclick="window.location='/merchants/${merchant.id}'">
+                            <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${(pagination.current_page - 1) * pagination.per_page + index + 1}</td>
+                            <td class="px-4 py-4 w-20 text-center">
+                                <div class="flex items-center justify-center h-full">
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
+                                            class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
+                                            title="Hapus">
+                                        <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.daerah}</td>
+                            <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">${merchant.nama_merchant}</td>
+                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.kategori || '-'}</td>
+                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">
+                                ${merchant.logo_merchant ? `
+                                    <a href="/storage/${merchant.logo_merchant}" 
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
+                                        <img src="/storage/${merchant.logo_merchant}" 
+                                             alt="${merchant.nama_merchant}" 
+                                             class="h-full w-full object-cover">
+                                    </a>
+                                ` : '<span class="text-gray-400">-</span>'}
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
+            
+            // Update mobile cards
+            const cardsContainer = document.getElementById('merchant-cards-container');
+            if (cardsContainer) {
+                if (merchants.length === 0) {
+                    cardsContainer.innerHTML = '<p class="text-sm text-center text-gray-500">Belum ada data merchant.</p>';
+                } else {
+                    cardsContainer.innerHTML = merchants.map((merchant, index) => `
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
+                             onclick="window.location='/merchants/${merchant.id}'">
+                            <div class="flex items-start justify-between pb-3 border-b border-gray-200">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">No</p>
+                                    <p class="text-sm font-medium text-gray-900 mt-1">${(pagination.current_page - 1) * pagination.per_page + index + 1}</p>
+                                </div>
+                                <div class="flex items-center">
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
+                                            class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
+                                            title="Hapus">
+                                        <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Daerah</p>
+                                <p class="text-sm text-gray-700 mt-1">${merchant.daerah}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Merchant</p>
+                                <p class="text-sm font-semibold text-gray-900 mt-1">${merchant.nama_merchant}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kategori</p>
+                                <p class="text-sm text-gray-700 mt-1">${merchant.kategori || '-'}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Logo Merchant</p>
+                                <div class="mt-2 flex items-center space-x-2">
+                                    ${merchant.logo_merchant ? `
+                                        <button type="button" 
+                                                onclick="event.stopPropagation(); previewMerchantLogo('/storage/${merchant.logo_merchant}', '${merchant.logo_merchant.split('/').pop()}')"
+                                                class="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
+                                            <img src="/storage/${merchant.logo_merchant}" 
+                                                 alt="${merchant.nama_merchant}" 
+                                                 class="h-full w-full object-cover">
+                                        </button>
+                                        <span class="text-sm text-gray-700 font-medium">${merchant.nama_merchant}</span>
+                                    ` : '<span class="text-sm text-gray-400">-</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+            
+            // Update pagination
+            updatePagination(pagination);
+        }
+        
+        function updatePagination(pagination) {
+            const paginationContainer = document.querySelector('.bg-white.px-4.py-4.border-t.border-gray-200');
+            if (!paginationContainer) return;
+            
+            let paginationHTML = `
+                <div class="text-sm text-gray-600">
+                    Menampilkan <span class="font-semibold">${pagination.from || 0}</span> hingga <span class="font-semibold">${pagination.to || 0}</span> dari <span class="font-semibold">${pagination.total}</span> data
+                </div>
+                <div class="flex items-center space-x-2">
+            `;
+            
+            // Previous button
+            if (pagination.current_page === 1) {
+                paginationHTML += '<button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-left"></i></button>';
+            } else {
+                paginationHTML += `<button onclick="searchPage(${pagination.current_page - 1})" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-left"></i></button>`;
+            }
+            
+            // Page numbers
+            for (let i = 1; i <= pagination.last_page; i++) {
+                if (i === pagination.current_page) {
+                    paginationHTML += `<button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">${i}</button>`;
+                } else {
+                    paginationHTML += `<button onclick="searchPage(${i})" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">${i}</button>`;
+                }
+            }
+            
+            // Next button
+            if (pagination.current_page === pagination.last_page) {
+                paginationHTML += '<button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-right"></i></button>';
+            } else {
+                paginationHTML += `<button onclick="searchPage(${pagination.current_page + 1})" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-right"></i></button>`;
+            }
+            
+            paginationHTML += '</div>';
+            paginationContainer.innerHTML = paginationHTML;
+        }
+        
+        function searchPage(page) {
+            const searchTerm = document.getElementById('merchantSearch').value.trim();
+            if (!searchTerm) return;
+            
+            fetch(`/merchants/search?q=${encodeURIComponent(searchTerm)}&page=${page}`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateMerchantTable(data);
+                window.scrollTo(0, 0);
+            })
+            .catch(error => console.error('Search error:', error));
+        }
+    </script>
         @include('partials.upload-modal-merchant')
         @include('partials.upload-modal-merchandise')
         @include('partials.upload-modal-keyword')
