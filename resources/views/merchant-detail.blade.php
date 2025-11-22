@@ -166,14 +166,17 @@
                             @if(Auth::check() && Auth::user()->can_approve == 1)
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Approve</th>
                             @endif
+                            @if(Auth::check() && Auth::user()->can_approve == 0)
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                            @endif
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA LINK</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SKB</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Periode</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Image</th>
                         </tr>
                     </thead>
@@ -222,6 +225,22 @@
                                         @endif
                                     </td>
                                 @endif
+                                @if(Auth::check() && Auth::user()->can_approve == 0)
+                                    <td id="keyword-status-{{ $keyword->id }}" class="px-4 py-4">
+                                    <span class="status-badge px-2 py-1 text-xs font-semibold rounded-full
+                                        @if($keyword->status === 'approve')
+                                            bg-green-100 text-green-800
+                                        @elseif($keyword->status === 'pending')
+                                            bg-yellow-100 text-yellow-800
+                                        @elseif($keyword->status === 'reject')
+                                            bg-red-100 text-red-800
+                                        @endif
+                                    ">
+                                        {{ ucfirst($keyword->status) }}
+                                    </span>
+                                </td>
+                                @endif
+
 
                                 <td class="px-4 py-4 text-sm text-gray-900">
                                     <div class="font-medium">{{ $keyword->merchant->nama_merchant ?? '-' }}</div>
@@ -229,6 +248,12 @@
                                 <td class="px-4 py-4 text-sm text-gray-900">
                                     <div class="font-medium">{{ $keyword->nama_produk }}</div>
                                 </td>
+                                <!-- <td class="px-4 py-4 text-sm text-gray-900">
+                                    {{ $keyword->cta_link }}
+                                </td> -->
+                                <td class="px-4 py-4 text-sm text-gray-900">
+                                    <a href="{{ $keyword->cta_link }}" target="_blank" class="text-blue-600 hover:underline">{{ $keyword->cta_link }}</a>
+                                </td>   
                                 <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->redeem ?? '-' }}</td>
                                 <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->diskon ?? '-' }}</td>
                                 <td class="px-4 py-4 text-xs text-gray-500">{{ $keyword->skb ?? '-' }}</td>
@@ -242,19 +267,6 @@
                                     @else
                                         <div>-</div>
                                     @endif
-                                </td>
-                                <td id="keyword-status-{{ $keyword->id }}" class="px-4 py-4">
-                                    <span class="status-badge px-2 py-1 text-xs font-semibold rounded-full
-                                        @if($keyword->status === 'approve')
-                                            bg-green-100 text-green-800
-                                        @elseif($keyword->status === 'pending')
-                                            bg-yellow-100 text-yellow-800
-                                        @elseif($keyword->status === 'reject')
-                                            bg-red-100 text-red-800
-                                        @endif
-                                    ">
-                                        {{ ucfirst($keyword->status) }}
-                                    </span>
                                 </td>
                                 <td class="px-4 py-4">
                                     @if($keyword->image)
