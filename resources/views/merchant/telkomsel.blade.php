@@ -14,7 +14,7 @@
  @endphp
 
  <!-- Card utama (2 pertama) -->
- <div id="telkomselCardContainer" data-voucher-container="true" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
+ <div id="telkomselCardContainer" data-voucher-container="true" data-voucher-section="telkomsel" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
   @forelse($visibleKeywords as $keyword)
   @php
    $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -120,7 +120,7 @@
  <!-- Card ekstra (See All) -->
  @if($extraKeywords->isNotEmpty())
  <div id="extraTelkomselCard" class="group max-h-0 overflow-y-hidden opacity-0 scale-y-0 origin-top transition-all duration-500 ease-in-out mt-6 md:mt-10">
-  <div data-voucher-container="true" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
+  <div data-voucher-container="true" data-voucher-section="telkomsel" data-container-type="extra" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
    @foreach($extraKeywords as $keyword)
    @php
     $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
