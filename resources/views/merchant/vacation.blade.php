@@ -14,7 +14,7 @@
  @endphp
 
  <!-- Card utama (2 pertama) -->
-<div class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
+<div data-voucher-container="true" data-voucher-section="vacation" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
  @forelse($visibleKeywords as $keyword)
   @php
    $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -23,7 +23,7 @@
    $searchName = strtolower(trim($merchantName . ' ' . $productName));
    $searchLocation = strtolower($locationName);
   @endphp
-  <article data-voucher-card="true" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:scale-[1.01] hover:border-blue-200 cursor-pointer h-full min-h-[280px]">
+  <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:scale-[1.01] hover:border-blue-200 cursor-pointer h-full min-h-[280px]">
    <!-- Mobile Layout -->
    <div class="lg:hidden flex flex-col h-full">
     <div class="relative">
@@ -52,7 +52,7 @@
      <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100">
       <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
        <span class="font-medium">Stock:</span>
-       <span class="font-semibold text-neutral-800">{{ $keyword->stok }}</span>
+       <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
       </div>
       @if($keyword->end_date)
       <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
@@ -105,7 +105,7 @@
    </div>
 
    <div class="hidden lg:flex flex-col md:flex-row items-start md:items-center justify-between px-3 md:px-4 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600 gap-1.5 md:gap-0">
-    <span class="font-medium">Stock {{ $keyword->stok }}</span>
+    <span class="font-medium">Stock {{ $keyword->stock }}</span>
     @if($keyword->end_date)
     <span class="font-medium">
      Valid until {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
@@ -123,7 +123,7 @@
  <!-- Card ekstra (See All) -->
  @if($extraKeywords->isNotEmpty())
  <div id="extraVacationCard" class="group max-h-0 overflow-y-hidden opacity-0 scale-y-0 origin-top transition-all duration-500 ease-in-out mt-6 md:mt-10">
-  <div class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
+  <div data-voucher-container="true" data-voucher-section="vacation" data-container-type="extra" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch">
    @foreach($extraKeywords as $keyword)
    @php
     $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -132,7 +132,7 @@
     $searchName = strtolower(trim($merchantName . ' ' . $productName));
     $searchLocation = strtolower($locationName);
    @endphp
-   <article data-voucher-card="true" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:scale-[1.01] hover:border-blue-200 cursor-pointer h-full min-h-[280px]">
+  <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:scale-[1.01] hover:border-blue-200 cursor-pointer h-full min-h-[280px]">
     <!-- Mobile Layout -->
     <div class="lg:hidden flex flex-col h-full">
      <div class="relative">
@@ -161,7 +161,7 @@
       <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100">
        <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
         <span class="font-medium">Stock:</span>
-        <span class="font-semibold text-neutral-800">{{ $keyword->stok }}</span>
+        <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
        </div>
        @if($keyword->end_date)
        <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
@@ -214,7 +214,7 @@
     </div>
 
     <div class="hidden lg:flex flex-col md:flex-row items-start md:items-center justify-between px-3 md:px-4 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600 gap-1.5 md:gap-0">
-     <span class="font-medium">Stock {{ $keyword->stok }}</span>
+     <span class="font-medium">Stock {{ $keyword->stock }}</span>
      @if($keyword->end_date)
      <span class="font-medium">
       Valid until {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}

@@ -9,12 +9,25 @@ use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KeywordController;
 use App\Models\Keyword;
+use App\Models\Merchant;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
     $keywords = Keyword::with('merchant')->get();
-    return view('welcome', compact('keywords'));
+    $locations = Merchant::query()
+        ->whereNotNull('daerah')
+        ->where('daerah', '!=', '')
+        ->distinct()
+        ->orderBy('daerah')
+        ->pluck('daerah');
+
+    return view('welcome', [
+        'keywords' => $keywords,
+        'locations' => $locations,
+    ]);
 })->name('home');
+
+Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchant.search');
 
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
@@ -34,7 +47,17 @@ Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
         $keywords = Keyword::with('merchant')->get();
-        return view('welcome', compact('keywords'));
+        $locations = Merchant::query()
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->distinct()
+            ->orderBy('daerah')
+            ->pluck('daerah');
+
+        return view('welcome', [
+            'keywords' => $keywords,
+            'locations' => $locations,
+        ]);
     })->name('welcome');
 
     // ======================= ADMIN / DASHBOARD =======================

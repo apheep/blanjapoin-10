@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,51 +16,162 @@
     .chip{display:inline-flex;align-items:center;gap:.4rem;border-radius:9999px;padding:.25rem .6rem;font-size:.75rem;font-weight:600}
   </style>
 </head>
+@include('partials.head')
 <body class="min-h-screen bg-white font-poppins">
-   <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
+<nav id="navbar" class="sticky top-0 z-20 bg-white/90 backdrop-blur-sm transition-shadow duration-300 w-full shadow-sm ring-1 ring-neutral-200/60">
     <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
      <div class="flex items-center justify-between">
       <div class="flex items-center gap-6">
+       <!-- Mobile hamburger -->
+       <button id="openSidebar" class="md:hidden text-gray-700 text-2xl mr-3">
+         <i class="fa-solid fa-bars"></i>
+       </button>
        <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
       </div>
 
-      <!-- Centered primary navigation -->
+      <!-- Centered primary navigation (desktop only, untouched) -->
       <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       @if(Auth::check() && Auth::user()->can_approve == 1) 
         <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Approval</a>
         <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>
        @endif
       </div>
 
-       <div class="relative">
-        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg shadow-orange-300/50 drop-shadow-lg ring-1 ring-white/30 transition-all hover:shadow-xl hover:shadow-orange-400/50 hover:drop-shadow-xl hover:scale-105 active:scale-95">
-         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 md:h-4 md:w-4 opacity-95">
-          <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
-         </svg>
-         <span class="tracking-tight">{{ Auth::user()->username }}</span>
-         <svg id="userDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3 w-3 md:h-3.5 md:w-3.5 opacity-95 transition-transform duration-300">
-          <path d="M7 10l5 5 5-5z"/>
-         </svg>
+      <div class="relative hidden md:block">
+        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg ring-1 ring-white/30 active:scale-95 transition-all">
+          <i class="fa-solid fa-user"></i>
+          <span>{{ Auth::user()->username }}</span>
+          <i id="userDropdownArrow" class="fa-solid fa-chevron-down text-xs"></i>
         </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-50 backdrop-blur-sm">
-         <div class="py-1">
-          <form method="POST" action="{{ route('logout') }}">
-           @csrf
-           <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-             <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clip-rule="evenodd" />
-            </svg>
-            <span>Logout</span>
-           </button>
-          </form>
-         </div>
+        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out backdrop-blur-sm">
+          <div class="py-1">
+            <form method="POST" action="{{ route('logout') }}">@csrf
+              <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+              </button>
+            </form>
+          </div>
         </div>
-       </div>
       </div>
      </div>
     </div>
    </nav>
+
+<!-- Mobile Sidebar -->
+<div id="mobileSidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+  <div id="sidebarPanel" class="bg-white w-72 h-full p-6 shadow-xl transform -translate-x-full transition-all">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-lg font-semibold">Menu</h2>
+      <button id="closeSidebar"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+
+    @if(Auth::check() && Auth::user()->can_approve == 1)
+      <a href="{{ route('admin') }}" class="block py-2 font-semibold text-gray-700">Home</a>
+      <a href="{{ route('user.management') }}" class="block py-2 font-semibold text-gray-700">User Management</a>
+    @endif
+
+    <hr class="my-4">
+
+    <form method="POST" action="{{ route('logout') }}">@csrf
+      <button type="submit" class="w-full text-left text-red-600 font-semibold py-2">Logout</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const openSidebar = document.getElementById('openSidebar');
+  const closeSidebar = document.getElementById('closeSidebar');
+  const mobileSidebar = document.getElementById('mobileSidebar');
+  const sidebarPanel = document.getElementById('sidebarPanel');
+
+  openSidebar?.addEventListener('click', () => {
+    mobileSidebar.classList.remove('hidden');
+    setTimeout(() => sidebarPanel.classList.remove('-translate-x-full'), 10);
+  });
+
+  closeSidebar?.addEventListener('click', () => {
+    sidebarPanel.classList.add('-translate-x-full');
+    setTimeout(() => mobileSidebar.classList.add('hidden'), 300);
+  });
+</script>
+
+<!-- Sidebar Mobile -->
+<div id="mobileSidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+  <div class="bg-white w-72 h-full p-6 shadow-xl transform -translate-x-full transition-all" id="sidebarPanel">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-lg font-semibold">Menu</h2>
+      <button id="closeSidebar"><i class="fa-solid fa-xmark text-xl"></i></button>
+    </div>
+
+    @if(Auth::check() && Auth::user()->can_approve == 1)
+      <a href="{{ route('admin') }}" class="block py-2 font-semibold text-gray-700">Home</a>
+      <a href="{{ route('user.management') }}" class="block py-2 font-semibold text-gray-700">User Management</a>
+    @endif
+
+    <hr class="my-4">
+
+    <form method="POST" action="{{ route('logout') }}"> @csrf
+      <button type="submit" class="w-full text-left text-red-600 font-semibold py-2">Logout</button>
+    </form>
+  </div>
+</div>
+<script>
+  const openSidebar = document.getElementById('openSidebar');
+  const closeSidebar = document.getElementById('closeSidebar');
+  const mobileSidebar = document.getElementById('mobileSidebar');
+  const sidebarPanel = document.getElementById('sidebarPanel');
+
+  openSidebar?.addEventListener('click', () => {
+    mobileSidebar.classList.remove('hidden');
+    setTimeout(() => sidebarPanel.classList.remove('-translate-x-full'), 10);
+  });
+
+  closeSidebar?.addEventListener('click', () => {
+    sidebarPanel.classList.add('-translate-x-full');
+    setTimeout(() => mobileSidebar.classList.add('hidden'), 300);
+  });
+</script>
+
+<!-- MOBILE SIDEBAR OVERLAY -->
+<div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden"></div>
+
+<!-- MOBILE SIDEBAR -->
+<div id="mobileSidebar" class="fixed top-0 left-0 w-64 h-full bg-white shadow-xl z-50 transform -translate-x-full transition-transform duration-300">
+  <div class="p-4 border-b flex items-center justify-between">
+    <img src="/logo.png" class="h-10" />
+    <button id="closeSidebar" class="text-gray-700 text-xl"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <div class="p-4 flex flex-col gap-4">
+    @if(Auth::check() && Auth::user()->can_approve == 1)
+      <a href="{{ route('admin') }}" class="text-base font-semibold text-gray-700">Home</a>
+      <a href="{{ route('user.management') }}" class="text-base font-semibold text-gray-700">User Management</a>
+    @endif
+
+    <!-- User button -->
+    <form method="POST" action="{{ route('logout') }}" class="pt-4 border-t">
+      @csrf
+      <button type="submit" class="flex items-center gap-3 text-red-600 font-semibold">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </form>
+  </div>
+</div>
+<script>
+// Mobile Sidebar
+const sidebar = document.getElementById('mobileSidebar');
+const overlay = document.getElementById('sidebarOverlay');
+document.getElementById('mobileMenuBtn').onclick = () => {
+  sidebar.classList.remove('-translate-x-full');
+  overlay.classList.remove('hidden');
+};
+document.getElementById('closeSidebar').onclick = closeSidebar;
+overlay.onclick = closeSidebar;
+function closeSidebar() {
+  sidebar.classList.add('-translate-x-full');
+  overlay.classList.add('hidden');
+}
+</script>
     <!-- Flash Message Container -->
     @if(session('success'))
         <div data-flash-message="{{ session('success') }}" data-flash-type="success" class="hidden"></div>
@@ -74,38 +186,64 @@
   <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 transform transition-all duration-500 opacity-0 translate-y-3">
     <div class="flex items-center justify-between gap-4 flex-wrap">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
-        <p class="text-gray-600 mt-1">Kelola role, status, dan keamanan akun admin.</p>
+        <h1 class="text-2xl md:text-3xl font-black tracking-tight text-neutral-900">User Management</h1>
       </div>
       <div class="flex items-center gap-2">
         <button id="btn-open-create" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-2 ring-orange-200/60 shadow-sm hover:shadow-md active:scale-[0.98] transition-all">
-          <i class="fa-solid fa-user-plus text-[12px]"></i> Buat Akun Baru
+          <i class="fa-solid fa-user-plus text-[12px]"></i>
         </button>
       </div>
     </div>
 
-    <!-- KPI Cards -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-      <div class="rounded-2xl border bg-white p-4 shadow-sm">
-        <div class="text-xs text-gray-500">Total User</div>
+<section class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+  <div class="rounded-2xl border bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs text-neutral-500">Total User</div>
         <div class="mt-1 text-2xl font-semibold" id="total-users">{{ $totalUsers ?? 0 }}</div>
       </div>
-      <div class="rounded-2xl border bg-white p-4 shadow-sm">
-        <div class="text-xs text-gray-500">Admin Aktif</div>
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-amber-600">
+        <i class="fa-solid fa-users"></i>
+      </div>
+    </div>
+  </div>
+  <div class="rounded-2xl border bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs text-neutral-500">Admin Aktif</div>
         <div class="mt-1 text-2xl font-semibold" id="admin-active">{{ $adminActiveCount ?? 0 }}</div>
       </div>
-      <div class="rounded-2xl border bg-white p-4 shadow-sm">
-        <div class="text-xs text-gray-500">User Aktif</div>
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-100 to-violet-100 flex items-center justify-center text-purple-600">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+    </div>
+  </div>
+  <div class="rounded-2xl border bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs text-neutral-500">User Aktif</div>
         <div class="mt-1 text-2xl font-semibold" id="user-active">{{ $userActiveCount ?? 0 }}</div>
       </div>
-      <div class="rounded-2xl border bg-white p-4 shadow-sm">
-        <div class="text-xs text-gray-500">Total Admin</div>
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center text-emerald-600">
+        <i class="fa-solid fa-user-check"></i>
+      </div>
+    </div>
+  </div>
+  <div class="rounded-2xl border bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs text-neutral-500">Total Admin</div>
         <div class="mt-1 text-2xl font-semibold" id="total-admin">{{ $adminCount ?? 0 }}</div>
       </div>
-    </section>
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-100 to-orange-100 flex items-center justify-center text-rose-600">
+        <i class="fa-solid fa-user-tie"></i>
+      </div>
+    </div>
+  </div>
+</section>
 
     <!-- Toolbar (search with button) -->
-    <section class="mt-6 bg-white border rounded-2xl shadow-sm p-4">
+    <section class="mt-6 bg-white border rounded-2xl shadow p-4">
       <div class="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
         <div class="flex flex-1 gap-2">
           <div class="relative flex-1 min-w-[220px]">
@@ -115,12 +253,12 @@
               id="search-input"
               placeholder="Cari username…"
               value="{{ request('search') ?? '' }}"
-              class="w-full pl-9 pr-3 py-2.5 rounded-xl border focus:ring-orange-400 focus:outline-none focus:ring-2"
+              class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
           </div>
           <button
             id="search-btn"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-2 ring-orange-200/60 shadow-sm hover:shadow-md active:scale-[0.97] transition-all"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-[0.97] transition-all"
           >
             <i class="fa-solid fa-search text-[12px]"></i>
             <span>Cari</span>
@@ -140,7 +278,7 @@
     </div>
 
     <!-- Table -->
-    <section class="mt-4 bg-white border rounded-2xl shadow overflow-hidden">
+    <section class="mt-4 bg-white border rounded-2xl shadow-xl overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full table-auto border-collapse align-middle">
           <colgroup>
@@ -172,11 +310,10 @@
                 $rowNum = $isPaginator ? ($users->firstItem() + $loop->index) : $loop->iteration;
                 $isCurrentUser = $user->id === Auth::id();
               @endphp
-              <tr class="hover:bg-gray-50" data-user-id="{{ $user->id }}">
+              <tr class="hover:bg-neutral-50 transition-colors" data-user-id="{{ $user->id }}">
                 <td class="px-2 py-2 text-left text-gray-800 font-semibold">{{ $rowNum }}</td>
                 <td class="px-3 py-2">
                   <div class="font-medium text-gray-900">{{ $user->username }}</div>
-                  <div class="text-xs text-gray-500">Dibuat {{ \Carbon\Carbon::parse($user->created_at)->translatedFormat('d F Y') }}</div>
                 </td>
                 <td class="px-3 py-2">
                   <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
@@ -194,7 +331,7 @@
                     @if($isCurrentUser)
                       <span class="text-xs text-gray-500">Your Account</span>
                     @else
-                      <button onclick="deleteUser({{ $user->id }})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border text-red-600 hover:bg-red-50"><i class="fas fa-trash text-sm"></i></button>
+                      <button onclick="deleteUser({{ $user->id }})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 bg-white text-red-600 ring-1 ring-red-100 hover:bg-red-50 hover:shadow-sm active:scale-95 transition-all"><i class="fas fa-trash text-sm"></i></button>
                     @endif
                   </div>
                 </td>
@@ -217,8 +354,62 @@
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="text-sm text-gray-700">Showing <span class="font-semibold" id="showing-from">{{ $showFrom }}</span> to <span class="font-semibold" id="showing-to">{{ $showTo }}</span> of <span class="font-semibold" id="showing-total">{{ $showTotal }}</span> users</div>
           <nav class="flex items-center gap-1" aria-label="Pagination" id="pagination">
-            @if($isPaginator)
-              {!! $users->links('vendor.pagination.tailwind') !!}
+            @if($isPaginator && $users->hasPages())
+              {{-- Previous Page Link --}}
+              @if ($users->onFirstPage())
+                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+              @else
+                <a href="{{ $users->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <i class="fas fa-chevron-left"></i>
+                </a>
+              @endif
+
+              {{-- Pagination Elements --}}
+              @php
+                $currentPage = $users->currentPage();
+                $lastPage = $users->lastPage();
+                $startPage = max(1, $currentPage - 2);
+                $endPage = min($lastPage, $currentPage + 2);
+              @endphp
+
+              @if($startPage > 1)
+                <a href="{{ $users->url(1) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</a>
+                @if($startPage > 2)
+                  <span class="px-2 text-gray-400">...</span>
+                @endif
+              @endif
+
+              @for ($page = $startPage; $page <= $endPage; $page++)
+                @if ($page == $currentPage)
+                  <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                    {{ $page }}
+                  </button>
+                @else
+                  <a href="{{ $users->url($page) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    {{ $page }}
+                  </a>
+                @endif
+              @endfor
+
+              @if($endPage < $lastPage)
+                @if($endPage < $lastPage - 1)
+                  <span class="px-2 text-gray-400">...</span>
+                @endif
+                <a href="{{ $users->url($lastPage) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $lastPage }}</a>
+              @endif
+
+              {{-- Next Page Link --}}
+              @if ($users->hasMorePages())
+                <a href="{{ $users->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <i class="fas fa-chevron-right"></i>
+                </a>
+              @else
+                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              @endif
             @endif
           </nav>
         </div>
@@ -228,29 +419,29 @@
 
   <!-- Modal: Create Admin -->
   <div id="modal-create" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/50"></div>
-    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-      <div class="flex items-center justify-between px-6 py-4 border-b">
-        <h3 class="text-lg font-semibold">Buat Akun Baru</h3>
+    <div id="modal-create-overlay" class="fixed inset-0 bg-black/50 opacity-0 transition-opacity duration-300"></div>
+  <div id="modal-create-panel" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden opacity-0 scale-95 translate-y-4 transition-all duration-300">
+      <div class="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+        <h3 class="text-lg font-semibold text-neutral-900">Buat Akun Baru</h3>
         <button id="btn-close-create" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div class="p-6 space-y-4 overflow-y-auto">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-            <input type="text" id="create-username" class="w-full px-3 py-2 rounded-xl border focus:ring-orange-400 focus:outline-none focus:ring-2" placeholder="Username" />
+            <input type="text" id="create-username" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Username" />
             <span class="text-red-500 text-xs mt-1 hidden" id="username-error"></span>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <select id="create-role" class="w-full px-3 py-2 rounded-xl border focus:ring-orange-400 focus:outline-none focus:ring-2">
+            <select id="create-role" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
               <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" id="create-password" class="w-full px-3 py-2 rounded-xl border focus:ring-orange-400 focus:outline-none focus:ring-2" placeholder="Password" />
+            <input type="password" id="create-password" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Password" />
             <span class="text-red-500 text-xs mt-1 hidden" id="password-error"></span>
           </div>
           <div class="flex items-center gap-3 pt-4">
@@ -261,15 +452,15 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t">
-        <button class="px-4 py-2 rounded-lg border hover:bg-gray-50" id="btn-cancel-create">Batal</button>
-        <button class="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-2 ring-orange-200/60 hover:shadow-md transition-all" id="btn-save-create">Simpan</button>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t bg-white">
+        <button class="px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" id="btn-cancel-create">Batal</button>
+        <button class="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-95 transition-all" id="btn-save-create">Simpan</button>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm opacity-0 invisible transition-all duration-300 z-[9999]">
+  <div id="toast" class="fixed bottom-4 right-4 bg-white rounded-xl border border-neutral-200 shadow-lg ring-1 ring-white/30 p-4 max-w-sm opacity-0 invisible transition-all duration-300 z-[9999]">
     <div class="flex items-center gap-3">
       <i class="fa-solid fa-check-circle text-green-500 text-xl"></i>
       <span id="toast-message"></span>
@@ -321,14 +512,14 @@
   <!-- Confirmation Modal -->
   <div id="modal-confirm" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/50"></div>
-    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
       <div class="p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-2" id="confirm-title">Konfirmasi</h3>
         <p class="text-gray-600 text-sm" id="confirm-message"></p>
       </div>
-      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t">
-        <button class="px-4 py-2 rounded-lg border hover:bg-gray-50" id="btn-confirm-cancel">Batal</button>
-        <button class="px-4 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors" id="btn-confirm-ok">Hapus</button>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t bg-white">
+        <button class="px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" id="btn-confirm-cancel">Batal</button>
+        <button class="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-red-600 to-orange-500 ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-95 transition-all" id="btn-confirm-ok">Hapus</button>
       </div>
     </div>
   </div>
@@ -774,16 +965,39 @@
 
     // Modal helpers
     function openCreateModal() {
-      document.getElementById('modal-create').classList.remove('hidden');
-      document.getElementById('modal-create').classList.add('flex');
+      const modal = document.getElementById('modal-create');
+      const overlay = document.getElementById('modal-create-overlay');
+      const panel = document.getElementById('modal-create-panel');
+
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
       document.body.style.overflow = 'hidden';
       clearCreateForm();
+
+      requestAnimationFrame(() => {
+        overlay?.classList.remove('opacity-0');
+        overlay?.classList.add('opacity-100');
+        panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+        panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+      });
     }
     function closeCreateModal() {
-      document.getElementById('modal-create').classList.add('hidden');
-      document.getElementById('modal-create').classList.remove('flex');
-      document.body.style.overflow = '';
-      clearCreateForm();
+      const modal = document.getElementById('modal-create');
+      const overlay = document.getElementById('modal-create-overlay');
+      const panel = document.getElementById('modal-create-panel');
+
+      overlay?.classList.add('opacity-0');
+      overlay?.classList.remove('opacity-100');
+      panel?.classList.add('opacity-0', 'scale-95', 'translate-y-4');
+      panel?.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+
+      setTimeout(() => {
+        modal?.classList.add('hidden');
+        modal?.classList.remove('flex');
+        document.body.style.overflow = '';
+        clearCreateForm();
+      }, 300);
     }
     function openConfirmModal() {
       document.getElementById('modal-confirm').classList.remove('hidden');

@@ -12,18 +12,31 @@ class UserController extends Controller
     /**
      * Display a listing of all users with statistics
      */
-    public function index()
+    public function index(Request $request)
     {
         // Only admin with can_approve = 1 can access
         if (!Auth::check() || !Auth::user()->can_approve) {
             return redirect()->route('home')->with('error', 'Unauthorized access');
         }
 
-        $users = User::all();
-        $totalUsers = $users->count();
-        $adminCount = $users->where('role', 'admin')->count();
-        $adminActiveCount = $users->where('role', 'admin')->where('can_approve', 1)->count();
-        $userActiveCount = $users->where('role', 'user')->count();
+        // Get all users for KPI calculations (unfiltered)
+        $allUsers = User::all();
+        $totalUsers = $allUsers->count();
+        $adminCount = $allUsers->where('role', 'admin')->count();
+        $adminActiveCount = $allUsers->where('role', 'admin')->where('can_approve', 1)->count();
+        $userActiveCount = $allUsers->where('role', 'user')->count();
+
+        // Build query for filtered/paginated users
+        $query = User::query();
+
+        // Search by username
+        if ($request->has('search') && !empty($request->search)) {
+            $query->where('username', 'like', '%' . $request->search . '%');
+        }
+
+        // Pagination
+        $perPage = $request->get('per_page', 15);
+        $users = $query->orderBy('id', 'desc')->paginate($perPage)->appends($request->query());
 
         return view('usermng', compact('users', 'totalUsers', 'adminCount', 'adminActiveCount', 'userActiveCount'));
     }
