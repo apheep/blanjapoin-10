@@ -6,6 +6,7 @@ use App\Models\Keyword;
 use App\Models\Merchant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class KeywordController extends Controller
 {
@@ -86,6 +87,14 @@ class KeywordController extends Controller
                     'message' => 'Keyword berhasil ditambahkan!',
                     'keyword' => $keyword
                 ], 201);
+            }
+
+            $redirect = $request->input('redirect_to');
+            if ($redirect) {
+                return redirect()->to($redirect)->with('success', 'Keyword berhasil ditambahkan!');
+            }
+            if ($request->boolean('stay_on_detail')) {
+                return redirect()->back()->with('success', 'Keyword berhasil ditambahkan!');
             }
 
             return redirect()->route('keywords.index')->with('success', 'Keyword berhasil ditambahkan!');
@@ -178,7 +187,19 @@ class KeywordController extends Controller
                 ], 200);
             }
 
-            return redirect()->route('keywords.index')->with('success', 'Keyword berhasil diperbarui!');
+            $redirect = $request->input('redirect_to');
+            if ($redirect) {
+                return redirect()->to($redirect)->with('success', 'Keyword berhasil diperbarui!');
+            }
+            if ($request->boolean('stay_on_detail')) {
+                return redirect()->back()->with('success', 'Keyword berhasil diperbarui!');
+            }
+
+            return redirect()->back()->with('success', 'Keyword berhasil diperbarui!');
+        } catch (ValidationException $e) {
+            // Tangani error validasi agar modal menampilkan pesan yang lebih spesifik
+            $message = $e->validator ? $e->validator->errors()->first() : 'Data tidak valid.';
+            return back()->withErrors(['error' => $message])->withInput();
         } catch (\Exception $e) {
             // Log error untuk debugging
             \Log::error('Error updating keyword: ' . $e->getMessage());
@@ -256,6 +277,25 @@ class KeywordController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyetujui keyword'
+            ], 500);
+        }
+    }
+
+    public function reject($id)
+    {
+        try {
+            $keyword = Keyword::findOrFail($id);
+            $keyword->update(['status' => 'reject']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Keyword berhasil ditolak',
+                'keyword' => $keyword
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menolak keyword'
             ], 500);
         }
     }

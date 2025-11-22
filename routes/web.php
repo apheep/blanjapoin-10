@@ -45,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Resource CRUD merchant (index sudah dipakai di atas)
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
+    Route::get('/merchants/{merchant}', [MerchantController::class, 'show'])->name('merchants.show');
 
     // Keywords routes
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
@@ -52,6 +53,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/keywords/{id}', [KeywordController::class, 'update'])->name('keywords.update');
     Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
+    Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
 
     // Manajemen user
