@@ -27,7 +27,7 @@
 
             <tbody class="bg-white divide-y divide-gray-200" id="keyword-table-body">
                 @forelse($keywordPaginator as $keyword)
-                    <tr class="hover:bg-gray-50 transition-colors keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}">
+                    <tr id="keyword-row-{{ $keyword->id }}" class="hover:bg-gray-50 transition-colors keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}" data-status="{{ $keyword->status }}">
 
                         {{-- No --}}
                         <td class="px-4 py-4 text-sm font-medium text-gray-900">
@@ -55,7 +55,7 @@
 
                         {{-- Approve Button (Desktop) --}}
                         @if(Auth::check() && Auth::user()->can_approve == 1)
-                            <td class="px-4 py-4">
+                            <td id="keyword-action-{{ $keyword->id }}" class="px-4 py-4">
                                 @if($keyword->status === 'approve')
                                     <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
                                         <i class="fas fa-check-circle text-green-600"></i>
@@ -87,7 +87,7 @@
                         <td class="px-4 py-4 text-xs text-gray-500">{{ $keyword->skb ?? '-' }}</td>
 
                         {{-- Stock --}}
-                        <td class="px-4 py-4">
+                        <td id="keyword-status-{{ $keyword->id }}" class="px-4 py-4">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
                         </td>
 
@@ -188,7 +188,7 @@
 {{-- MOBILE VERSION --}}
 <div class="md:hidden space-y-3" id="keyword-cards-container">
     @forelse($keywordPaginator as $keyword)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}">
+        <div id="keyword-card-{{ $keyword->id }}" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}" data-status="{{ $keyword->status }}">
             {{-- Header dengan No dan Actions (EDIT & DELETE) --}}
             <div class="flex items-start justify-between pb-3 border-b border-gray-200">
                 <div>
@@ -264,7 +264,7 @@
             </div>
 
             {{-- Status --}}
-            <div>
+            <div id="keyword-status-mobile-{{ $keyword->id }}">
                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p>
                 <div class="mt-1">
                     <span class="px-2 py-1 text-xs font-semibold rounded-full
@@ -283,7 +283,7 @@
 
             {{-- Approve Button (Mobile) --}}
             @if(Auth::check() && Auth::user()->can_approve == 1)
-                <div>
+                <div id="keyword-action-mobile-{{ $keyword->id }}">
                     <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Action</p>
                     @if($keyword->status === 'approve')
                         <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">

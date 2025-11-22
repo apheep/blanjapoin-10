@@ -11,6 +11,8 @@
         
         <form id="formUploadKeyword" method="POST" action="{{ route('keywords.store') }}" enctype="multipart/form-data" class="flex-1 overflow-y-auto">
             @csrf
+            <input type="hidden" name="redirect_to" id="keywordRedirectUpload">
+            <input type="hidden" name="stay_on_detail" id="keywordStayOnDetailUpload">
             <div class="p-4 md:p-6 space-y-4">
                 <div class="">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-6 md:gap-y-3">
@@ -143,9 +145,61 @@ function removeKeywordImage(index) {
     }
 }
 
+
+// Lock merchant dropdown when page is scoped to a specific merchant (e.g. from detail view)
+function applyFixedMerchantContext() {
+    const merchantSelect = document.getElementById('merchantSelect');
+    const productNameInput = document.getElementById('productName');
+    const redirectInput = document.getElementById('keywordRedirectUpload');
+    const stayFlagInput = document.getElementById('keywordStayOnDetailUpload');
+    if (!merchantSelect) return;
+
+    const hasFixedMerchant = Boolean(window.fixedMerchantId);
+    const existingHidden = document.getElementById('lockedMerchantKey');
+    if (hasFixedMerchant) {
+        merchantSelect.value = window.fixedMerchantId;
+        merchantSelect.disabled = true;
+        merchantSelect.classList.add('bg-gray-100', 'cursor-not-allowed', 'text-gray-600');
+
+        let hiddenInput = existingHidden;
+        if (!hiddenInput) {
+            hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = 'lockedMerchantKey';
+            hiddenInput.name = 'merchant_key';
+            merchantSelect.parentNode.appendChild(hiddenInput);
+        }
+        hiddenInput.value = window.fixedMerchantId;
+
+        const selectedOption = merchantSelect.options[merchantSelect.selectedIndex];
+        if (productNameInput && !productNameInput.value) {
+            productNameInput.value = (selectedOption && selectedOption.text) || window.fixedMerchantName || '';
+        }
+        if (redirectInput && window.detailRedirectUrl) {
+            redirectInput.value = window.detailRedirectUrl;
+        }
+        if (stayFlagInput) {
+            stayFlagInput.value = '1';
+        }
+    } else {
+        merchantSelect.disabled = false;
+        merchantSelect.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-600');
+        if (existingHidden) {
+            existingHidden.remove();
+        }
+        if (redirectInput) {
+            redirectInput.value = '';
+        }
+        if (stayFlagInput) {
+            stayFlagInput.value = '';
+        }
+    }
+}
+
 function openUploadKeyword() {
     const modal = document.getElementById('uploadModalKeyword');
     if (!modal) return;
+    applyFixedMerchantContext();
     const modalContent = modal.querySelector('div.relative');
     const backdrop = modal.querySelector('div.fixed');
     modal.classList.remove('hidden');
@@ -170,6 +224,7 @@ function closeUploadKeyword() {
         document.body.style.overflow = '';
         const form = document.getElementById('formUploadKeyword');
         if (form) form.reset();
+        applyFixedMerchantContext();
         formElements.forEach(el => { el.style.transform = 'translateY(10px)'; el.style.opacity = '0'; });
         if (modalContent) { modalContent.style.transform = 'scale(0.95)'; modalContent.style.opacity = '0'; }
         if (backdrop) backdrop.style.opacity = '0';

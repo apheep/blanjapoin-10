@@ -20,12 +20,10 @@
     <div class="text-sm font-semibold text-neutral-600">Loading Please wait...</div>
    </div>
   </div>
-   <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
+   <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full">
     <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
-     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-      </div>
+     <div class="flex items-center justify-center">
+      <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
      </div>
     </div>
    </nav>
@@ -146,7 +144,7 @@
      </div>
     </section>
 
-    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 100;">
+    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
      <!-- Mobile Version -->
      <div class="md:hidden flex items-center gap-2">
       <div class="flex-1 rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
@@ -174,7 +172,7 @@
      @php
       $locationList = collect($locations ?? [])->filter()->values();
      @endphp
-     <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl" style="overflow: visible !important; position: relative; z-index: 100;">
+     <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl" style="overflow: visible !important; position: relative; z-index: 10;">
       <div class="flex-1 rounded-lg md:rounded-xl bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
        <div class="flex items-center gap-2 text-neutral-500">
         <span class="text-base md:text-lg">🔍</span>
@@ -190,14 +188,14 @@
        </div>
        <div id="locationDropdown" class="absolute left-0 right-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-56 overflow-auto hidden backdrop-blur-sm"></div>
       </div>
-     <div class="relative z-[200]" style="z-index: 200 !important; position: relative; overflow: visible !important;">
-      <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px] relative z-[201]" style="z-index: 201 !important; position: relative;">
+     <div class="relative z-10" style="z-index: 10 !important; position: relative; overflow: visible !important;">
+      <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px] relative z-10" style="z-index: 10 !important; position: relative;">
        <span id="sortSelectedText">According To Your Point</span>
         <svg id="sortDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-neutral-500 transition-transform duration-300">
          <path d="M7 10l5 5 5-5z"/>
         </svg>
        </button>
-       <div id="sortDropdown" class="absolute left-0 right-0 mt-1 w-full rounded-lg md:rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top transition-all duration-300 ease-out z-[9999] backdrop-blur-sm pointer-events-none" style="z-index: 9999 !important; position: absolute !important;">
+       <div id="sortDropdown" class="absolute left-0 right-0 mt-1 w-full rounded-lg md:rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top transition-all duration-300 ease-out z-[60] backdrop-blur-sm pointer-events-none" style="z-index: 60 !important; position: absolute !important;">
         <div class="py-1">
          <button onclick="selectSortOption('Lowest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative z-10">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-green-500 pointer-events-none">
@@ -205,7 +203,7 @@
           </svg>
           <span class="pointer-events-none">Lowest</span>
          </button>
-         <button type="button" onclick="selectSortOption('Highest'); return false;" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative" style="pointer-events: auto !important; position: relative; z-index: 9999 !important;">
+         <button type="button" onclick="selectSortOption('Highest'); return false;" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative" style="pointer-events: auto !important; position: relative; z-index: 60 !important;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-red-500 pointer-events-none" style="pointer-events: none;">
            <path d="M7 10l5 5 5-5z"/>
           </svg>
@@ -698,7 +696,7 @@
      dropdown.classList.remove('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
      
      // Force visibility with inline styles (before adding visible classes)
-     dropdown.style.zIndex = '9999';
+     dropdown.style.zIndex = '60';
      dropdown.style.display = 'block';
      dropdown.style.visibility = 'visible';
      dropdown.style.opacity = '1';

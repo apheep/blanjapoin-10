@@ -16,7 +16,8 @@
 
             <tbody class="bg-white divide-y divide-gray-200" id="merchant-table-body">
                 @forelse($merchants as $merchant)
-                    <tr class="hover:bg-gray-50 transition-colors merchant-row" data-category="{{ $merchant->kategori ?? 'All' }}">
+                    <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="{{ $merchant->kategori ?? 'All' }}"
+                        onclick="window.location='{{ route('merchants.show', $merchant->id) }}'">
 
                         {{-- No --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">
@@ -27,7 +28,7 @@
                         <td class="px-4 py-4 w-20 text-center">
                             <div class="flex items-center justify-center h-full">
                                 <button type="button"
-                                        onclick="showDeleteConfirmation('Merchant', '{{ $merchant->nama_merchant }}', {{ $merchant->id }})"
+                                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '{{ $merchant->nama_merchant }}', {{ $merchant->id }})"
                                         class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
                                         title="Hapus">
                                     <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
@@ -122,7 +123,8 @@
 <!-- ======================= MOBILE / CARD VIEW (DINAMIS) ======================= -->
 <div class="md:hidden space-y-3" id="merchant-cards-container">
     @forelse($merchants as $merchant)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row" data-category="{{ $merchant->kategori ?? 'All' }}">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row cursor-pointer" data-category="{{ $merchant->kategori ?? 'All' }}"
+             onclick="window.location='{{ route('merchants.show', $merchant->id) }}'">
             {{-- Header dengan No dan Actions --}}
             <div class="flex items-start justify-between pb-3 border-b border-gray-200">
                 <div>
@@ -131,7 +133,7 @@
                 </div>
                 <div class="flex items-center">
                     <button type="button"
-                            onclick="showDeleteConfirmation('Merchant', '{{ $merchant->nama_merchant }}', {{ $merchant->id }})"
+                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '{{ $merchant->nama_merchant }}', {{ $merchant->id }})"
                             class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
                             title="Hapus">
                         <i class="fas fa-trash text-red-600 text-lg leading-none"></i>

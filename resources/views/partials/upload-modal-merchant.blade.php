@@ -70,20 +70,20 @@
                                     class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full z-50"
                                 >
                                     <div class="py-1 text-sm">
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('F&B')">
-                                            F&B
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Makanan')">
+                                            Makanan
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Entertain')">
-                                            Entertain
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Hiburan')">
+                                            Hiburan
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Vacation')">
-                                            Vacation
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Liburan')">
+                                            Liburan
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Shopping')">
-                                            Shopping
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Belanja')">
+                                            Belanja
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Beauty & Care')">
-                                            Beauty & Care
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Kecantikan')">
+                                            Kecantikan
                                         </button>
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Telkomsel Packet')">
                                             Telkomsel Packet
@@ -318,17 +318,17 @@ function selectMerchantKategori(value) {
     if (btn) {
         btn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border transition-all duration-300';
 
-        if (value === 'F&B') {
+        if (value === 'Makanan') {
             btn.classList.add('border-orange-300', 'text-orange-800', 'bg-gradient-to-r', 'from-orange-100', 'to-red-100');
-        } else if (value === 'Entertain') {
+        } else if (value === 'Hiburan') {
             btn.classList.add('border-purple-300', 'text-purple-800', 'bg-gradient-to-r', 'from-purple-100', 'to-pink-100');
-        } else if (value === 'Vacation') {
+        } else if (value === 'Liburan') {
             btn.classList.add('border-blue-300', 'text-blue-800', 'bg-gradient-to-r', 'from-blue-100', 'to-cyan-100');
-        } else if (value === 'Shopping') {
+        } else if (value === 'Belanja') {
             btn.classList.add('border-green-300', 'text-green-800', 'bg-gradient-to-r', 'from-green-100', 'to-emerald-100');
-        } else if (value === 'Beauty & Care') {
+        } else if (value === 'Kecantikan & Perawatan') {
             btn.classList.add('border-pink-300', 'text-pink-800', 'bg-gradient-to-r', 'from-pink-100', 'to-rose-100');
-        } else if (value === 'Telkomsel Packet') {
+        } else if (value === 'Paket Telkomsel') {
             btn.classList.add('border-indigo-300', 'text-indigo-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100');
         } else if (value === 'Merchandise') {
             btn.classList.add('border-indigo-300', 'text-red-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100');

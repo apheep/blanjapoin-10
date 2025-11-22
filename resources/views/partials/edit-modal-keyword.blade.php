@@ -12,6 +12,8 @@
         <form id="formEditKeyword" method="POST" enctype="multipart/form-data" class="flex-1 overflow-y-auto">
             @csrf
             @method('PUT')
+            <input type="hidden" name="redirect_to" id="keywordRedirectEdit">
+            <input type="hidden" name="stay_on_detail" id="keywordStayOnDetailEdit">
             <div class="p-4 md:p-6 space-y-4">
                 <div class="">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-6 md:gap-y-3">
@@ -108,6 +110,8 @@
     </div>
 </div>
 
+@include('partials.edit-modal-validation')
+
 <script>
 let currentEditKeywordId = null;
 
@@ -141,9 +145,19 @@ function openEditKeyword(id, keywordData) {
     const modal = document.getElementById('editModalKeyword');
     const modalContent = modal.querySelector('.relative');
     const form = document.getElementById('formEditKeyword');
+    const redirectInput = document.getElementById('keywordRedirectEdit');
+    const stayFlagInput = document.getElementById('keywordStayOnDetailEdit');
     
     // Set form action
     form.action = `/keywords/${id}`;
+    if (redirectInput && window.detailRedirectUrl) {
+        redirectInput.value = window.detailRedirectUrl;
+    } else if (redirectInput) {
+        redirectInput.value = '';
+    }
+    if (stayFlagInput) {
+        stayFlagInput.value = window.detailRedirectUrl ? '1' : '';
+    }
     
     // Populate form fields
     document.getElementById('editMerchantSelect').value = keywordData.merchant_key;
@@ -196,7 +210,7 @@ function openEditKeyword(id, keywordData) {
     backdrop.style.opacity = '0';
     
     setTimeout(() => {
-        backdrop.style.opacity = '1';
+        backdrop.style.opacity = '0.5';
         formElements.forEach((el, index) => {
             setTimeout(() => {
                 el.style.transform = 'translateY(0)';
@@ -287,8 +301,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
-            // Submit form langsung tanpa AJAX
-            form.submit();
+            // Kumpulkan data untuk ditampilkan di modal verifikasi (opsional)
+            const formData = new FormData(form);
+            const data = {};
+            for (const [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            data.id = currentEditKeywordId;
+            
+            // Tampilkan modal verifikasi edit sebelum submit
+            if (typeof showEditValidation === 'function') {
+                showEditValidation(data, 'Keyword');
+            } else {
+                // Fallback jika modal verifikasi belum tersedia
+                form.submit();
+            }
         });
     }
     const modal = document.getElementById('editModalKeyword');

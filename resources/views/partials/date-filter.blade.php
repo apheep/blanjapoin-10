@@ -242,9 +242,42 @@
     }
     
     function applyDateFilter(filterId) {
-        // Close directly to avoid flicker/reopen
         const dropdown = document.getElementById(filterId);
         if (!dropdown) return;
+
+        // Get selected range
+        const state = calendarState[filterId];
+        const start = state && state.startDate ? stripTime(state.startDate) : null;
+        const end = state && state.endDate ? stripTime(state.endDate) : null;
+
+        // Filter rows/cards that have data-start / data-end
+        const allRows = document.querySelectorAll('.keyword-row');
+        allRows.forEach(el => {
+            const ds = el.dataset.start || '';
+            const de = el.dataset.end || '';
+            if (!start && !end) {
+                el.style.display = '';
+                return;
+            }
+            const rowStart = ds ? stripTime(new Date(ds)) : null;
+            const rowEnd = de ? stripTime(new Date(de)) : null;
+            let show = true;
+            if (start && end) {
+                // overlap: rowStart <= end && rowEnd >= start
+                const cond1 = rowStart ? (rowStart.getTime() <= end.getTime()) : true;
+                const cond2 = rowEnd ? (rowEnd.getTime() >= start.getTime()) : true;
+                show = cond1 && cond2;
+            } else if (start && !end) {
+                // show if rowEnd >= start
+                show = rowEnd ? (rowEnd.getTime() >= start.getTime()) : true;
+            } else if (!start && end) {
+                // show if rowStart <= end
+                show = rowStart ? (rowStart.getTime() <= end.getTime()) : true;
+            }
+            el.style.display = show ? '' : 'none';
+        });
+
+        // Close dropdown smoothly
         dropdown.style.transition = 'opacity .15s ease, transform .15s ease';
         dropdown.style.opacity = '0';
         dropdown.style.transform = 'translateY(-6px)';
