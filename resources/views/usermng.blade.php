@@ -22,10 +22,6 @@
     <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
      <div class="flex items-center justify-between">
       <div class="flex items-center gap-6">
-       <!-- Mobile hamburger -->
-       <button id="openSidebar" class="md:hidden text-gray-700 text-2xl mr-3">
-         <i class="fa-solid fa-bars"></i>
-       </button>
        <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
       </div>
 
@@ -37,7 +33,12 @@
        @endif
       </div>
 
-      <div class="relative hidden md:block">
+      <div class="flex items-center gap-4">
+       <!-- Mobile hamburger -->
+       <button id="openSidebar" class="md:hidden text-gray-700 text-2xl pr-4">
+         <i class="fa-solid fa-bars"></i>
+       </button>
+       <div class="relative hidden md:block">
         <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg ring-1 ring-white/30 active:scale-95 transition-all">
           <i class="fa-solid fa-user"></i>
           <span>{{ Auth::user()->username }}</span>
@@ -52,6 +53,7 @@
             </form>
           </div>
         </div>
+       </div>
       </div>
      </div>
     </div>
@@ -59,22 +61,53 @@
 
 <!-- Mobile Sidebar -->
 <div id="mobileSidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-  <div id="sidebarPanel" class="bg-white w-72 h-full p-6 shadow-xl transform -translate-x-full transition-all">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-lg font-semibold">Menu</h2>
-      <button id="closeSidebar"><i class="fa-solid fa-xmark text-xl"></i></button>
+  <div id="sidebarPanel" class="bg-white w-72 h-full shadow-xl transform translate-x-full transition-transform duration-300 ml-auto flex flex-col">
+    <!-- Header -->
+    <div class="border-b border-gray-200 p-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <img src="/logo.png" alt="BlanjaPoin" class="h-8 w-auto" />
+        </div>
+        <button id="closeSidebar" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-user text-gray-600"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-gray-900 truncate">{{ Auth::user()->username ?? 'User' }}</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    @if(Auth::check() && Auth::user()->can_approve == 1)
-      <a href="{{ route('admin') }}" class="block py-2 font-semibold text-gray-700">Home</a>
-      <a href="{{ route('user.management') }}" class="block py-2 font-semibold text-gray-700">User Management</a>
-    @endif
+    <!-- Menu Items -->
+    <div class="flex-1 overflow-y-auto py-2">
+      @if(Auth::check() && Auth::user()->can_approve == 1)
+        <a href="{{ route('admin') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-home w-5 text-gray-500"></i>
+          <span class="font-medium">Home</span>
+        </a>
+        <a href="{{ route('user.management') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-users w-5 text-gray-500"></i>
+          <span class="font-medium">User Management</span>
+        </a>
+      @endif
+    </div>
 
-    <hr class="my-4">
-
-    <form method="POST" action="{{ route('logout') }}">@csrf
-      <button type="submit" class="w-full text-left text-red-600 font-semibold py-2">Logout</button>
-    </form>
+    <!-- Footer / Logout -->
+    <div class="border-t border-gray-200 p-4">
+      <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
+          <i class="fa-solid fa-right-from-bracket text-sm"></i>
+          <span>Logout</span>
+        </button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -84,93 +117,40 @@
   const mobileSidebar = document.getElementById('mobileSidebar');
   const sidebarPanel = document.getElementById('sidebarPanel');
 
-  openSidebar?.addEventListener('click', () => {
-    mobileSidebar.classList.remove('hidden');
-    setTimeout(() => sidebarPanel.classList.remove('-translate-x-full'), 10);
+  // Close sidebar when clicking overlay
+  mobileSidebar?.addEventListener('click', (e) => {
+    if (e.target === mobileSidebar) {
+      closeSidebarFunc();
+    }
   });
 
-  closeSidebar?.addEventListener('click', () => {
-    sidebarPanel.classList.add('-translate-x-full');
-    setTimeout(() => mobileSidebar.classList.add('hidden'), 300);
+  function openSidebarFunc() {
+    if (mobileSidebar && sidebarPanel) {
+      mobileSidebar.classList.remove('hidden');
+      setTimeout(() => {
+        sidebarPanel.classList.remove('translate-x-full');
+      }, 10);
+    }
+  }
+
+  function closeSidebarFunc() {
+    if (sidebarPanel && mobileSidebar) {
+      sidebarPanel.classList.add('translate-x-full');
+      setTimeout(() => {
+        mobileSidebar.classList.add('hidden');
+      }, 300);
+    }
+  }
+
+  openSidebar?.addEventListener('click', openSidebarFunc);
+  closeSidebar?.addEventListener('click', closeSidebarFunc);
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && mobileSidebar && !mobileSidebar.classList.contains('hidden')) {
+      closeSidebarFunc();
+    }
   });
-</script>
-
-<!-- Sidebar Mobile -->
-<div id="mobileSidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-  <div class="bg-white w-72 h-full p-6 shadow-xl transform -translate-x-full transition-all" id="sidebarPanel">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-lg font-semibold">Menu</h2>
-      <button id="closeSidebar"><i class="fa-solid fa-xmark text-xl"></i></button>
-    </div>
-
-    @if(Auth::check() && Auth::user()->can_approve == 1)
-      <a href="{{ route('admin') }}" class="block py-2 font-semibold text-gray-700">Home</a>
-      <a href="{{ route('user.management') }}" class="block py-2 font-semibold text-gray-700">User Management</a>
-    @endif
-
-    <hr class="my-4">
-
-    <form method="POST" action="{{ route('logout') }}"> @csrf
-      <button type="submit" class="w-full text-left text-red-600 font-semibold py-2">Logout</button>
-    </form>
-  </div>
-</div>
-<script>
-  const openSidebar = document.getElementById('openSidebar');
-  const closeSidebar = document.getElementById('closeSidebar');
-  const mobileSidebar = document.getElementById('mobileSidebar');
-  const sidebarPanel = document.getElementById('sidebarPanel');
-
-  openSidebar?.addEventListener('click', () => {
-    mobileSidebar.classList.remove('hidden');
-    setTimeout(() => sidebarPanel.classList.remove('-translate-x-full'), 10);
-  });
-
-  closeSidebar?.addEventListener('click', () => {
-    sidebarPanel.classList.add('-translate-x-full');
-    setTimeout(() => mobileSidebar.classList.add('hidden'), 300);
-  });
-</script>
-
-<!-- MOBILE SIDEBAR OVERLAY -->
-<div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden"></div>
-
-<!-- MOBILE SIDEBAR -->
-<div id="mobileSidebar" class="fixed top-0 left-0 w-64 h-full bg-white shadow-xl z-50 transform -translate-x-full transition-transform duration-300">
-  <div class="p-4 border-b flex items-center justify-between">
-    <img src="/logo.png" class="h-10" />
-    <button id="closeSidebar" class="text-gray-700 text-xl"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-
-  <div class="p-4 flex flex-col gap-4">
-    @if(Auth::check() && Auth::user()->can_approve == 1)
-      <a href="{{ route('admin') }}" class="text-base font-semibold text-gray-700">Home</a>
-      <a href="{{ route('user.management') }}" class="text-base font-semibold text-gray-700">User Management</a>
-    @endif
-
-    <!-- User button -->
-    <form method="POST" action="{{ route('logout') }}" class="pt-4 border-t">
-      @csrf
-      <button type="submit" class="flex items-center gap-3 text-red-600 font-semibold">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
-    </form>
-  </div>
-</div>
-<script>
-// Mobile Sidebar
-const sidebar = document.getElementById('mobileSidebar');
-const overlay = document.getElementById('sidebarOverlay');
-document.getElementById('mobileMenuBtn').onclick = () => {
-  sidebar.classList.remove('-translate-x-full');
-  overlay.classList.remove('hidden');
-};
-document.getElementById('closeSidebar').onclick = closeSidebar;
-overlay.onclick = closeSidebar;
-function closeSidebar() {
-  sidebar.classList.add('-translate-x-full');
-  overlay.classList.add('hidden');
-}
 </script>
     <!-- Flash Message Container -->
     @if(session('success'))
@@ -185,11 +165,11 @@ function closeSidebar() {
 
   <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 transform transition-all duration-500 opacity-0 translate-y-3">
     <div class="flex items-center justify-between gap-4 flex-wrap">
-      <div>
+      <div class="pl-4">
         <h1 class="text-2xl md:text-3xl font-black tracking-tight text-neutral-900">User Management</h1>
       </div>
-      <div class="flex items-center gap-2">
-        <button id="btn-open-create" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-2 ring-orange-200/60 shadow-sm hover:shadow-md active:scale-[0.98] transition-all">
+      <div class="flex items-center gap-2 pr-4">
+        <button id="btn-open-create" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] shadow-l hover:shadow-md active:scale-[0.98] transition-all">
           <i class="fa-solid fa-user-plus text-[12px]"></i>
         </button>
       </div>
@@ -242,30 +222,19 @@ function closeSidebar() {
   </div>
 </section>
 
-    <!-- Toolbar (search with button) -->
-    <section class="mt-6 bg-white border rounded-2xl shadow p-4">
-      <div class="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
-        <div class="flex flex-1 gap-2">
-          <div class="relative flex-1 min-w-[220px]">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-            <input
-              type="text"
-              id="search-input"
-              placeholder="Cari username…"
-              value="{{ request('search') ?? '' }}"
-              class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
-          </div>
-          <button
-            id="search-btn"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-[0.97] transition-all"
-          >
-            <i class="fa-solid fa-search text-[12px]"></i>
-            <span>Cari</span>
-          </button>
-        </div>
+    <!-- Search -->
+    <div class="mt-6">
+      <div class="relative max-w-md ">
+        <input
+        type="text"
+        id="search-input"
+        placeholder="Cari username…"
+        autocomplete="off"
+        class="w-full pl-9 pr-3 py-2.5 rounded-full border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+        />
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
       </div>
-    </section>
+    </div>
 
     <!-- Bulk bar (muncul saat ada checkbox yang dicentang) -->
     <div id="bulkbar" class="hidden mt-4 bg-slate-800 text-slate-100 rounded-2xl p-3 flex items-center justify-between">
