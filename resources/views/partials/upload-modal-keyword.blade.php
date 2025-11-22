@@ -3,7 +3,7 @@
     <div class="fixed inset-0 bg-black opacity-0 transition-opacity duration-300 ease-out"></div>
     <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col transform transition-all duration-300 ease-out scale-95 opacity-0">
         <div class="sticky top-0 z-10 flex justify-between items-center px-4 py-3 md:px-6 md:py-4 border-b bg-white rounded-t-xl">
-            <h3 class="text-xl font-semibold text-gray-800 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Upload Keyword Data</h3>
+            <h3 class="text-xl font-semibold text-gray-800 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Add Keyword Data</h3>
             <button type="button" onclick="closeUploadKeyword()" class="text-gray-400 hover:text-gray-600 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -228,11 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validasi diskon sebelum submit
             if (!validateDiskon()) {
-                return false;
-            }
-            
-            // Validasi date range sebelum submit
-            if (!validateDateRange()) {
                 return false;
             }
             

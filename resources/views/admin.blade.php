@@ -6,12 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>blanjapoin.id - Merchant</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -33,7 +30,6 @@
 
 <body class="min-h-screen bg-white font-poppins">
 
-    <!-- Flash Message Container -->
     @if(session('success'))
         <div data-flash-message="{{ session('success') }}" data-flash-type="success" class="hidden"></div>
     @endif
@@ -44,21 +40,17 @@
         <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
     @endif
 
-    <!-- Header -->
-   <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
+    <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
     <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
      <div class="flex items-center justify-between">
       <div class="flex items-center gap-6">
        <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
       </div>
 
-      <!-- Centered primary navigation -->
       <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       @if(Auth::check() && Auth::user()->can_approve == 1) 
         <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Approval</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>
-       @endif
+        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>       @endif
       </div>
 
        <div class="relative">
@@ -90,23 +82,16 @@
     </div>
    </nav>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
-        <!-- Navigation Tabs -->
         <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto">
             <div class="flex space-x-3 px-4 sm:px-0 min-w-max">
                 <button onclick="switchTab('all')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">Merchant</button>
                 <button onclick="switchTab('keyword')" id="tab-keyword" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Keyword</button>
-                <!-- <button onclick="switchTab('merchandise')" id="tab-merchandise" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchandise</button>
-                <button onclick="switchTab('telkom')" id="tab-telkom" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Telkom Packages</button> -->
             </div>
         </div>
 
-        <!-- JavaScript Functions -->
         <script>
-            ////////////////////////////////////////////////////////////////////
-            // Dropdown Toggle Functions
-            ////////////////////////////////////////////////////////////////////
+            // Dropdown Toggle Functions //
 
             function toggleDateFilter(id) {
                 const dropdown = document.getElementById(id || 'dateFilterDropdown');
@@ -222,9 +207,9 @@
                     // const formData = new FormData();
                     // formData.append('image', file);
                     // fetch('/upload-image', { method: 'POST', body: formData })
-                    //   .then(response => response.json())
-                    //   .then(data => console.log('Success:', data))
-                    //   .catch(error => console.error('Error:', error));
+                    //    .then(response => response.json())
+                    //    .then(data => console.log('Success:', data))
+                    //    .catch(error => console.error('Error:', error));
                 }
             }
 
@@ -258,46 +243,6 @@
             }
 
             function handleFileUploadMerchant(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            // Functions for Merchandise section
-            function toggleKategoriDropdownMerchandise() {
-                const dropdown = document.getElementById('kategoriDropdownMerchandise');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadMerchandise(event) {
                 const file = event.target.files[0];
                 if (file) {
                     if (!file.type.startsWith('image/')) {
@@ -378,46 +323,6 @@
             }
 
             function handleFileUploadAll1(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            // Functions for All section - Merchandise
-            function toggleKategoriDropdownAll2() {
-                const dropdown = document.getElementById('kategoriDropdownAll2');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadAll2(event) {
                 const file = event.target.files[0];
                 if (file) {
                     if (!file.type.startsWith('image/')) {
@@ -764,28 +669,6 @@
                     toggleKategoriDropdownMerchant();
                 }
                 
-                // Handle merchandise section dropdown
-                const kategoriBtnMerchandise = document.getElementById('kategoriBtnMerchandise');
-                const kategoriDropdownMerchandise = document.getElementById('kategoriDropdownMerchandise');
-                
-                if (kategoriBtnMerchandise && kategoriDropdownMerchandise && 
-                    !kategoriBtnMerchandise.contains(event.target) && 
-                    !kategoriDropdownMerchandise.contains(event.target) &&
-                    !kategoriDropdownMerchandise.classList.contains('hidden')) {
-                    toggleKategoriDropdownMerchandise();
-                }
-                
-                // Handle telkom section dropdown
-                const kategoriBtnTelkom = document.getElementById('kategoriBtnTelkom');
-                const kategoriDropdownTelkom = document.getElementById('kategoriDropdownTelkom');
-                
-                if (kategoriBtnTelkom && kategoriDropdownTelkom && 
-                    !kategoriBtnTelkom.contains(event.target) && 
-                    !kategoriDropdownTelkom.contains(event.target) &&
-                    !kategoriDropdownTelkom.classList.contains('hidden')) {
-                    toggleKategoriDropdownTelkom();
-                }
-                
                 // Handle All section dropdowns
                 const kategoriBtnAll1 = document.getElementById('kategoriBtnAll1');
                 const kategoriDropdownAll1 = document.getElementById('kategoriDropdownAll1');
@@ -881,7 +764,7 @@
                 currentActiveTab = tab;
                 window.currentActiveTab = tab;
                 // Reset all tabs
-                const tabs = ['all', 'keyword', 'merchant', 'merchandise', 'telkom'];
+                const tabs = ['all', 'keyword', 'merchant','telkom'];
                 tabs.forEach(t => {
                     const btn = document.getElementById('tab-' + t);
                     if (btn) {
@@ -894,7 +777,7 @@
                     activeBtn.className = 'shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg';
                 }
                 // Hide non-active sections with Tailwind utilities
-                const sections = ['all', 'keyword', 'merchant', 'merchandise', 'telkom'];
+                const sections = ['all', 'keyword', 'merchant','telkom'];
                 sections.forEach(s => {
                     const section = document.getElementById('section-' + s);
                     if (section) {
@@ -925,7 +808,7 @@
             }
 
             // Keep track of selected category per table for toggle behavior
-            const selectedCategory = { merchant: 'All', merchandise: 'All', telkom: 'All' };
+            const selectedCategory = { merchant: 'All', telkom: 'All' };
             // Function to filter table based on category
             function filterTable(tableType, category) {
                 // Close the dropdown after selection
@@ -936,12 +819,10 @@
                 if (document.getElementById('section-all').classList.contains('hidden') === false) {
                     // We are in the "All" section
                     if (tableType === 'merchant') buttonId = 'kategoriBtnAll1';
-                    else if (tableType === 'merchandise') buttonId = 'kategoriBtnAll2';
                     else if (tableType === 'telkom') buttonId = 'kategoriBtnAll3';
                 } else {
                     // We are in a specific section
                     if (tableType === 'merchant') buttonId = 'kategoriBtnMerchant';
-                    else if (tableType === 'merchandise') buttonId = 'kategoriBtnMerchandise';
                     else if (tableType === 'telkom') buttonId = 'kategoriBtnTelkom';
                 }
                 // Toggle: clicking the same category again resets to All
@@ -985,9 +866,6 @@
                 if (tableType === 'merchant') {
                     tableBodyId = 'merchant-table-body';
                     rowClass = 'merchant-row';
-                } else if (tableType === 'merchandise') {
-                    tableBodyId = 'merchandise-table-body';
-                    rowClass = 'merchandise-row';
                 } else if (tableType === 'telkom') {
                     tableBodyId = 'telkom-table-body';
                     rowClass = 'telkom-row';
@@ -1086,15 +964,11 @@
 
         </script>
 
-        <!-- All Tables Section -->
-         <div id="section-all" class="transition-all duration-300 opacity-100 translate-y-0"> 
-            <!-- Merchant Table -->
+        <div id="section-all" class="transition-all duration-300 opacity-100 translate-y-0"> 
             <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 mt-4 sm:mt-8">Merchant</h2>
             
-            <!-- Merchant Controls -->
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div class="flex space-x-3">
-                    <!-- Kategori Dropdown -->
                     <div class="relative">
                         <button id="kategoriBtnAll1" onclick="toggleKategoriDropdownAll1()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-list mr-2"></i>
@@ -1103,18 +977,17 @@
                         </button>
                         <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
                             <div class="py-1">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'F&B'); return false;">F&B</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Entertain'); return false;">Entertain</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Vacation'); return false;">Vacation</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Shopping'); return false;">Shopping</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Beauty & Care'); return false;">Beauty & Care</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Makanan'); return false;">Makanan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Merchandise'); return false;">Merchandise</a>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Upload Button -->
                     <div class="relative">
                         <button
                             type="button"
@@ -1122,7 +995,7 @@
                             class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                             <i class="fas fa-upload mr-2"></i>
-                            Add
+                            Upload
                         </button>
                     </div>
 
@@ -1141,79 +1014,14 @@
             </div>
             
             @include('partials.table-merchant')
-
-            <!-- Merchandise Table -->
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 mt-8 sm:mt-12">Merchandise</h2>
-            
-            <!-- Merchandise Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                    <button
-                    type="button"
-                    onclick="openUploadMerchant()"
-                    class="px-4 py-2 rounded-full border border-orange-400 text-orange-500 font-medium flex items-center space-x-2"
-                >
-                    <i class="fas fa-upload"></i>
-                    <span>Add</span>
-                </button>
-                    </div>
-                </div>
-            
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter2'])
-                </div>
-            </div>
-            
-            @include('partials.table-merchandise')
-
-            <!-- Telkom Packages Table -->
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 mt-8 sm:mt-12">Telkom Packages</h2>
-            
-            <!-- Telkom Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadTelkom()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Add
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter3'])
-                </div>
-            </div>
-            
-            @include('partials.table-talkompackages')
         </div>
 
-        <!-- Keyword Only Section -->
         <div id="section-keyword" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
             <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Keyword</h2>
             
-            <!-- Keyword Controls -->
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div class="flex space-x-3">
 
-                    <!-- Status Dropdown -->
                     <div class="relative">
                         <button id="statusBtnKeyword" onclick="toggleStatusDropdownKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-filter mr-2"></i>
@@ -1230,11 +1038,10 @@
                         </div>
                     </div>
                     
-                <!-- Upload Button with File Input -->
-                    <div class="relative">
+                <div class="relative">
                         <button type="button" onclick="openUploadKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
+                            <i class="fas fa-plus mr-2"></i>
+                            Add Keyword
                         </button>
                     </div>
                 </div>
@@ -1254,14 +1061,11 @@
             @include('partials.table-keyword')
         </div>
 
-        <!-- Merchant Only Section -->
         <div id="section-merchant" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
             <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Merchant</h2>
             
-            <!-- Merchant Controls -->
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
                 <div class="flex space-x-3">
-                    <!-- Kategori Dropdown -->
                     <div class="relative">
                         <button id="kategoriBtnMerchant" onclick="toggleKategoriDropdownMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-list mr-2"></i>
@@ -1270,19 +1074,18 @@
                         </button>
                         <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
                             <div class="py-1">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'All'); return false;">All</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'F&B'); return false;">F&B</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Entertain'); return false;">Entertain</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Vacation'); return false;">Vacation</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Shopping'); return false;">Shopping</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Beauty & Care'); return false;">Beauty & Care</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Makanan'); return false;">Makanan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'liburan'); return false;">Liburan</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merhandise'); return false;">Merchandise</a>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Upload Button with File Input -->
                     <div class="relative">
                         <button type="button" onclick="openUploadMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-upload mr-2"></i>
@@ -1306,77 +1109,13 @@
             @include('partials.table-merchant')
         </div>
 
-        <!-- Merchandise Only Section -->
-        <div id="section-merchandise" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Merchandise</h2>
-            
-            <!-- Merchandise Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadMerchandise()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter5'])
-                </div>
-            </div>
-            
-            @include('partials.table-merchandise')
-        </div>
-
-        <!-- Telkom Packages Only Section -->
-        <div id="section-telkom" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Telkom Packages</h2>
-            
-            <!-- Telkom Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadTelkom()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter6'])
-                </div>
-            </div>
-            
-            @include('partials.table-talkompackages')
-        </div>
-
     </main>
     
     @include('partials.upload-modal-merchant')
     @include('partials.upload-modal-merchandise')
-    @include('partials.upload-modal-telkom')
     @include('partials.upload-modal-keyword')
     @include('partials.edit-modal-merchant')
     @include('partials.edit-modal-merchandise')
-    @include('partials.edit-modal-telkom')
     @include('partials.delete-confirmation-modal')
     @include('partials.approve-confirmation-modal')
 
