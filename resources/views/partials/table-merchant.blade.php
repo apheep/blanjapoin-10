@@ -4,13 +4,18 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                    <th class="px-4 py-3 w-20 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                    <th class="px-4 py-3 w-20 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider"> Actions</th>
-                    <th class="px-4 py-3 w-20 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
-                    <th class="px-4 py-3 w-20 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
-                    <th class="px-4 py-3 w-20 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
-
-                    <th class="px-4 py-3 w-20 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Logo Merchant</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Daerah</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMap</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Blanjapoin</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Logo</th>
                 </tr>
             </thead>
 
@@ -28,7 +33,7 @@
                         <td class="px-4 py-4 w-20 text-center">
                             <div class="flex items-center justify-center h-full">
                                 <button type="button"
-                                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '{{ $merchant->nama_merchant }}', {{ $merchant->id }})"
+                                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
                                         class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
                                         title="Hapus">
                                     <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
@@ -43,10 +48,77 @@
                         <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">{{ $merchant->nama_merchant }}</td>
 
                         {{-- Kategori --}}
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->kategori ?? '-' }}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">{{ $merchant->kategori ?? '-' }}</td>
 
-                        {{-- logo --}}
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">
+                        {{-- Nama PIC --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">{{ $merchant->nama_pic ?? '-' }}</td>
+
+                        {{-- WA PIC --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->wa_pic)
+                                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $merchant->wa_pic) }}" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline">
+                                    {{ $merchant->wa_pic }}
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Detail Daerah --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->detail_daerah)
+                                <span class="truncate block max-w-xs" title="{{ $merchant->detail_daerah }}">
+                                    {{ strlen($merchant->detail_daerah) > 30 ? substr($merchant->detail_daerah, 0, 30) . '...' : $merchant->detail_daerah }}
+                                </span>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Lat/Long --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->lat && $merchant->long)
+                                <span class="text-xs">{{ $merchant->lat }}, {{ $merchant->long }}</span>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Link Google Maps --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->link_gmap)
+                                <a href="{{ $merchant->link_gmap }}" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                    <i class="fas fa-map-marker-alt text-xs"></i>
+                                    <span class="truncate max-w-xs">Link</span>
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Link Blanjapoin --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->link_blanjapoin)
+                                <a href="https://{{ $merchant->link_blanjapoin }}" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
+                                    <i class="fas fa-link text-xs"></i>
+                                    <span class="truncate max-w-xs">Link</span>
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Logo --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->logo_merchant)
                                 <a href="{{ asset('storage/' . $merchant->logo_merchant) }}" 
                                    target="_blank" 
@@ -60,12 +132,10 @@
                                 <span class="text-gray-400">-</span>
                             @endif
                         </td>
-
-              
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="12" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data merchant.
                         </td>
                     </tr>
@@ -133,7 +203,7 @@
                 </div>
                 <div class="flex items-center">
                     <button type="button"
-                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '{{ $merchant->nama_merchant }}', {{ $merchant->id }})"
+                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
                             class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
                             title="Hapus">
                         <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
@@ -157,6 +227,75 @@
             <div>
                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kategori</p>
                 <p class="text-sm text-gray-700 mt-1">{{ $merchant->kategori ?? '-' }}</p>
+            </div>
+
+            {{-- Nama PIC --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Nama PIC</p>
+                <p class="text-sm text-gray-700 mt-1">{{ $merchant->nama_pic ?? '-' }}</p>
+            </div>
+
+            {{-- WA PIC --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">WA PIC</p>
+                @if($merchant->wa_pic)
+                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $merchant->wa_pic) }}" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-block">
+                        {{ $merchant->wa_pic }}
+                    </a>
+                @else
+                    <p class="text-sm text-gray-400 mt-1">-</p>
+                @endif
+            </div>
+
+            {{-- Detail Daerah --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Detail Daerah</p>
+                <p class="text-sm text-gray-700 mt-1">{{ $merchant->detail_daerah ?? '-' }}</p>
+            </div>
+
+            {{-- Lat/Long --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Koordinat</p>
+                @if($merchant->lat && $merchant->long)
+                    <p class="text-sm text-gray-700 mt-1">{{ $merchant->lat }}, {{ $merchant->long }}</p>
+                @else
+                    <p class="text-sm text-gray-400 mt-1">-</p>
+                @endif
+            </div>
+
+            {{-- Link Google Maps --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Google Maps</p>
+                @if($merchant->link_gmap)
+                    <a href="{{ $merchant->link_gmap }}" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
+                        <i class="fas fa-map-marker-alt text-xs"></i>
+                        <span class="truncate max-w-full">Buka Peta</span>
+                    </a>
+                @else
+                    <p class="text-sm text-gray-400 mt-1">-</p>
+                @endif
+            </div>
+
+            {{-- Link Blanjapoin --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Blanjapoin</p>
+                @if($merchant->link_blanjapoin)
+                    <a href="https://{{ $merchant->link_blanjapoin }}" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="text-sm text-orange-600 hover:text-orange-800 hover:underline mt-1 inline-flex items-center gap-1">
+                        <i class="fas fa-link text-xs"></i>
+                        <span class="truncate max-w-full">Buka Link</span>
+                    </a>
+                @else
+                    <p class="text-sm text-gray-400 mt-1">-</p>
+                @endif
             </div>
 
             {{-- Logo Merchant --}}
