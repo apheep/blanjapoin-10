@@ -1,19 +1,20 @@
-<div id="uploadModalMerchant" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-    <div class="fixed inset-0 bg-black opacity-0 transition-opacity duration-300 ease-out"></div>
+<div id="uploadModalMerchant" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="uploadModalMerchantOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
 
-    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300 ease-out scale-95 opacity-0">
-        <div class="sticky top-0 z-10 flex justify-between items-center px-4 py-3 md:px-6 md:py-4 border-b bg-white rounded-t-xl">
-            <h3 class="text-xl font-semibold text-gray-800 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                Upload Data
+    <div id="uploadModalMerchantPanel" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden opacity-0 scale-95 translate-y-4 transition-all duration-300">
+        {{-- Header --}}
+        <div class="sticky top-0 z-10 flex justify-between items-center px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+            <h3 class="text-xl font-bold text-gray-800">
+                Tambah Merchant Baru
             </h3>
             <button type="button"
                     onclick="closeUploadMerchant()"
-                    class="text-gray-400 hover:text-gray-600 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
+                    class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/50 rounded-lg">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
 
-        {{-- FORM: Merchant form yang langsung POST ke database --}}
+        {{-- FORM: Merchant form --}}
         <form id="formUploadMerchant"
       action="{{ route('merchants.store') }}"
       method="POST"
@@ -21,40 +22,29 @@
       class="flex-1 overflow-y-auto">
 
     @csrf
-            <div class="p-4 md:p-6 space-y-4">
+            <div class="p-6 space-y-6">
+                {{-- Section 1: Informasi Dasar --}}
                 <div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-6 md:gap-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {{-- Nama Merchant --}}
                         <div class="md:col-span-2">
-                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                                Nama Merchant
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Nama Merchant <span class="text-red-500">*</span>
                             </label>
                             <input type="text"
                                    name="nama_merchant"
-                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0"
+                                   required
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                                    placeholder="Masukkan nama merchant">
                         </div>
 
-                        {{-- Daerah --}}
+                        {{-- Kategori --}}
                         <div>
-                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                                Daerah
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Kategori <span class="text-red-500">*</span>
                             </label>
-                            <input type="text"
-                                   name="daerah"
-                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0"
-                                   placeholder="Contoh: Surabaya">
-                        </div>
-
-                        {{-- Kategori (dropdown) --}}
-                        <div>
-                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                                Kategori
-                            </label>
-
-                            <div class="relative transition-all duration-300 ease-out">
+                            <div class="relative">
                                 <input type="hidden" name="kategori" id="merchantKategoriValue">
-
                                 <button
                                     type="button"
                                     id="merchantKategoriBtn"
@@ -64,43 +54,218 @@
                                     <span id="merchantKategoriLabel">Pilih kategori</span>
                                     <i class="fas fa-chevron-down text-xs ml-2"></i>
                                 </button>
-
                                 <div
                                     id="merchantKategoriDropdown"
-                                    class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full z-50"
+                                    class="hidden absolute left-0 mt-2 bg-white rounded-xl shadow-xl p-2 border border-gray-200 w-full z-50"
                                 >
                                     <div class="py-1 text-sm">
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Makanan')">
-                                            Makanan
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all" onclick="selectMerchantKategori('kuliner')">
+                                            Kuliner
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Hiburan')">
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all" onclick="selectMerchantKategori('hiburan')">
                                             Hiburan
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Liburan')">
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all" onclick="selectMerchantKategori('liburan')">
                                             Liburan
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Belanja')">
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all" onclick="selectMerchantKategori('belanja')">
                                             Belanja
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Kecantikan')">
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all" onclick="selectMerchantKategori('kecantikan')">
                                             Kecantikan
                                         </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Telkomsel Packet')">
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all" onclick="selectMerchantKategori('telkomsel')">
                                             Telkomsel Packet
-                                        </button>
-                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="selectMerchantKategori('Merchandise')">
-                                            Merchandise
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {{-- Link Blanjapoin --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Link Blanjapoin
+                            </label>
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent">
+                                <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">blanjapoin.id/dash/</span>
+                                <input type="text"
+                                       name="link_blanjapoin_code"
+                                       id="linkBlanjapoinCode"
+                                       oninput="updateLinkBlanjapoin()"
+                                       class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
+                                       placeholder="Code">
+                                <input type="hidden" name="link_blanjapoin" id="linkBlanjapoinFull">
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        {{-- Image --}}
-                        <div class="md:col-span-2">
-                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                                Logo Merchant
+                {{-- Section 2: Informasi PIC --}}
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Informasi PIC</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- Nama PIC --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Nama PIC Merchant
+                            </label>
+                            <input type="text"
+                                   name="nama_pic"
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                   placeholder="Masukkan nama PIC">
+                        </div>
+
+                        {{-- WA PIC --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                WhatsApp PIC
+                            </label>
+                            <input type="number"
+                                   name="wa_pic"
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                   placeholder="+6281234567890">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Section 3: Lokasi --}}
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Alamat</h4>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {{-- Provinsi --}}
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Provinsi
+                                </label>
+                                <div class="relative">
+                                    <input type="hidden" name="provinsi" id="provinsiValue">
+                                    <input type="text"
+                                           id="provinsiSearch"
+                                           placeholder="Cari atau pilih provinsi..."
+                                           autocomplete="off"
+                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                           onfocus="openSearchableDropdown('provinsi', event)"
+                                           onclick="openSearchableDropdown('provinsi', event)"
+                                           oninput="filterSearchableDropdown('provinsi', this.value)">
+                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                    <div id="provinsiDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
+                                        <div class="max-h-60 overflow-y-auto">
+                                            <div id="provinsiOptions" class="py-1"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Kabupaten --}}
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Kabupaten/Kota
+                                </label>
+                                <div class="relative">
+                                    <input type="hidden" name="kabupaten" id="kabupatenValue">
+                                    <input type="text"
+                                           id="kabupatenSearch"
+                                           placeholder="Cari atau pilih kabupaten..."
+                                           autocomplete="off"
+                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                           onfocus="openSearchableDropdown('kabupaten', event)"
+                                           onclick="openSearchableDropdown('kabupaten', event)"
+                                           oninput="filterSearchableDropdown('kabupaten', this.value)">
+                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                    <div id="kabupatenDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
+                                        <div class="max-h-60 overflow-y-auto">
+                                            <div id="kabupatenOptions" class="py-1"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Kecamatan --}}
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Kecamatan
+                                </label>
+                                <div class="relative">
+                                    <input type="hidden" name="kecamatan" id="kecamatanValue">
+                                    <input type="text"
+                                           id="kecamatanSearch"
+                                           placeholder="Cari atau pilih kecamatan..."
+                                           autocomplete="off"
+                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                           onfocus="openSearchableDropdown('kecamatan', event)"
+                                           onclick="openSearchableDropdown('kecamatan', event)"
+                                           oninput="filterSearchableDropdown('kecamatan', this.value)">
+                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                    <div id="kecamatanDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
+                                        <div class="max-h-60 overflow-y-auto">
+                                            <div id="kecamatanOptions" class="py-1"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Detail Alamat --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Detail Alamat
+                            </label>
+                            <textarea name="detail_alamat"
+                                      rows="2"
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm resize-none"
+                                      placeholder="Masukkan detail alamat (jalan, nomor, RT/RW, dll)"></textarea>
+                        </div>
+
+                        {{-- Hidden field untuk menyimpan daerah (dikombinasikan) --}}
+                        <input type="hidden" name="daerah" id="daerahCombined">
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {{-- Latitude --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Latitude
+                                </label>
+                                <input type="number"
+                                       step="any"
+                                       name="lat"
+                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                       placeholder="-8.6705">
+                            </div>
+
+                            {{-- Longitude --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Longitude
+                                </label>
+                                <input type="number"
+                                       step="any"
+                                       name="long"
+                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                       placeholder="115.2126">
+                            </div>
+
+                            {{-- Link Google Maps --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Link Google Maps
+                                </label>
+                                <input type="url"
+                                       name="link_gmap"
+                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                       placeholder="https://maps.google.com/...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Section 4: Logo --}}
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Logo Merchant</h4>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                            Upload Logo
                             </label>
                             <div class="relative">
                                 <input type="file"
@@ -111,35 +276,36 @@
                                     onchange="previewMerchantImage(this)">
                                 <button type="button"
                                         onclick="document.getElementById('merchantImageInput').click()"
-                                        class="w-full min-h-[92px] px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 focus:outline-none focus:border-orange-500 flex flex-col items-center justify-center text-gray-600 hover:text-orange-600 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                                    <i class="fas fa-upload text-2xl mb-2"></i>
-                                    <span id="merchantImageText" class="text-[15px]">
+                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 focus:outline-none focus:border-orange-500 flex flex-col items-center justify-center text-gray-600 hover:text-orange-600 transition-all">
+                                <i class="fas fa-upload text-3xl mb-2"></i>
+                                <span id="merchantImageText" class="text-sm">
                                         Click to upload Logo Merchant
                                     </span>
+                                <span class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG maks 2MB</span>
                                 </button>
                                 <div id="merchantImagePreview" class="mt-3 hidden"></div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="sticky bottom-0 z-10 flex justify-end space-x-3 px-4 py-3 md:px-6 md:py-4 border-t bg-white rounded-b-xl">
+            {{-- Footer dengan tombol --}}
+            <div class="sticky bottom-0 z-10 flex justify-end items-center gap-3 px-6 py-4 border-t bg-white">
                 <button type="button"
                         onclick="closeUploadMerchant()"
-                        class="px-5 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
+                        class="px-6 py-2.5 text-sm font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     Cancel
                 </button>
                 <button type="submit"
-                        class="px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white rounded-lg hover:shadow-lg transition-all duration-300 ease-out transform translate-y-2 opacity-0">
-                    Upload
+                        class="px-6 py-2.5 text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white rounded-lg hover:shadow-lg transition-all active:scale-95">
+                    <i class="fas fa-save mr-2"></i>Simpan
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- kalau kamu juga pakai upload-verification-modal untuk merchant --}}
+{{-- Include upload verification modal --}}
 @include('partials.upload-verification-modal')
 
 <script>
@@ -155,6 +321,11 @@ function previewMerchantImage(input) {
 
     if (input.files && input.files.length > 0) {
         const file = input.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB');
+            input.value = '';
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.classList.remove('hidden');
@@ -162,8 +333,8 @@ function previewMerchantImage(input) {
             const div = document.createElement('div');
             div.className = 'relative';
             div.innerHTML = `
-                <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg">
-                <button type="button" onclick="removeMerchantImage()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600">
+                <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                <button type="button" onclick="removeMerchantImage()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors">
                     <i class="fas fa-times text-xs"></i>
                 </button>
             `;
@@ -188,79 +359,78 @@ function removeMerchantImage() {
 // ======================
 function openUploadMerchant() {
     const modal = document.getElementById('uploadModalMerchant');
+    const overlay = document.getElementById('uploadModalMerchantOverlay');
+    const panel = document.getElementById('uploadModalMerchantPanel');
+    
     if (!modal) return;
-
-    const modalContent = modal.querySelector('div.relative');
-    const backdrop = modal.querySelector('div.fixed');
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
-    setTimeout(() => { if (backdrop) backdrop.style.opacity = '0.5'; }, 10);
-    setTimeout(() => {
-        if (modalContent) {
-            modalContent.style.transform = 'scale(1)';
-            modalContent.style.opacity = '1';
-        }
-    }, 50);
-
-    if (modalContent) {
-        const formElements = modalContent.querySelectorAll('h3, button, label, input, select, textarea');
-        formElements.forEach((el, index) => {
-            el.style.transform = 'translateY(10px)';
-            el.style.opacity = '0';
-            setTimeout(() => {
-                el.style.transform = 'translateY(0)';
-                el.style.opacity = '1';
-            }, 100 + (index * 30));
-        });
+    // Preload provinsi data saat modal dibuka
+    if (allProvinsiOptions.length === 0) {
+        fetchProvinces();
     }
+    
+    requestAnimationFrame(() => {
+        overlay?.classList.remove('opacity-0');
+        overlay?.classList.add('opacity-100');
+        panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+        panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+    });
 }
 
 function closeUploadMerchant() {
     const modal = document.getElementById('uploadModalMerchant');
-    if (!modal) return;
-
-    const modalContent = modal.querySelector('div.relative');
-    const backdrop = modal.querySelector('div.fixed');
-
-    if (modalContent) {
-        const formElements = modalContent.querySelectorAll('h3, button, label, input, select, textarea');
-        formElements.forEach((el, index) => {
-            setTimeout(() => {
-                el.style.transform = 'translateY(10px)';
-                el.style.opacity = '0';
-            }, index * 20);
-        });
-    }
+    const overlay = document.getElementById('uploadModalMerchantOverlay');
+    const panel = document.getElementById('uploadModalMerchantPanel');
+    
+    overlay?.classList.remove('opacity-100');
+    overlay?.classList.add('opacity-0');
+    panel?.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+    panel?.classList.add('opacity-0', 'scale-95', 'translate-y-4');
 
     setTimeout(() => {
-        if (modalContent) {
-            modalContent.style.transform = 'scale(0.95)';
-            modalContent.style.opacity = '0';
-        }
-    }, 100);
-
-    setTimeout(() => { if (backdrop) backdrop.style.opacity = '0'; }, 150);
-
-    setTimeout(() => {
-        modal.classList.add('hidden');
+        modal?.classList.add('hidden');
         document.body.style.overflow = '';
 
         const form = document.getElementById('formUploadMerchant');
-        if (form) form.reset();
-
-        // reset kategori dropdown
+        if (form) {
+            form.reset();
+            // Reset kategori dropdown
         const kategoriInput = document.getElementById('merchantKategoriValue');
         const kategoriLabel = document.getElementById('merchantKategoriLabel');
-        const kategoriBtn   = document.getElementById('merchantKategoriBtn');
+            const kategoriBtn = document.getElementById('merchantKategoriBtn');
         if (kategoriInput) kategoriInput.value = '';
         if (kategoriLabel) kategoriLabel.textContent = 'Pilih kategori';
         if (kategoriBtn) {
             kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
         }
 
-        // reset preview image
+            // Reset lokasi dropdowns
+            document.getElementById('provinsiSearch').value = '';
+            document.getElementById('provinsiValue').value = '';
+            document.getElementById('provinsiOptions').innerHTML = '';
+            document.getElementById('kabupatenSearch').value = '';
+            document.getElementById('kabupatenValue').value = '';
+            document.getElementById('kabupatenOptions').innerHTML = '';
+            document.getElementById('kecamatanSearch').value = '';
+            document.getElementById('kecamatanValue').value = '';
+            document.getElementById('kecamatanOptions').innerHTML = '';
+            document.getElementById('daerahCombined').value = '';
+            allKabupatenOptions = [];
+            allKecamatanOptions = [];
+            selectedProvinceCode = null;
+            selectedRegencyCode = null;
+            closeSearchableDropdown('provinsi');
+            closeSearchableDropdown('kabupaten');
+            closeSearchableDropdown('kecamatan');
+            
+            // Reset link blanjapoin
+            document.getElementById('linkBlanjapoinCode').value = '';
+            document.getElementById('linkBlanjapoinFull').value = '';
+            
+            // Reset preview image
         const preview = document.getElementById('merchantImagePreview');
         const text = document.getElementById('merchantImageText');
         if (preview) {
@@ -268,17 +438,12 @@ function closeUploadMerchant() {
             preview.classList.add('hidden');
         }
         if (text) text.textContent = 'Click to upload Logo Merchant';
-
-        if (modalContent) {
-            modalContent.style.transform = 'scale(0.95)';
-            modalContent.style.opacity = '0';
         }
-        if (backdrop) backdrop.style.opacity = '0';
-    }, 400);
+    }, 300);
 }
 
 // ======================
-// Dropdown kategori di modal
+// Dropdown kategori
 // ======================
 function toggleMerchantKategoriDropdown() {
     const dropdown = document.getElementById('merchantKategoriDropdown');
@@ -299,41 +464,37 @@ function toggleMerchantKategoriDropdown() {
         dropdown.style.transform = 'translateY(-6px)';
         setTimeout(() => {
             dropdown.classList.add('hidden');
-            dropdown.style.transition = '';
-            dropdown.style.opacity = '';
-            dropdown.style.transform = '';
         }, 200);
     }
 }
 
 function selectMerchantKategori(value) {
     const hiddenInput = document.getElementById('merchantKategoriValue');
-    const labelSpan   = document.getElementById('merchantKategoriLabel');
-    const btn         = document.getElementById('merchantKategoriBtn');
-    const dropdown    = document.getElementById('merchantKategoriDropdown');
+    const labelSpan = document.getElementById('merchantKategoriLabel');
+    const btn = document.getElementById('merchantKategoriBtn');
+    const dropdown = document.getElementById('merchantKategoriDropdown');
 
     if (hiddenInput) hiddenInput.value = value;
-    if (labelSpan)   labelSpan.textContent = value;
+    if (labelSpan) labelSpan.textContent = value.charAt(0).toUpperCase() + value.slice(1);
 
     if (btn) {
         btn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border transition-all duration-300';
 
-        if (value === 'Makanan') {
-            btn.classList.add('border-orange-300', 'text-orange-800', 'bg-gradient-to-r', 'from-orange-100', 'to-red-100');
-        } else if (value === 'Hiburan') {
-            btn.classList.add('border-purple-300', 'text-purple-800', 'bg-gradient-to-r', 'from-purple-100', 'to-pink-100');
-        } else if (value === 'Liburan') {
-            btn.classList.add('border-blue-300', 'text-blue-800', 'bg-gradient-to-r', 'from-blue-100', 'to-cyan-100');
-        } else if (value === 'Belanja') {
-            btn.classList.add('border-green-300', 'text-green-800', 'bg-gradient-to-r', 'from-green-100', 'to-emerald-100');
-        } else if (value === 'Kecantikan & Perawatan') {
-            btn.classList.add('border-pink-300', 'text-pink-800', 'bg-gradient-to-r', 'from-pink-100', 'to-rose-100');
-        } else if (value === 'Paket Telkomsel') {
-            btn.classList.add('border-indigo-300', 'text-indigo-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100');
-        } else if (value === 'Merchandise') {
-            btn.classList.add('border-indigo-300', 'text-red-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100');
+        const colorMap = {
+            'kuliner': ['border-orange-300', 'text-orange-800', 'from-orange-100', 'to-red-100'],
+            'hiburan': ['border-purple-300', 'text-purple-800', 'from-purple-100', 'to-pink-100'],
+            'liburan': ['border-blue-300', 'text-blue-800', 'from-blue-100', 'to-cyan-100'],
+            'belanja': ['border-green-300', 'text-green-800', 'from-green-100', 'to-emerald-100'],
+            'kecantikan': ['border-pink-300', 'text-pink-800', 'from-pink-100', 'to-rose-100'],
+            'telkomsel': ['border-indigo-300', 'text-indigo-800', 'from-indigo-100', 'to-blue-100']
+        };
+        
+        const colors = colorMap[value] || ['border-gray-300', 'text-gray-700'];
+        btn.classList.add(...colors);
+        if (colors.length > 2) {
+            btn.classList.add('bg-gradient-to-r', colors[2], colors[3]);
         } else {
-            btn.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+            btn.classList.add('hover:bg-gray-50');
         }
     }
 
@@ -343,14 +504,11 @@ function selectMerchantKategori(value) {
         dropdown.style.transform = 'translateY(-6px)';
         setTimeout(() => {
             dropdown.classList.add('hidden');
-            dropdown.style.transition = '';
-            dropdown.style.opacity = '';
-            dropdown.style.transform = '';
         }, 200);
     }
 }
 
-// klik di luar dropdown kategori → tutup
+// Klik di luar dropdown kategori → tutup
 document.addEventListener('click', function (event) {
     const btn = document.getElementById('merchantKategoriBtn');
     const dropdown = document.getElementById('merchantKategoriDropdown');
@@ -362,52 +520,665 @@ document.addEventListener('click', function (event) {
         dropdown.style.transform = 'translateY(-6px)';
         setTimeout(() => {
             dropdown.classList.add('hidden');
-            dropdown.style.transition = '';
-            dropdown.style.opacity = '';
-            dropdown.style.transform = '';
         }, 200);
     }
 });
 
 // ======================
-// Submit & overlay click
+// Update Link Blanjapoin
 // ======================
-let pendingFormData = null;
-let csrfToken = null;
+function updateLinkBlanjapoin() {
+    const code = document.getElementById('linkBlanjapoinCode').value.trim();
+    // Format sesuai dengan yang diharapkan controller: blanjapoin.id/dash/{code}
+    const fullLink = code ? `blanjapoin.id/dash/${code}` : '';
+    document.getElementById('linkBlanjapoinFull').value = fullLink;
+}
 
+// ======================
+// Lokasi Dropdowns (Provinsi, Kabupaten, Kecamatan) - Data dari API wilayah.id
+// ======================
+// Data akan diambil dari API wilayah.id secara dinamis
+
+// Store all options for searchable dropdowns
+let allProvinsiOptions = [];
+let allKabupatenOptions = [];
+let allKecamatanOptions = [];
+
+// Cache untuk menyimpan kode yang dipilih
+let selectedProvinceCode = null;
+let selectedRegencyCode = null;
+
+// ======================
+// API Functions - wilayah.id
+// ======================
+
+// Load provinsi dari API
+async function fetchProvinces() {
+    const container = document.getElementById('provinsiOptions');
+    const dropdown = document.getElementById('provinsiDropdown');
+    
+    // Show loading state
+    if (container) {
+        container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data provinsi...</div>';
+    }
+    if (dropdown) {
+        dropdown.classList.remove('hidden');
+        dropdown.style.display = 'block';
+    }
+    
+    try {
+        // Gunakan backend proxy untuk menghindari CORS
+        const response = await fetch('{{ route("api.wilayah.provinces") }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('API Response:', data); // Debug log
+        
+        // Handle different response formats
+        const provincesData = data?.data || data?.provinces || data;
+        
+        if (Array.isArray(provincesData) && provincesData.length > 0) {
+            allProvinsiOptions = provincesData.map(prov => ({
+                value: prov.code || prov.id,
+                label: prov.name,
+                code: prov.code || prov.id
+            }));
+            
+            console.log('Loaded provinces:', allProvinsiOptions.length, allProvinsiOptions.slice(0, 3)); // Debug log
+            
+            // Render options
+            if (container) {
+                renderSearchableOptions('provinsi', allProvinsiOptions);
+            }
+            
+            // Ensure dropdown is visible
+            if (dropdown) {
+                dropdown.classList.remove('hidden');
+                dropdown.style.display = 'block';
+            }
+        } else {
+            throw new Error('Invalid data format or empty data');
+        }
+    } catch (error) {
+        console.error('Error fetching provinces:', error);
+        
+        // Show error message with retry option
+        if (container) {
+            container.innerHTML = `
+                <div class="px-4 py-2 text-sm text-red-500">
+                    <div>Gagal memuat data provinsi</div>
+                    <button onclick="fetchProvinces()" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline">Coba lagi</button>
+                </div>
+            `;
+        }
+        
+        // Keep dropdown visible to show error
+        if (dropdown) {
+            dropdown.classList.remove('hidden');
+            dropdown.style.display = 'block';
+        }
+    }
+}
+
+// Load kabupaten dari API berdasarkan kode provinsi
+async function fetchRegencies(provinceCode) {
+    if (!provinceCode) return;
+    
+    try {
+        allKabupatenOptions = [];
+        const kabupatenSearch = document.getElementById('kabupatenSearch');
+        const kabupatenValue = document.getElementById('kabupatenValue');
+        const kecamatanSearch = document.getElementById('kecamatanSearch');
+        const kecamatanValue = document.getElementById('kecamatanValue');
+        
+        // Reset kabupaten dan kecamatan
+        if (kabupatenSearch) kabupatenSearch.value = '';
+        if (kabupatenValue) kabupatenValue.value = '';
+        if (kecamatanSearch) kecamatanSearch.value = '';
+        if (kecamatanValue) kecamatanValue.value = '';
+        document.getElementById('kabupatenOptions').innerHTML = '';
+        document.getElementById('kecamatanOptions').innerHTML = '';
+        allKecamatanOptions = [];
+        
+        // Show loading state
+        const container = document.getElementById('kabupatenOptions');
+        if (container) {
+            container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data...</div>';
+        }
+        
+        // Gunakan backend proxy untuk menghindari CORS
+        const response = await fetch(`{{ url('/api/wilayah/regencies') }}/${provinceCode}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Regencies response:', data); // Debug log
+        
+        // Handle different response formats
+        const regenciesData = data?.data || data?.regencies || data;
+        
+        if (Array.isArray(regenciesData) && regenciesData.length > 0) {
+            allKabupatenOptions = regenciesData.map(kab => {
+                // Pastikan kode disimpan sebagai string dan tanpa karakter aneh
+                const code = String(kab.code || kab.id || '').trim();
+                return {
+                    value: code,
+                    label: kab.name || kab.nama,
+                    code: code
+                };
+            });
+            
+            console.log('Loaded regencies:', allKabupatenOptions.length); // Debug log
+            
+            const dropdown = document.getElementById('kabupatenDropdown');
+            renderSearchableOptions('kabupaten', allKabupatenOptions);
+            if (dropdown) {
+                dropdown.classList.remove('hidden');
+                dropdown.style.display = 'block';
+            }
+        } else {
+            throw new Error('Invalid data format or empty data');
+        }
+    } catch (error) {
+        console.error('Error fetching regencies:', error);
+        const container = document.getElementById('kabupatenOptions');
+        if (container) {
+            container.innerHTML = `
+                <div class="px-4 py-2 text-sm text-red-500">
+                    <div>Gagal memuat data kabupaten</div>
+                    <button onclick="fetchRegencies('${provinceCode}')" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline">Coba lagi</button>
+                </div>
+            `;
+        }
+    }
+}
+
+// Load kecamatan dari API berdasarkan kode kabupaten
+async function fetchDistricts(regencyCode) {
+    if (!regencyCode) return;
+    
+    const container = document.getElementById('kecamatanOptions');
+    const dropdown = document.getElementById('kecamatanDropdown');
+    
+    try {
+        allKecamatanOptions = [];
+        const kecamatanSearch = document.getElementById('kecamatanSearch');
+        const kecamatanValue = document.getElementById('kecamatanValue');
+        
+        // Reset kecamatan
+        if (kecamatanSearch) kecamatanSearch.value = '';
+        if (kecamatanValue) kecamatanValue.value = '';
+        if (container) container.innerHTML = '';
+        
+        // Show loading state
+        if (container) {
+            container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data kecamatan...</div>';
+        }
+        if (dropdown) {
+            dropdown.classList.remove('hidden');
+            dropdown.style.display = 'block';
+        }
+        
+        // Log untuk debugging
+        console.log('Fetching districts for regency code:', regencyCode);
+        
+        // Gunakan backend proxy untuk menghindari CORS
+        // Gunakan query parameter untuk menghindari masalah dengan titik di route
+        const url = `{{ url('/api/wilayah/districts-by-code') }}?code=${encodeURIComponent(regencyCode)}`;
+        console.log('Fetching from URL:', url, 'Original code:', regencyCode);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        console.log('Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Response error:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Districts response data:', data); // Debug log
+        
+        // Check if response has error
+        if (data.error) {
+            throw new Error(data.error + (data.message ? ': ' + data.message : ''));
+        }
+        
+        // Handle different response formats
+        let districtsData = null;
+        if (data?.data) {
+            districtsData = Array.isArray(data.data) ? data.data : (data.data.data || null);
+        } else if (data?.districts) {
+            districtsData = Array.isArray(data.districts) ? data.districts : null;
+        } else if (Array.isArray(data)) {
+            districtsData = data;
+        }
+        
+        console.log('Parsed districts data:', districtsData);
+        
+        if (districtsData && Array.isArray(districtsData) && districtsData.length > 0) {
+            allKecamatanOptions = districtsData.map(kec => {
+                // Pastikan kode disimpan sebagai string dan tanpa karakter aneh
+                const code = String(kec.code || kec.id || kec.kode || '').trim();
+                return {
+                    value: code,
+                    label: kec.name || kec.nama,
+                    code: code
+                };
+            });
+            
+            console.log('Loaded districts:', allKecamatanOptions.length, 'items'); // Debug log
+            
+            // Render options
+            if (container) {
+                renderSearchableOptions('kecamatan', allKecamatanOptions);
+            }
+            
+            // Ensure dropdown is visible
+            if (dropdown) {
+                dropdown.classList.remove('hidden');
+                dropdown.style.display = 'block';
+            }
+        } else {
+            console.warn('No districts data found or empty array');
+            throw new Error('Data kecamatan kosong atau format tidak valid');
+        }
+    } catch (error) {
+        console.error('Error fetching districts:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            regencyCode: regencyCode
+        });
+        
+        // Show error message with retry option and more details
+        if (container) {
+            container.innerHTML = `
+                <div class="px-4 py-2 text-sm text-red-500">
+                    <div>Gagal memuat data kecamatan</div>
+                    <div class="text-xs text-gray-500 mt-1">${error.message}</div>
+                    <button onclick="fetchDistricts('${regencyCode}')" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline">Coba lagi</button>
+                </div>
+            `;
+        }
+        
+        // Keep dropdown visible to show error
+        if (dropdown) {
+            dropdown.classList.remove('hidden');
+            dropdown.style.display = 'block';
+        }
+    }
+}
+
+// Load provinsi saat DOM ready atau saat modal dibuka
+document.addEventListener('DOMContentLoaded', function() {
+    // Preload provinsi data
+    fetchProvinces();
+    
+    // Close dropdowns saat klik di luar (dengan delay untuk menghindari konflik dengan open event)
+    let clickTimeout;
+    document.addEventListener('click', function(event) {
+        const target = event.target;
+        
+        // Skip jika klik di input atau dropdown option
+        if (target.id === 'provinsiSearch' || target.id === 'kabupatenSearch' || target.id === 'kecamatanSearch' ||
+            target.closest('#provinsiOptions') || target.closest('#kabupatenOptions') || target.closest('#kecamatanOptions')) {
+            clearTimeout(clickTimeout);
+            return;
+        }
+        
+        // Clear previous timeout
+        clearTimeout(clickTimeout);
+        
+        // Delay untuk memastikan open event sudah selesai
+        clickTimeout = setTimeout(() => {
+            const provinsiInput = document.getElementById('provinsiSearch');
+            const kabupatenInput = document.getElementById('kabupatenSearch');
+            const kecamatanInput = document.getElementById('kecamatanSearch');
+            
+            const provinsiDropdown = document.getElementById('provinsiDropdown');
+            const kabupatenDropdown = document.getElementById('kabupatenDropdown');
+            const kecamatanDropdown = document.getElementById('kecamatanDropdown');
+            
+            // Check if click is inside dropdown container
+            const provinsiContainer = provinsiInput?.closest('.relative');
+            const kabupatenContainer = kabupatenInput?.closest('.relative');
+            const kecamatanContainer = kecamatanInput?.closest('.relative');
+            
+            // Close provinsi dropdown if click is outside
+            if (provinsiDropdown && !provinsiDropdown.classList.contains('hidden')) {
+                if (!provinsiContainer?.contains(target) && !provinsiDropdown?.contains(target)) {
+                    closeSearchableDropdown('provinsi');
+                }
+            }
+            
+            // Close kabupaten dropdown if click is outside
+            if (kabupatenDropdown && !kabupatenDropdown.classList.contains('hidden')) {
+                if (!kabupatenContainer?.contains(target) && !kabupatenDropdown?.contains(target)) {
+                    closeSearchableDropdown('kabupaten');
+                }
+            }
+            
+            // Close kecamatan dropdown if click is outside
+            if (kecamatanDropdown && !kecamatanDropdown.classList.contains('hidden')) {
+                if (!kecamatanContainer?.contains(target) && !kecamatanDropdown?.contains(target)) {
+                    closeSearchableDropdown('kecamatan');
+                }
+            }
+        }, 150); // Delay 150ms untuk memberikan waktu open event selesai
+    });
+    
+    // Close dropdowns saat tekan ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeAllDropdowns();
+        }
+    });
+});
+
+// ======================
+// Searchable Dropdown Functions
+// ======================
+async function openSearchableDropdown(type, event) {
+    // Stop event propagation jika event tersedia
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    const dropdown = document.getElementById(`${type}Dropdown`);
+    const optionsContainer = document.getElementById(`${type}Options`);
+    
+    if (!dropdown || !optionsContainer) {
+        console.error(`Element not found for type: ${type}`, { dropdown: !!dropdown, optionsContainer: !!optionsContainer });
+        return;
+    }
+    
+    // Close other dropdowns first
+    if (type !== 'provinsi') closeSearchableDropdown('provinsi');
+    if (type !== 'kabupaten') closeSearchableDropdown('kabupaten');
+    if (type !== 'kecamatan') closeSearchableDropdown('kecamatan');
+    
+    // Open dropdown
+    dropdown.classList.remove('hidden');
+    dropdown.style.display = 'block';
+    dropdown.style.opacity = '1';
+    dropdown.style.visibility = 'visible';
+    
+    // Load data jika belum ada
+    if (type === 'provinsi') {
+        if (allProvinsiOptions.length === 0) {
+            // Show loading
+            optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data provinsi...</div>';
+            await fetchProvinces();
+        } else {
+            // Render existing options
+            renderSearchableOptions(type, allProvinsiOptions);
+        }
+        return;
+    }
+    
+    if (type === 'kabupaten') {
+        if (allKabupatenOptions.length === 0) {
+            // Show message if no province selected
+            if (!selectedProvinceCode) {
+                optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Pilih provinsi terlebih dahulu</div>';
+                return;
+            }
+            await fetchRegencies(selectedProvinceCode);
+        } else {
+            // Render existing options
+            renderSearchableOptions(type, allKabupatenOptions);
+        }
+        return;
+    }
+    
+    if (type === 'kecamatan') {
+        // Check if regency code is available
+        if (!selectedRegencyCode) {
+            // Try to get from hidden input
+            const kabupatenValue = document.getElementById('kabupatenValue');
+            if (kabupatenValue && kabupatenValue.value) {
+                selectedRegencyCode = kabupatenValue.value;
+                console.log('Got regency code from input:', selectedRegencyCode);
+            } else {
+                optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Pilih kabupaten terlebih dahulu</div>';
+                return;
+            }
+        }
+        
+        // Always fetch if no data or if regency code changed
+        if (allKecamatanOptions.length === 0) {
+            await fetchDistricts(selectedRegencyCode);
+        } else {
+            // Render existing options
+            renderSearchableOptions(type, allKecamatanOptions);
+        }
+        return;
+    }
+}
+
+function closeSearchableDropdown(type) {
+    const dropdown = document.getElementById(`${type}Dropdown`);
+    if (dropdown) {
+        dropdown.classList.add('hidden');
+        dropdown.style.display = 'none';
+        dropdown.style.opacity = '0';
+        dropdown.style.visibility = 'hidden';
+    }
+}
+
+// Close all dropdowns
+function closeAllDropdowns() {
+    closeSearchableDropdown('provinsi');
+    closeSearchableDropdown('kabupaten');
+    closeSearchableDropdown('kecamatan');
+}
+
+function filterSearchableDropdown(type, searchTerm) {
+    let options = [];
+    if (type === 'provinsi') {
+        options = allProvinsiOptions;
+    } else if (type === 'kabupaten') {
+        options = allKabupatenOptions;
+    } else if (type === 'kecamatan') {
+        options = allKecamatanOptions;
+    }
+    
+    const filtered = searchTerm 
+        ? options.filter(opt => opt.label.toLowerCase().includes(searchTerm.toLowerCase()))
+        : options;
+    
+    // Open dropdown if not already open
+    const dropdown = document.getElementById(`${type}Dropdown`);
+    if (dropdown) {
+        dropdown.classList.remove('hidden');
+    }
+    
+    renderSearchableOptions(type, filtered);
+}
+
+function renderSearchableOptions(type, options) {
+    const container = document.getElementById(`${type}Options`);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!options || options.length === 0) {
+        container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Tidak ada data</div>';
+        return;
+    }
+    
+    options.forEach(option => {
+        const div = document.createElement('div');
+        div.className = 'px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 cursor-pointer transition-colors';
+        div.textContent = option.label || option.name || option;
+        const value = option.value || option.code || option;
+        const code = option.code || option.value || option;
+        const label = option.label || option.name || option;
+        div.onclick = () => selectSearchableOption(type, value, label, code);
+        container.appendChild(div);
+    });
+}
+
+function selectSearchableOption(type, value, label, code) {
+    const searchInput = document.getElementById(`${type}Search`);
+    const hiddenInput = document.getElementById(`${type}Value`);
+    
+    if (searchInput) searchInput.value = label;
+    if (hiddenInput) hiddenInput.value = value;
+    
+    closeSearchableDropdown(type);
+    
+    if (type === 'provinsi') {
+        selectedProvinceCode = code || value;
+        fetchRegencies(selectedProvinceCode);
+        updateDaerahCombined();
+    } else if (type === 'kabupaten') {
+        // Use code first, then value as fallback, ensure it's a clean string
+        const regencyCode = String(code || value || '').trim();
+        selectedRegencyCode = regencyCode || null;
+        console.log('Kabupaten selected:', {
+            label: label,
+            value: value,
+            code: code,
+            selectedRegencyCode: selectedRegencyCode,
+            originalCode: code,
+            originalValue: value
+        });
+        
+        // Validate code format (should be numeric, possibly with dots)
+        if (!selectedRegencyCode || (!/^[0-9.]+$/.test(selectedRegencyCode))) {
+            console.error('Invalid regency code format:', selectedRegencyCode);
+        }
+        
+        // Reset kecamatan data when kabupaten changes
+        allKecamatanOptions = [];
+        const kecamatanSearch = document.getElementById('kecamatanSearch');
+        const kecamatanValue = document.getElementById('kecamatanValue');
+        if (kecamatanSearch) kecamatanSearch.value = '';
+        if (kecamatanValue) kecamatanValue.value = '';
+        
+        if (selectedRegencyCode) {
+            // Fetch districts immediately
+            fetchDistricts(selectedRegencyCode);
+        } else {
+            console.error('Regency code is empty or invalid. Code:', code, 'Value:', value);
+            alert('Kode kabupaten tidak valid. Silakan pilih ulang.');
+        }
+        updateDaerahCombined();
+    } else if (type === 'kecamatan') {
+        updateDaerahCombined();
+    }
+}
+
+// Event listener untuk close dropdown sudah di-handle di DOMContentLoaded
+
+// Functions ini sudah tidak diperlukan karena menggunakan API langsung
+// updateKabupatenOptions() dan updateKecamatanOptions() sudah diganti dengan fetchRegencies() dan fetchDistricts()
+
+function updateDaerahCombined() {
+    const provinsiSearch = document.getElementById('provinsiSearch');
+    const kabupatenSearch = document.getElementById('kabupatenSearch');
+    const kecamatanSearch = document.getElementById('kecamatanSearch');
+    
+    const parts = [];
+    
+    // Gunakan nilai dari input search (yang sudah terisi label)
+    if (kecamatanSearch && kecamatanSearch.value && kecamatanSearch.value.trim() !== '') {
+        parts.push(kecamatanSearch.value.trim());
+    }
+    if (kabupatenSearch && kabupatenSearch.value && kabupatenSearch.value.trim() !== '') {
+        parts.push(kabupatenSearch.value.trim());
+    }
+    if (provinsiSearch && provinsiSearch.value && provinsiSearch.value.trim() !== '') {
+        parts.push(provinsiSearch.value.trim());
+    }
+    
+    const daerahCombined = parts.join(', ');
+    document.getElementById('daerahCombined').value = daerahCombined;
+    
+    console.log('Daerah combined updated:', daerahCombined);
+    return daerahCombined;
+}
+
+// ======================
+// Handle form submit - tampilkan modal verifikasi
+// ======================
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formUploadMerchant');
     if (form) {
-        // Get CSRF token from form
-        const csrfInput = form.querySelector('input[name="_token"]');
-        if (csrfInput) {
-            csrfToken = csrfInput.value;
-        }
-        
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             
             // Validate required fields
             const namaMerchant = form.querySelector('input[name="nama_merchant"]').value.trim();
-            const daerah = form.querySelector('input[name="daerah"]').value.trim();
             const kategori = form.querySelector('input[name="kategori"]').value.trim();
             
-            if (!namaMerchant || !daerah || !kategori) {
-                alert('Mohon isi semua field yang diperlukan (Nama Merchant, Daerah, Kategori)');
-                return;
+            if (!namaMerchant || !kategori) {
+                alert('Mohon isi field yang diperlukan (Nama Merchant, Kategori)');
+                return false;
             }
             
-            // Store form data and show verification modal
-            pendingFormData = new FormData(form);
-            // Use the shared verification modal from upload-verification-modal.blade.php
-            showUploadVerification(pendingFormData, 'Merchant');
+            // Update link blanjapoin sebelum submit
+            updateLinkBlanjapoin();
+            
+            // Update daerah sebelum submit
+            updateDaerahCombined();
+            
+            // Debug: Log form data sebelum submit
+            const formData = new FormData(form);
+            console.log('=== FORM DATA SEBELUM SUBMIT ===');
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'logo_merchant') {
+                    console.log(`${key}:`, value);
+                } else {
+                    console.log(`${key}:`, value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value);
+                }
+            }
+            console.log('================================');
+            
+            // Tampilkan modal verifikasi
+            if (typeof showUploadVerification === 'function') {
+                showUploadVerification(formData, 'Merchant');
+            } else {
+                // Fallback: submit langsung jika modal verifikasi tidak tersedia
+                form.submit();
+            }
         });
     }
-
+    
+    // Close modal when clicking overlay
     const modal = document.getElementById('uploadModalMerchant');
-    if (modal) {
+    const overlay = document.getElementById('uploadModalMerchantOverlay');
+    if (modal && overlay) {
         modal.addEventListener('click', function(event) {
-            if (event.target === this) closeUploadMerchant();
+            if (event.target === modal || event.target === overlay) {
+                closeUploadMerchant();
+            }
         });
     }
 });
