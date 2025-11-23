@@ -480,15 +480,34 @@
 
   <!-- Confirmation Modal -->
   <div id="modal-confirm" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/50"></div>
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-      <div class="p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2" id="confirm-title">Konfirmasi</h3>
-        <p class="text-gray-600 text-sm" id="confirm-message"></p>
+    <div id="modal-confirm-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+    <div id="modal-confirm-panel" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden opacity-0 scale-95 translate-y-4 transition-all duration-300">
+      <!-- Header with icon -->
+      <div class="bg-gradient-to-r from-red-50 to-orange-50 px-6 py-5 border-b border-red-100">
+        <div class="flex items-center gap-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+            <i class="fa-solid fa-exclamation-triangle text-white text-lg"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-xl font-bold text-gray-900" id="confirm-title">Konfirmasi</h3>
+          </div>
+          <button id="btn-confirm-close" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/50 rounded-lg">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
       </div>
-      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t bg-white">
-        <button class="px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" id="btn-confirm-cancel">Batal</button>
-        <button class="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-red-600 to-orange-500 ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-95 transition-all" id="btn-confirm-ok">Hapus</button>
+      
+      <!-- Body -->
+      <div class="p-6">
+        <p class="text-gray-700 text-base leading-relaxed" id="confirm-message"></p>
+      </div>
+      
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t">
+        <button class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 active:scale-95 transition-all" id="btn-confirm-cancel">Batal</button>
+        <button class="px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-red-600 to-orange-500 ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-95 transition-all font-semibold" id="btn-confirm-ok">
+          <i class="fa-solid fa-trash mr-2"></i>Hapus
+        </button>
       </div>
     </div>
   </div>
@@ -586,6 +605,7 @@
 
       document.getElementById('btn-confirm-cancel')?.addEventListener('click', closeConfirmModal);
       document.getElementById('btn-confirm-ok')?.addEventListener('click', executeConfirmedAction);
+      document.getElementById('btn-confirm-close')?.addEventListener('click', closeConfirmModal);
 
       document.addEventListener('click', function(event) {
         const userDropdownBtn = document.getElementById('userDropdownBtn');
@@ -609,6 +629,17 @@
           }
         }
       });
+      
+      // Close modal when clicking overlay
+      const modalConfirm = document.getElementById('modal-confirm');
+      const modalConfirmOverlay = document.getElementById('modal-confirm-overlay');
+      if (modalConfirm && modalConfirmOverlay) {
+        modalConfirm.addEventListener('click', (e) => {
+          if (e.target === modalConfirm || e.target === modalConfirmOverlay) {
+            closeConfirmModal();
+          }
+        });
+      }
     }
 
     // toggleApproval: call API but do NOT reload; reflect UI immediately (checkbox already toggled by user)
@@ -969,14 +1000,39 @@
       }, 300);
     }
     function openConfirmModal() {
-      document.getElementById('modal-confirm').classList.remove('hidden');
-      document.getElementById('modal-confirm').classList.add('flex');
+      const modal = document.getElementById('modal-confirm');
+      const overlay = document.getElementById('modal-confirm-overlay');
+      const panel = document.getElementById('modal-confirm-panel');
+      
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
       document.body.style.overflow = 'hidden';
+      
+      // Trigger animation after DOM update
+      requestAnimationFrame(() => {
+        overlay?.classList.remove('opacity-0');
+        overlay?.classList.add('opacity-100');
+        panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+        panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+      });
     }
+    
     function closeConfirmModal() {
-      document.getElementById('modal-confirm').classList.add('hidden');
-      document.getElementById('modal-confirm').classList.remove('flex');
-      document.body.style.overflow = '';
+      const modal = document.getElementById('modal-confirm');
+      const overlay = document.getElementById('modal-confirm-overlay');
+      const panel = document.getElementById('modal-confirm-panel');
+      
+      overlay?.classList.remove('opacity-100');
+      overlay?.classList.add('opacity-0');
+      panel?.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+      panel?.classList.add('opacity-0', 'scale-95', 'translate-y-4');
+      
+      setTimeout(() => {
+        modal?.classList.add('hidden');
+        modal?.classList.remove('flex');
+        document.body.style.overflow = '';
+      }, 300);
     }
 
     // User dropdown
