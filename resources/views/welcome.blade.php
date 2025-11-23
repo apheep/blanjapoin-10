@@ -20,7 +20,7 @@
     <div class="text-sm font-semibold text-neutral-600">Loading Please wait...</div>
    </div>
   </div>
-   <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
+   <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full">
     <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
      <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -83,7 +83,7 @@
        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
         <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
        </span>
-       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Lifestyle</span>
+       <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
       </button>
       <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
@@ -129,7 +129,7 @@
        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
         <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
        </span>
-       <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kesehatan & Kecantikan</span>
+       <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
       </button>
       <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
@@ -146,7 +146,7 @@
      </div>
     </section>
 
-    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection">
+    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
      <!-- Mobile Version -->
      <div class="md:hidden flex items-center gap-2">
       <div class="flex-1 rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
@@ -158,20 +158,23 @@
         <input id="mobileSearchInput" class="w-full bg-transparent text-xs outline-none placeholder:text-neutral-400 font-semibold" placeholder="Search Product" />
        </div>
       </div>
-      <button onclick="openMobilePointSheet()" id="mobilePointBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
-       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
-        <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
-       </svg>
-      </button>
       <button onclick="openMobileLocationSheet()" id="mobileLocationBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
         <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
        </svg>
       </button>
+      <button onclick="openMobilePointSheet()" id="mobilePointBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+        <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
+       </svg>
+      </button>
      </div>
 
      <!-- Desktop Version -->
-     <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl">
+     @php
+      $locationList = collect($locations ?? [])->filter()->values();
+     @endphp
+     <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl" style="overflow: visible !important; position: relative; z-index: 10;">
       <div class="flex-1 rounded-lg md:rounded-xl bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
        <div class="flex items-center gap-2 text-neutral-500">
         <span class="text-base md:text-lg">🔍</span>
@@ -187,34 +190,30 @@
        </div>
        <div id="locationDropdown" class="absolute left-0 right-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-56 overflow-auto hidden backdrop-blur-sm"></div>
       </div>
-     <div class="relative">
-      <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px]">
+     <div class="relative z-10" style="z-index: 10 !important; position: relative; overflow: visible !important;">
+      <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px] relative z-10" style="z-index: 10 !important; position: relative;">
        <span id="sortSelectedText">According To Your Point</span>
         <svg id="sortDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-neutral-500 transition-transform duration-300">
          <path d="M7 10l5 5 5-5z"/>
         </svg>
        </button>
-       <div id="sortDropdown" class="absolute left-0 right-0 mt-1 w-full rounded-lg md:rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top transition-all duration-300 ease-out z-50 backdrop-blur-sm">
+       <div id="sortDropdown" class="absolute left-0 right-0 mt-1 w-full rounded-lg md:rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top transition-all duration-300 ease-out z-[60] backdrop-blur-sm pointer-events-none" style="z-index: 60 !important; position: absolute !important;">
         <div class="py-1">
-         <button onclick="selectSortOption('Lowest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-green-500">
+         <button onclick="selectSortOption('Lowest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-green-500 pointer-events-none">
            <path d="M7 14l5-5 5 5z"/>
           </svg>
-          <span>Lowest</span>
+          <span class="pointer-events-none">Lowest</span>
          </button>
-         <button onclick="selectSortOption('Highest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-red-500">
+         <button type="button" onclick="selectSortOption('Highest'); return false;" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative" style="pointer-events: auto !important; position: relative; z-index: 60 !important;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-red-500 pointer-events-none" style="pointer-events: none;">
            <path d="M7 10l5 5 5-5z"/>
           </svg>
-          <span>Highest</span>
+          <span class="pointer-events-none" style="pointer-events: none;">Highest</span>
          </button>
         </div>
       </div>
      </div>
-    </div>
-
-    <div id="searchEmptyState" class="hidden mt-4 text-center text-xs md:text-sm font-semibold text-neutral-500">
-     Voucher yang kamu cari belum ditemukan.
     </div>
 
     </section>
@@ -281,8 +280,8 @@
     <div id="bottomSheetContent" class="overflow-y-auto" style="height: calc(55vh - 70px);"></div>
    </div>
 
-   <!-- Desktop: Modal Popup -->
-   <div id="desktopModal" class="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-out w-full max-w-2xl" style="opacity: 0; transform: translate(-50%, -50%) scale(0.95);">
+  <!-- Desktop: Modal Popup -->
+  <div id="desktopModal" class="hidden md:block fixed top-3/4 left-3/4 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-out w-full max-w-2xl" style="opacity: 0; transform: translate(-50%, -50%) scale(0.95);">
     <!-- Header -->
     <div class="bg-gradient-to-r from-orange-50 to-rose-50 px-6 py-4 flex items-center justify-between border-b border-neutral-200">
      <h3 id="desktopModalTitle" class="text-xl font-bold text-neutral-800">Pilihan</h3>
@@ -695,13 +694,27 @@
     const arrow = document.getElementById('sortDropdownArrow');
     
     if (!sortDropdownOpen) {
-     dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
-     dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+     // Remove hidden classes first
+     dropdown.classList.remove('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+     
+     // Force visibility with inline styles (before adding visible classes)
+     dropdown.style.zIndex = '60';
+     dropdown.style.display = 'block';
+     dropdown.style.visibility = 'visible';
+     dropdown.style.opacity = '1';
+     dropdown.style.position = 'absolute';
+     
+     // Add visible classes
+     dropdown.classList.add('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+     
      arrow.classList.add('rotate-180');
      sortDropdownOpen = true;
     } else {
-     dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
-     dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+     // Hide dropdown
+     dropdown.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+     dropdown.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+     dropdown.style.opacity = '0';
+     dropdown.style.visibility = 'hidden';
      arrow.classList.remove('rotate-180');
      sortDropdownOpen = false;
     }
@@ -711,17 +724,36 @@
     const selectedText = document.getElementById('sortSelectedText');
     const dropdown = document.getElementById('sortDropdown');
     const arrow = document.getElementById('sortDropdownArrow');
-    
+
     selectedText.textContent = option;
-    
-    // Close dropdown
-    dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
-    dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+    mobilePointFilter = option;
+    applyPointSort(option);
+
+    // Close dropdown - ensure it's fully hidden
+    dropdown.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+    dropdown.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+    dropdown.style.opacity = '0';
+    dropdown.style.visibility = 'hidden';
     arrow.classList.remove('rotate-180');
     sortDropdownOpen = false;
-    
-    // Here you can add logic to actually sort the content based on the selected option
-    console.log('Sort by:', option);
+   }
+
+   // Ensure sort dropdown buttons are clickable - add direct event listeners
+   const sortDropdown = document.getElementById('sortDropdown');
+   if (sortDropdown) {
+    // Use event delegation as backup
+    sortDropdown.addEventListener('click', function(e) {
+     const button = e.target.closest('button[onclick*="selectSortOption"]');
+     if (button) {
+      const onclickAttr = button.getAttribute('onclick');
+      if (onclickAttr && onclickAttr.includes('Highest')) {
+       // Ensure Highest button works
+       e.stopPropagation();
+       selectSortOption('Highest');
+       return false;
+      }
+     }
+    }, true); // Use capture phase
    }
 
    // Close sort dropdown when clicking outside
@@ -732,8 +764,10 @@
     
     if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
      if (sortDropdownOpen) {
-      dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
-      dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+      dropdown.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+      dropdown.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+      dropdown.style.opacity = '0';
+      dropdown.style.visibility = 'hidden';
       arrow.classList.remove('rotate-180');
       sortDropdownOpen = false;
      }
@@ -751,14 +785,35 @@
    });
 
    // Location searchable select (combobox)
-   const locations = ['All','Surabaya','Sidoarja','Malang','Madiun','Jakarta','Jogja','Bandung','Bali'];
+   const serverLocations = @json($locationList);
+   const locations = ['All', ...serverLocations];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');
-   const voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
-   const totalVoucherCards = voucherCards.length;
-   const searchEmptyState = document.getElementById('searchEmptyState');
-   let currentSearchQuery = '';
+   const voucherSections = new Map();
+   let voucherCards = [];
+
+   function refreshVoucherCards() {
+    voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
+   }
+
+   function registerVoucherSections() {
+    voucherSections.clear();
+    let fallbackIndex = 0;
+    document.querySelectorAll('[data-voucher-container="true"]').forEach(container => {
+     const sectionKey = container.dataset.voucherSection || `container-${fallbackIndex++}`;
+     if (!voucherSections.has(sectionKey)) {
+      voucherSections.set(sectionKey, []);
+     }
+     voucherSections.get(sectionKey).push({
+      element: container,
+      slotCount: container.querySelectorAll('[data-voucher-card="true"]').length
+     });
+    });
+   }
+
    let currentLocationFilter = '';
+   let currentPointSort = 'Lowest';
+   let mobilePointFilter = 'Lowest';
 
    function renderLocationOptions(filter = '', dropdownElement, inputElement) {
     const f = filter.trim().toLowerCase();
@@ -785,32 +840,62 @@
    }
 
    function applyVoucherFilters() {
-    const nameQuery = normalizeQuery(currentSearchQuery);
     const locationQuery = normalizeQuery(currentLocationFilter);
-    let visibleCount = 0;
 
     voucherCards.forEach(card => {
-     const cardName = card.dataset.searchName || '';
-     const cardLocation = card.dataset.searchLocation || '';
-     const matchesName = nameQuery === '' || cardName.includes(nameQuery);
+     const cardLocation = (card.dataset.searchLocation || '').toLowerCase();
      const matchesLocation = locationQuery === '' || cardLocation.includes(locationQuery);
-     const shouldShow = matchesName && matchesLocation;
-     card.style.display = shouldShow ? '' : 'none';
-     if (shouldShow) {
-      visibleCount++;
-     }
+     card.style.display = matchesLocation ? '' : 'none';
     });
-
-    if (searchEmptyState) {
-     const shouldHideEmpty = visibleCount !== 0 || totalVoucherCards === 0;
-     searchEmptyState.classList.toggle('hidden', shouldHideEmpty);
-    }
    }
 
    function updateLocationFilter(value) {
     const normalizedValue = normalizeQuery(value);
     currentLocationFilter = normalizedValue === 'all' ? '' : normalizedValue;
     applyVoucherFilters();
+   }
+
+   function applyPointSort(order = 'Lowest') {
+    currentPointSort = order === 'Highest' ? 'Highest' : 'Lowest';
+    if (voucherSections.size === 0) {
+     registerVoucherSections();
+    }
+
+    voucherSections.forEach(containerInfos => {
+     const cards = [];
+     containerInfos.forEach(info => {
+      cards.push(...info.element.querySelectorAll('[data-voucher-card="true"]'));
+     });
+
+     if (cards.length === 0) {
+      return;
+     }
+
+     const sortedCards = cards.slice().sort((a, b) => {
+      const aPoint = parseFloat(cardPointValue(a)) || 0;
+      const bPoint = parseFloat(cardPointValue(b)) || 0;
+      return currentPointSort === 'Lowest' ? aPoint - bPoint : bPoint - aPoint;
+     });
+
+     let cursor = 0;
+     containerInfos.forEach(info => {
+      const slice = sortedCards.slice(cursor, cursor + info.slotCount);
+      cursor += info.slotCount;
+
+      info.element.innerHTML = '';
+      slice.forEach(card => info.element.appendChild(card));
+     });
+    });
+
+    refreshVoucherCards();
+    applyVoucherFilters();
+   }
+
+   function cardPointValue(card) {
+    // Get the redeem value from data-point attribute (which contains keyword->redeem)
+    const pointValue = card?.dataset?.point ?? '0';
+    // Remove any formatting (commas, dots) and parse as number
+    return pointValue.toString().replace(/[^\d.-]/g, '') || '0';
    }
 
    if (locationInput && locationDropdown) {
@@ -828,7 +913,14 @@
      if (!item) return;
      locationInput.value = item.getAttribute('data-value');
      updateLocationFilter(locationInput.value);
+     goToLocationSearch(locationInput.value);
      closeLocationDropdown(locationDropdown);
+    });
+    locationInput.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter') {
+      e.preventDefault();
+      goToLocationSearch(e.target.value);
+     }
     });
     document.addEventListener('click', (e) => {
      if (!locationDropdown.contains(e.target) && e.target !== locationInput) {
@@ -936,7 +1028,6 @@
 
 
    // Mobile Point -> open sheet radios
-  let mobilePointFilter = 'Lowest'; // Store selected filter
   function openMobilePointSheet() {
    const options = ['Lowest','Highest'];
    const html = buildRadioList(options, mobilePointFilter);
@@ -947,7 +1038,11 @@
     if (!btn) return;
     const val = btn.getAttribute('data-value');
     mobilePointFilter = val;
-    console.log('Mobile Point Filter:', val);
+    const desktopSelectedText = document.getElementById('sortSelectedText');
+    if (desktopSelectedText) {
+     desktopSelectedText.textContent = val;
+    }
+    applyPointSort(val);
     closeBottomSheet();
     holder.removeEventListener('click', onClick);
    });
@@ -987,6 +1082,7 @@
      locationInput.value = selectedLocation;
     }
     updateLocationFilter(selectedLocation);
+    goToLocationSearch(selectedLocation);
     closeBottomSheet();
     content.removeEventListener('click', onClick);
    });
@@ -1032,32 +1128,52 @@
    // Search functionality (sync mobile and desktop)
    const mobileSearchInput = document.getElementById('mobileSearchInput');
    const desktopSearchInput = document.getElementById('desktopSearchInput');
+   const searchPageUrl = "{{ route('merchant.search') }}";
 
-   function handleSearch(value) {
-    const textValue = (value ?? '').toString();
-    currentSearchQuery = textValue;
-    if (mobileSearchInput && mobileSearchInput.value !== textValue) {
-     mobileSearchInput.value = textValue;
+   function goToSearchPage(query) {
+    const trimmedQuery = (query || '').trim();
+    if (trimmedQuery.length === 0) {
+     return;
     }
-    if (desktopSearchInput && desktopSearchInput.value !== textValue) {
-     desktopSearchInput.value = textValue;
-    }
-    applyVoucherFilters();
+    window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
    }
 
    if (mobileSearchInput) {
-    mobileSearchInput.addEventListener('input', (e) => {
-     handleSearch(e.target.value);
+    mobileSearchInput.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter') {
+      e.preventDefault();
+      goToSearchPage(e.target.value);
+     }
     });
    }
 
    if (desktopSearchInput) {
-    desktopSearchInput.addEventListener('input', (e) => {
-     handleSearch(e.target.value);
+    desktopSearchInput.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter') {
+      e.preventDefault();
+      goToSearchPage(e.target.value);
+     }
     });
    }
 
-   applyVoucherFilters();
+   function goToLocationSearch(locationValue) {
+    const normalizedLocation = (locationValue || '').trim();
+    if (normalizedLocation.length === 0) {
+     return;
+    }
+    goToSearchPage(normalizedLocation);
+   }
+
+   // Initialize filters and sorting after DOM is ready
+   function initializeFiltersAndSorting() {
+    refreshVoucherCards();
+    registerVoucherSections();
+    applyPointSort(currentPointSort);
+   }
+   
+   // Run immediately and also after a short delay to catch any dynamically loaded content
+   initializeFiltersAndSorting();
+   setTimeout(initializeFiltersAndSorting, 500);
   </script>
  </body>
 </html>
