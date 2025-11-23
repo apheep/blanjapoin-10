@@ -10,11 +10,11 @@
         <div class="flex gap-2 mb-2">
             <div class="flex-1">
                 <label class="block text-[10px] font-medium text-gray-600 mb-1">Start</label>
-                <input type="text" 
-                       id="startInput{{ $filterId }}" 
+                    <input type="text" 
+                           id="startInput{{ $filterId }}" 
                        placeholder="DD/MM/YYYY"
-                       readonly
-                       inputmode="none"
+                           readonly
+                           inputmode="none"
                        autocomplete="off"
                        onkeydown="return false;"
                        onclick="openDateCalendar('{{ $filterId }}', 'start', this)"
@@ -23,11 +23,11 @@
             </div>
             <div class="flex-1">
                 <label class="block text-[10px] font-medium text-gray-600 mb-1">End</label>
-                <input type="text" 
-                       id="endInput{{ $filterId }}" 
+                    <input type="text" 
+                           id="endInput{{ $filterId }}" 
                        placeholder="DD/MM/YYYY"
-                       readonly
-                       inputmode="none"
+                           readonly
+                           inputmode="none"
                        autocomplete="off"
                        onkeydown="return false;"
                        onclick="openDateCalendar('{{ $filterId }}', 'end', this)"
@@ -207,12 +207,12 @@
         if (type === 'start') {
             state.startDate = selectedDate;
             if (state.endDate && state.endDate < state.startDate) {
-                state.endDate = null;
+            state.endDate = null;
                 const endInput = document.getElementById('endInput' + filterId);
                 if (endInput) endInput.value = '';
             }
-        } else {
-            state.endDate = selectedDate;
+            } else {
+                state.endDate = selectedDate;
             if (state.startDate && state.endDate < state.startDate) {
                 alert('End date cannot be before start date');
                 state.endDate = null;
@@ -225,7 +225,7 @@
         const calendarContainer = document.getElementById('calendarContainer' + filterId);
         if (calendarContainer) {
             calendarContainer.classList.add('hidden');
-        }
+            }
         
         // Auto-apply filter
         applyDateFilterCompact(filterId);
@@ -259,8 +259,8 @@
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
         return `${day}/${month}/${year}`;
-    }
-    
+        }
+        
     function formatDateForInputCompact(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -289,7 +289,7 @@
     }
     
     window.clearDateFilter = clearDateFilter;
-    
+
     function closeDateFilter(filterId) {
         const dropdown = document.getElementById(filterId);
         if (!dropdown) return;
@@ -299,7 +299,7 @@
             calendarContainer.classList.add('hidden');
         }
         
-        dropdown.classList.add('hidden');
+            dropdown.classList.add('hidden');
     }
     
     window.closeDateFilter = closeDateFilter;
@@ -333,7 +333,7 @@
                             shouldShow = rowEnd >= filterStart;
                         } else if (filterEnd) {
                             shouldShow = rowStart <= filterEnd;
-                        }
+    }
                     } else if (rowStart) {
                         if (filterStart && filterEnd) {
                             shouldShow = rowStart <= filterEnd;

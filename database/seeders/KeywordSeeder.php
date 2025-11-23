@@ -16,6 +16,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 1,
                 'nama_produk'    => 'CLIP N CLIMB BALI',
+                'keyword_id'     => 'A3VGAME1000',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/clip-n-climb-bali',
                 'redeem'         => '100',
                 'diskon'         => 'Rp 10.000',
@@ -30,6 +31,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 2,
                 'nama_produk'    => 'ETERNA AESTHETIC & ANTI AGING CLINIC',
+                'keyword_id'     => 'A3VBEAU1001',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/eterna-laser',
                 'redeem'         => '500',
                 'diskon'         => '10%',
@@ -44,6 +46,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 3,
                 'nama_produk'    => 'LABORATORIM PRODIA SINGARAJA BALI',
+                'keyword_id'     => 'A3VHEAL1002',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/prodia-sing',
                 'redeem'         => '200',
                 'diskon'         => '10%',
@@ -58,6 +61,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 4,
                 'nama_produk'    => 'LABORATORIM PRODIA TABANAN BALI',
+                'keyword_id'     => 'A3VHEAL1003',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/prodia-tbn',
                 'redeem'         => '200',
                 'diskon'         => '10%',
@@ -72,6 +76,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 5,
                 'nama_produk'    => 'MIRACLE ULTIMATE DENPASAR',
+                'keyword_id'     => 'A3VBEAU1004',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/miracle',
                 'redeem'         => '500',
                 'diskon'         => '15%',
@@ -88,6 +93,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 6,
                 'nama_produk'    => 'Masterpiece',
+                'keyword_id'     => 'KPGENTE1005',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/masterpiece',
                 'redeem'         => '5000',
                 'diskon'         => 'Rp 20.000',
@@ -102,6 +108,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 7,
                 'nama_produk'    => 'la Moringa',
+                'keyword_id'     => 'KPGFOOD1006',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/la-moringa',
                 'redeem'         => '2000',
                 'diskon'         => 'Rp 20.000',
@@ -116,6 +123,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 8,
                 'nama_produk'    => 'Nakamura Kupang',
+                'keyword_id'     => 'KPGSPA1007',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/nakamura',
                 'redeem'         => '2000',
                 'diskon'         => '10%',
@@ -130,6 +138,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 9,
                 'nama_produk'    => 'Relaxology Kupang',
+                'keyword_id'     => 'KPGSPA1008',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/relaxology',
                 'redeem'         => '3000',
                 'diskon'         => 'Rp 20.000',
@@ -144,6 +153,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 10,
                 'nama_produk'    => 'Dapur Solokoe',
+                'keyword_id'     => 'KPGFOOD1009',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/dapur-solokoe',
                 'redeem'         => '2000',
                 'diskon'         => 'Rp 20.000',
@@ -160,6 +170,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 11,
                 'nama_produk'    => 'JELAJAH COFFEE',
+                'keyword_id'     => 'MTRCAFE1010',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/jelajah-coffee',
                 'redeem'         => '1500',
                 'diskon'         => 'Rp 20.000',
@@ -174,6 +185,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 12,
                 'nama_produk'    => 'B CLINIC',
+                'keyword_id'     => 'MTRBEAU1011',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/b-clinic',
                 'redeem'         => '500',
                 'diskon'         => '10%',
@@ -188,6 +200,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 13,
                 'nama_produk'    => 'LOMBOK WILDLIFE PARK',
+                'keyword_id'     => 'MTRGAME1012',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/lombok-wildlife',
                 'redeem'         => '1000',
                 'diskon'         => 'Rp 20.000',
@@ -202,6 +215,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 14,
                 'nama_produk'    => 'DAPUR SAYUR',
+                'keyword_id'     => 'MTRFOOD1013',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/dapur-sayur',
                 'redeem'         => '1000',
                 'diskon'         => 'Rp 20.000',
@@ -216,6 +230,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 15,
                 'nama_produk'    => 'SALOME HAIR & BEAUTY',
+                'keyword_id'     => 'MTRBEAU1014',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/salome',
                 'redeem'         => '500',
                 'diskon'         => '15%',
@@ -232,6 +247,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 16,
                 'nama_produk'    => 'KOPI DENG SAPA',
+                'keyword_id'     => 'FLOCAFE1015',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/kopi-deng-sapa',
                 'redeem'         => '1500',
                 'diskon'         => 'Rp 20.000',
@@ -246,6 +262,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 17,
                 'nama_produk'    => 'CAFE HM CAFE & RESTO',
+                'keyword_id'     => 'FLOCAFE1016',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/hm-cafe',
                 'redeem'         => '1500',
                 'diskon'         => 'Rp 20.000',
@@ -260,6 +277,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 18,
                 'nama_produk'    => 'SIBAKLOANG GALLERY COFFE',
+                'keyword_id'     => 'FLOCAFE1017',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/sibakloang',
                 'redeem'         => '1500',
                 'diskon'         => 'Rp 20.000',
@@ -274,6 +292,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 19,
                 'nama_produk'    => 'CAFE TERAS LANGIT',
+                'keyword_id'     => 'FLOCAFE1018',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/teras-langit',
                 'redeem'         => '1500',
                 'diskon'         => 'Rp 20.000',
@@ -288,6 +307,7 @@ class KeywordSeeder extends Seeder
             [
                 'merchant_key'   => 20,
                 'nama_produk'    => 'APOTIK TIARA FARM',
+                'keyword_id'     => 'FLOHEAL1019',
                 'cta_link'       => 'https://my.telkomsel.com/app/loyalty-reward-detail/tiara-farm',
                 'redeem'         => '1000',
                 'diskon'         => 'Rp 20.000',

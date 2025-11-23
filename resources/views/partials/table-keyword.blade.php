@@ -6,7 +6,7 @@
 <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
@@ -18,6 +18,7 @@
                     @endif
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Keyword ID</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA LINK</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
@@ -94,6 +95,9 @@
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-900">
                             <div class="font-medium">{{ $keyword->nama_produk }}</div>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-gray-900">
+                            <div class="font-medium">{{ $keyword->keyword_id ?? '-' }}</div>
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-900">
                             <a href="{{ $keyword->cta_link }}" target="_blank" class="text-blue-600 hover:underline">{{ $keyword->cta_link }}</a>
@@ -180,14 +184,24 @@
 </div>
 
 {{-- MOBILE VERSION --}}
-<div class="md:hidden space-y-2" id="keyword-cards-container">
+<div class="md:hidden space-y-4" id="keyword-cards-container">
     @forelse($keywordPaginator as $keyword)
-        <div id="keyword-card-{{ $keyword->id }}" class="bg-white rounded-lg shadow-sm border border-gray-200 p-3 keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}" data-status="{{ $keyword->status }}" data-start="{{ ($keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('Y-m-d') : '') }}" data-end="{{ ($keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('Y-m-d') : '') }}">
+        <div id="keyword-card-{{ $keyword->id }}" class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 border-l-4 p-4 pl-5 keyword-row
+            @if($keyword->status === 'approve')
+                border-l-green-500
+            @elseif($keyword->status === 'pending')
+                border-l-yellow-500
+            @elseif($keyword->status === 'reject')
+                border-l-red-500
+            @else
+                border-l-gray-400
+            @endif
+        " data-category="{{ $keyword->merchant->kategori ?? 'All' }}" data-status="{{ $keyword->status }}" data-start="{{ ($keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('Y-m-d') : '') }}" data-end="{{ ($keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('Y-m-d') : '') }}">
             {{-- Header dengan No, Status, dan Actions --}}
-            <div class="flex items-start justify-between mb-2 pb-2 border-b border-gray-200">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-medium text-gray-500">#{{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}</span>
-                    <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-sm font-bold text-gray-900">#{{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}</span>
+                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full
                         @if($keyword->status === 'approve')
                             bg-green-100 text-green-800
                         @elseif($keyword->status === 'pending')
@@ -199,54 +213,68 @@
                         {{ ucfirst($keyword->status) }}
                     </span>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5">
                     <button type="button"
                             onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
-                            class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Edit">
-                        <i class="fas fa-edit text-xs"></i>
+                        <i class="fas fa-edit text-sm"></i>
                     </button>
                     <button type="button"
                             onclick="showDeleteConfirmation('Keyword', '{{ $keyword->nama_produk }}', {{ $keyword->id }})"
-                            class="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Hapus">
-                        <i class="fas fa-trash text-xs"></i>
+                        <i class="fas fa-trash text-sm"></i>
                     </button>
                 </div>
             </div>
 
             {{-- Grid Layout untuk informasi utama --}}
-            <div class="grid grid-cols-2 gap-2 mb-2">
-                <div>
-                    <p class="text-[10px] text-gray-500 font-medium mb-0.5">Merchant</p>
-                    <p class="text-xs font-semibold text-gray-900 truncate" title="{{ $keyword->merchant->nama_merchant ?? '-' }}">{{ $keyword->merchant->nama_merchant ?? '-' }}</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
+                    <p class="text-[11px] text-gray-500 font-medium mb-1 uppercase tracking-wide">Merchant</p>
+                    <p class="text-xs font-bold text-gray-900 truncate" title="{{ $keyword->merchant->nama_merchant ?? '-' }}">{{ $keyword->merchant->nama_merchant ?? '-' }}</p>
                 </div>
-                <div>
-                    <p class="text-[10px] text-gray-500 font-medium mb-0.5">Stock</p>
-                    <span class="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
+                <div class="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
+                    <p class="text-[11px] text-blue-600 font-medium mb-1 uppercase tracking-wide">Stock</p>
+                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-blue-600 text-white">{{ $keyword->stock }}</span>
                 </div>
             </div>
 
-            <div class="mb-2">
-                <p class="text-[10px] text-gray-500 font-medium mb-0.5">Produk</p>
-                <p class="text-xs text-gray-900 line-clamp-2">{{ $keyword->nama_produk }}</p>
+            <div class="mb-4">
+                <p class="text-[11px] text-gray-500 font-medium mb-1.5 uppercase tracking-wide">Produk</p>
+                <p class="text-sm font-semibold text-gray-900 leading-relaxed">{{ $keyword->nama_produk }}</p>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 mb-2 text-xs">
-                <div>
-                    <span class="text-gray-500">Redeem:</span>
-                    <span class="text-gray-900 font-medium ml-1">{{ $keyword->redeem ?? '-' }}</span>
+            @if($keyword->keyword_id)
+            <div class="mb-4 bg-orange-50 rounded-lg p-2.5 border border-orange-100">
+                <p class="text-[11px] text-orange-600 font-medium mb-1 uppercase tracking-wide">Keyword ID</p>
+                <p class="text-xs font-bold text-orange-900">{{ $keyword->keyword_id }}</p>
+            </div>
+            @endif
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-gray-50 rounded-lg p-2 border border-gray-100">
+                    <p class="text-[11px] text-gray-500 font-medium mb-1">Redeem</p>
+                    <p class="text-xs font-bold text-gray-900">{{ $keyword->redeem ?? '-' }}</p>
                 </div>
-                <div>
-                    <span class="text-gray-500">Diskon:</span>
-                    <span class="text-gray-900 font-medium ml-1">{{ $keyword->diskon ?? '-' }}</span>
+                <div class="bg-gray-50 rounded-lg p-2 border border-gray-100">
+                    <p class="text-[11px] text-gray-500 font-medium mb-1">Diskon</p>
+                    <p class="text-xs font-bold text-gray-900">{{ $keyword->diskon ?? '-' }}</p>
                 </div>
             </div>
+
+            @if($keyword->skb)
+            <div class="mb-4 bg-purple-50 rounded-lg p-2.5 border border-purple-100">
+                <p class="text-[11px] text-purple-600 font-medium mb-1 uppercase tracking-wide">SKB</p>
+                <p class="text-xs text-gray-700 leading-relaxed line-clamp-3">{{ $keyword->skb }}</p>
+            </div>
+            @endif
 
             @if($keyword->start_date || $keyword->end_date)
-            <div class="mb-2">
-                <p class="text-[10px] text-gray-500 font-medium mb-0.5">Periode</p>
-                <p class="text-[10px] text-gray-600">
+            <div class="mb-4">
+                <p class="text-[11px] text-gray-500 font-medium mb-1.5 uppercase tracking-wide">Periode</p>
+                <p class="text-xs font-medium text-gray-700">
                     {{ $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d/m/Y') : '-' }} - 
                     {{ $keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('d/m/Y') : '-' }}
                 </p>
@@ -254,8 +282,9 @@
             @endif
 
             @if($keyword->cta_link)
-            <div class="mb-2">
-                <a href="{{ $keyword->cta_link }}" target="_blank" class="text-[10px] text-blue-600 hover:underline truncate block" title="{{ $keyword->cta_link }}">{{ $keyword->cta_link }}</a>
+            <div class="mb-4">
+                <p class="text-[11px] text-gray-500 font-medium mb-1.5 uppercase tracking-wide">CTA Link</p>
+                <a href="{{ $keyword->cta_link }}" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 hover:underline truncate block font-medium" title="{{ $keyword->cta_link }}">{{ $keyword->cta_link }}</a>
             </div>
             @endif
 

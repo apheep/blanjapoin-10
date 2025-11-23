@@ -34,6 +34,12 @@
                             <input type="text" name="nama_produk" id="editProductName" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="Nama produk akan otomatis terisi" required> 
                         </div>
 
+                        <!-- Row 1.6: Keyword ID -->
+                        <div class="md:col-span-2">
+                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Keyword ID</label>
+                            <input type="text" name="keyword_id" id="editKeywordId" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="Enter keyword ID">
+                        </div>
+
                         <!-- Row 2: CTA -->
                         <div>
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">CTA</label>
@@ -179,6 +185,7 @@ function openEditKeyword(id, keywordData) {
     // Populate form fields
     document.getElementById('editMerchantSelect').value = keywordData.merchant_key;
     document.getElementById('editProductName').value = keywordData.nama_produk;
+    document.getElementById('editKeywordId').value = keywordData.keyword_id || '';
     document.getElementById('editCtaLink').value = keywordData.cta_link || '';
     document.getElementById('editRedeem').value = keywordData.redeem || '';
     document.getElementById('editStock').value = keywordData.stock || '';

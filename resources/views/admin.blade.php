@@ -23,6 +23,14 @@
             font-feature-settings: 'kern' 1;
             letter-spacing: -0.01em;
         }
+        /* Prevent horizontal scroll on mobile */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+        * {
+            box-sizing: border-box;
+        }
     </style>
 
 </head>
@@ -85,8 +93,8 @@
                 // Normalize: if tab is not 'keyword', default to 'merchant'
                 $activeTab = ($tabParam === 'keyword') ? 'keyword' : 'merchant';
             @endphp
-            <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto">
-                <div class="flex space-x-3 px-4 sm:px-0 min-w-max">
+            <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto sm:overflow-x-visible">
+                <div class="flex space-x-3 px-4 sm:px-0 sm:min-w-max">
                     <!-- TAB MERCHANT -->
                     <button
                         onclick="switchTab('merchant')"
@@ -604,11 +612,22 @@
                             <div id="statusDropdownKeyword" class="hidden absolute md:left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-56 z-40">
                                 <div class="py-1">
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-yellow-100 hover:to-amber-100 hover:text-yellow-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-200 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
                                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="relative">
+                            <button
+                                type="button"
+                                onclick="openUploadKeyword()"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <i class="fas fa-plus mr-2"></i>
+                                Add Keyword
+                            </button>
                         </div>
                     </div>
 

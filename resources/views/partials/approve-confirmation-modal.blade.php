@@ -272,10 +272,34 @@ function confirmReject() {
     if (rejectItemData) {
         closeRejectVerificationModal();
         const endpoint = rejectItemData.type === 'Keyword' ? `/keywords/${rejectItemData.id}/reject` : `/merchants/${rejectItemData.id}/reject`;
-        fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ type: rejectItemData.type, id: rejectItemData.id }) })
-        .then(response => response.json())
-        .then(data => { if (data.success) { updateKeywordDisplay(rejectItemData.id, 'reject', rejectItemData.name); showRejectSuccessModal(rejectItemData.name); } else { alert('Error: ' + (data.message || 'Gagal menolak item')); } })
-        .catch(error => { console.error('Error:', error); alert('Terjadi kesalahan saat menolak item'); });
+        fetch(endpoint, { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }, 
+            body: JSON.stringify({ type: rejectItemData.type, id: rejectItemData.id }) 
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => { 
+            if (data.success) { 
+                updateKeywordDisplay(rejectItemData.id, 'reject', rejectItemData.name); 
+                showRejectSuccessModal(rejectItemData.name); 
+            } else { 
+                alert('Error: ' + (data.message || 'Gagal menolak item')); 
+            } 
+        })
+        .catch(error => { 
+            console.error('Error:', error); 
+            const errorMessage = error.message || error.error || 'Terjadi kesalahan saat menolak item';
+            alert('Error: ' + errorMessage); 
+        });
     }
 }
 function showRejectSuccessModal(itemName) {

@@ -15,6 +15,7 @@ return new class extends Migration
                 $table->unsignedBigInteger('merchant_key');
 
                 $table->string('nama_produk');
+                $table->string('keyword_id')->nullable();
                 $table->string('cta_link')->nullable();
                 $table->string('redeem')->nullable();
                 $table->string('diskon')->nullable();
