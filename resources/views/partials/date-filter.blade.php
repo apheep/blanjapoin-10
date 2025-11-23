@@ -1,311 +1,418 @@
-<div class="relative">
-    <button onclick="toggleDateFilter('{{ $filterId }}')" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-        <i class="fas fa-calendar-alt mr-2"></i>
-        Date
+<div class="relative inline-block">
+    <button onclick="toggleDateFilterCompact('{{ $filterId }}')" class="flex items-center px-3 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+        <i class="fas fa-calendar-alt mr-2 text-xs"></i>
+        <span>Date</span>
     </button>
-    <div id="{{ $filterId }}" class="hidden absolute left-0 right-0 md:left-auto md:right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 sm:p-5 border border-gray-200 w-full md:w-96 mx-auto md:mx-0 z-50" onclick="event.stopPropagation()">
-        <!-- Enter range label -->
-        <div class="text-xs text-gray-500 mb-2">Enter range</div>
-        
-        <!-- Date Range Display -->
-        <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 transition-all duration-300">
-            <div class="text-lg sm:text-2xl font-semibold text-gray-800" id="dateRangeDisplay{{ $filterId }}">Select dates</div>
-            <i class="fas fa-calendar text-lg sm:text-xl text-gray-400"></i>
-        </div>
-        
-        <!-- Start and End Inputs -->
-        <div class="grid grid-cols-2 gap-3 mb-3">
-            <!-- Start Date -->
-            <div>
-                <label class="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 block text-gray-700">Start</label>
-                <div class="relative">
+    
+    <!-- Compact Date Filter Dropdown -->
+    <div id="{{ $filterId }}" class="hidden absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-72 z-50" onclick="event.stopPropagation()">
+        <!-- Date Inputs Row -->
+        <div class="flex gap-2 mb-2">
+            <div class="flex-1">
+                <label class="block text-[10px] font-medium text-gray-600 mb-1">Start</label>
                     <input type="text" 
                            id="startInput{{ $filterId }}" 
-                           placeholder="MM/DD/YYYY"
+                       placeholder="DD/MM/YYYY"
                            readonly
                            inputmode="none"
-                           onfocus="this.blur(); showCalendar('{{ $filterId }}', 'start')"
-                           onclick="event.preventDefault(); showCalendar('{{ $filterId }}', 'start')"
-                           class="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border-2 rounded-lg focus:outline-none focus:ring-2 cursor-pointer transition-all duration-300 hover:border-orange-400 border-gray-300 focus:ring-orange-300">
-                </div>
+                       autocomplete="off"
+                       onkeydown="return false;"
+                       onclick="openDateCalendar('{{ $filterId }}', 'start', this)"
+                       class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 cursor-pointer bg-white"
+                       value="">
             </div>
-            
-            <!-- End Date -->
-            <div>
-                <label class="text-xs sm:text-sm font-semibold mb-1 sm:mb-2 block text-gray-700">End</label>
-                <div class="relative">
+            <div class="flex-1">
+                <label class="block text-[10px] font-medium text-gray-600 mb-1">End</label>
                     <input type="text" 
                            id="endInput{{ $filterId }}" 
-                           placeholder="MM/DD/YYYY"
+                       placeholder="DD/MM/YYYY"
                            readonly
                            inputmode="none"
-                           onfocus="this.blur(); showCalendar('{{ $filterId }}', 'end')"
-                           onclick="event.preventDefault(); showCalendar('{{ $filterId }}', 'end')"
-                           class="w-full px-2 sm:px-3 py-2 text-xs sm:text-sm border-2 rounded-lg focus:outline-none focus:ring-2 cursor-pointer transition-all duration-300 hover:border-orange-400 border-gray-300 focus:ring-orange-300">
-                </div>
+                       autocomplete="off"
+                       onkeydown="return false;"
+                       onclick="openDateCalendar('{{ $filterId }}', 'end', this)"
+                       class="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 cursor-pointer bg-white"
+                       value="">
             </div>
         </div>
         
-        <!-- Calendar Picker (Hidden by default) -->
-        <div id="calendarPicker{{ $filterId }}" class="hidden mb-3 p-2 sm:p-4 bg-gray-50 rounded-lg transition-all duration-300" style="opacity: 0; transform: translateY(-10px);">
-            <!-- Calendar Header -->
-            <div class="flex items-center justify-between mb-3">
-                <button onclick="changeMonth('{{ $filterId }}', -1)" class="p-1.5 sm:p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                    <i class="fas fa-chevron-left text-sm sm:text-base text-gray-600"></i>
-                </button>
-                <div id="headerLabel{{ $filterId }}" class="text-sm sm:text-base font-semibold text-gray-800">December 2024</div>
-                <button onclick="changeMonth('{{ $filterId }}', 1)" class="p-1.5 sm:p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                    <i class="fas fa-chevron-right text-sm sm:text-base text-gray-600"></i>
-                </button>
-            </div>
-        
-        <!-- Calendar Days Header -->
-        <div class="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
-            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">M</div>
-            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">T</div>
-            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">W</div>
-            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">T</div>
-            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">F</div>
-            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">S</div>
-            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">S</div>
-        </div>
-        
-        <!-- Calendar Days -->
-        <div id="calendarDays{{ $filterId }}" class="grid grid-cols-7 gap-0.5 sm:gap-1 mb-3">
-            <!-- Days will be generated by JavaScript -->
-        </div>
+        <!-- Inline Calendar Container -->
+        <div id="calendarContainer{{ $filterId }}" class="hidden">
+            <div id="activeCalendar{{ $filterId }}" class="bg-gray-50 rounded-md p-2 border border-gray-200"></div>
         </div>
         
         <!-- Action Buttons -->
-        <div class="flex gap-2 pt-2 sm:pt-3 border-t border-gray-100">
-            <button onclick="event.stopPropagation(); clearDates('{{ $filterId }}')" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors" style="color: #F81611;" onmouseover="this.style.color='#F0B100'" onmouseout="this.style.color='#F81611'">
+        <div class="flex gap-2 mt-2 pt-2 border-t border-gray-200">
+            <button onclick="event.stopPropagation(); clearDateFilter('{{ $filterId }}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
                 Clear
             </button>
-            <div class="flex-1"></div>
-            <button onclick="event.stopPropagation(); closeDateFilter('{{ $filterId }}')" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors" style="color: #F81611;" onmouseover="this.style.color='#F0B100'" onmouseout="this.style.color='#F81611'">
-                Cancel
-            </button>
-            <button onclick="event.stopPropagation(); applyDateFilter('{{ $filterId }}')" class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300">
-                OK
+            <button onclick="event.stopPropagation(); closeDateFilter('{{ $filterId }}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-md hover:shadow-sm transition-all">
+                Apply
             </button>
         </div>
     </div>
 </div>
 
 <script>
-    // Calendar state for each filter
-    const calendarState = {};
+    // Initialize calendar state
+    if (typeof window.calendarState === 'undefined') {
+        window.calendarState = {};
+    }
     
-    function showCalendar(filterId, type) {
-        const calendar = document.getElementById('calendarPicker' + filterId);
+    function toggleDateFilterCompact(filterId) {
+        const dropdown = document.getElementById(filterId);
+        if (!dropdown) return;
         
-        // Smooth show animation
-        calendar.classList.remove('hidden');
-        setTimeout(() => {
-            calendar.style.opacity = '1';
-            calendar.style.transform = 'translateY(0)';
-        }, 10);
+        // Close other date filters
+        document.querySelectorAll("[id^='dateFilter']:not([id$='Backdrop'])").forEach(dd => {
+            if (dd.id !== filterId && !dd.classList.contains('hidden')) {
+                dd.classList.add('hidden');
+            }
+        });
         
-        // Initialize state if not exists (no default selection)
-        if (!calendarState[filterId]) {
+        dropdown.classList.toggle('hidden');
+    }
+    
+    window.toggleDateFilterCompact = toggleDateFilterCompact;
+    
+    function openDateCalendar(filterId, type, inputElement) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const calendarContainer = document.getElementById('calendarContainer' + filterId);
+        const activeCalendar = document.getElementById('activeCalendar' + filterId);
+        
+        if (!calendarContainer || !activeCalendar) return;
+        
+        // Show calendar container
+        calendarContainer.classList.remove('hidden');
+        
+        // Initialize state if needed
+        if (!window.calendarState[filterId]) {
             const today = new Date();
-            calendarState[filterId] = {
+            window.calendarState[filterId] = {
                 currentMonth: today.getMonth(),
                 currentYear: today.getFullYear(),
-                selectingFor: type,
                 startDate: null,
-                endDate: null
+                endDate: null,
+                activeType: type
             };
-        } else {
-            calendarState[filterId].selectingFor = type;
         }
-        updateCalendar(filterId);
+        
+        window.calendarState[filterId].activeType = type;
+        
+        // Render calendar
+        renderCompactCalendar(filterId, type, activeCalendar);
+        
+        // Scroll calendar into view if needed
+        setTimeout(() => {
+            calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
     }
     
-    function changeMonth(filterId, delta) {
-        const state = calendarState[filterId];
-        state.currentMonth += delta;
-        if (state.currentMonth > 11) { state.currentMonth = 0; state.currentYear++; }
-        if (state.currentMonth < 0) { state.currentMonth = 11; state.currentYear--; }
-        updateCalendar(filterId);
-    }
+    window.openDateCalendar = openDateCalendar;
     
-    function updateCalendar(filterId) {
-        const state = calendarState[filterId];
-        const monthsFull = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        // Update header label
-        const header = document.getElementById('headerLabel' + filterId);
-        if (header) header.textContent = monthsFull[state.currentMonth] + ' ' + state.currentYear;
+    function renderCompactCalendar(filterId, type, container) {
+        const state = window.calendarState[filterId];
+        if (!state) return;
+        
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const daysOfWeek = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
         
         const firstDay = new Date(state.currentYear, state.currentMonth, 1);
         const lastDay = new Date(state.currentYear, state.currentMonth + 1, 0);
-        const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // Monday = 0
+        const startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
         const daysInMonth = lastDay.getDate();
         
-        const calendarDays = document.getElementById('calendarDays' + filterId);
-        calendarDays.innerHTML = '';
+        let html = `
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between mb-2">
+                    <button onclick="changeMonthCompact('${filterId}', -1)" class="p-1 hover:bg-gray-200 rounded transition-colors">
+                        <i class="fas fa-chevron-left text-xs text-gray-600"></i>
+                    </button>
+                    <div class="text-xs font-semibold text-gray-800">${months[state.currentMonth]} ${state.currentYear}</div>
+                    <button onclick="changeMonthCompact('${filterId}', 1)" class="p-1 hover:bg-gray-200 rounded transition-colors">
+                        <i class="fas fa-chevron-right text-xs text-gray-600"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-7 gap-0.5 mb-1">
+        `;
         
-        // Empty cells before first day
+        daysOfWeek.forEach(day => {
+            html += `<div class="text-center text-[9px] font-medium text-gray-500 py-0.5">${day}</div>`;
+        });
+        
+        html += `</div><div class="grid grid-cols-7 gap-0.5">`;
+        
         for (let i = 0; i < startDayOfWeek; i++) {
-            const emptyDiv = document.createElement('div');
-            calendarDays.appendChild(emptyDiv);
+            html += `<div></div>`;
         }
         
-        // Days of month
         for (let day = 1; day <= daysInMonth; day++) {
-            const dayDiv = document.createElement('div');
-            dayDiv.className = 'text-xs sm:text-sm text-gray-700 transition-all duration-200 aspect-square flex items-center justify-center rounded-lg cursor-pointer hover:bg-gray-100';
-            dayDiv.textContent = day;
-            dayDiv.addEventListener('click', (e) => { e.stopPropagation(); selectDate(filterId, day); });
-            
-            // Check if this day is selected (only start and end)
             const currentDate = new Date(state.currentYear, state.currentMonth, day);
-            if (state.startDate && currentDate.getTime() === stripTime(state.startDate).getTime()) {
-                dayDiv.classList.add('bg-gradient-to-r','from-[#F81611]','to-[#F0B100]','text-white','font-semibold');
-            }
-            if (state.endDate && currentDate.getTime() === stripTime(state.endDate).getTime()) {
-                dayDiv.classList.add('bg-gradient-to-r','from-[#F81611]','to-[#F0B100]','text-white','font-semibold');
+            const isSelected = isDateSelectedCompact(filterId, type, currentDate);
+            const isToday = isTodayDateCompact(currentDate);
+            
+            let dayClass = 'text-center text-[10px] py-1 rounded cursor-pointer transition-all aspect-square flex items-center justify-center ';
+            if (isSelected) {
+                dayClass += 'bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-semibold';
+            } else if (isToday) {
+                dayClass += 'bg-orange-100 text-orange-700 font-medium';
+            } else {
+                dayClass += 'text-gray-700 hover:bg-orange-50 hover:text-orange-600';
             }
             
-            calendarDays.appendChild(dayDiv);
+            html += `<div class="${dayClass}" onclick="selectDateCompact('${filterId}', '${type}', ${day})">${day}</div>`;
+        }
+        
+        html += `</div></div>`;
+        container.innerHTML = html;
+    }
+    
+    window.renderCompactCalendar = renderCompactCalendar;
+    
+    function changeMonthCompact(filterId, delta) {
+        const state = window.calendarState[filterId];
+        if (!state) return;
+        
+        state.currentMonth += delta;
+        if (state.currentMonth > 11) {
+            state.currentMonth = 0;
+            state.currentYear++;
+        }
+        if (state.currentMonth < 0) {
+            state.currentMonth = 11;
+            state.currentYear--;
+        }
+        
+        const activeCalendar = document.getElementById('activeCalendar' + filterId);
+        if (activeCalendar) {
+            renderCompactCalendar(filterId, state.activeType, activeCalendar);
         }
     }
     
-    function selectDate(filterId, day) {
-        const state = calendarState[filterId];
-        const selectedDate = new Date(state.currentYear, state.currentMonth, day);
-        const formattedDate = `${String(state.currentMonth + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}/${state.currentYear}`;
+    window.changeMonthCompact = changeMonthCompact;
+    
+    function selectDateCompact(filterId, type, day) {
+        const state = window.calendarState[filterId];
+        if (!state) return;
         
-        // If both dates already set, start a new range from clicked date
-        if (state.startDate && state.endDate) {
+        const selectedDate = new Date(state.currentYear, state.currentMonth, day);
+        const inputId = type + 'Input' + filterId;
+        const input = document.getElementById(inputId);
+        
+        const formattedDate = formatDateForDisplayCompact(selectedDate);
+        if (input) input.value = formattedDate;
+        
+        if (type === 'start') {
             state.startDate = selectedDate;
+            if (state.endDate && state.endDate < state.startDate) {
             state.endDate = null;
-            document.getElementById('startInput' + filterId).value = formattedDate;
-            document.getElementById('endInput' + filterId).value = '';
-            state.selectingFor = 'end';
-            updateRangeDisplay(filterId);
-            updateCalendar(filterId);
-            return;
-        }
-
-        if (state.selectingFor === 'start') {
-            state.startDate = selectedDate;
-            state.endDate = state.endDate && state.endDate < state.startDate ? null : state.endDate;
-            document.getElementById('startInput' + filterId).value = formattedDate;
-            state.selectingFor = 'end'; // keep calendar open for end selection
-        } else {
-            // Ensure end is not before start; if no start, set start first
-            if (!state.startDate || selectedDate < state.startDate) {
-                state.startDate = selectedDate;
-                document.getElementById('startInput' + filterId).value = formattedDate;
-                state.selectingFor = 'end';
+                const endInput = document.getElementById('endInput' + filterId);
+                if (endInput) endInput.value = '';
+            }
             } else {
                 state.endDate = selectedDate;
-                document.getElementById('endInput' + filterId).value = formattedDate;
-            }
-        }
-        
-        updateRangeDisplay(filterId);
-        updateCalendar(filterId); // refresh highlights
-    }
-    
-    function updateRangeDisplay(filterId) {
-        const state = calendarState[filterId];
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        
-        let displayText = 'Select dates';
-        
-        if (state.startDate && state.endDate) {
-            const startMonth = months[state.startDate.getMonth()];
-            const startDay = state.startDate.getDate();
-            const endMonth = months[state.endDate.getMonth()];
-            const endDay = state.endDate.getDate();
-            
-            displayText = `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
-        } else if (state.startDate && !state.endDate) {
-            const startMonth = months[state.startDate.getMonth()];
-            const startDay = state.startDate.getDate();
-            displayText = `${startMonth} ${startDay}`;
-        }
-        
-        document.getElementById('dateRangeDisplay' + filterId).textContent = displayText;
-    }
-    
-    function clearDates(filterId) {
-        const state = calendarState[filterId] || (calendarState[filterId] = {});
-        document.getElementById('startInput' + filterId).value = '';
-        document.getElementById('endInput' + filterId).value = '';
-        document.getElementById('dateRangeDisplay' + filterId).textContent = 'Select dates';
-        state.startDate = null;
-        state.endDate = null;
-        updateCalendar(filterId);
-    }
-    
-    function applyDateFilter(filterId) {
-        const dropdown = document.getElementById(filterId);
-        if (!dropdown) return;
-
-        // Get selected range
-        const state = calendarState[filterId];
-        const start = state && state.startDate ? stripTime(state.startDate) : null;
-        const end = state && state.endDate ? stripTime(state.endDate) : null;
-
-        // Filter rows/cards that have data-start / data-end
-        const allRows = document.querySelectorAll('.keyword-row');
-        allRows.forEach(el => {
-            const ds = el.dataset.start || '';
-            const de = el.dataset.end || '';
-            if (!start && !end) {
-                el.style.display = '';
+            if (state.startDate && state.endDate < state.startDate) {
+                alert('End date cannot be before start date');
+                state.endDate = null;
+                if (input) input.value = '';
                 return;
             }
-            const rowStart = ds ? stripTime(new Date(ds)) : null;
-            const rowEnd = de ? stripTime(new Date(de)) : null;
-            let show = true;
-            if (start && end) {
-                // overlap: rowStart <= end && rowEnd >= start
-                const cond1 = rowStart ? (rowStart.getTime() <= end.getTime()) : true;
-                const cond2 = rowEnd ? (rowEnd.getTime() >= start.getTime()) : true;
-                show = cond1 && cond2;
-            } else if (start && !end) {
-                // show if rowEnd >= start
-                show = rowEnd ? (rowEnd.getTime() >= start.getTime()) : true;
-            } else if (!start && end) {
-                // show if rowStart <= end
-                show = rowStart ? (rowStart.getTime() <= end.getTime()) : true;
+        }
+        
+        // Hide calendar after selection
+        const calendarContainer = document.getElementById('calendarContainer' + filterId);
+        if (calendarContainer) {
+            calendarContainer.classList.add('hidden');
             }
-            el.style.display = show ? '' : 'none';
-        });
-
-        // Close dropdown smoothly
-        dropdown.style.transition = 'opacity .15s ease, transform .15s ease';
-        dropdown.style.opacity = '0';
-        dropdown.style.transform = 'translateY(-6px)';
-        setTimeout(() => {
-            dropdown.classList.add('hidden');
-            dropdown.style.transition = '';
-            dropdown.style.opacity = '';
-            dropdown.style.transform = '';
-        }, 150);
+        
+        // Auto-apply filter
+        applyDateFilterCompact(filterId);
     }
+    
+    window.selectDateCompact = selectDateCompact;
+    
+    function isDateSelectedCompact(filterId, type, date) {
+        const state = window.calendarState[filterId];
+        if (!state) return false;
+        
+        const dateStr = formatDateForInputCompact(date);
+        if (type === 'start' && state.startDate) {
+            return formatDateForInputCompact(state.startDate) === dateStr;
+        }
+        if (type === 'end' && state.endDate) {
+            return formatDateForInputCompact(state.endDate) === dateStr;
+        }
+        return false;
+    }
+    
+    function isTodayDateCompact(date) {
+        const today = new Date();
+        return date.getDate() === today.getDate() &&
+               date.getMonth() === today.getMonth() &&
+               date.getFullYear() === today.getFullYear();
+    }
+    
+    function formatDateForDisplayCompact(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+        }
+        
+    function formatDateForInputCompact(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    function clearDateFilter(filterId) {
+        const startInput = document.getElementById('startInput' + filterId);
+        const endInput = document.getElementById('endInput' + filterId);
+        
+        if (startInput) startInput.value = '';
+        if (endInput) endInput.value = '';
+        
+        if (window.calendarState[filterId]) {
+            window.calendarState[filterId].startDate = null;
+            window.calendarState[filterId].endDate = null;
+        }
+        
+        const calendarContainer = document.getElementById('calendarContainer' + filterId);
+        if (calendarContainer) {
+            calendarContainer.classList.add('hidden');
+        }
+        
+        applyDateFilterCompact(filterId);
+    }
+    
+    window.clearDateFilter = clearDateFilter;
 
     function closeDateFilter(filterId) {
         const dropdown = document.getElementById(filterId);
         if (!dropdown) return;
-        dropdown.style.transition = 'opacity .15s ease, transform .15s ease';
-        dropdown.style.opacity = '0';
-        dropdown.style.transform = 'translateY(-6px)';
-        setTimeout(() => {
+        
+        const calendarContainer = document.getElementById('calendarContainer' + filterId);
+        if (calendarContainer) {
+            calendarContainer.classList.add('hidden');
+        }
+        
             dropdown.classList.add('hidden');
-            dropdown.style.transition = '';
-            dropdown.style.opacity = '';
-            dropdown.style.transform = '';
-        }, 150);
     }
-
-    // Helpers
-    function stripTime(date) {
-        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        return d;
+    
+    window.closeDateFilter = closeDateFilter;
+    
+    function applyDateFilterCompact(filterId) {
+        const state = window.calendarState[filterId];
+        if (!state) return;
+        
+        const startDate = state.startDate;
+        const endDate = state.endDate;
+        
+        const filterStart = startDate ? formatDateForInputCompact(startDate) : null;
+        const filterEnd = endDate ? formatDateForInputCompact(endDate) : null;
+        
+        // Filter keyword rows
+        const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
+        rows.forEach(row => {
+            const rowStart = row.dataset.start;
+            const rowEnd = row.dataset.end;
+            
+            let shouldShow = true;
+            
+            if (filterStart || filterEnd) {
+                shouldShow = false;
+                
+                if (rowStart || rowEnd) {
+                    if (rowStart && rowEnd) {
+                        if (filterStart && filterEnd) {
+                            shouldShow = (rowStart <= filterEnd && rowEnd >= filterStart);
+                        } else if (filterStart) {
+                            shouldShow = rowEnd >= filterStart;
+                        } else if (filterEnd) {
+                            shouldShow = rowStart <= filterEnd;
     }
+                    } else if (rowStart) {
+                        if (filterStart && filterEnd) {
+                            shouldShow = rowStart <= filterEnd;
+                        } else if (filterStart) {
+                            shouldShow = rowStart >= filterStart;
+                        } else if (filterEnd) {
+                            shouldShow = rowStart <= filterEnd;
+                        }
+                    } else if (rowEnd) {
+                        if (filterStart && filterEnd) {
+                            shouldShow = rowEnd >= filterStart;
+                        } else if (filterStart) {
+                            shouldShow = rowEnd >= filterStart;
+                        } else if (filterEnd) {
+                            shouldShow = rowEnd <= filterEnd;
+                        }
+                    }
+                } else {
+                    shouldShow = false;
+                }
+            }
+            
+            row.style.display = shouldShow ? '' : 'none';
+        });
+        
+        // Filter keyword cards (mobile)
+        const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
+        cards.forEach(card => {
+            const cardStart = card.dataset.start;
+            const cardEnd = card.dataset.end;
+            
+            let shouldShow = true;
+            
+            if (filterStart || filterEnd) {
+                shouldShow = false;
+                
+                if (cardStart || cardEnd) {
+                    if (cardStart && cardEnd) {
+                        if (filterStart && filterEnd) {
+                            shouldShow = (cardStart <= filterEnd && cardEnd >= filterStart);
+                        } else if (filterStart) {
+                            shouldShow = cardEnd >= filterStart;
+                        } else if (filterEnd) {
+                            shouldShow = cardStart <= filterEnd;
+                        }
+                    } else if (cardStart) {
+                        if (filterStart && filterEnd) {
+                            shouldShow = cardStart <= filterEnd;
+                        } else if (filterStart) {
+                            shouldShow = cardStart >= filterStart;
+                        } else if (filterEnd) {
+                            shouldShow = cardStart <= filterEnd;
+                        }
+                    } else if (cardEnd) {
+                        if (filterStart && filterEnd) {
+                            shouldShow = cardEnd >= filterStart;
+                        } else if (filterStart) {
+                            shouldShow = cardEnd >= filterStart;
+                        } else if (filterEnd) {
+                            shouldShow = cardEnd <= filterEnd;
+                        }
+                    }
+                } else {
+                    shouldShow = false;
+                }
+            }
+            
+            card.style.display = shouldShow ? '' : 'none';
+        });
+    }
+    
+    window.applyDateFilterCompact = applyDateFilterCompact;
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('[id^="dateFilter"]') && !event.target.closest('button[onclick*="toggleDateFilter"]')) {
+            document.querySelectorAll("[id^='dateFilter']:not([id$='Backdrop'])").forEach(dd => {
+                dd.classList.add('hidden');
+            });
+        }
+    });
 </script>

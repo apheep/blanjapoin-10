@@ -23,6 +23,14 @@
             font-feature-settings: 'kern' 1;
             letter-spacing: -0.01em;
         }
+        /* Prevent horizontal scroll on mobile */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+        * {
+            box-sizing: border-box;
+        }
     </style>
 
 </head>
@@ -80,15 +88,19 @@
     </div>
    </nav>
         <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
-            <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto">
-                <div class="flex space-x-3 px-4 sm:px-0 min-w-max">
-                    <!-- TAB MERCHANT (default active) -->
+            @php
+                $tabParam = request()->get('tab', 'merchant');
+                // Normalize: if tab is not 'keyword', default to 'merchant'
+                $activeTab = ($tabParam === 'keyword') ? 'keyword' : 'merchant';
+            @endphp
+            <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto sm:overflow-x-visible">
+                <div class="flex space-x-3 px-4 sm:px-0 sm:min-w-max">
+                    <!-- TAB MERCHANT -->
                     <button
                         onclick="switchTab('merchant')"
                         id="tab-merchant"
                         class="shrink-0 px-6 py-2 rounded-full border border-orange-400
-                               bg-gradient-to-r from-[#F81611] to-[#F0B100]
-                               text-white font-medium shadow-lg">
+                               {{ $activeTab === 'merchant' ? 'bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg' : 'text-gray-700 hover:bg-orange-50 transition-colors' }}">
                         Merchant
                     </button>
 
@@ -97,7 +109,7 @@
                         onclick="switchTab('keyword')"
                         id="tab-keyword"
                         class="shrink-0 px-6 py-2 rounded-full border border-orange-400
-                               text-gray-700 hover:bg-orange-50 transition-colors">
+                               {{ $activeTab === 'keyword' ? 'bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg' : 'text-gray-700 hover:bg-orange-50 transition-colors' }}">
                         Keyword
                     </button>
                 </div>
@@ -155,6 +167,8 @@
                 // Keyword Status Filter
                 ////////////////////////////////////////////////////////////////////
 
+                let selectedKeywordStatus = 'all';
+
                 function toggleKeywordStatusDropdown() {
                     const dropdown = document.getElementById('statusDropdownKeyword');
                     if (!dropdown) return;
@@ -183,14 +197,57 @@
                     }
                 }
 
+                function filterKeywordByStatus(status) {
+                    const button = document.getElementById('statusBtnKeyword');
+                    if (!button) return;
+
+                    if (selectedKeywordStatus === status) {
+                        status = 'all';
+                    }
+                    selectedKeywordStatus = status;
+
+                    let label = 'Status';
+                    let buttonClasses = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300 ';
+
+                    if (status === 'all') {
+                        buttonClasses += 'border-gray-300 text-gray-700 hover:bg-gray-50';
+                    } else if (status === 'pending') {
+                        label = 'Pending';
+                        buttonClasses += 'border-yellow-300 text-yellow-800 bg-gradient-to-r from-yellow-100 to-amber-100';
+                    } else if (status === 'reject') {
+                        label = 'Rejected';
+                        buttonClasses += 'border-red-300 text-red-800 bg-gradient-to-r from-red-100 to-rose-100';
+                    } else if (status === 'approve') {
+                        label = 'Approved';
+                        buttonClasses += 'border-green-300 text-green-800 bg-gradient-to-r from-green-100 to-emerald-100';
+                    }
+
+                    button.className = buttonClasses;
+                    button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
+
+                    const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
+                    rows.forEach(row => {
+                        const s = (row.dataset.status || '').toLowerCase();
+                        const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
+                        row.style.display = (status === 'all' || normalized === status) ? '' : 'none';
+                    });
+
+                    const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
+                    cards.forEach(card => {
+                        const s = (card.dataset.status || '').toLowerCase();
+                        const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
+                        card.style.display = (status === 'all' || normalized === status) ? '' : 'none';
+                    });
+
+                    toggleKeywordStatusDropdown();
+                }
+
                 document.addEventListener('click', function(event) {
                     if (!event.target.closest('#statusDropdownKeyword') && 
                         !event.target.closest('#statusBtnKeyword')) {
                         const dropdown = document.getElementById('statusDropdownKeyword');
                         if (dropdown) {
-                            dropdown.classList.remove('opacity-100', 'translate-y-0');
-                            dropdown.classList.add('opacity-0', 'translate-y-1');
-                            setTimeout(() => dropdown.classList.add('hidden'), 150);
+                            dropdown.classList.add('hidden');
                         }
                     }
                 });
@@ -283,8 +340,11 @@
                 // Tab Switching Functions
                 ////////////////////////////////////////////////////////////////////
 
-                // Store current active tab
-                let currentActiveTab = 'merchant';
+                // Store current active tab - get from URL or default to merchant
+                const urlParams = new URLSearchParams(window.location.search);
+                let tabParam = urlParams.get('tab');
+                // Normalize: if tab is not 'keyword', default to 'merchant'
+                let currentActiveTab = (tabParam === 'keyword') ? 'keyword' : 'merchant';
                 // Make it accessible from partials
                 window.currentActiveTab = currentActiveTab;
 
@@ -538,7 +598,7 @@
                 });
             </script>
 
-            <div id="section-keyword" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
+            <div id="section-keyword" class="transition-all duration-300 {{ $activeTab === 'keyword' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
                 <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Keyword</h2>
                 
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -549,21 +609,37 @@
                                 Status
                                 <i class="fas fa-chevron-down ml-2 text-xs"></i>
                             </button>
-                            <div id="statusDropdownKeyword" class="hidden absolute mt-2 w-52 rounded-2xl bg-white shadow-2xl border border-gray-200 py-2 z-50">
-                                <a href="#" onclick="event.preventDefault();" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Semua</a>
-                                <a href="#" onclick="event.preventDefault();" class="block px-4 py-2 text-sm text-green-700 hover:bg-green-50">Aktif</a>
-                                <a href="#" onclick="event.preventDefault();" class="block px-4 py-2 text-sm text-red-700 hover:bg-red-50">Tidak Aktif</a>
+                            <div id="statusDropdownKeyword" class="hidden absolute md:left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-56 z-40">
+                                <div class="py-1">
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-200 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
+                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="relative">
+                            <button
+                                type="button"
+                                onclick="openUploadKeyword()"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <i class="fas fa-plus mr-2"></i>
+                                Add Keyword
+                            </button>
                         </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
                         </div>
+                        
+                        @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
                     </div>
                     
                 </div>
@@ -571,7 +647,7 @@
                 @include('partials.table-keyword')
             </div>
 
-            <div id="section-merchant" class="transition-all duration-300 opacity-100 translate-y-0">
+            <div id="section-merchant" class="transition-all duration-300 {{ $activeTab === 'merchant' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
                 <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Merchant</h2>
                 
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -616,7 +692,6 @@
                             </div>
                         </div>
                         
-                        @include('partials.date-filter', ['filterId' => 'dateFilter4'])
                     </div>
                 </div>
                 
@@ -809,6 +884,67 @@
             })
             .catch(error => console.error('Search error:', error));
         }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            const arrow = document.getElementById('userDropdownArrow');
+            if (!dropdown) return;
+
+            if (dropdown.classList.contains('opacity-0')) {
+                dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            } else {
+                dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const btn = document.getElementById('userDropdownBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (!btn || !dropdown) return;
+
+            if (!btn.contains(event.target) && !dropdown.contains(event.target) && dropdown.classList.contains('opacity-100')) {
+                toggleUserDropdown();
+            }
+        });
+
+        function previewKeywordImage(imageUrl, fileName) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                    <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">${fileName}</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <img src="${imageUrl}" alt="${fileName}" class="w-full h-auto rounded-lg">
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Keyword search functionality
+        document.getElementById('keywordSearch')?.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+            const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+
     </script>
         @include('partials.upload-modal-merchant')
         @include('partials.upload-modal-merchandise')

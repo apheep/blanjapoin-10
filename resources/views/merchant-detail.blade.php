@@ -29,6 +29,14 @@
             font-feature-settings: 'kern' 1;
             letter-spacing: -0.01em;
         }
+        /* Prevent horizontal scroll on mobile */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+        * {
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-[#f8fafc]">
@@ -113,9 +121,9 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('admin', ['tab' => 'all']) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                <a href="{{ route('admin', ['tab' => 'all']) }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
                     <i class="fas fa-arrow-left text-xs"></i>
-                    Kembali ke daftar merchant
+                    <span>Kembali</span>
                 </a>
             </div>
         </div>
@@ -131,7 +139,7 @@
                     <div id="statusDropdownDetail" class="hidden absolute md:left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-56 z-40">
                         <div class="py-1">
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('all'); return false;">All</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-yellow-100 hover:to-amber-100 hover:text-yellow-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('pending'); return false;">Pending</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-200 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('pending'); return false;">Pending</a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('reject'); return false;">Rejected</a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('approve'); return false;">Approved</a>
                         </div>
@@ -159,12 +167,12 @@
         <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                             @if(Auth::check() && Auth::user()->can_approve == 1)
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Approve</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Approval</th>
                             @endif
                             @if(Auth::check() && Auth::user()->can_approve == 0)
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
@@ -333,70 +341,21 @@
 
         <div class="md:hidden space-y-3" id="keyword-cards-container">
             @forelse($keywordPaginator as $keyword)
-                <div id="keyword-card-{{ $keyword->id }}" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}" data-status="{{ $keyword->status }}" data-start="{{ ($keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('Y-m-d') : '') }}" data-end="{{ ($keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('Y-m-d') : '') }}">
-                    <div class="flex items-start justify-between pb-3 border-b border-gray-200">
-                        <div>
-                            <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">No</p>
-                            <p class="text-sm font-medium text-gray-900 mt-1">{{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}</p>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <button type="button"
-                                    onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
-                                    class="text-blue-600 hover:text-blue-900 transition-colors"
-                                    title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-
-                            <button type="button"
-                                    onclick="showDeleteConfirmation('Keyword', '{{ $keyword->nama_produk }}', {{ $keyword->id }})"
-                                    class="text-red-600 hover:text-red-900 transition-colors"
-                                    title="Hapus">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Merchant</p>
-                        <p class="text-sm font-semibold text-gray-900 mt-1">{{ $keyword->merchant->nama_merchant ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Nama Produk</p>
-                        <p class="text-sm text-gray-700 mt-1">{{ $keyword->nama_produk }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Redeem</p>
-                        <p class="text-sm text-gray-700 mt-1">{{ $keyword->redeem ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Diskon</p>
-                        <p class="text-sm text-gray-700 mt-1">{{ $keyword->diskon ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">SKB</p>
-                        <p class="text-xs text-gray-500 mt-1">{{ $keyword->skb ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Stock</p>
-                        <p class="text-sm text-gray-700 mt-1">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Periode</p>
-                        <div class="text-xs text-gray-500 mt-1">
-                            @if($keyword->start_date || $keyword->end_date)
-                                <div>{{ $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d/m/Y') : '-' }}</div>
-                                <div>{{ $keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('d/m/Y') : '-' }}</div>
-                            @else
-                                <div>-</div>
-                            @endif
-                        </div>
-                    </div>
-                    <div id="keyword-status-mobile-{{ $keyword->id }}">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p>
-                        <div class="mt-1">
-                            <span class="status-badge px-2 py-1 text-xs font-semibold rounded-full
+                <div id="keyword-card-{{ $keyword->id }}" class="bg-white rounded-xl shadow-sm hover:shadow-md border-l-3 transition-all duration-200 keyword-row
+                    @if($keyword->status === 'approve')
+                        border-l-green-500
+                    @elseif($keyword->status === 'pending')
+                        border-l-yellow-500
+                    @elseif($keyword->status === 'reject')
+                        border-l-red-500
+                    @else
+                        border-l-gray-400
+                    @endif
+                " data-category="{{ $keyword->merchant->kategori ?? 'All' }}" data-status="{{ $keyword->status }}" data-start="{{ ($keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('Y-m-d') : '') }}" data-end="{{ ($keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('Y-m-d') : '') }}">
+                    <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-sm font-bold text-gray-900">#{{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}</span>
+                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full
                                 @if($keyword->status === 'approve')
                                     bg-green-100 text-green-800
                                 @elseif($keyword->status === 'pending')
@@ -408,51 +367,104 @@
                                 {{ ucfirst($keyword->status) }}
                             </span>
                         </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button"
+                                    onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
+                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Edit">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                            <button type="button"
+                                    onclick="showDeleteConfirmation('Keyword', '{{ $keyword->nama_produk }}', {{ $keyword->id }})"
+                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Hapus">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
                     </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
+                            <p class="text-[10px] text-gray-500 font-medium mb-1 uppercase tracking-wide">Merchant</p>
+                            <p class="text-xs font-bold text-gray-900 truncate" title="{{ $keyword->merchant->nama_merchant ?? '-' }}">{{ $keyword->merchant->nama_merchant ?? '-' }}</p>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
+                            <p class="text-[10px] text-blue-600 font-medium mb-1 uppercase tracking-wide">Stock</p>
+                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-blue-600 text-white">{{ $keyword->stock }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="text-[10px] text-gray-500 font-medium mb-1.5 uppercase tracking-wide">Produk</p>
+                        <p class="text-sm font-semibold text-gray-900 leading-relaxed">{{ $keyword->nama_produk }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-gray-50 rounded-lg p-2 border border-gray-100">
+                            <p class="text-[10px] text-gray-500 font-medium mb-1">Redeem</p>
+                            <p class="text-xs font-bold text-gray-900">{{ $keyword->redeem ?? '-' }}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-2 border border-gray-100">
+                            <p class="text-[10px] text-gray-500 font-medium mb-1">Diskon</p>
+                            <p class="text-xs font-bold text-gray-900">{{ $keyword->diskon ?? '-' }}</p>
+                        </div>
+                    </div>
+
+                    @if($keyword->start_date || $keyword->end_date)
+                    <div class="mb-4">
+                        <p class="text-[10px] text-gray-500 font-medium mb-1 uppercase tracking-wide">Periode</p>
+                        <p class="text-xs font-medium text-gray-700">
+                            {{ $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d/m/Y') : '-' }} - 
+                            {{ $keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('d/m/Y') : '-' }}
+                        </p>
+                    </div>
+                    @endif
+
+                    @if($keyword->cta_link)
+                    <div class="mb-4">
+                        <p class="text-[10px] text-gray-500 font-medium mb-1 uppercase tracking-wide">CTA Link</p>
+                        <a href="{{ $keyword->cta_link }}" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 hover:underline truncate block font-medium" title="{{ $keyword->cta_link }}">{{ $keyword->cta_link }}</a>
+                    </div>
+                    @endif
+
                     @if(Auth::check() && Auth::user()->can_approve == 1)
-                        <div id="keyword-action-mobile-{{ $keyword->id }}">
-                            <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Action</p>
+                        <div id="keyword-action-mobile-{{ $keyword->id }}" class="mt-4 pt-4 border-t border-gray-100">
                             @if($keyword->status === 'approve')
-                                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
+                                <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 text-green-700 font-semibold text-xs border border-green-200">
                                     <i class="fas fa-check-circle text-green-600"></i>
                                     <span>Approved</span>
                                 </div>
                             @elseif($keyword->status === 'reject')
-                                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-red-100 to-rose-100 text-red-700 font-medium text-sm shadow-sm">
+                                <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 text-red-700 font-semibold text-xs border border-red-200">
                                     <i class="fas fa-times text-red-600"></i>
                                     <span>Rejected</span>
                                 </div>
                             @else
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button onclick="showApproveConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="justify-center w-full px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200 font-medium text-sm" title="Approve">
-                                        <i class="fas fa-check-circle mr-2"></i>
-                                        Approve
+                                <div class="flex gap-2.5">
+                                    <button onclick="showApproveConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-green-500 text-white hover:bg-green-600 text-xs font-semibold transition-colors shadow-sm" title="Approve">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Approve</span>
                                     </button>
-                                    <button onclick="showRejectConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="justify-center w-full px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200 font-medium text-sm" title="Reject">
-                                        <i class="fas fa-times mr-2"></i>
-                                        Reject
+                                    <button onclick="showRejectConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-red-500 text-white hover:bg-red-600 text-xs font-semibold transition-colors shadow-sm" title="Reject">
+                                        <i class="fas fa-times"></i>
+                                        <span>Reject</span>
                                     </button>
                                 </div>
                             @endif
                         </div>
                     @endif
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Image</p>
-                        <div class="mt-2 flex items-center space-x-2">
-                            @if($keyword->image)
-                                <button type="button" 
-                                        onclick="previewKeywordImage('{{ asset('storage/' . $keyword->image) }}', '{{ basename($keyword->image) }}')"
-                                        class="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
-                                    <img src="{{ asset('storage/' . $keyword->image) }}" 
-                                         alt="{{ $keyword->nama_produk }}" 
-                                         class="h-full w-full object-cover">
-                                </button>
-                                <span class="text-sm text-gray-700 font-medium">{{ $keyword->nama_produk }}</span>
-                            @else
-                                <span class="text-sm text-gray-400">-</span>
-                            @endif
-                        </div>
+
+                    @if($keyword->image)
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <button type="button" 
+                                onclick="previewKeywordImage('{{ asset('storage/' . $keyword->image) }}', '{{ basename($keyword->image) }}')"
+                                class="w-full h-24 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors shadow-sm">
+                            <img src="{{ asset('storage/' . $keyword->image) }}" 
+                                 alt="{{ $keyword->nama_produk }}" 
+                                 class="h-full w-full object-cover">
+                        </button>
                     </div>
+                    @endif
                 </div>
             @empty
                 <p class="text-sm text-center text-gray-500">Belum ada data keyword.</p>

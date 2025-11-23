@@ -34,6 +34,12 @@
                             <input type="text" name="nama_produk" id="editProductName" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="Nama produk akan otomatis terisi" required> 
                         </div>
 
+                        <!-- Row 1.6: Keyword ID -->
+                        <div class="md:col-span-2">
+                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Keyword ID</label>
+                            <input type="text" name="keyword_id" id="editKeywordId" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="Enter keyword ID">
+                        </div>
+
                         <!-- Row 2: CTA -->
                         <div>
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">CTA</label>
@@ -150,18 +156,36 @@ function openEditKeyword(id, keywordData) {
     
     // Set form action
     form.action = `/keywords/${id}`;
+    
+    // Set redirect URL - prioritize detail page, then keyword tab, then default
     if (redirectInput && window.detailRedirectUrl) {
+        // Jika ada detailRedirectUrl, berarti dari halaman merchant detail
         redirectInput.value = window.detailRedirectUrl;
+        if (stayFlagInput) {
+            stayFlagInput.value = '1';
+        }
     } else if (redirectInput) {
-        redirectInput.value = '';
-    }
-    if (stayFlagInput) {
-        stayFlagInput.value = window.detailRedirectUrl ? '1' : '';
+        // Cek apakah kita sedang di halaman keyword (tab keyword)
+        const currentUrl = new URL(window.location.href);
+        const currentTab = currentUrl.searchParams.get('tab');
+        
+        if (currentTab === 'keyword') {
+            // Jika sedang di tab keyword, set redirect ke halaman yang sama dengan tab=keyword
+            const baseUrl = currentUrl.pathname;
+            redirectInput.value = `${baseUrl}?tab=keyword`;
+        } else {
+            // Default: redirect ke halaman admin dengan tab keyword
+            redirectInput.value = window.location.pathname + '?tab=keyword';
+        }
+        if (stayFlagInput) {
+            stayFlagInput.value = '';
+        }
     }
     
     // Populate form fields
     document.getElementById('editMerchantSelect').value = keywordData.merchant_key;
     document.getElementById('editProductName').value = keywordData.nama_produk;
+    document.getElementById('editKeywordId').value = keywordData.keyword_id || '';
     document.getElementById('editCtaLink').value = keywordData.cta_link || '';
     document.getElementById('editRedeem').value = keywordData.redeem || '';
     document.getElementById('editStock').value = keywordData.stock || '';

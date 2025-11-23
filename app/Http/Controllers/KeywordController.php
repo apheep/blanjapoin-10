@@ -38,12 +38,24 @@ class KeywordController extends Controller
 
             // Validasi bahwa salah satu dari diskon harus diisi
             if (empty($request->diskon_percent) && empty($request->diskon_rupiah)) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'
+                    ], 422);
+                }
                 return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'])->withInput();
             }
 
             // Validasi start date tidak boleh melebihi end date
             if ($request->start_date && $request->end_date) {
                 if ($request->start_date > $request->end_date) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai tidak boleh melebihi tanggal berakhir'
+                        ], 422);
+                    }
                     return back()->withErrors(['start_date' => 'Tanggal mulai tidak boleh melebihi tanggal berakhir'])->withInput();
                 }
             }
@@ -70,6 +82,7 @@ class KeywordController extends Controller
             $keyword = Keyword::create([
                 'merchant_key'  => $request->merchant_key,
                 'nama_produk'   => $request->nama_produk,
+                'keyword_id'    => $request->keyword_id,
                 'cta_link'      => $request->cta_link,
                 'redeem'        => $request->redeem,
                 'diskon'        => $diskon,
@@ -81,7 +94,7 @@ class KeywordController extends Controller
                 'status'        => $request->status ?? 'pending',
             ]);
 
-            if ($request->wantsJson()) {
+            if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Keyword berhasil ditambahkan!',
@@ -102,7 +115,7 @@ class KeywordController extends Controller
             // Log error untuk debugging
             \Log::error('Error creating keyword: ' . $e->getMessage());
             
-            if ($request->wantsJson()) {
+            if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal menyimpan keyword: ' . $e->getMessage()
@@ -121,6 +134,7 @@ class KeywordController extends Controller
             $validated = $request->validate([
                 'merchant_key'      => 'required|exists:merchants,id',
                 'nama_produk'       => 'required|string|max:255',
+                'keyword_id'        => 'nullable|string|max:255',
                 'cta_link'          => 'nullable|string|max:255',
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
@@ -168,6 +182,7 @@ class KeywordController extends Controller
             $keyword->update([
                 'merchant_key'  => $request->merchant_key,
                 'nama_produk'   => $request->nama_produk,
+                'keyword_id'    => $request->keyword_id,
                 'cta_link'      => $request->cta_link,
                 'redeem'        => $request->redeem,
                 'diskon'        => $diskon,
@@ -324,9 +339,10 @@ class KeywordController extends Controller
                 'keyword' => $keyword
             ], 200);
         } catch (\Exception $e) {
+            \Log::error('Error rejecting keyword: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menolak keyword'
+                'message' => 'Gagal menolak keyword: ' . $e->getMessage()
             ], 500);
         }
     }
