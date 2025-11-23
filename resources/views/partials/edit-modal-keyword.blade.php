@@ -150,13 +150,30 @@ function openEditKeyword(id, keywordData) {
     
     // Set form action
     form.action = `/keywords/${id}`;
+    
+    // Set redirect URL - prioritize detail page, then keyword tab, then default
     if (redirectInput && window.detailRedirectUrl) {
+        // Jika ada detailRedirectUrl, berarti dari halaman merchant detail
         redirectInput.value = window.detailRedirectUrl;
+        if (stayFlagInput) {
+            stayFlagInput.value = '1';
+        }
     } else if (redirectInput) {
-        redirectInput.value = '';
-    }
-    if (stayFlagInput) {
-        stayFlagInput.value = window.detailRedirectUrl ? '1' : '';
+        // Cek apakah kita sedang di halaman keyword (tab keyword)
+        const currentUrl = new URL(window.location.href);
+        const currentTab = currentUrl.searchParams.get('tab');
+        
+        if (currentTab === 'keyword') {
+            // Jika sedang di tab keyword, set redirect ke halaman yang sama dengan tab=keyword
+            const baseUrl = currentUrl.pathname;
+            redirectInput.value = `${baseUrl}?tab=keyword`;
+        } else {
+            // Default: redirect ke halaman admin dengan tab keyword
+            redirectInput.value = window.location.pathname + '?tab=keyword';
+        }
+        if (stayFlagInput) {
+            stayFlagInput.value = '';
+        }
     }
     
     // Populate form fields

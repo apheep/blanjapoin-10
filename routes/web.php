@@ -53,7 +53,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/keywords/{id}', [KeywordController::class, 'update'])->name('keywords.update');
     Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
-    Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
 
     // Manajemen user

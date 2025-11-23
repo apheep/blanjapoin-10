@@ -280,23 +280,4 @@ class KeywordController extends Controller
             ], 500);
         }
     }
-
-    public function reject($id)
-    {
-        try {
-            $keyword = Keyword::findOrFail($id);
-            $keyword->update(['status' => 'reject']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Keyword berhasil ditolak',
-                'keyword' => $keyword
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menolak keyword'
-            ], 500);
-        }
-    }
 }
