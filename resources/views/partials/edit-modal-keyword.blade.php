@@ -176,8 +176,8 @@ function openEditKeyword(id, keywordData) {
         } else {
             // Default: redirect ke halaman admin dengan tab keyword
             redirectInput.value = window.location.pathname + '?tab=keyword';
-        }
-        if (stayFlagInput) {
+    }
+    if (stayFlagInput) {
             stayFlagInput.value = '';
         }
     }
