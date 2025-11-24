@@ -253,4 +253,44 @@ class MerchantController extends Controller
         
         return view('admin', compact('merchants'));
     }
+
+    /**
+     * Menampilkan halaman link pelanggan dengan voucher merchant
+     * Route: /u/{code}
+     */
+    public function linkPelanggan($code)
+    {
+        // Decode URL encoded characters (e.g., h%26m -> h&m)
+        $decodedCode = urldecode($code);
+        
+        // Cari merchant berdasarkan code dari link_blanjapoin
+        // Format link_blanjapoin: "blanjapoin.id/dash/{code}"
+        // Coba dengan code yang sudah di-decode dan juga dengan yang masih encoded
+        $merchant = Merchant::where(function($query) use ($decodedCode, $code) {
+                // Cari dengan code yang sudah di-decode
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $decodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '%')
+                      // Juga coba dengan code yang masih encoded (jika berbeda)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $code)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            abort(404, 'Merchant tidak ditemukan');
+        }
+
+        // Ambil semua voucher/keyword yang approved untuk merchant ini
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->where('status', 'approve')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('link-pelanggan', [
+            'merchant' => $merchant,
+            'keywords' => $keywords,
+        ]);
+    }
 }
