@@ -138,10 +138,10 @@
                     </button>
                     <div id="statusDropdownDetail" class="hidden absolute md:left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-56 z-40">
                         <div class="py-1">
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('all'); return false;">All</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-200 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('pending'); return false;">Pending</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('reject'); return false;">Rejected</a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatusDetail('approve'); return false;">Approved</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('all'); return false;">All</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('pending'); return false;">Pending</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-red-100 hover:text-red-900 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('reject'); return false;">Rejected</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-100 hover:text-green-900 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('approve'); return false;">Approved</a>
                         </div>
                     </div>
                 </div>
@@ -570,17 +570,53 @@
             button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
 
             const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-            rows.forEach(row => {
+            rows.forEach((row, index) => {
                 const s = (row.dataset.status || '').toLowerCase();
                 const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                row.style.display = (status === 'all' || normalized === status) ? '' : 'none';
+                const shouldShow = (status === 'all' || normalized === status);
+                
+                if (shouldShow) {
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateY(-10px)';
+                    row.style.display = '';
+                    setTimeout(() => {
+                        row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        row.style.opacity = '1';
+                        row.style.transform = 'translateY(0)';
+                    }, index * 20);
+                } else {
+                    row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        row.style.display = 'none';
+                    }, 200);
+                }
             });
 
             const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-            cards.forEach(card => {
+            cards.forEach((card, index) => {
                 const s = (card.dataset.status || '').toLowerCase();
                 const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                card.style.display = (status === 'all' || normalized === status) ? '' : 'none';
+                const shouldShow = (status === 'all' || normalized === status);
+                
+                if (shouldShow) {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-10px)';
+                    card.style.display = '';
+                    setTimeout(() => {
+                        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 20);
+                } else {
+                    card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-10px)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 200);
+                }
             });
 
             toggleStatusDropdownDetail();
