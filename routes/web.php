@@ -35,6 +35,12 @@ Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchan
 // Route untuk link pelanggan (public, tidak perlu login)
 Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
 
+// Route untuk link dashboard (public, tidak perlu login)
+Route::get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
+
+// Route untuk link history (public, tidak perlu login)
+Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
+
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [LoginController::class, 'index'])->name('login');

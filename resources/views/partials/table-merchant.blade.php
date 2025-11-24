@@ -104,10 +104,22 @@
                             @endif
                         </td>
 
-                        {{-- Link Blanjapoin --}}
+                        {{-- Link Blanjapoin (Dashboard) --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @if($merchant->link_blanjapoin)
-                                <a href="https://{{ $merchant->link_blanjapoin }}" 
+                            @php
+                                $codeDashboard = null;
+                                if($merchant->link_blanjapoin) {
+                                    // Remove http:// or https:// if present
+                                    $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                                    // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                                    $parts = explode('/', $link);
+                                    if(count($parts) >= 3 && $parts[1] === 'dash') {
+                                        $codeDashboard = end($parts);
+                                    }
+                                }
+                            @endphp
+                            @if($codeDashboard)
+                                <a href="{{ route('link.dashboard', $codeDashboard) }}" 
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
@@ -339,11 +351,23 @@
                 @endif
             </div>
 
-            {{-- Link Blanjapoin --}}
+            {{-- Link Blanjapoin (Dashboard) --}}
             <div>
                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Blanjapoin</p>
-                @if($merchant->link_blanjapoin)
-                    <a href="https://{{ $merchant->link_blanjapoin }}" 
+                @php
+                    $codeDashboardMobile = null;
+                    if($merchant->link_blanjapoin) {
+                        // Remove http:// or https:// if present
+                        $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                        // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                        $parts = explode('/', $link);
+                        if(count($parts) >= 3 && $parts[1] === 'dash') {
+                            $codeDashboardMobile = end($parts);
+                        }
+                    }
+                @endphp
+                @if($codeDashboardMobile)
+                    <a href="{{ route('link.dashboard', $codeDashboardMobile) }}" 
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-orange-600 hover:text-orange-800 hover:underline mt-1 inline-flex items-center gap-1">
