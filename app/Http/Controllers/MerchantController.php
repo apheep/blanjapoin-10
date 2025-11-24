@@ -1,0 +1,256 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Merchant;
+use App\Models\Keyword;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class MerchantController extends Controller
+{
+    public function index()
+    {
+        $merchants = Merchant::orderBy('id')->paginate(10);
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        $allMerchants = Merchant::orderBy('nama_merchant')->get();
+        return view('admin', compact('merchants', 'keywords', 'allMerchants'));
+    }
+
+    public function show(Merchant $merchant)
+    {
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('id')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('merchant-detail', [
+            'merchant' => $merchant,
+            'keywords' => $keywords,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_merchant'  => 'required|string|max:255',
+            'kategori'       => 'nullable|string|max:100',
+            'link_blanjapoin' => 'nullable|string|max:500',
+            'link_blanjapoin_code' => 'nullable|string|max:255',
+            'nama_pic'       => 'nullable|string|max:255',
+            'wa_pic'         => 'nullable|string|max:20',
+            'daerah'         => 'nullable|string|max:255',
+            'detail_alamat'  => 'nullable|string',
+            'lat'            => 'nullable|string|max:50',
+            'long'           => 'nullable|string|max:50',
+            'link_gmap'      => 'nullable|string|max:500',
+            'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+    
+        // =====================
+        //  HANDLE LINK BLANJAPOIN
+        // =====================
+        $linkBlanjapoin = null;
+        
+        // Prioritas: link_blanjapoin (full) > link_blanjapoin_code
+        if ($request->filled('link_blanjapoin') && trim($request->link_blanjapoin) !== '') {
+            $linkBlanjapoin = trim($request->link_blanjapoin);
+        } elseif ($request->filled('link_blanjapoin_code') && trim($request->link_blanjapoin_code) !== '') {
+            $code = trim($request->link_blanjapoin_code);
+            $linkBlanjapoin = 'blanjapoin.id/dash/' . $code;
+        } else {
+            $linkBlanjapoin = null;
+        }
+    
+        // =====================
+        //  HANDLE UPLOAD LOGO
+        // =====================
+        $logoPath = null;
+    
+        if ($request->hasFile('logo_merchant')) {
+            // Simpan ke storage/app/public/merchants/
+            $logoPath = $request->file('logo_merchant')->store('merchants', 'public');
+        }
+    
+        // Helper function untuk convert empty string ke null
+        $getValue = function($value) {
+            if ($value === null) return null;
+            if (is_string($value)) {
+                $trimmed = trim($value);
+                return $trimmed === '' ? null : $trimmed;
+            }
+            return $value;
+        };
+        
+        // SIMPAN DATA KE DATABASE - Pastikan semua field tersimpan
+        // Ambil semua field langsung dari request tanpa transformasi untuk lat/long
+        $merchantData = [
+            'nama_merchant'  => trim($request->input('nama_merchant', '')),
+            'kategori'       => $getValue($request->input('kategori', null)),
+            'link_blanjapoin' => $getValue($linkBlanjapoin),
+            'nama_pic'       => $getValue($request->input('nama_pic', null)),
+            'wa_pic'         => $getValue($request->input('wa_pic', null)),
+            'daerah'         => $getValue($request->input('daerah', null)),
+            'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
+            // Ambil lat dan long sebagai string untuk mempertahankan nilai asli input
+            'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
+                                ? (string)$request->input('lat')
+                                : null,
+            'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
+                                ? (string)$request->input('long')
+                                : null,
+            'link_gmap'      => $getValue($request->input('link_gmap', null)),
+            'logo_merchant'  => $logoPath,
+        ];
+        
+        // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
+        foreach ($merchantData as $key => $value) {
+            if ($value !== null && is_string($value) && trim($value) === '') {
+                $merchantData[$key] = null;
+            }
+        }
+        
+        // // Log untuk debugging - log semua request data
+        // Log::info('=== MERCHANT STORE REQUEST ===');
+        // Log::info('Request all data:', $request->all());
+        // Log::info('Link blanjapoin processed:', [
+        //     'link_blanjapoin' => $request->input('link_blanjapoin'),
+        //     'link_blanjapoin_code' => $request->input('link_blanjapoin_code'),
+        //     'final_link' => $linkBlanjapoin
+        // ]);
+        // Log::info('Lat/Long processing:', [
+        //     'lat_input' => $request->input('lat'),
+        //     'lat_processed' => $merchantData['lat'],
+        //     'long_input' => $request->input('long'),
+        //     'long_processed' => $merchantData['long'],
+        // ]);
+        // Log::info('All individual fields:', [
+        //     'nama_pic' => $request->input('nama_pic'),
+        //     'wa_pic' => $request->input('wa_pic'),
+        //     'detail_alamat' => $request->input('detail_alamat'),
+        //     'lat' => $request->input('lat'),
+        //     'long' => $request->input('long'),
+        //     'link_gmap' => $request->input('link_gmap'),
+        //     'daerah' => $request->input('daerah'),
+        // ]);
+        // Log::info('Creating merchant with processed data:', array_map(function($v) {
+        //     if (is_string($v) && strlen($v) > 100) {
+        //         return substr($v, 0, 100) . '...';
+        //     }
+        //     return $v;
+        // }, $merchantData));
+        
+        try {
+            $merchant = Merchant::create($merchantData);
+            Log::info('Merchant created successfully with ID:', ['id' => $merchant->id]);
+        } catch (\Exception $e) {
+            Log::error('Error creating merchant:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $merchantData
+            ]);
+            
+        //     // Jika request dari AJAX, return JSON error
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan merchant: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Gagal menyimpan merchant: ' . $e->getMessage()]);
+        }
+    
+        // Jika request dari AJAX, return JSON
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Merchant berhasil ditambahkan!',
+                'merchant' => $merchant
+            ], 201);
+        }
+    
+        return redirect()->route('admin')->with('success', 'Merchant berhasil ditambahkan!');
+    }
+    
+
+
+    
+    public function create()
+    {
+        return view('merchant.create');
+    }
+
+
+    public function destroy($id)
+    {
+        try {
+            $merchant = Merchant::findOrFail($id);
+            
+            // Delete logo file if exists
+            if ($merchant->logo_merchant && Storage::disk('public')->exists($merchant->logo_merchant)) {
+                Storage::disk('public')->delete($merchant->logo_merchant);
+            }
+            
+            // Delete merchant record
+            $merchant->delete();
+            
+            return response()->json(['success' => true, 'message' => 'Merchant berhasil dihapus'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus merchant'], 500);
+        }
+    }
+
+    // edit, update menyusul
+
+    public function downloadFile($path)
+    {
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        $file = Storage::disk('public')->get($path);
+        $mimeType = Storage::disk('public')->mimeType($path);
+
+        return response($file, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
+        ]);
+    }
+
+    public function search(Request $request)
+    {
+        $searchTerm = $request->input('q', '');
+        $page = $request->input('page', 1);
+        
+        $merchants = Merchant::where('nama_merchant', 'like', "%{$searchTerm}%")
+                    ->orWhere('daerah', 'like', "%{$searchTerm}%")
+                    ->orWhere('kategori', 'like', "%{$searchTerm}%")
+                    ->orderBy('id')
+                    ->paginate(15, ['*'], 'page', $page);
+        
+        if ($request->wantsJson()) {
+            return response()->json([
+                'merchants' => $merchants->items(),
+                'pagination' => [
+                    'current_page' => $merchants->currentPage(),
+                    'last_page' => $merchants->lastPage(),
+                    'per_page' => $merchants->perPage(),
+                    'total' => $merchants->total(),
+                    'from' => $merchants->firstItem(),
+                    'to' => $merchants->lastItem(),
+                    'has_more_pages' => $merchants->hasMorePages(),
+                    'next_page_url' => $merchants->nextPageUrl(),
+                    'prev_page_url' => $merchants->previousPageUrl(),
+                ]
+            ]);
+        }
+        
+        return view('admin', compact('merchants'));
+    }
+}

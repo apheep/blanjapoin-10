@@ -18,9 +18,10 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
+        'username',
         'password',
+        'role',
+        'can_approve',
     ];
 
     /**
@@ -39,6 +40,16 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        'username_verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
+
+    /**
+     * Scope to get last login time
+     */
+    public function getLastLoginAttribute()
+    {
+        return $this->updated_at ? $this->updated_at->format('Y-m-d H:i') : 'Belum pernah login';
+    }
 }

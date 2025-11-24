@@ -1,53 +1,95 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
+use App\Http\Controllers\MerchantController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\KeywordController;
+use App\Models\Keyword;
+use App\Models\Merchant;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
-    return view('welcome');
+    $keywords = Keyword::with('merchant')->get();
+    $locations = Merchant::query()
+        ->whereNotNull('daerah')
+        ->where('daerah', '!=', '')
+        ->distinct()
+        ->orderBy('daerah')
+        ->pluck('daerah');
+
+    return view('welcome', [
+        'keywords' => $keywords,
+        'locations' => $locations,
+    ]);
 })->name('home');
+
+Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchant.search');
 
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
-    // Login routes
     Route::get('/login', [LoginController::class, 'index'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.post');
 
-    // Minimal forgot-password route
     Route::get('/forgot-password', function () {
         return response('Fitur lupa password belum tersedia.', 200);
     })->name('password.request');
 });
 
+// Route untuk download/view storage files
+Route::get('/storage/{path}', [MerchantController::class, 'downloadFile'])->name('storage.download')->where('path', '.*');
+
 // Routes untuk user yang sudah login
 Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
-        return view('welcome');
+        $keywords = Keyword::with('merchant')->get();
+        $locations = Merchant::query()
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->distinct()
+            ->orderBy('daerah')
+            ->pluck('daerah');
+
+        return view('welcome', [
+            'keywords' => $keywords,
+            'locations' => $locations,
+        ]);
     })->name('welcome');
 
-    // Halaman admin
-    Route::get('/admin', function () {
-        return view('admin');
-    })->name('admin');
+    // ======================= ADMIN / DASHBOARD =======================
+    // Sekarang admin & dashboard pakai MerchantController@index
+    Route::get('/admin', [MerchantController::class, 'index'])->name('admin');
+    Route::get('/dashboard', [MerchantController::class, 'index'])->name('dashboard');
+    Route::get('/merchants/search', [MerchantController::class, 'search'])->name('merchants.search');
 
-    // Dashboard (alias admin)
-    Route::get('/dashboard', function () {
-        return view('admin');
-    })->name('dashboard');
+    // Resource CRUD merchant (index sudah dipakai di atas)
+    Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
+    Route::get('/merchants/{merchant}', [MerchantController::class, 'show'])->name('merchants.show');
 
-    // Halaman approval
-    Route::get('/approval', function () {
-        return view('approval');
-    })->name('approval');
+    // Keywords routes
+    Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
+    Route::post('/keywords', [KeywordController::class, 'store'])->name('keywords.store');
+    Route::put('/keywords/{id}', [KeywordController::class, 'update'])->name('keywords.update');
+    Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
+    Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
+    Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
+    Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
 
     // Manajemen user
-    Route::get('/user-management', function () {
-        return view('usermng');
-    })->name('user.management');
+    Route::get('/user-management', [UserController::class, 'index'])->name('user.management');
+    Route::get('/api/users', [UserController::class, 'getUsers'])->name('users.get');
+    Route::post('/api/users', [UserController::class, 'store'])->name('users.store');
+    Route::patch('/api/users/{user}/toggle-approval', [UserController::class, 'toggleApproval'])->name('users.toggle-approval');
+    Route::delete('/api/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/api/users/bulk-delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
+    Route::post('/api/users/bulk-toggle-approval', [UserController::class, 'bulkToggleApproval'])->name('users.bulk-toggle-approval');
 
     // Halaman profil
     Route::get('/profile', function () {
@@ -66,3 +108,176 @@ Route::middleware(['auth'])->group(function () {
     // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
+
+// API Proxy untuk wilayah Indonesia (menghindari CORS)
+// OJOK DISENGGOL CAK!!
+
+Route::get('/api/wilayah/provinces', function () {
+    try {
+        $response = Http::timeout(10)->get('https://wilayah.id/api/provinces.json');
+        if ($response->successful()) {
+            return response()->json($response->json());
+        }
+        Log::error('Failed to fetch provinces. Status: ' . $response->status());
+        return response()->json(['error' => 'Failed to fetch provinces'], 500);
+    } catch (\Exception $e) {
+        Log::error('Error fetching provinces: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch provinces', 'message' => $e->getMessage()], 500);
+    }
+})->name('api.wilayah.provinces');
+
+Route::get('/api/wilayah/regencies/{code}', function ($code) {
+    try {
+        $url = "https://wilayah.id/api/regencies/{$code}.json";
+        $response = Http::timeout(10)->get($url);
+        if ($response->successful()) {
+            return response()->json($response->json());
+        }
+        Log::error('Failed to fetch regencies. Status: ' . $response->status());
+        return response()->json(['error' => 'Failed to fetch regencies'], 500);
+    } catch (\Exception $e) {
+        Log::error('Error fetching regencies: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch regencies', 'message' => $e->getMessage()], 500);
+    }
+})->where('code', '[0-9.]+')->name('api.wilayah.regencies');
+
+// Route untuk districts - menggunakan query parameter untuk menghindari masalah titik
+Route::get('/api/wilayah/districts/{code}', function (Request $request, $code) {
+    // Jika code tidak ada atau kosong, coba ambil dari query
+    if (empty($code) || $code === 'null' || $code === 'undefined') {
+        $code = $request->query('code', '');
+    }
+    // Log request untuk debugging
+    Log::info('Districts route hit', [
+        'code' => $code,
+        'url' => $request->fullUrl(),
+        'path' => $request->path()
+    ]);
+    
+    try {
+        // Log untuk debugging
+        Log::info('Fetching districts for code: ' . $code);
+        
+        // Bersihkan kode dari karakter yang tidak perlu
+        $cleanCode = preg_replace('/[^0-9.]/', '', $code);
+        
+        // Jika kode mengandung titik, coba format tanpa titik juga
+        $codesToTry = [$cleanCode];
+        if (strpos($cleanCode, '.') !== false) {
+            $codesToTry[] = str_replace('.', '', $cleanCode);
+        }
+        
+        $url = null;
+        $response = null;
+        $lastError = null;
+        
+        foreach ($codesToTry as $tryCode) {
+            $url = "https://wilayah.id/api/districts/{$tryCode}.json";
+            Log::info('Trying API URL: ' . $url);
+            
+            try {
+                $response = Http::timeout(10)->get($url);
+                
+                if ($response->successful()) {
+                    Log::info('Success with code: ' . $tryCode);
+                    return response()->json($response->json());
+                } else {
+                    $lastError = [
+                        'status' => $response->status(),
+                        'body' => $response->body()
+                    ];
+                    Log::warning('Failed with code ' . $tryCode . ': Status ' . $response->status());
+                }
+            } catch (\Exception $e) {
+                $lastError = ['message' => $e->getMessage()];
+                Log::warning('Exception with code ' . $tryCode . ': ' . $e->getMessage());
+            }
+        }
+        
+        // Log error response
+        Log::error('Failed to fetch districts. Last error: ' . json_encode($lastError));
+        return response()->json([
+            'error' => 'Failed to fetch districts',
+            'status' => $lastError['status'] ?? 404,
+            'message' => 'District data not found for code: ' . $code,
+            'tried_codes' => $codesToTry,
+            'last_error' => $lastError
+        ], $lastError['status'] ?? 404);
+    } catch (\Exception $e) {
+        Log::error('Error fetching districts: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to fetch districts',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+})->where('code', '[^/]+')->name('api.wilayah.districts');
+
+// Route alternatif untuk districts dengan query parameter (untuk kode dengan titik)
+Route::get('/api/wilayah/districts-by-code', function (Request $request) {
+    $code = $request->query('code', '');
+    
+    if (empty($code)) {
+        return response()->json(['error' => 'Code parameter is required'], 400);
+    }
+    
+    // Log request untuk debugging
+    Log::info('Districts route (query) hit', [
+        'code' => $code,
+        'url' => $request->fullUrl()
+    ]);
+    
+    try {
+        // Bersihkan kode dari karakter yang tidak perlu
+        $cleanCode = preg_replace('/[^0-9.]/', '', $code);
+        
+        // Jika kode mengandung titik, coba format tanpa titik juga
+        $codesToTry = [$cleanCode];
+        if (strpos($cleanCode, '.') !== false) {
+            $codesToTry[] = str_replace('.', '', $cleanCode);
+        }
+        
+        $url = null;
+        $response = null;
+        $lastError = null;
+        
+        foreach ($codesToTry as $tryCode) {
+            $url = "https://wilayah.id/api/districts/{$tryCode}.json";
+            Log::info('Trying API URL: ' . $url);
+            
+            try {
+                $response = Http::timeout(10)->get($url);
+                
+                if ($response->successful()) {
+                    Log::info('Success with code: ' . $tryCode);
+                    return response()->json($response->json());
+                } else {
+                    $lastError = [
+                        'status' => $response->status(),
+                        'body' => $response->body()
+                    ];
+                    Log::warning('Failed with code ' . $tryCode . ': Status ' . $response->status());
+                }
+            } catch (\Exception $e) {
+                $lastError = ['message' => $e->getMessage()];
+                Log::warning('Exception with code ' . $tryCode . ': ' . $e->getMessage());
+            }
+        }
+        
+        // Log error response
+        Log::error('Failed to fetch districts. Last error: ' . json_encode($lastError));
+        return response()->json([
+            'error' => 'Failed to fetch districts',
+            'status' => $lastError['status'] ?? 404,
+            'message' => 'District data not found for code: ' . $code,
+            'tried_codes' => $codesToTry
+        ], $lastError['status'] ?? 404);
+    } catch (\Exception $e) {
+        Log::error('Error fetching districts: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to fetch districts',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+})->name('api.wilayah.districts.query');
+
+

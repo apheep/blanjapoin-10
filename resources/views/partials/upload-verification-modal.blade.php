@@ -85,6 +85,48 @@
     </div>
 </div>
 
+<!-- Upload Error Modal -->
+<div id="uploadErrorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="uploadErrorContent">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-exclamation text-red-600 text-lg"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Gagal!</h3>
+                    <p class="text-sm text-gray-500">Data gagal diupload</p>
+                </div>
+            </div>
+            <button onclick="closeUploadErrorModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-red-100 to-rose-100 mb-4">
+                    <i class="fas fa-times-circle text-red-600 text-3xl"></i>
+                </div>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">Upload Gagal!</h4>
+                <p class="text-sm text-gray-600 mb-6">
+                    <span id="errorMessage">Terjadi kesalahan saat mengupload data.</span>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="flex items-center justify-center px-6 py-4 bg-gray-50 rounded-b-2xl">
+            <button onclick="closeUploadErrorModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-lg hover:shadow-lg transition-all duration-300">
+                <i class="fas fa-times mr-2"></i>
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 let uploadVerificationData = null;
 let uploadDataType = null;
@@ -138,21 +180,158 @@ function confirmUpload() {
         // Close verification modal
         closeUploadVerificationModal();
         
-        // Close upload modal based on type
-        setTimeout(() => {
-            if (uploadDataType === 'Merchant' && typeof closeUploadMerchant === 'function') {
-                closeUploadMerchant();
-            } else if (uploadDataType === 'Merchandise' && typeof closeUploadMerchandise === 'function') {
-                closeUploadMerchandise();
-            } else if (uploadDataType === 'Telkom Package' && typeof closeUploadTelkom === 'function') {
-                closeUploadTelkom();
-            }
-            
-            // Show success modal after a short delay
+        // Handle Merchant upload - submit form via AJAX
+        if (uploadDataType === 'Merchant') {
             setTimeout(() => {
-                showUploadSuccessModal(uploadDataType);
-            }, 500);
-        }, 300);
+                const form = document.getElementById('formUploadMerchant');
+                if (form) {
+                    // Update link blanjapoin dan daerah sebelum membuat FormData baru
+                    if (typeof updateLinkBlanjapoin === 'function') {
+                        updateLinkBlanjapoin();
+                    }
+                    if (typeof updateDaerahCombined === 'function') {
+                        updateDaerahCombined();
+                    }
+                    
+                    // Buat FormData baru dari form untuk memastikan semua nilai terbaru terkirim
+                    const freshFormData = new FormData(form);
+                    
+                    // Get CSRF token
+                    const csrfInput = form.querySelector('input[name="_token"]');
+                    const csrfToken = csrfInput ? csrfInput.value : null;
+                    
+                    // Ensure CSRF token is in the FormData
+                    if (csrfToken && !freshFormData.has('_token')) {
+                        freshFormData.append('_token', csrfToken);
+                    }
+                    
+                    // Debug: Log form data yang akan dikirim
+                    console.log('Sending form data:');
+                    for (let [key, value] of freshFormData.entries()) {
+                        if (key !== 'logo_merchant') {
+                            console.log(key + ':', value);
+                        } else {
+                            console.log(key + ':', value instanceof File ? value.name : 'File');
+                        }
+                    }
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: freshFormData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Store success message in sessionStorage
+                            sessionStorage.setItem('uploadSuccess', 'Merchant');
+                            
+                            // Close upload modal
+                            if (typeof closeUploadMerchant === 'function') {
+                                closeUploadMerchant();
+                            }
+                            
+                            // Reload page
+                            setTimeout(() => {
+                                location.reload();
+                            }, 300);
+                        } else {
+                            alert('Gagal menyimpan data: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan saat menyimpan data.\n\n' + error.message);
+                    });
+                }
+            }, 300);
+        } else if (uploadDataType === 'Keyword') {
+            // Handle Keyword upload - submit form via AJAX
+            setTimeout(() => {
+                const form = document.getElementById('formUploadKeyword');
+                if (form) {
+                    // Get CSRF token
+                    const csrfInput = form.querySelector('input[name="_token"]');
+                    const csrfToken = csrfInput ? csrfInput.value : null;
+                    
+                    // Ensure CSRF token is in the FormData
+                    if (csrfToken && !uploadVerificationData.has('_token')) {
+                        uploadVerificationData.append('_token', csrfToken);
+                    }
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: uploadVerificationData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.message || `HTTP ${response.status}`);
+                            }).catch(() => {
+                                return response.text().then(text => {
+                                    throw new Error(`HTTP ${response.status}: ${text}`);
+                                });
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Store success message in sessionStorage
+                            sessionStorage.setItem('uploadSuccess', 'Keyword');
+                            
+                            // Close upload modal
+                            if (typeof closeUploadKeyword === 'function') {
+                                closeUploadKeyword();
+                            }
+                            
+                            // Reload page with keyword tab active
+                            setTimeout(() => {
+                                const currentUrl = new URL(window.location.href);
+                                currentUrl.searchParams.set('tab', 'keyword');
+                                window.location.href = currentUrl.toString();
+                            }, 300);
+                        } else {
+                            showUploadErrorModal('Gagal menyimpan data: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showUploadErrorModal('Terjadi kesalahan saat menyimpan data.\n\n' + error.message);
+                    });
+                }
+            }, 300);
+        } else {
+            // Handle other types (Merchandise, Telkom Package)
+            setTimeout(() => {
+                if (uploadDataType === 'Merchandise' && typeof closeUploadMerchandise === 'function') {
+                    closeUploadMerchandise();
+                } else if (uploadDataType === 'Telkom Package' && typeof closeUploadTelkom === 'function') {
+                    closeUploadTelkom();
+                }
+                
+                // Show success modal after a short delay
+                setTimeout(() => {
+                    showUploadSuccessModal(uploadDataType);
+                }, 500);
+            }, 300);
+        }
     }
 }
 
@@ -201,4 +380,81 @@ function closeUploadSuccessModal() {
         }
     }, 300);
 }
+
+function showUploadErrorModal(message) {
+    // Update error message
+    const errorMessageSpan = document.getElementById('errorMessage');
+    if (errorMessageSpan) errorMessageSpan.textContent = message || 'Terjadi kesalahan saat mengupload data.';
+    
+    // Show modal with animation
+    const modal = document.getElementById('uploadErrorModal');
+    const modalContent = document.getElementById('uploadErrorContent');
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Animate modal
+    setTimeout(() => {
+        if (modalContent) {
+            modalContent.style.transform = 'scale(1)';
+            modalContent.style.opacity = '1';
+        }
+    }, 10);
+}
+
+function closeUploadErrorModal() {
+    const modal = document.getElementById('uploadErrorModal');
+    const modalContent = document.getElementById('uploadErrorContent');
+    
+    // Animate out
+    if (modalContent) {
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+    }
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (modalContent) {
+            modalContent.style.transform = 'scale(0.95)';
+            modalContent.style.opacity = '0';
+        }
+    }, 300);
+}
+
+// Check for success message after page reload
+document.addEventListener('DOMContentLoaded', function() {
+    const successType = sessionStorage.getItem('uploadSuccess');
+    if (successType) {
+        // Clear the stored message
+        sessionStorage.removeItem('uploadSuccess');
+        
+        // Show success modal
+        setTimeout(() => {
+            showUploadSuccessModal(successType);
+        }, 500);
+    }
+    
+    // Check for flash message from Laravel (for Keyword and other POST submissions)
+    const flashMessage = document.querySelector('[data-flash-message]');
+    if (flashMessage) {
+        const message = flashMessage.getAttribute('data-flash-message');
+        const type = flashMessage.getAttribute('data-flash-type') || 'success';
+        
+        if (message) {
+            setTimeout(() => {
+                if (type === 'success') {
+                    // Extract type from message or use default
+                    let messageType = 'Keyword';
+                    if (message.includes('Merchant')) messageType = 'Merchant';
+                    else if (message.includes('Merchandise')) messageType = 'Merchandise';
+                    
+                    showUploadSuccessModal(messageType);
+                } else if (type === 'error') {
+                    showUploadErrorModal(message);
+                }
+            }, 500);
+        }
+    }
+});
 </script>
