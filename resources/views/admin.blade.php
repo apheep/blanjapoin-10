@@ -225,18 +225,81 @@
                     button.className = buttonClasses;
                     button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
 
+                    // ====== (update dropdown item active state) ======
+                    const dropdownItems = document.querySelectorAll('#statusDropdownKeyword a[data-status]');
+                    dropdownItems.forEach(item => {
+                        const itemStatus = item.getAttribute('data-status');
+                        const normalizedItemStatus = (itemStatus || '').toLowerCase();
+                        const normalizedCurrentStatus = (status || '').toLowerCase();
+
+                        // Reset semua item ke state default
+                        item.classList.remove('bg-gray-100', 'bg-yellow-100', 'bg-red-100', 'bg-green-100',
+                            'text-gray-900', 'text-yellow-900', 'text-red-900', 'text-green-900');
+
+                        // Apply active state jika status cocok
+                        if (normalizedItemStatus === normalizedCurrentStatus || 
+                            (normalizedCurrentStatus === 'all' && normalizedItemStatus === 'all')) {
+                            
+                            if (status === 'all') {
+                                item.classList.add('bg-gray-100', 'text-gray-900');
+                            } else if (status === 'pending') {
+                                item.classList.add('bg-yellow-100', 'text-yellow-900');
+                            } else if (status === 'reject') {
+                                item.classList.add('bg-red-100', 'text-red-900');
+                            } else if (status === 'approve') {
+                                item.classList.add('bg-green-100', 'text-green-900');
+                            }
+                        }
+                    });
+
                     const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-                    rows.forEach(row => {
+                    rows.forEach((row, index) => {
                         const s = (row.dataset.status || '').toLowerCase();
                         const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        row.style.display = (status === 'all' || normalized === status) ? '' : 'none';
+                        const shouldShow = (status === 'all' || normalized === status);
+                        
+                        if (shouldShow) {
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateY(-10px)';
+                            row.style.display = '';
+                            setTimeout(() => {
+                                row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                row.style.opacity = '1';
+                                row.style.transform = 'translateY(0)';
+                            }, index * 20);
+                        } else {
+                            row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateY(-10px)';
+                            setTimeout(() => {
+                                row.style.display = 'none';
+                            }, 200);
+                        }
                     });
 
                     const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-                    cards.forEach(card => {
+                    cards.forEach((card, index) => {
                         const s = (card.dataset.status || '').toLowerCase();
                         const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        card.style.display = (status === 'all' || normalized === status) ? '' : 'none';
+                        const shouldShow = (status === 'all' || normalized === status);
+                        
+                        if (shouldShow) {
+                            card.style.opacity = '0';
+                            card.style.transform = 'translateY(-10px)';
+                            card.style.display = '';
+                            setTimeout(() => {
+                                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                card.style.opacity = '1';
+                                card.style.transform = 'translateY(0)';
+                            }, index * 20);
+                        } else {
+                            card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                            card.style.opacity = '0';
+                            card.style.transform = 'translateY(-10px)';
+                            setTimeout(() => {
+                                card.style.display = 'none';
+                            }, 200);
+                        }
                     });
 
                     toggleKeywordStatusDropdown();
@@ -272,9 +335,11 @@
                     dropdownIds.forEach(id => {
                         const dropdown = document.getElementById(id);
                         if (dropdown) {
-                            dropdown.classList.add('hidden');
-                            dropdown.style.opacity = '0';
-                            dropdown.style.transform = 'translateY(-10px)';
+                            dropdown.classList.remove('opacity-100', 'translate-y-0');
+                            dropdown.classList.add('opacity-0', 'translate-y-1');
+                            setTimeout(() => {
+                                dropdown.classList.add('hidden');
+                            }, 150);
                         }
                     });
                 }
@@ -283,18 +348,18 @@
                     const dropdown = document.getElementById('kategoriDropdownMerchant');
                     if (!dropdown) return;
                     
-                    if (dropdown.classList.contains('hidden')) {
+                    const isHidden = dropdown.classList.contains('hidden');
+                    
+                    if (isHidden) {
                         closeAllDropdowns();
                         dropdown.classList.remove('hidden');
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
-                        setTimeout(() => {
-                            dropdown.style.opacity = '1';
-                            dropdown.style.transform = 'translateY(0)';
-                        }, 10);
+                        requestAnimationFrame(() => {
+                            dropdown.classList.remove('opacity-0', 'translate-y-1');
+                            dropdown.classList.add('opacity-100', 'translate-y-0');
+                        });
                     } else {
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
+                        dropdown.classList.remove('opacity-100', 'translate-y-0');
+                        dropdown.classList.add('opacity-0', 'translate-y-1');
                         setTimeout(() => dropdown.classList.add('hidden'), 150);
                     }
                 }
@@ -442,6 +507,47 @@
                         `;
                     }
 
+                    // ====== (update dropdown item active state) ======
+                    if (tableType === 'merchant') {
+                        const dropdownItems = document.querySelectorAll('#kategoriDropdownMerchant a[data-category]');
+                        dropdownItems.forEach(item => {
+                            const itemCategory = item.getAttribute('data-category');
+                            const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                            const normalizedCurrentCategory = (category || '').toLowerCase();
+
+                            // Reset semua item ke state default
+                            item.classList.remove('bg-gray-100', 'bg-gradient-to-r', 
+                                'from-orange-100', 'to-red-100', 'text-orange-900',
+                                'from-purple-100', 'to-pink-100', 'text-purple-900',
+                                'from-blue-100', 'to-cyan-100', 'text-blue-900',
+                                'from-green-100', 'to-emerald-100', 'text-green-900',
+                                'from-rose-100', 'to-pink-100', 'text-rose-900',
+                                'from-red-100', 'to-orange-100', 'text-red-900',
+                                'text-gray-900');
+
+                            // Apply active state jika kategori cocok
+                            if (normalizedItemCategory === normalizedCurrentCategory || 
+                                (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                                
+                                if (category === 'Semua') {
+                                    item.classList.add('bg-gray-100', 'text-gray-900');
+                                } else if (category === 'Kuliner') {
+                                    item.classList.add('bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'text-orange-900');
+                                } else if (category === 'Hiburan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'text-purple-900');
+                                } else if (category === 'Liburan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'text-blue-900');
+                                } else if (category === 'Belanja') {
+                                    item.classList.add('bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'text-green-900');
+                                } else if (category === 'Kecantikan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-rose-100', 'to-pink-100', 'text-rose-900');
+                                } else {
+                                    item.classList.add('bg-gradient-to-r', 'from-red-100', 'to-orange-100', 'text-red-900');
+                                }
+                            }
+                        });
+                    }
+
                     // Mapping table type to actual DOM elements
                     let tableBodyId = '';
                     let rowClass = '';
@@ -459,15 +565,26 @@
 
                     if (tableBody) {
                         const rows = tableBody.querySelectorAll(`.${rowClass}`);
-                        rows.forEach(row => {
+                        rows.forEach((row, index) => {
                             const rowCategory = (row.getAttribute('data-category') || '').toLowerCase();
-
-                            if (!normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all') {
+                            const shouldShow = !normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all' || rowCategory === normalizedSelected;
+                            
+                            if (shouldShow) {
+                                row.style.opacity = '0';
+                                row.style.transform = 'translateY(-10px)';
                                 row.style.display = '';
-                            } else if (rowCategory === normalizedSelected) {
-                                row.style.display = '';
+                                setTimeout(() => {
+                                    row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                    row.style.opacity = '1';
+                                    row.style.transform = 'translateY(0)';
+                                }, index * 20);
                             } else {
-                                row.style.display = 'none';
+                                row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                                row.style.opacity = '0';
+                                row.style.transform = 'translateY(-10px)';
+                                setTimeout(() => {
+                                    row.style.display = 'none';
+                                }, 200);
                             }
                         });
                     }
@@ -477,15 +594,26 @@
                         const cardsContainer = document.getElementById('merchant-cards-container');
                         if (cardsContainer) {
                             const cards = cardsContainer.querySelectorAll('[data-category]');
-                            cards.forEach(card => {
+                            cards.forEach((card, index) => {
                                 const cardCategory = (card.getAttribute('data-category') || '').toLowerCase();
-
-                                if (!normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all') {
+                                const shouldShow = !normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all' || cardCategory === normalizedSelected;
+                                
+                                if (shouldShow) {
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'translateY(-10px)';
                                     card.style.display = '';
-                                } else if (cardCategory === normalizedSelected) {
-                                    card.style.display = '';
+                                    setTimeout(() => {
+                                        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                        card.style.opacity = '1';
+                                        card.style.transform = 'translateY(0)';
+                                    }, index * 20);
                                 } else {
-                                    card.style.display = 'none';
+                                    card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'translateY(-10px)';
+                                    setTimeout(() => {
+                                        card.style.display = 'none';
+                                    }, 200);
                                 }
                             });
                         }
@@ -609,12 +737,12 @@
                                 Status
                                 <i class="fas fa-chevron-down ml-2 text-xs"></i>
                             </button>
-                            <div id="statusDropdownKeyword" class="hidden absolute md:left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-56 z-40">
+                            <div id="statusDropdownKeyword" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-56 sm:max-w-none max-w-full z-40 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
                                 <div class="py-1">
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-200 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
+                                    <a href="#" id="status-item-all" data-status="all" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
+                                    <a href="#" id="status-item-pending" data-status="pending" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
+                                    <a href="#" id="status-item-reject" data-status="reject" class="block px-4 py-2 text-sm text-gray-700 hover:bg-red-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
+                                    <a href="#" id="status-item-approve" data-status="approve" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-100 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
                                 </div>
                             </div>
                         </div>
@@ -658,16 +786,16 @@
                                 Kategori
                                 <i class="fas fa-chevron-down ml-2 text-xs"></i>
                             </button>
-                            <div id="kategoriDropdownMerchant" class="hidden absolute mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
+                            <div id="kategoriDropdownMerchant" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-64 sm:max-w-none max-w-full z-50 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
                                 <div class="py-1">
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-orange-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kuliner'); return false;">Kuliner</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-purple-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-blue-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-green-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-rose-700 hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 hover:text-rose-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-orange-50 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-orange-50 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merchandise'); return false;">Merchandise</a>
+                                    <a href="#" id="dropdown-item-semua" data-category="Semua" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
+                                    <a href="#" id="dropdown-item-kuliner" data-category="Kuliner" class="block px-4 py-2 text-sm text-orange-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kuliner'); return false;">Kuliner</a>
+                                    <a href="#" id="dropdown-item-hiburan" data-category="Hiburan" class="block px-4 py-2 text-sm text-purple-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
+                                    <a href="#" id="dropdown-item-liburan" data-category="Liburan" class="block px-4 py-2 text-sm text-blue-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
+                                    <a href="#" id="dropdown-item-belanja" data-category="Belanja" class="block px-4 py-2 text-sm text-green-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
+                                    <a href="#" id="dropdown-item-kecantikan" data-category="Kecantikan" class="block px-4 py-2 text-sm text-rose-700 hover:bg-gradient-to-r hover:from-rose-100 hover:to-pink-100 hover:text-rose-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
+                                    <a href="#" id="dropdown-item-telkomsel" data-category="Telkomsel Packet" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-orange-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
+                                    <a href="#" id="dropdown-item-merchandise" data-category="Merchandise" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-orange-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merchandise'); return false;">Merchandise</a>
                                 </div>
                             </div>
                         </div>
@@ -942,6 +1070,77 @@
             cards.forEach(card => {
                 const text = card.textContent.toLowerCase();
                 card.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+
+        // Initialize dropdown active state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update dropdown item active state for merchant
+            const merchantCategory = selectedCategory.merchant || 'Semua';
+            const dropdownItems = document.querySelectorAll('#kategoriDropdownMerchant a[data-category]');
+            dropdownItems.forEach(item => {
+                const itemCategory = item.getAttribute('data-category');
+                const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                const normalizedCurrentCategory = (merchantCategory || '').toLowerCase();
+
+                // Reset semua item ke state default
+                item.classList.remove('bg-gray-100', 'bg-gradient-to-r', 
+                    'from-orange-100', 'to-red-100', 'text-orange-900',
+                    'from-purple-100', 'to-pink-100', 'text-purple-900',
+                    'from-blue-100', 'to-cyan-100', 'text-blue-900',
+                    'from-green-100', 'to-emerald-100', 'text-green-900',
+                    'from-rose-100', 'to-pink-100', 'text-rose-900',
+                    'from-red-100', 'to-orange-100', 'text-red-900',
+                    'text-gray-900');
+
+                // Apply active state jika kategori cocok
+                if (normalizedItemCategory === normalizedCurrentCategory || 
+                    (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                    
+                    if (merchantCategory === 'Semua') {
+                        item.classList.add('bg-gray-100', 'text-gray-900');
+                    } else if (merchantCategory === 'Kuliner') {
+                        item.classList.add('bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'text-orange-900');
+                    } else if (merchantCategory === 'Hiburan') {
+                        item.classList.add('bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'text-purple-900');
+                    } else if (merchantCategory === 'Liburan') {
+                        item.classList.add('bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'text-blue-900');
+                    } else if (merchantCategory === 'Belanja') {
+                        item.classList.add('bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'text-green-900');
+                    } else if (merchantCategory === 'Kecantikan') {
+                        item.classList.add('bg-gradient-to-r', 'from-rose-100', 'to-pink-100', 'text-rose-900');
+                    } else {
+                        item.classList.add('bg-gradient-to-r', 'from-red-100', 'to-orange-100', 'text-red-900');
+                    }
+                }
+            });
+
+            // Update dropdown item active state for keyword status
+            const keywordStatus = selectedKeywordStatus || 'all';
+            const statusDropdownItems = document.querySelectorAll('#statusDropdownKeyword a[data-status]');
+            statusDropdownItems.forEach(item => {
+                const itemStatus = item.getAttribute('data-status');
+                const normalizedItemStatus = (itemStatus || '').toLowerCase();
+                const normalizedCurrentStatus = (keywordStatus || '').toLowerCase();
+
+                // Reset semua item ke state default
+                item.classList.remove('bg-gray-100', 'bg-yellow-100', 'bg-red-100', 'bg-green-100',
+                    'text-gray-900', 'text-yellow-900', 'text-red-900', 'text-green-900');
+
+                // Apply active state jika status cocok
+                if (normalizedItemStatus === normalizedCurrentStatus || 
+                    (normalizedCurrentStatus === 'all' && normalizedItemStatus === 'all')) {
+                    
+                    if (keywordStatus === 'all') {
+                        item.classList.add('bg-gray-100', 'text-gray-900');
+                    } else if (keywordStatus === 'pending') {
+                        item.classList.add('bg-yellow-100', 'text-yellow-900');
+                    } else if (keywordStatus === 'reject') {
+                        item.classList.add('bg-red-100', 'text-red-900');
+                    } else if (keywordStatus === 'approve') {
+                        item.classList.add('bg-green-100', 'text-green-900');
+                    }
+                }
             });
         });
 

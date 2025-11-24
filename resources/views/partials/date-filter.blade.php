@@ -1,11 +1,11 @@
 <div class="relative inline-block">
-    <button onclick="toggleDateFilterCompact('{{ $filterId }}')" class="flex items-center px-3 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+    <button onclick="toggleDateFilterCompact('{{ $filterId }}')" class="flex items-center px-3 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200">
         <i class="fas fa-calendar-alt mr-2 text-xs"></i>
         <span>Date</span>
     </button>
     
     <!-- Compact Date Filter Dropdown -->
-    <div id="{{ $filterId }}" class="hidden absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-72 z-50" onclick="event.stopPropagation()">
+    <div id="{{ $filterId }}" class="hidden absolute right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-72 z-50 opacity-0 scale-95 translate-y-2 transition-all duration-200 ease-out" onclick="event.stopPropagation()">
         <!-- Date Inputs Row -->
         <div class="flex gap-2 mb-2">
             <div class="flex-1">
@@ -46,7 +46,7 @@
             <button onclick="event.stopPropagation(); clearDateFilter('{{ $filterId }}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
                 Clear
             </button>
-            <button onclick="event.stopPropagation(); closeDateFilter('{{ $filterId }}')" class="flex-1 px-2 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-md hover:shadow-sm transition-all">
+            <button onclick="event.stopPropagation(); applyDateFilterCompact('{{ $filterId }}'); closeDateFilter('{{ $filterId }}');" class="flex-1 px-2 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-md hover:shadow-sm transition-all">
                 Apply
             </button>
         </div>
@@ -66,11 +66,28 @@
         // Close other date filters
         document.querySelectorAll("[id^='dateFilter']:not([id$='Backdrop'])").forEach(dd => {
             if (dd.id !== filterId && !dd.classList.contains('hidden')) {
-                dd.classList.add('hidden');
+                dd.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+                setTimeout(() => {
+                    dd.classList.add('hidden');
+                }, 200);
             }
         });
         
-        dropdown.classList.toggle('hidden');
+        if (dropdown.classList.contains('hidden')) {
+            // Open dropdown with animation
+            dropdown.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                dropdown.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+                dropdown.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+            });
+        } else {
+            // Close dropdown with animation
+            dropdown.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+            dropdown.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, 200);
+        }
     }
     
     window.toggleDateFilterCompact = toggleDateFilterCompact;
@@ -225,10 +242,9 @@
         const calendarContainer = document.getElementById('calendarContainer' + filterId);
         if (calendarContainer) {
             calendarContainer.classList.add('hidden');
-            }
+        }
         
-        // Auto-apply filter
-        applyDateFilterCompact(filterId);
+        // Don't auto-apply filter - wait for Apply button
     }
     
     window.selectDateCompact = selectDateCompact;
@@ -299,14 +315,28 @@
             calendarContainer.classList.add('hidden');
         }
         
+        // Close dropdown with animation
+        dropdown.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+        dropdown.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+        setTimeout(() => {
             dropdown.classList.add('hidden');
+        }, 200);
     }
     
     window.closeDateFilter = closeDateFilter;
     
     function applyDateFilterCompact(filterId) {
         const state = window.calendarState[filterId];
-        if (!state) return;
+        if (!state) {
+            // If no state, show all rows
+            const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row, #keyword-cards-container .keyword-row');
+            rows.forEach(row => {
+                row.style.display = '';
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            });
+            return;
+        }
         
         const startDate = state.startDate;
         const endDate = state.endDate;
@@ -314,94 +344,109 @@
         const filterStart = startDate ? formatDateForInputCompact(startDate) : null;
         const filterEnd = endDate ? formatDateForInputCompact(endDate) : null;
         
-        // Filter keyword rows
-        const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-        rows.forEach(row => {
-            const rowStart = row.dataset.start;
-            const rowEnd = row.dataset.end;
+        // Helper function to check if keyword period is within filter range
+        function dateRangesOverlap(rowStart, rowEnd, filterStart, filterEnd) {
+            // If no filter dates, show all
+            if (!filterStart && !filterEnd) return true;
             
-            let shouldShow = true;
+            // If row has no dates, hide it when filter is active
+            if (!rowStart && !rowEnd) return false;
             
-            if (filterStart || filterEnd) {
-                shouldShow = false;
-                
-                if (rowStart || rowEnd) {
-                    if (rowStart && rowEnd) {
-                        if (filterStart && filterEnd) {
-                            shouldShow = (rowStart <= filterEnd && rowEnd >= filterStart);
-                        } else if (filterStart) {
-                            shouldShow = rowEnd >= filterStart;
-                        } else if (filterEnd) {
-                            shouldShow = rowStart <= filterEnd;
-    }
-                    } else if (rowStart) {
-                        if (filterStart && filterEnd) {
-                            shouldShow = rowStart <= filterEnd;
-                        } else if (filterStart) {
-                            shouldShow = rowStart >= filterStart;
-                        } else if (filterEnd) {
-                            shouldShow = rowStart <= filterEnd;
-                        }
-                    } else if (rowEnd) {
-                        if (filterStart && filterEnd) {
-                            shouldShow = rowEnd >= filterStart;
-                        } else if (filterStart) {
-                            shouldShow = rowEnd >= filterStart;
-                        } else if (filterEnd) {
-                            shouldShow = rowEnd <= filterEnd;
-                        }
-                    }
-                } else {
-                    shouldShow = false;
+            // Convert string dates (YYYY-MM-DD) to timestamps for comparison
+            const rowStartTime = rowStart ? new Date(rowStart).getTime() : null;
+            const rowEndTime = rowEnd ? new Date(rowEnd).getTime() : null;
+            const filterStartTime = filterStart ? new Date(filterStart).getTime() : null;
+            const filterEndTime = filterEnd ? new Date(filterEnd).getTime() : null;
+            
+            // If both filter dates are set - check if keyword period is within or overlaps filter range
+            if (filterStartTime !== null && filterEndTime !== null) {
+                if (rowStartTime !== null && rowEndTime !== null) {
+                    // Keyword has both start and end date
+                    // Show if keyword period overlaps with filter range
+                    // Overlap: keywordStart <= filterEnd AND keywordEnd >= filterStart
+                    return rowStartTime <= filterEndTime && rowEndTime >= filterStartTime;
+                } else if (rowStartTime !== null) {
+                    // Keyword only has start date - show if start falls within filter range
+                    return rowStartTime >= filterStartTime && rowStartTime <= filterEndTime;
+                } else if (rowEndTime !== null) {
+                    // Keyword only has end date - show if end falls within filter range
+                    return rowEndTime >= filterStartTime && rowEndTime <= filterEndTime;
+                }
+            } else if (filterStartTime !== null) {
+                // Only start filter is set - show keywords that end on or after filter start
+                if (rowStartTime !== null && rowEndTime !== null) {
+                    return rowEndTime >= filterStartTime;
+                } else if (rowStartTime !== null) {
+                    return rowStartTime >= filterStartTime;
+                } else if (rowEndTime !== null) {
+                    return rowEndTime >= filterStartTime;
+                }
+            } else if (filterEndTime !== null) {
+                // Only end filter is set - show keywords that start on or before filter end
+                if (rowStartTime !== null && rowEndTime !== null) {
+                    return rowStartTime <= filterEndTime;
+                } else if (rowStartTime !== null) {
+                    return rowStartTime <= filterEndTime;
+                } else if (rowEndTime !== null) {
+                    return rowEndTime <= filterEndTime;
                 }
             }
             
-            row.style.display = shouldShow ? '' : 'none';
+            return false;
+        }
+        
+        // Filter keyword rows with smooth animation
+        const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
+        rows.forEach((row, index) => {
+            const rowStart = row.dataset.start || '';
+            const rowEnd = row.dataset.end || '';
+            
+            const shouldShow = dateRangesOverlap(rowStart, rowEnd, filterStart, filterEnd);
+            
+            if (shouldShow) {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(-10px)';
+                row.style.display = '';
+                setTimeout(() => {
+                    row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, index * 20);
+            } else {
+                row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    row.style.display = 'none';
+                }, 200);
+            }
         });
         
-        // Filter keyword cards (mobile)
+        // Filter keyword cards (mobile) with smooth animation
         const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-        cards.forEach(card => {
-            const cardStart = card.dataset.start;
-            const cardEnd = card.dataset.end;
+        cards.forEach((card, index) => {
+            const cardStart = card.dataset.start || '';
+            const cardEnd = card.dataset.end || '';
             
-            let shouldShow = true;
+            const shouldShow = dateRangesOverlap(cardStart, cardEnd, filterStart, filterEnd);
             
-            if (filterStart || filterEnd) {
-                shouldShow = false;
-                
-                if (cardStart || cardEnd) {
-                    if (cardStart && cardEnd) {
-                        if (filterStart && filterEnd) {
-                            shouldShow = (cardStart <= filterEnd && cardEnd >= filterStart);
-                        } else if (filterStart) {
-                            shouldShow = cardEnd >= filterStart;
-                        } else if (filterEnd) {
-                            shouldShow = cardStart <= filterEnd;
-                        }
-                    } else if (cardStart) {
-                        if (filterStart && filterEnd) {
-                            shouldShow = cardStart <= filterEnd;
-                        } else if (filterStart) {
-                            shouldShow = cardStart >= filterStart;
-                        } else if (filterEnd) {
-                            shouldShow = cardStart <= filterEnd;
-                        }
-                    } else if (cardEnd) {
-                        if (filterStart && filterEnd) {
-                            shouldShow = cardEnd >= filterStart;
-                        } else if (filterStart) {
-                            shouldShow = cardEnd >= filterStart;
-                        } else if (filterEnd) {
-                            shouldShow = cardEnd <= filterEnd;
-                        }
-                    }
-                } else {
-                    shouldShow = false;
-                }
+            if (shouldShow) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-10px)';
+                card.style.display = '';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 20);
+            } else {
+                card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    card.style.display = 'none';
+                }, 200);
             }
-            
-            card.style.display = shouldShow ? '' : 'none';
         });
     }
     
