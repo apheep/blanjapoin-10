@@ -11,7 +11,7 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">SKB</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Daerah</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMap</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Blanjapoin</th>
