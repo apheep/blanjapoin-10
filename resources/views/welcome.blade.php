@@ -22,8 +22,10 @@
   </div>
    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full">
     <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
-     <div class="flex items-center justify-center">
-      <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
+     <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
+      </div>
      </div>
     </div>
    </nav>

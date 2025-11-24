@@ -232,27 +232,21 @@ function updateKeywordDisplay(id, status, name) {
     var statusCell = document.getElementById('keyword-status-' + id);
     var actionMobile = document.getElementById('keyword-action-mobile-' + id);
     var statusMobile = document.getElementById('keyword-status-mobile-' + id);
-    var rowEl = document.getElementById('keyword-row-' + id);
-    var cardEl = document.getElementById('keyword-card-' + id);
 
     if (status === 'approve') {
         var approvedBadge = '<div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm"><i class="fas fa-check-circle text-green-600"></i><span>Approved</span></div>';
         if (actionCell) actionCell.innerHTML = approvedBadge;
         if (actionMobile) actionMobile.innerHTML = '<p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Action</p>' + approvedBadge;
-        var statusBadge = '<span class="status-badge px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>';
+        var statusBadge = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>';
         if (statusCell) statusCell.innerHTML = statusBadge;
         if (statusMobile) statusMobile.innerHTML = '<p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p><div class="mt-1">' + statusBadge + '</div>';
-        if (rowEl) rowEl.dataset.status = 'approve';
-        if (cardEl) cardEl.dataset.status = 'approve';
     } else if (status === 'reject') {
         var rejectedBadge = '<div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-red-100 to-rose-100 text-red-700 font-medium text-sm shadow-sm"><i class="fas fa-times text-red-600"></i><span>Rejected</span></div>';
         if (actionCell) actionCell.innerHTML = rejectedBadge;
         if (actionMobile) actionMobile.innerHTML = '<p class="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">Action</p>' + rejectedBadge;
-        var statusBadgeR = '<span class="status-badge px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>';
+        var statusBadgeR = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>';
         if (statusCell) statusCell.innerHTML = statusBadgeR;
         if (statusMobile) statusMobile.innerHTML = '<p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p><div class="mt-1">' + statusBadgeR + '</div>';
-        if (rowEl) rowEl.dataset.status = 'reject';
-        if (cardEl) cardEl.dataset.status = 'reject';
     }
 }
 </script>
@@ -278,10 +272,34 @@ function confirmReject() {
     if (rejectItemData) {
         closeRejectVerificationModal();
         const endpoint = rejectItemData.type === 'Keyword' ? `/keywords/${rejectItemData.id}/reject` : `/merchants/${rejectItemData.id}/reject`;
-        fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }, body: JSON.stringify({ type: rejectItemData.type, id: rejectItemData.id }) })
-        .then(response => response.json())
-        .then(data => { if (data.success) { updateKeywordDisplay(rejectItemData.id, 'reject', rejectItemData.name); showRejectSuccessModal(rejectItemData.name); } else { alert('Error: ' + (data.message || 'Gagal menolak item')); } })
-        .catch(error => { console.error('Error:', error); alert('Terjadi kesalahan saat menolak item'); });
+        fetch(endpoint, { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }, 
+            body: JSON.stringify({ type: rejectItemData.type, id: rejectItemData.id }) 
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => { 
+            if (data.success) { 
+                updateKeywordDisplay(rejectItemData.id, 'reject', rejectItemData.name); 
+                showRejectSuccessModal(rejectItemData.name); 
+            } else { 
+                alert('Error: ' + (data.message || 'Gagal menolak item')); 
+            } 
+        })
+        .catch(error => { 
+            console.error('Error:', error); 
+            const errorMessage = error.message || error.error || 'Terjadi kesalahan saat menolak item';
+            alert('Error: ' + errorMessage); 
+        });
     }
 }
 function showRejectSuccessModal(itemName) {

@@ -13,7 +13,7 @@ class Merchant extends Model
 
     protected $primaryKey = 'id';
 
-    public $incrementing = false;
+    public $incrementing = true;
 
     protected $keyType = 'int';
 
@@ -22,8 +22,18 @@ class Merchant extends Model
         'daerah',
         'nama_merchant',
         'kategori',
-        'logo_merchant'
+        'logo_merchant',
+        'link_blanjapoin',
+        'nama_pic',
+        'wa_pic',
+        'detail_daerah',
+        'lat',
+        'long',
+        'link_gmap'
     ];
+
+    // Jangan cast lat dan long, biarkan sebagai string/decimal dari database
+    // Ini mempertahankan format asli yang diinput user
 
     public function keywords()
     {

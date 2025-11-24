@@ -185,18 +185,39 @@ function confirmUpload() {
             setTimeout(() => {
                 const form = document.getElementById('formUploadMerchant');
                 if (form) {
+                    // Update link blanjapoin dan daerah sebelum membuat FormData baru
+                    if (typeof updateLinkBlanjapoin === 'function') {
+                        updateLinkBlanjapoin();
+                    }
+                    if (typeof updateDaerahCombined === 'function') {
+                        updateDaerahCombined();
+                    }
+                    
+                    // Buat FormData baru dari form untuk memastikan semua nilai terbaru terkirim
+                    const freshFormData = new FormData(form);
+                    
                     // Get CSRF token
                     const csrfInput = form.querySelector('input[name="_token"]');
                     const csrfToken = csrfInput ? csrfInput.value : null;
                     
                     // Ensure CSRF token is in the FormData
-                    if (csrfToken && !uploadVerificationData.has('_token')) {
-                        uploadVerificationData.append('_token', csrfToken);
+                    if (csrfToken && !freshFormData.has('_token')) {
+                        freshFormData.append('_token', csrfToken);
+                    }
+                    
+                    // Debug: Log form data yang akan dikirim
+                    console.log('Sending form data:');
+                    for (let [key, value] of freshFormData.entries()) {
+                        if (key !== 'logo_merchant') {
+                            console.log(key + ':', value);
+                        } else {
+                            console.log(key + ':', value instanceof File ? value.name : 'File');
+                        }
                     }
                     
                     fetch(form.action, {
                         method: 'POST',
-                        body: uploadVerificationData,
+                        body: freshFormData,
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
@@ -236,11 +257,64 @@ function confirmUpload() {
                 }
             }, 300);
         } else if (uploadDataType === 'Keyword') {
-            // Handle Keyword upload - submit form via POST (normal form submission)
+            // Handle Keyword upload - submit form via AJAX
             setTimeout(() => {
                 const form = document.getElementById('formUploadKeyword');
                 if (form) {
-                    form.submit();
+                    // Get CSRF token
+                    const csrfInput = form.querySelector('input[name="_token"]');
+                    const csrfToken = csrfInput ? csrfInput.value : null;
+                    
+                    // Ensure CSRF token is in the FormData
+                    if (csrfToken && !uploadVerificationData.has('_token')) {
+                        uploadVerificationData.append('_token', csrfToken);
+                    }
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: uploadVerificationData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.message || `HTTP ${response.status}`);
+                            }).catch(() => {
+                                return response.text().then(text => {
+                                    throw new Error(`HTTP ${response.status}: ${text}`);
+                                });
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Store success message in sessionStorage
+                            sessionStorage.setItem('uploadSuccess', 'Keyword');
+                            
+                            // Close upload modal
+                            if (typeof closeUploadKeyword === 'function') {
+                                closeUploadKeyword();
+                            }
+                            
+                            // Reload page with keyword tab active
+                            setTimeout(() => {
+                                const currentUrl = new URL(window.location.href);
+                                currentUrl.searchParams.set('tab', 'keyword');
+                                window.location.href = currentUrl.toString();
+                            }, 300);
+                        } else {
+                            showUploadErrorModal('Gagal menyimpan data: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showUploadErrorModal('Terjadi kesalahan saat menyimpan data.\n\n' + error.message);
+                    });
                 }
             }, 300);
         } else {
