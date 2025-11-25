@@ -428,6 +428,93 @@
     </div>
   </div>
 
+  <!-- Create User Confirmation Modal -->
+  <div id="createUserVerificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="createUserVerificationContent">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-user-plus text-orange-600 text-lg"></i>
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg font-semibold text-gray-900">Konfirmasi Buat Akun</h3>
+            <p class="text-sm text-gray-500">Pastikan data sudah benar</p>
+          </div>
+        </div>
+        <button onclick="closeCreateUserVerificationModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-orange-100 to-yellow-100 mb-4">
+            <i class="fas fa-user-plus text-orange-600 text-2xl"></i>
+          </div>
+          <h4 class="text-lg font-medium text-gray-900 mb-2" id="createUserItemName">Username</h4>
+          <p class="text-sm text-gray-600 mb-6" id="createUserItemDescription">
+            Apakah Anda yakin ingin membuat akun baru dengan data ini?
+          </p>
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+        <button onclick="closeCreateUserVerificationModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Batal
+        </button>
+        <button onclick="confirmCreateUser()" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300">
+          <i class="fas fa-check-circle mr-2"></i>
+          Ya, Buat Akun
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Success Modal -->
+  <div id="createUserSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="createUserSuccessContent">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-check text-green-600 text-lg"></i>
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg font-semibold text-gray-900">Berhasil!</h3>
+            <p class="text-sm text-gray-500">Akun berhasil dibuat</p>
+          </div>
+        </div>
+        <button onclick="closeCreateUserSuccessModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 mb-4">
+            <i class="fas fa-check-circle text-green-600 text-3xl"></i>
+          </div>
+          <h4 class="text-lg font-medium text-gray-900 mb-2">Akun Berhasil Dibuat!</h4>
+          <p class="text-sm text-gray-600 mb-6">
+            Akun <span id="createUserSuccessItemName" class="font-semibold"></span> telah berhasil dibuat dan sekarang aktif di sistem.
+          </p>
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-center px-6 py-4 bg-gray-50 rounded-b-2xl">
+        <button onclick="closeCreateUserSuccessModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
+          <i class="fas fa-check mr-2"></i>
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-4 right-4 bg-white rounded-xl border border-neutral-200 shadow-lg ring-1 ring-white/30 p-4 max-w-sm opacity-0 invisible transition-all duration-300 z-[9999]">
     <div class="flex items-center gap-3">
@@ -792,8 +879,8 @@
       if (showingTotalEl) showingTotalEl.textContent = parseInt(showingTotalEl.textContent || '0', 10) + 1;
     }
 
-    // createUser: attempt AJAX create and insert row if API returns user
-    async function createUser() {
+    // createUser: show confirmation modal first
+    function createUser() {
       const username = document.getElementById('create-username').value.trim();
       const password = document.getElementById('create-password').value.trim();
       const role = document.getElementById('create-role').value;
@@ -816,6 +903,20 @@
       }
 
       if (!isValid) return;
+
+      // Show confirmation modal
+      showCreateUserConfirmation(username, role, canApprove);
+    }
+
+    // confirmCreateUser: actually create the user after confirmation
+    async function confirmCreateUser() {
+      const username = document.getElementById('create-username').value.trim();
+      const password = document.getElementById('create-password').value.trim();
+      const role = document.getElementById('create-role').value;
+      const canApprove = document.getElementById('create-can-approve').checked;
+
+      // Close confirmation modal
+      closeCreateUserVerificationModal();
 
       try {
         const response = await fetch('/api/users', {
@@ -846,7 +947,8 @@
           return;
         }
 
-        showToast(data.message || 'User berhasil dibuat');
+        // Show success modal
+        showCreateUserSuccessModal(username);
         closeCreateModal();
 
         // If API returned the created user object, insert the row without reload
@@ -861,6 +963,92 @@
         console.error('Error:', error);
         showToast('Terjadi kesalahan', 'error');
       }
+    }
+
+    // Show create user confirmation modal
+    function showCreateUserConfirmation(username, role, canApprove) {
+      const roleText = role === 'admin' ? 'Admin' : 'User';
+      const approveText = canApprove ? ' (Dapat Approve)' : '';
+      
+      document.getElementById('createUserItemName').textContent = username;
+      document.getElementById('createUserItemDescription').textContent = 
+        `Apakah Anda yakin ingin membuat akun baru dengan username "${username}" sebagai ${roleText}${approveText}?`;
+      
+      const modal = document.getElementById('createUserVerificationModal');
+      const modalContent = document.getElementById('createUserVerificationContent');
+      
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      setTimeout(() => {
+        if (modalContent) {
+          modalContent.style.transform = 'scale(1)';
+          modalContent.style.opacity = '1';
+        }
+      }, 10);
+    }
+
+    // Close create user verification modal
+    function closeCreateUserVerificationModal() {
+      const modal = document.getElementById('createUserVerificationModal');
+      const modalContent = document.getElementById('createUserVerificationContent');
+      
+      if (modalContent) {
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+      }
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (modalContent) {
+          modalContent.style.transform = 'scale(0.95)';
+          modalContent.style.opacity = '0';
+        }
+      }, 300);
+    }
+
+    // Show create user success modal
+    function showCreateUserSuccessModal(username) {
+      document.getElementById('createUserSuccessItemName').textContent = username;
+      
+      const modal = document.getElementById('createUserSuccessModal');
+      const modalContent = document.getElementById('createUserSuccessContent');
+      
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      setTimeout(() => {
+        if (modalContent) {
+          modalContent.style.transform = 'scale(1)';
+          modalContent.style.opacity = '1';
+        }
+      }, 10);
+      
+      // Auto close after 3 seconds
+      setTimeout(() => {
+        closeCreateUserSuccessModal();
+      }, 3000);
+    }
+
+    // Close create user success modal
+    function closeCreateUserSuccessModal() {
+      const modal = document.getElementById('createUserSuccessModal');
+      const modalContent = document.getElementById('createUserSuccessContent');
+      
+      if (modalContent) {
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+      }
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (modalContent) {
+          modalContent.style.transform = 'scale(0.95)';
+          modalContent.style.opacity = '0';
+        }
+      }, 300);
     }
 
     // Bulk functions left as stubs (no row checkboxes present)
