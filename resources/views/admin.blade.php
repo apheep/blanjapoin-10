@@ -324,6 +324,12 @@
                     telkom: 'Semua'
                 };
 
+                function hideDropdown(dropdown) {
+                    dropdown.classList.remove('opacity-100', 'translate-y-0');
+                    dropdown.classList.add('opacity-0', 'translate-y-1');
+                    setTimeout(() => dropdown.classList.add('hidden'), 150);
+                }
+
                 function closeAllDropdowns() {
                     const dropdownIds = [
                         'kategoriDropdownAll1',
@@ -334,12 +340,8 @@
 
                     dropdownIds.forEach(id => {
                         const dropdown = document.getElementById(id);
-                        if (dropdown) {
-                            dropdown.classList.remove('opacity-100', 'translate-y-0');
-                            dropdown.classList.add('opacity-0', 'translate-y-1');
-                            setTimeout(() => {
-                                dropdown.classList.add('hidden');
-                            }, 150);
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
                         }
                     });
                 }
@@ -347,57 +349,80 @@
                 function toggleKategoriDropdownMerchant() {
                     const dropdown = document.getElementById('kategoriDropdownMerchant');
                     if (!dropdown) return;
-                    
+
                     const isHidden = dropdown.classList.contains('hidden');
-                    
+                    const otherDropdowns = document.querySelectorAll("[id^='kategoriDropdown']");
+
+                    otherDropdowns.forEach(dd => {
+                        if (dd.id !== 'kategoriDropdownMerchant' && !dd.classList.contains('hidden')) {
+                            hideDropdown(dd);
+                        }
+                    });
+
                     if (isHidden) {
-                        closeAllDropdowns();
                         dropdown.classList.remove('hidden');
                         requestAnimationFrame(() => {
                             dropdown.classList.remove('opacity-0', 'translate-y-1');
                             dropdown.classList.add('opacity-100', 'translate-y-0');
                         });
                     } else {
-                        dropdown.classList.remove('opacity-100', 'translate-y-0');
-                        dropdown.classList.add('opacity-0', 'translate-y-1');
-                        setTimeout(() => dropdown.classList.add('hidden'), 150);
+                        hideDropdown(dropdown);
                     }
                 }
 
                 function toggleKategoriDropdownTelkom() {
                     const dropdown = document.getElementById('kategoriDropdownTelkom');
                     if (!dropdown) return;
-                    
-                    if (dropdown.classList.contains('hidden')) {
-                        closeAllDropdowns();
+
+                    const isHidden = dropdown.classList.contains('hidden');
+                    const otherDropdowns = document.querySelectorAll("[id^='kategoriDropdown']");
+
+                    otherDropdowns.forEach(dd => {
+                        if (dd.id !== 'kategoriDropdownTelkom' && !dd.classList.contains('hidden')) {
+                            hideDropdown(dd);
+                        }
+                    });
+
+                    if (isHidden) {
                         dropdown.classList.remove('hidden');
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
-                        setTimeout(() => {
-                            dropdown.style.opacity = '1';
-                            dropdown.style.transform = 'translateY(0)';
-                        }, 10);
+                        requestAnimationFrame(() => {
+                            dropdown.classList.remove('opacity-0', 'translate-y-1');
+                            dropdown.classList.add('opacity-100', 'translate-y-0');
+                        });
                     } else {
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
-                        setTimeout(() => dropdown.classList.add('hidden'), 150);
+                        hideDropdown(dropdown);
                     }
                 }
 
                 document.addEventListener('click', function(event) {
-                    const kategoriDropdownMerchant = document.getElementById('kategoriDropdownMerchant');
-                    const kategoriDropdownTelkom = document.getElementById('kategoriDropdownTelkom');
-                    
-                    const isClickInsideAnyDropdown = 
-                        (kategoriDropdownMerchant && kategoriDropdownMerchant.contains(event.target)) ||
-                        (kategoriDropdownTelkom && kategoriDropdownTelkom.contains(event.target)) ||
-                        (event.target.closest('#kategoriBtnMerchant')) ||
-                        (event.target.closest('#kategoriBtnTelkom')) ||
-                        (event.target.closest('#kategoriBtnAll1')) ||
-                        (event.target.closest('#kategoriBtnAll3'));
+                    const merchantDropdown = document.getElementById('kategoriDropdownMerchant');
+                    const telkomDropdown = document.getElementById('kategoriDropdownTelkom');
 
-                    if (!isClickInsideAnyDropdown) {
-                        closeAllDropdowns();
+                    const clickMerchant = event.target.closest('#kategoriDropdownMerchant') || event.target.closest('#kategoriBtnMerchant');
+                    const clickTelkom = event.target.closest('#kategoriDropdownTelkom') || event.target.closest('#kategoriBtnTelkom');
+                    const clickAll1 = event.target.closest('#kategoriDropdownAll1') || event.target.closest('#kategoriBtnAll1');
+                    const clickAll3 = event.target.closest('#kategoriDropdownAll3') || event.target.closest('#kategoriBtnAll3');
+
+                    if (!clickMerchant && merchantDropdown && !merchantDropdown.classList.contains('hidden')) {
+                        hideDropdown(merchantDropdown);
+                    }
+
+                    if (!clickTelkom && telkomDropdown && !telkomDropdown.classList.contains('hidden')) {
+                        hideDropdown(telkomDropdown);
+                    }
+
+                    if (!clickAll1) {
+                        const dropdownAll1 = document.getElementById('kategoriDropdownAll1');
+                        if (dropdownAll1 && !dropdownAll1.classList.contains('hidden')) {
+                            hideDropdown(dropdownAll1);
+                        }
+                    }
+
+                    if (!clickAll3) {
+                        const dropdownAll3 = document.getElementById('kategoriDropdownAll3');
+                        if (dropdownAll3 && !dropdownAll3.classList.contains('hidden')) {
+                            hideDropdown(dropdownAll3);
+                        }
                     }
                 });
 
@@ -460,8 +485,6 @@
                 ////////////////////////////////////////////////////////////////////
 
                 function filterTable(tableType, category) {
-                    closeAllDropdowns();
-
                     const incomingCategory = category || '';
                     const normalizedIncoming = incomingCategory.toLowerCase();
 
@@ -546,6 +569,32 @@
                                 }
                             }
                         });
+
+                        const dropdown = document.getElementById('kategoriDropdownMerchant');
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
+                        }
+                    } else if (tableType === 'telkom') {
+                        const dropdownItems = document.querySelectorAll('#kategoriDropdownTelkom a[data-category]');
+                        dropdownItems.forEach(item => {
+                            const itemCategory = item.getAttribute('data-category');
+                            const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                            const normalizedCurrentCategory = (category || '').toLowerCase();
+
+                            item.classList.remove('bg-gray-100', 'text-gray-900', 'bg-gradient-to-r',
+                                'from-orange-100', 'to-red-100', 'text-orange-900',
+                                'from-purple-100', 'to-pink-100', 'text-purple-900');
+
+                            if (normalizedItemCategory === normalizedCurrentCategory || 
+                                (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                                item.classList.add('bg-gray-100', 'text-gray-900');
+                            }
+                        });
+
+                        const dropdown = document.getElementById('kategoriDropdownTelkom');
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
+                        }
                     }
 
                     // Mapping table type to actual DOM elements
@@ -837,104 +886,121 @@
         function updateMerchantTable(data) {
             const merchants = data.merchants;
             const pagination = data.pagination;
-            
-            // Update table body
-            const tableBody = document.getElementById('merchant-table-body');
-            if (tableBody) {
-                if (merchants.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
-                } else {
-                    tableBody.innerHTML = merchants.map((merchant, index) => `
-                        <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
-                            onclick="window.location='/merchants/${merchant.id}'">
-                            <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${(pagination.current_page - 1) * pagination.per_page + index + 1}</td>
-                            <td class="px-4 py-4 w-20 text-center">
-                                <div class="flex items-center justify-center h-full">
-                                    <button type="button"
-                                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
-                                            class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
-                                            title="Hapus">
-                                        <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
-                                    </button>
-                                </div>
-                            </td>
-                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.daerah}</td>
-                            <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">${merchant.nama_merchant}</td>
-                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.kategori || '-'}</td>
-                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">
-                                ${merchant.logo_merchant ? `
-                                    <a href="/storage/${merchant.logo_merchant}" 
-                                       target="_blank" 
-                                       rel="noopener noreferrer"
-                                       class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
-                                        <img src="/storage/${merchant.logo_merchant}" 
-                                             alt="${merchant.nama_merchant}" 
-                                             class="h-full w-full object-cover">
-                                    </a>
-                                ` : '<span class="text-gray-400">-</span>'}
-                            </td>
-                        </tr>
-                    `).join('');
-                }
+            const container = document.getElementById('merchant-table-container');
+
+            if (!container) {
+                return;
             }
-            
-            // Update mobile cards
-            const cardsContainer = document.getElementById('merchant-cards-container');
-            if (cardsContainer) {
-                if (merchants.length === 0) {
-                    cardsContainer.innerHTML = '<p class="text-sm text-center text-gray-500">Belum ada data merchant.</p>';
-                } else {
-                    cardsContainer.innerHTML = merchants.map((merchant, index) => `
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
-                             onclick="window.location='/merchants/${merchant.id}'">
-                            <div class="flex items-start justify-between pb-3 border-b border-gray-200">
-                                <div>
-                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">No</p>
-                                    <p class="text-sm font-medium text-gray-900 mt-1">${(pagination.current_page - 1) * pagination.per_page + index + 1}</p>
-                                </div>
-                                <div class="flex items-center">
-                                    <button type="button"
-                                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
-                                            class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
-                                            title="Hapus">
-                                        <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Daerah</p>
-                                <p class="text-sm text-gray-700 mt-1">${merchant.daerah}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Merchant</p>
-                                <p class="text-sm font-semibold text-gray-900 mt-1">${merchant.nama_merchant}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kategori</p>
-                                <p class="text-sm text-gray-700 mt-1">${merchant.kategori || '-'}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Logo Merchant</p>
-                                <div class="mt-2 flex items-center space-x-2">
+
+            // Animasi keluar (fade + slight slide) untuk seluruh blok merchant
+            container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(8px)';
+
+            setTimeout(() => {
+                // Update table body
+                const tableBody = document.getElementById('merchant-table-body');
+                if (tableBody) {
+                    if (merchants.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
+                    } else {
+                        tableBody.innerHTML = merchants.map((merchant, index) => `
+                            <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
+                                onclick="window.location='/merchants/${merchant.id}'">
+                                <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${(pagination.current_page - 1) * pagination.per_page + index + 1}</td>
+                                <td class="px-4 py-4 w-20 text-center">
+                                    <div class="flex items-center justify-center h-full">
+                                        <button type="button"
+                                                onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
+                                                class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
+                                                title="Hapus">
+                                            <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.daerah}</td>
+                                <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">${merchant.nama_merchant}</td>
+                                <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.kategori || '-'}</td>
+                                <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">
                                     ${merchant.logo_merchant ? `
-                                        <button type="button" 
-                                                onclick="event.stopPropagation(); previewMerchantLogo('/storage/${merchant.logo_merchant}', '${merchant.logo_merchant.split('/').pop()}')"
-                                                class="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
+                                        <a href="/storage/${merchant.logo_merchant}" 
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
                                             <img src="/storage/${merchant.logo_merchant}" 
                                                  alt="${merchant.nama_merchant}" 
                                                  class="h-full w-full object-cover">
+                                        </a>
+                                    ` : '<span class="text-gray-400">-</span>'}
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+
+                // Update mobile cards
+                const cardsContainer = document.getElementById('merchant-cards-container');
+                if (cardsContainer) {
+                    if (merchants.length === 0) {
+                        cardsContainer.innerHTML = '<p class="text-sm text-center text-gray-500">Belum ada data merchant.</p>';
+                    } else {
+                        cardsContainer.innerHTML = merchants.map((merchant, index) => `
+                            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
+                                 onclick="window.location='/merchants/${merchant.id}'">
+                                <div class="flex items-start justify-between pb-3 border-b border-gray-200">
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">No</p>
+                                        <p class="text-sm font-medium text-gray-900 mt-1">${(pagination.current_page - 1) * pagination.per_page + index + 1}</p>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <button type="button"
+                                                onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
+                                                class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
+                                                title="Hapus">
+                                            <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
                                         </button>
-                                        <span class="text-sm text-gray-700 font-medium">${merchant.nama_merchant}</span>
-                                    ` : '<span class="text-sm text-gray-400">-</span>'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Daerah</p>
+                                    <p class="text-sm text-gray-700 mt-1">${merchant.daerah}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Merchant</p>
+                                    <p class="text-sm font-semibold text-gray-900 mt-1">${merchant.nama_merchant}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kategori</p>
+                                    <p class="text-sm text-gray-700 mt-1">${merchant.kategori || '-'}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Logo Merchant</p>
+                                    <div class="mt-2 flex items-center space-x-2">
+                                        ${merchant.logo_merchant ? `
+                                            <button type="button" 
+                                                    onclick="event.stopPropagation(); previewMerchantLogo('/storage/${merchant.logo_merchant}', '${merchant.logo_merchant.split('/').pop()}')"
+                                                    class="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
+                                                <img src="/storage/${merchant.logo_merchant}" 
+                                                     alt="${merchant.nama_merchant}" 
+                                                     class="h-full w-full object-cover">
+                                            </button>
+                                            <span class="text-sm text-gray-700 font-medium">${merchant.nama_merchant}</span>
+                                        ` : '<span class="text-sm text-gray-400">-</span>'}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `).join('');
+                        `).join('');
+                    }
                 }
-            }
-            
-            // Update pagination
-            updatePagination(pagination);
+
+                // Update pagination
+                updatePagination(pagination);
+
+                // Trigger reflow lalu animasi masuk
+                void container.offsetWidth;
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 200);
         }
         
         function updatePagination(pagination) {
@@ -1004,14 +1070,40 @@
             fetchKeywordTable(buildKeywordSearchRequestUrl());
         }
 
-        keywordSearchInput?.addEventListener('input', (event) => {
+        // Trigger search hanya saat Enter, tapi kalau input dikosongkan,
+        // otomatis reset tabel tanpa perlu Enter lagi.
+        keywordSearchInput?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            event.preventDefault();
             currentKeywordQuery = event.target.value.trim();
+
             if (keywordSearchTimeout) {
                 clearTimeout(keywordSearchTimeout);
             }
+
             keywordSearchTimeout = setTimeout(() => {
                 fetchKeywordTable(buildKeywordSearchRequestUrl());
-            }, 300);
+            }, 50);
+        });
+
+        keywordSearchInput?.addEventListener('input', (event) => {
+            const value = event.target.value.trim();
+
+            // Kalau dikosongkan, langsung reset ke semua data
+            if (value === '' && currentKeywordQuery !== '') {
+                currentKeywordQuery = '';
+
+                if (keywordSearchTimeout) {
+                    clearTimeout(keywordSearchTimeout);
+                }
+
+                keywordSearchTimeout = setTimeout(() => {
+                    fetchKeywordTable(buildKeywordSearchRequestUrl());
+                }, 50);
+            }
         });
 
         function buildKeywordSearchRequestUrl(sourceHref = null) {
@@ -1037,6 +1129,17 @@
 
         function fetchKeywordTable(requestUrl) {
             const url = requestUrl || buildKeywordSearchRequestUrl();
+            const container = document.getElementById('keyword-table-container');
+
+            if (!container) {
+                return;
+            }
+
+            // Animasi keluar (fade + slight slide)
+            container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(8px)';
+
             fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -1046,12 +1149,19 @@
             .then(response => response.json())
             .then(data => {
                 if (data.html) {
-                    const container = document.getElementById('keyword-table-container');
-                    if (container) {
+                    // Ganti konten setelah animasi keluar selesai
+                    setTimeout(() => {
                         container.innerHTML = data.html;
-                    }
-                    attachKeywordPaginationHandlers();
-                    updateKeywordUrlState();
+                        attachKeywordPaginationHandlers();
+                        updateKeywordUrlState();
+
+                        // Trigger reflow sebelum animasi masuk
+                        void container.offsetWidth;
+
+                        // Animasi masuk (fade + slide up)
+                        container.style.opacity = '1';
+                        container.style.transform = 'translateY(0)';
+                    }, 200);
                 }
             })
             .catch(error => console.error('Keyword search error:', error));
