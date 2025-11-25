@@ -93,6 +93,7 @@
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->link_gmap)
                                 <a href="{{ $merchant->link_gmap }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
@@ -120,6 +121,7 @@
                             @endphp
                             @if($codeDashboard)
                                 <a href="{{ route('link.dashboard', $codeDashboard) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
@@ -147,6 +149,7 @@
                             @endphp
                             @if($codePelanggan)
                                 <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
@@ -340,6 +343,7 @@
                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Google Maps</p>
                 @if($merchant->link_gmap)
                     <a href="{{ $merchant->link_gmap }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -368,6 +372,7 @@
                 @endphp
                 @if($codeDashboardMobile)
                     <a href="{{ route('link.dashboard', $codeDashboardMobile) }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-orange-600 hover:text-orange-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -396,6 +401,7 @@
                 @endphp
                 @if($codePelanggan)
                     <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -425,6 +431,7 @@
                 @endphp
                 @if($linkHistory)
                     <a href="https://{{ $linkHistory }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-purple-600 hover:text-purple-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -505,4 +512,3 @@
     </div>
     @endif
 </div>
-
