@@ -17,12 +17,45 @@ use App\Models\Merchant;
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
     $keywords = Keyword::with('merchant')->get();
-    $locations = Merchant::query()
+    
+    // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+    $allDaerah = Merchant::query()
         ->whereNotNull('daerah')
         ->where('daerah', '!=', '')
         ->distinct()
-        ->orderBy('daerah')
         ->pluck('daerah');
+    
+    // Ekstrak hanya kabupaten/kota dari daerah
+    // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+    $locations = $allDaerah->map(function($daerah) {
+        $daerah = trim($daerah);
+        
+        // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+        if (strpos($daerah, ',') !== false) {
+            $parts = explode(',', $daerah);
+            $kabupatenKota = trim($parts[0]);
+            
+            // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
+            $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+            
+            return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+        }
+        
+        // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
+        if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
+            return trim($matches[1]);
+        }
+        
+        // Jika tidak ada format khusus, gunakan seluruhnya
+        return $daerah;
+    })
+    ->filter(function($item) {
+        // Hapus yang kosong atau terlalu pendek
+        return !empty($item) && strlen($item) > 1;
+    })
+    ->unique() // Hapus duplikat
+    ->sort()
+    ->values();
 
     return view('welcome', [
         'keywords' => $keywords,
@@ -31,6 +64,15 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchant.search');
+
+// Route untuk link pelanggan (public, tidak perlu login)
+Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
+
+// Route untuk link dashboard (public, tidak perlu login)
+Route::get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
+
+// Route untuk link history (public, tidak perlu login)
+Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
 
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
@@ -50,12 +92,45 @@ Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
         $keywords = Keyword::with('merchant')->get();
-        $locations = Merchant::query()
+        
+        // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+        $allDaerah = Merchant::query()
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->distinct()
-            ->orderBy('daerah')
             ->pluck('daerah');
+        
+        // Ekstrak hanya kabupaten/kota dari daerah
+        // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+        $locations = $allDaerah->map(function($daerah) {
+            $daerah = trim($daerah);
+            
+            // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+            if (strpos($daerah, ',') !== false) {
+                $parts = explode(',', $daerah);
+                $kabupatenKota = trim($parts[0]);
+                
+                // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
+                $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+                
+                return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+            }
+            
+            // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
+            if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
+                return trim($matches[1]);
+            }
+            
+            // Jika tidak ada format khusus, gunakan seluruhnya
+            return $daerah;
+        })
+        ->filter(function($item) {
+            // Hapus yang kosong atau terlalu pendek
+            return !empty($item) && strlen($item) > 1;
+        })
+        ->unique() // Hapus duplikat
+        ->sort()
+        ->values();
 
         return view('welcome', [
             'keywords' => $keywords,

@@ -12,7 +12,7 @@ class KeywordController extends Controller
 {
     public function index()
     {
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(15);
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
@@ -251,30 +251,37 @@ class KeywordController extends Controller
 
     public function search(Request $request)
     {
-        $searchTerm = $request->get('q', '');
-        
-        $keywords = Keyword::with('merchant')
-            ->where('nama_produk', 'like', "%{$searchTerm}%")
-            ->orWhereHas('merchant', function ($query) use ($searchTerm) {
-                $query->where('nama_merchant', 'like', "%{$searchTerm}%");
-            })
-            ->paginate(15);
+        $searchTerm = trim($request->get('q', ''));
 
-        if ($request->wantsJson()) {
+        $keywordsQuery = Keyword::with('merchant')
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $query->where(function ($subQuery) use ($searchTerm) {
+                    $subQuery->where('nama_produk', 'like', "%{$searchTerm}%")
+                        ->orWhere('keyword_id', 'like', "%{$searchTerm}%")
+                        ->orWhere('cta_link', 'like', "%{$searchTerm}%")
+                        ->orWhere('redeem', 'like', "%{$searchTerm}%")
+                        ->orWhere('diskon', 'like', "%{$searchTerm}%")
+                        ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
+                            $merchantQuery->where('nama_merchant', 'like', "%{$searchTerm}%")
+                                ->orWhere('kategori', 'like', "%{$searchTerm}%")
+                                ->orWhere('daerah', 'like', "%{$searchTerm}%");
+                        });
+                });
+            })
+            ->orderBy('id');
+
+        $keywords = $keywordsQuery->paginate(10)->appends($request->query());
+
+        if ($request->ajax()) {
             return response()->json([
-                'keywords' => $keywords->items(),
-                'pagination' => [
-                    'current_page' => $keywords->currentPage() ?? 1,
-                    'per_page' => $keywords->perPage() ?? 15,
-                    'total' => $keywords->total() ?? 0,
-                    'last_page' => $keywords->lastPage() ?? 1,
-                    'from' => $keywords->firstItem() ?? 0,
-                    'to' => $keywords->lastItem() ?? 0,
-                ]
+                'html' => view('partials.table-keyword', ['keywords' => $keywords])->render(),
             ]);
         }
 
-        return view('admin', compact('keywords'));
+        $merchants = Merchant::orderBy('id')->paginate(10);
+        $allMerchants = Merchant::orderBy('nama_merchant')->get();
+
+        return view('admin', compact('keywords', 'merchants', 'allMerchants'));
     }
 
     public function publicSearch(Request $request)
