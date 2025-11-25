@@ -15,6 +15,8 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMap</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Blanjapoin</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Pelanggan</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link History</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Logo</th>
                 </tr>
             </thead>
@@ -102,13 +104,80 @@
                             @endif
                         </td>
 
-                        {{-- Link Blanjapoin --}}
+                        {{-- Link Blanjapoin (Dashboard) --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @if($merchant->link_blanjapoin)
-                                <a href="https://{{ $merchant->link_blanjapoin }}" 
+                            @php
+                                $codeDashboard = null;
+                                if($merchant->link_blanjapoin) {
+                                    // Remove http:// or https:// if present
+                                    $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                                    // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                                    $parts = explode('/', $link);
+                                    if(count($parts) >= 3 && $parts[1] === 'dash') {
+                                        $codeDashboard = end($parts);
+                                    }
+                                }
+                            @endphp
+                            @if($codeDashboard)
+                                <a href="{{ route('link.dashboard', $codeDashboard) }}" 
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
+                                    <i class="fas fa-link text-xs"></i>
+                                    <span class="truncate max-w-xs">Link</span>
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Link Pelanggan --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @php
+                                $codePelanggan = null;
+                                if($merchant->link_blanjapoin) {
+                                    // Remove http:// or https:// if present
+                                    $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                                    // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                                    $parts = explode('/', $link);
+                                    if(count($parts) >= 3 && $parts[1] === 'dash') {
+                                        $codePelanggan = end($parts);
+                                    }
+                                }
+                            @endphp
+                            @if($codePelanggan)
+                                <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                    <i class="fas fa-link text-xs"></i>
+                                    <span class="truncate max-w-xs">Link</span>
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+
+                        {{-- Link History --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @php
+                                $linkHistory = null;
+                                if($merchant->link_blanjapoin) {
+                                    // Remove http:// or https:// if present
+                                    $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                                    // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                                    $parts = explode('/', $link);
+                                    if(count($parts) >= 3 && $parts[1] === 'dash') {
+                                        $code = end($parts);
+                                        $linkHistory = $parts[0] . '/history/' . $code;
+                                    }
+                                }
+                            @endphp
+                            @if($linkHistory)
+                                <a href="https://{{ $linkHistory }}" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="text-purple-600 hover:text-purple-800 hover:underline inline-flex items-center gap-1">
                                     <i class="fas fa-link text-xs"></i>
                                     <span class="truncate max-w-xs">Link</span>
                                 </a>
@@ -135,7 +204,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="12" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="14" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data merchant.
                         </td>
                     </tr>
@@ -282,14 +351,83 @@
                 @endif
             </div>
 
-            {{-- Link Blanjapoin --}}
+            {{-- Link Blanjapoin (Dashboard) --}}
             <div>
                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Blanjapoin</p>
-                @if($merchant->link_blanjapoin)
-                    <a href="https://{{ $merchant->link_blanjapoin }}" 
+                @php
+                    $codeDashboardMobile = null;
+                    if($merchant->link_blanjapoin) {
+                        // Remove http:// or https:// if present
+                        $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                        // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                        $parts = explode('/', $link);
+                        if(count($parts) >= 3 && $parts[1] === 'dash') {
+                            $codeDashboardMobile = end($parts);
+                        }
+                    }
+                @endphp
+                @if($codeDashboardMobile)
+                    <a href="{{ route('link.dashboard', $codeDashboardMobile) }}" 
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-orange-600 hover:text-orange-800 hover:underline mt-1 inline-flex items-center gap-1">
+                        <i class="fas fa-link text-xs"></i>
+                        <span class="truncate max-w-full">Buka Link</span>
+                    </a>
+                @else
+                    <p class="text-sm text-gray-400 mt-1">-</p>
+                @endif
+            </div>
+
+            {{-- Link Pelanggan --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Pelanggan</p>
+                @php
+                    $codePelanggan = null;
+                    if($merchant->link_blanjapoin) {
+                        // Remove http:// or https:// if present
+                        $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                        // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                        $parts = explode('/', $link);
+                        if(count($parts) >= 3 && $parts[1] === 'dash') {
+                            $codePelanggan = end($parts);
+                        }
+                    }
+                @endphp
+                @if($codePelanggan)
+                    <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
+                        <i class="fas fa-link text-xs"></i>
+                        <span class="truncate max-w-full">Buka Link</span>
+                    </a>
+                @else
+                    <p class="text-sm text-gray-400 mt-1">-</p>
+                @endif
+            </div>
+
+            {{-- Link History --}}
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link History</p>
+                @php
+                    $linkHistory = null;
+                    if($merchant->link_blanjapoin) {
+                        // Remove http:// or https:// if present
+                        $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                        // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
+                        $parts = explode('/', $link);
+                        if(count($parts) >= 3 && $parts[1] === 'dash') {
+                            $code = end($parts);
+                            $linkHistory = $parts[0] . '/history/' . $code;
+                        }
+                    }
+                @endphp
+                @if($linkHistory)
+                    <a href="https://{{ $linkHistory }}" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="text-sm text-purple-600 hover:text-purple-800 hover:underline mt-1 inline-flex items-center gap-1">
                         <i class="fas fa-link text-xs"></i>
                         <span class="truncate max-w-full">Buka Link</span>
                     </a>
