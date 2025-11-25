@@ -4,6 +4,8 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Models\Keyword;
+use Carbon\Carbon;
 
 class Kernel extends ConsoleKernel
 {
@@ -12,7 +14,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Hapus keywords yang sudah lewat end_date setiap menit tanpa trigger user
+        $schedule->call(function () {
+            Keyword::whereNotNull('end_date')
+                ->whereDate('end_date', '<', Carbon::today())
+                ->delete();
+        })->name('cleanup-expired-keywords')->everyMinute()->withoutOverlapping();
     }
 
     /**
