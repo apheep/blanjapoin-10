@@ -30,8 +30,26 @@
     </div>
    </nav>
 
-  <div class="mx-auto max-w-[1120px]">
-   <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+ <div class="mx-auto max-w-[1120px]">
+  <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+   @php
+    $bannerImages = collect($iklans ?? [])
+        ->map(function ($iklan) {
+            if (!$iklan?->image_path) {
+                return null;
+            }
+
+            return '/storage/' . ltrim($iklan->image_path, '/');
+        })
+        ->filter()
+        ->values();
+
+    if ($bannerImages->isEmpty()) {
+        $bannerImages = collect(['/logo.png']);
+    }
+
+    $activeBannerSrc = $bannerImages->first();
+   @endphp
     <section class="mt-1 md:mt-1 opacity-0 translate-y-8 transition-all duration-700 ease-out" id="bannerSection">
      <div class="relative group">
       <!-- Navigation Arrows -->
@@ -47,7 +65,7 @@
 
       <!-- Background Image -->
       <img id="bannerImage"
-          src="{{ asset('storage/iklan/iklan1.jpeg') }}"
+          src="{{ $activeBannerSrc }}"
           alt="Banner Promo"
           class="w-full h-full object-cover transition-all duration-700 rounded-3xl md:rounded-[2.5rem]"
           loading="lazy">
@@ -63,9 +81,12 @@
       
       <!-- Carousel Dots -->
       <div class="mt-2 md:mt-3/2 flex items-center justify-center gap-3 md:gap-3">
-       <span onclick="goToSlide(0)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
-       <span onclick="goToSlide(1)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
-       <span onclick="goToSlide(2)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+       @php
+        $dotsHtml = $bannerImages->map(function ($image, $index) {
+            return '<span onclick="goToSlide(' . $index . ')" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>';
+        })->implode('');
+       @endphp
+       {!! $dotsHtml !!}
       </div>
      </div>
     </section>
@@ -371,22 +392,23 @@
     });
    });
 
-   // Carousel configuration
-   const slides = [
-    '{{ asset("storage/iklan/iklan1.jpeg") }}',
-    '{{ asset("storage/iklan/iklan2.jpeg") }}',
-    '{{ asset("storage/iklan/iklan3.jpeg") }}'
-   ];
+  // Carousel configuration
+  const slides = <?php echo $bannerImages->values()->toJson(); ?>;
    
    let currentSlide = 0;
    let autoSlideInterval;
    
    // Get elements
-   const bannerImage = document.getElementById('bannerImage');
-   const dots = document.querySelectorAll('.carousel-dot');
+  const bannerImage = document.getElementById('bannerImage');
+  const dots = document.querySelectorAll('.carousel-dot');
+  const carouselSection = document.getElementById('bannerSection');
    
    // Update slide
-   function updateSlide(index) {
+  function updateSlide(index) {
+   if (!slides.length || !bannerImage) {
+    return;
+   }
+
     currentSlide = index;
     
     // Fade effect
@@ -411,6 +433,10 @@
    
    // Next slide
    function nextSlide() {
+    if (!slides.length) {
+     return;
+    }
+
     currentSlide = (currentSlide + 1) % slides.length;
     updateSlide(currentSlide);
     resetAutoSlide();
@@ -418,6 +444,10 @@
    
    // Previous slide
    function prevSlide() {
+    if (!slides.length) {
+     return;
+    }
+
     currentSlide = (currentSlide - 1 + slides.length) % slides.length;
     updateSlide(currentSlide);
     resetAutoSlide();
@@ -425,29 +455,44 @@
    
    // Go to specific slide
    function goToSlide(index) {
-    updateSlide(index);
+    if (!slides.length) {
+     return;
+    }
+
+    const normalizedIndex = Math.max(0, Math.min(index, slides.length - 1));
+    updateSlide(normalizedIndex);
     resetAutoSlide();
    }
    
    // Auto slide
    function startAutoSlide() {
+    if (slides.length < 2) {
+     return;
+    }
+
     autoSlideInterval = setInterval(() => {
      nextSlide();
-    }, 2000); // Change slide every 5 seconds
+    }, 5000); // Change slide every 5 seconds
    }
    
    // Reset auto slide
    function resetAutoSlide() {
+    if (slides.length < 2) {
+     return;
+    }
+
     clearInterval(autoSlideInterval);
     startAutoSlide();
    }
    
    // Initialize
    updateSlide(0);
-   startAutoSlide();
+   if (slides.length > 1) {
+    startAutoSlide();
+   }
    
    // Pause on hover
-   const carouselSection = document.querySelector('section');
+  if (carouselSection && slides.length > 1) {
    carouselSection.addEventListener('mouseenter', () => {
     clearInterval(autoSlideInterval);
    });
@@ -455,6 +500,7 @@
    carouselSection.addEventListener('mouseleave', () => {
     startAutoSlide();
    });
+  }
 
    // Toggle Shop Cards
    let shopCardsExpanded = false;
@@ -785,7 +831,7 @@
    });
 
    // Location searchable select (combobox)
-   const serverLocations = @json($locationList);
+  const serverLocations = <?php echo $locationList->toJson(); ?>;
    const locations = ['All', ...serverLocations];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');

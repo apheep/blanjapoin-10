@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use App\Http\Controllers\IklanController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
 use App\Http\Controllers\MerchantController;
@@ -13,10 +14,12 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\KeywordController;
 use App\Models\Keyword;
 use App\Models\Merchant;
+use App\Models\Iklan;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
     $keywords = Keyword::with('merchant')->get();
+    $iklans = Iklan::latest()->get();
     
     // Ambil semua daerah dan ekstrak hanya kabupaten/kota
     $allDaerah = Merchant::query()
@@ -60,6 +63,7 @@ Route::get('/', function () {
     return view('welcome', [
         'keywords' => $keywords,
         'locations' => $locations,
+        'iklans' => $iklans,
     ]);
 })->name('home');
 
@@ -92,6 +96,7 @@ Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
         $keywords = Keyword::with('merchant')->get();
+        $iklans = Iklan::latest()->get();
         
         // Ambil semua daerah dan ekstrak hanya kabupaten/kota
         $allDaerah = Merchant::query()
@@ -135,6 +140,7 @@ Route::middleware(['auth'])->group(function () {
         return view('welcome', [
             'keywords' => $keywords,
             'locations' => $locations,
+            'iklans' => $iklans,
         ]);
     })->name('welcome');
 
@@ -156,6 +162,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
+
+    // Iklan management
+    Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');
+    Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
+    Route::delete('/iklan/{iklan}', [IklanController::class, 'destroy'])->name('iklan.destroy');
 
     // Manajemen user
     Route::get('/user-management', [UserController::class, 'index'])->name('user.management');

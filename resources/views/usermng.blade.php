@@ -72,9 +72,9 @@
         <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
     @endif
 
-  <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 transform transition-all duration-500 opacity-0 translate-y-3">
+  <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 transform transition-all duration-500 opacity-0 translate-y-3 mt-4">
     <div class="flex items-center justify-between gap-4 flex-wrap">
-      <div class="pl-4">
+      <div class="pl-2">
         <h1 class="text-2xl md:text-3xl font-black tracking-tight text-neutral-900">User Management</h1>
       </div>
       <div class="flex items-center gap-2 pr-4">
