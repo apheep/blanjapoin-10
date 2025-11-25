@@ -18,100 +18,9 @@
 </head>
 @include('partials.head')
 <body class="min-h-screen bg-white font-poppins">
-<nav id="navbar" class="sticky top-0 z-20 bg-white/90 backdrop-blur-sm transition-shadow duration-300 w-full shadow-sm ring-1 ring-neutral-200/60">
-    <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
-     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-6">
-       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-      </div>
+@include('partials.navbar-admin')
 
-      <!-- Centered primary navigation (desktop only, untouched) -->
-      <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      @if(Auth::check() && Auth::user()->can_approve == 1) 
-        <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>
-       @endif
-      </div>
-
-      <div class="flex items-center gap-4">
-       <!-- Mobile hamburger -->
-       <button id="openSidebar" class="md:hidden text-gray-700 text-2xl pr-4">
-         <i class="fa-solid fa-bars"></i>
-       </button>
-       <div class="relative hidden md:block">
-        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg ring-1 ring-white/30 active:scale-95 transition-all">
-          <i class="fa-solid fa-user"></i>
-          <span>{{ Auth::user()->username }}</span>
-          <i id="userDropdownArrow" class="fa-solid fa-chevron-down text-xs"></i>
-        </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out backdrop-blur-sm">
-          <div class="py-1">
-            <form method="POST" action="{{ route('logout') }}">@csrf
-              <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50">
-                <i class="fa-solid fa-right-from-bracket"></i> Logout
-              </button>
-            </form>
-          </div>
-        </div>
-       </div>
-      </div>
-     </div>
-    </div>
-   </nav>
-
-<!-- Mobile Sidebar -->
-<div id="mobileSidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-  <div id="sidebarPanel" class="bg-white w-72 h-full shadow-xl transform translate-x-full transition-transform duration-300 ml-auto flex flex-col">
-    <!-- Header -->
-    <div class="border-b border-gray-200 p-4">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-3">
-          <img src="/logo.png" alt="BlanjaPoin" class="h-8 w-auto" />
-        </div>
-        <button id="closeSidebar" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="mt-4 pt-4 border-t border-gray-100">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-user text-gray-600"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-900 truncate">{{ Auth::user()->username ?? 'User' }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Menu Items -->
-    <div class="flex-1 overflow-y-auto py-2">
-      @if(Auth::check() && Auth::user()->can_approve == 1)
-        <a href="{{ route('admin') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-home w-5 text-gray-500"></i>
-          <span class="font-medium">Home</span>
-        </a>
-        <a href="{{ route('user.management') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-users w-5 text-gray-500"></i>
-          <span class="font-medium">User Management</span>
-        </a>
-      @endif
-    </div>
-
-    <!-- Footer / Logout -->
-    <div class="border-t border-gray-200 p-4">
-      <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
-          <i class="fa-solid fa-right-from-bracket text-sm"></i>
-          <span>Logout</span>
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<script>
+<!-- <script>
   const openSidebar = document.getElementById('openSidebar');
   const closeSidebar = document.getElementById('closeSidebar');
   const mobileSidebar = document.getElementById('mobileSidebar');
@@ -151,7 +60,7 @@
       closeSidebarFunc();
     }
   });
-</script>
+</script> -->
     <!-- Flash Message Container -->
     @if(session('success'))
         <div data-flash-message="{{ session('success') }}" data-flash-type="success" class="hidden"></div>
