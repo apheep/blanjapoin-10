@@ -693,37 +693,6 @@
                     });
                 }
 
-                document.querySelectorAll('.keyword-pagination').forEach(link => {
-                    link.addEventListener('click', function(event) {
-                        event.preventDefault();
-                        const url = this.getAttribute('href');
-
-                        fetch(url, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                        .then(response => response.text())
-                        .then(html => {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(html, 'text/html');
-                            const newTable = doc.querySelector('#keyword-table-container');
-                            
-                            if (newTable) {
-                                document.querySelector('#keyword-table-container').innerHTML = newTable.innerHTML;
-                            }
-
-                            try {
-                                const newUrl = new URL(url, window.location.origin);
-                                window.history.replaceState({}, '', newUrl);
-                            } catch (e) {
-                                console.warn('Tidak bisa update URL state:', e);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Keyword pagination AJAX error:', error);
-                            window.location.href = url;
-                        });
-                    });
-                });
             </script>
 
             <div id="section-keyword" class="transition-all duration-300 {{ $activeTab === 'keyword' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
@@ -771,8 +740,10 @@
                     </div>
                     
                 </div>
-
-                @include('partials.table-keyword')
+                
+                <div id="keyword-table-container">
+                    @include('partials.table-keyword')
+                </div>
             </div>
 
             <div id="section-merchant" class="transition-all duration-300 {{ $activeTab === 'merchant' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
@@ -814,7 +785,7 @@
                     
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" placeholder="Search..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="merchantSearch" placeholder="Search merchant..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
@@ -823,20 +794,28 @@
                     </div>
                 </div>
                 
-                @include('partials.table-merchant')
+                <div id="merchant-table-container">
+                    @include('partials.table-merchant')
+                </div>
             </div>
         </main>
         
 
         <script>
         // Search functionality for Merchant table - AJAX search across all pages
-        document.getElementById('merchantSearch').addEventListener('keyup', function(e) {
-            clearTimeout(searchTimeout);
+        let searchTimeout;
+        const merchantSearchInput = document.getElementById('merchantSearch');
+        merchantSearchInput?.addEventListener('keyup', function(e) {
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
             const searchTerm = e.target.value.trim();
             
-            // If search is empty, reload the page to show all merchants
+            // If search is empty, reload the page (keep merchant tab active)
             if (searchTerm === '') {
-                location.reload();
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'merchant');
+                window.location.href = url.toString();
                 return;
             }
             
@@ -1013,6 +992,98 @@
             .catch(error => console.error('Search error:', error));
         }
 
+        ////////////////////////////////////////////////////////////////////
+        // Keyword search & pagination (AJAX across all pages)
+        ////////////////////////////////////////////////////////////////////
+        const keywordSearchInput = document.getElementById('keywordSearch');
+        let keywordSearchTimeout;
+        let currentKeywordQuery = new URL(window.location.href).searchParams.get('keyword_search') || '';
+
+        if (keywordSearchInput && currentKeywordQuery) {
+            keywordSearchInput.value = currentKeywordQuery;
+            fetchKeywordTable(buildKeywordSearchRequestUrl());
+        }
+
+        keywordSearchInput?.addEventListener('input', (event) => {
+            currentKeywordQuery = event.target.value.trim();
+            if (keywordSearchTimeout) {
+                clearTimeout(keywordSearchTimeout);
+            }
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 300);
+        });
+
+        function buildKeywordSearchRequestUrl(sourceHref = null) {
+            const base = new URL(sourceHref || '/keywords', window.location.origin);
+            const searchUrl = new URL('/keywords/search', window.location.origin);
+
+            base.searchParams.forEach((value, key) => {
+                if (key === 'tab' || key === 'keyword_search') {
+                    return;
+                }
+                searchUrl.searchParams.set(key, value);
+            });
+
+            if (currentKeywordQuery) {
+                searchUrl.searchParams.set('q', currentKeywordQuery);
+            } else {
+                searchUrl.searchParams.delete('q');
+            }
+
+            searchUrl.searchParams.set('tab', 'keyword');
+            return searchUrl.toString();
+        }
+
+        function fetchKeywordTable(requestUrl) {
+            const url = requestUrl || buildKeywordSearchRequestUrl();
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    const container = document.getElementById('keyword-table-container');
+                    if (container) {
+                        container.innerHTML = data.html;
+                    }
+                    attachKeywordPaginationHandlers();
+                    updateKeywordUrlState();
+                }
+            })
+            .catch(error => console.error('Keyword search error:', error));
+        }
+
+        function attachKeywordPaginationHandlers() {
+            const container = document.getElementById('keyword-table-container');
+            if (!container) return;
+
+            container.querySelectorAll('.keyword-pagination-link').forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const requestUrl = buildKeywordSearchRequestUrl(this.href);
+                    fetchKeywordTable(requestUrl);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+        }
+
+        function updateKeywordUrlState() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'keyword');
+            if (currentKeywordQuery) {
+                url.searchParams.set('keyword_search', currentKeywordQuery);
+            } else {
+                url.searchParams.delete('keyword_search');
+            }
+            window.history.replaceState({}, '', url);
+        }
+
+        attachKeywordPaginationHandlers();
+
         function toggleUserDropdown() {
             const dropdown = document.getElementById('userDropdown');
             const arrow = document.getElementById('userDropdownArrow');
@@ -1057,21 +1128,6 @@
             `;
             document.body.appendChild(modal);
         }
-
-        // Keyword search functionality
-        document.getElementById('keywordSearch')?.addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(query) ? '' : 'none';
-            });
-            const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? '' : 'none';
-            });
-        });
 
         // Initialize dropdown active state on page load
         document.addEventListener('DOMContentLoaded', function() {
