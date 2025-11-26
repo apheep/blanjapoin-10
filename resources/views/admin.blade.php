@@ -919,6 +919,44 @@ merchantSearchClear?.addEventListener('click', () => {
 });
 
 
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function escapeSingleQuotes(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/'/g, "\\'");
+}
+
+function truncateText(value, limit) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    return str.length > limit ? str.slice(0, limit) + '...' : str;
+}
+
+function extractBlanjapoinCode(link) {
+    if (!link) return null;
+    const trimmed = link.replace(/^https?:\/\//i, '').trim();
+    const [pathWithoutQuery] = trimmed.split('?');
+    const normalized = pathWithoutQuery.replace(/\/+$/, '');
+    const segments = normalized.split('/');
+    const dashIndex = segments.findIndex(segment => segment.toLowerCase() === 'dash');
+    if (dashIndex !== -1 && segments[dashIndex + 1]) {
+        return segments[dashIndex + 1];
+    }
+    if (segments.length >= 2) {
+        return segments[segments.length - 1];
+    }
+    return null;
+}
+
+
 function buildMerchantSearchRequestUrl(sourceHref = null) {
     const base = new URL(sourceHref || '/merchants', window.location.origin);
     const searchUrl = new URL('/merchants/search', window.location.origin);
@@ -986,39 +1024,118 @@ function updateMerchantTable(data) {
         const tableBody = document.getElementById('merchant-table-body');
         if (tableBody) {
             if (!merchants || merchants.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="14" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
             } else {
-                tableBody.innerHTML = merchants.map((merchant, index) => `
-                    <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
+                tableBody.innerHTML = merchants.map((merchant, index) => {
+                    const rowNumber = (pagination.current_page - 1) * pagination.per_page + index + 1;
+                    const categoryAttrValue = escapeHtml(merchant.kategori || 'All');
+                    const merchantName = escapeHtml(merchant.nama_merchant || '-');
+                    const merchantNameForDelete = escapeSingleQuotes(merchant.nama_merchant || '');
+                    const categoryText = escapeHtml(merchant.kategori) || '-';
+                    const namaPicText = escapeHtml(merchant.nama_pic) || '-';
+                    const daerahCell = merchant.daerah
+                        ? escapeHtml(merchant.daerah)
+                        : '<span class="text-gray-400">-</span>';
+                    const detailRaw = merchant.detail_daerah || '';
+                    const detailCell = detailRaw
+                        ? `<span class="truncate block max-w-xs" title="${escapeHtml(detailRaw)}">${escapeHtml(truncateText(detailRaw, 30))}</span>`
+                        : '<span class="text-gray-400">-</span>';
+                    const latLongCell = merchant.lat && merchant.long
+                        ? `<span class="text-xs">${escapeHtml(merchant.lat)}, ${escapeHtml(merchant.long)}</span>`
+                        : '<span class="text-gray-400">-</span>';
+                    const waDigits = merchant.wa_pic ? merchant.wa_pic.replace(/[^0-9]/g, '') : '';
+                    const waCell = waDigits
+                        ? `<a href="https://wa.me/${waDigits}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline">
+                                ${escapeHtml(merchant.wa_pic)}
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const gmapCell = merchant.link_gmap
+                        ? `<a href="${escapeHtml(merchant.link_gmap)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-map-marker-alt text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const blanjapoinCode = extractBlanjapoinCode(merchant.link_blanjapoin);
+                    const dashboardCell = blanjapoinCode
+                        ? `<a href="${escapeHtml(`/dash/${encodeURIComponent(blanjapoinCode)}`)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-link text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const pelangganCell = blanjapoinCode
+                        ? `<a href="${escapeHtml(`/u/${encodeURIComponent(blanjapoinCode)}`)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-link text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const historyCell = blanjapoinCode
+                        ? `<a href="${escapeHtml(`/history/${encodeURIComponent(blanjapoinCode)}`)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-purple-600 hover:text-purple-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-link text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const logoPath = merchant.logo_merchant ? `/storage/${encodeURI(merchant.logo_merchant)}` : '';
+                    const logoCell = logoPath
+                        ? `<a href="${escapeHtml(logoPath)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
+                                <img src="${escapeHtml(logoPath)}"
+                                     alt="${escapeHtml(merchant.nama_merchant || '')}"
+                                     class="h-full w-full object-cover">
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+
+                    return `
+                    <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${categoryAttrValue}"
                         onclick="window.location='/merchants/${merchant.id}'">
-                        <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${(pagination.current_page - 1) * pagination.per_page + index + 1}</td>
+                        <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${rowNumber}</td>
                         <td class="px-4 py-4 w-20 text-center">
                             <div class="flex items-center justify-center h-full">
                                 <button type="button"
-                                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
+                                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchantNameForDelete}', ${merchant.id})"
                                         class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
                                         title="Hapus">
                                     <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
                                 </button>
                             </div>
                         </td>
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.daerah}</td>
-                        <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">${merchant.nama_merchant}</td>
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.kategori || '-'}</td>
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">
-                            ${merchant.logo_merchant ? `
-                                <a href="/storage/${merchant.logo_merchant}" 
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
-                                    <img src="/storage/${merchant.logo_merchant}" 
-                                         alt="${merchant.nama_merchant}" 
-                                         class="h-full w-full object-cover">
-                                </a>
-                            ` : '<span class="text-gray-400">-</span>'}
-                        </td>
+                        <td class="px-4 py-4 text-center text-sm font-semibold text-gray-900">${merchantName}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${categoryText}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${namaPicText}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${waCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${daerahCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${detailCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${latLongCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${gmapCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${dashboardCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${pelangganCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${historyCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700" >${logoCell}</td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
             }
         }
 
