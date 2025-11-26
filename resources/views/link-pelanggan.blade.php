@@ -21,7 +21,7 @@
     </div>
 
     <!-- Navbar -->
-    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full shadow-sm">
+    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full ">
         <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
             <div class="flex items-center">
                 <a href="{{ route('home') }}">
@@ -34,12 +34,21 @@
     <!-- Main Content -->
     <div class="mx-auto max-w-[1120px]">
         <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+
+                <div class="flex flex-wrap items-start justify-between gap-4 pl-1">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mt-4">Voucher</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</h1>
+                
+                </div>
+            </div>
+
             <!-- Voucher Section -->
             <section class="mt-4 md:mt-6">
 
                 @if($keywords->count() > 0)
                     <!-- Voucher Grid -->
-                    <div class="grid grid-cols-1 lg:grid-cols-1 gap-4 md:gap-6">
+                    <div class="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5 items-stretch px-1">
                         @foreach($keywords as $keyword)
                             @php
                                 $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -138,10 +147,10 @@
                                         </div>
                                     </div>
                                     <div class="hidden lg:flex flex-col md:flex-row items-start md:items-center justify-between px-3 md:px-4 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600 gap-1.5 md:gap-0">
-                                        <span class="font-medium">Stock {{ $keyword->stock }}</span>
+                                        <span class="font-medium">Stock • {{ $keyword->stock }}</span>
                                         @if($keyword->end_date)
                                             <span class="font-medium">
-                                                Valid until {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
+                                                Valid until • {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
                                             </span>
                                         @endif
                                     </div>
@@ -192,4 +201,3 @@
     </script>
 </body>
 </html>
-

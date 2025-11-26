@@ -15,7 +15,7 @@
 </head>
 <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
     <!-- Navbar -->
-    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full shadow-sm">
+    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full">
         <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
             <div class="flex items-center">
                 <a href="{{ route('home') }}">
@@ -25,9 +25,19 @@
         </div>
     </nav>
 
+
+
+
     <!-- Main Content -->
     <div class="mx-auto max-w-[1120px]">
         <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mt-4">Dashboard</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</h1>
+                
+                </div>
+            </div>
 
             <!-- Table Section -->
             <section class="mt-8">

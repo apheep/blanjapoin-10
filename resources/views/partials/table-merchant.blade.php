@@ -6,12 +6,12 @@
                 <tr>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Daerah</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMap</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Blanjapoin</th>
@@ -43,9 +43,6 @@
                             </div>
                         </td>
 
-                        {{-- Daerah --}}
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->daerah }}</td>
-
                         {{-- Merchant --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">{{ $merchant->nama_merchant }}</td>
 
@@ -68,6 +65,9 @@
                                 <span class="text-gray-400">-</span>
                             @endif
                         </td>
+
+                        {{-- Daerah --}}
+                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->daerah }}</td>
 
                         {{-- Detail Daerah --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
@@ -93,6 +93,7 @@
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->link_gmap)
                                 <a href="{{ $merchant->link_gmap }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
@@ -120,6 +121,7 @@
                             @endphp
                             @if($codeDashboard)
                                 <a href="{{ route('link.dashboard', $codeDashboard) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
@@ -147,6 +149,7 @@
                             @endphp
                             @if($codePelanggan)
                                 <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
@@ -174,7 +177,7 @@
                                 }
                             @endphp
                             @if($linkHistory)
-                                <a href="https://{{ $linkHistory }}" 
+                                <a href="{{ route('link.history', $codePelanggan) }}" 
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-purple-600 hover:text-purple-800 hover:underline inline-flex items-center gap-1">
@@ -282,7 +285,7 @@
 
             {{-- Daerah --}}
             <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Daerah</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Alamat</p>
                 <p class="text-sm text-gray-700 mt-1">{{ $merchant->daerah }}</p>
             </div>
 
@@ -321,7 +324,7 @@
 
             {{-- Detail Daerah --}}
             <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Detail Daerah</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Detail Alamat</p>
                 <p class="text-sm text-gray-700 mt-1">{{ $merchant->detail_daerah ?? '-' }}</p>
             </div>
 
@@ -340,6 +343,7 @@
                 <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Google Maps</p>
                 @if($merchant->link_gmap)
                     <a href="{{ $merchant->link_gmap }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -368,6 +372,7 @@
                 @endphp
                 @if($codeDashboardMobile)
                     <a href="{{ route('link.dashboard', $codeDashboardMobile) }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-orange-600 hover:text-orange-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -396,6 +401,7 @@
                 @endphp
                 @if($codePelanggan)
                     <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -425,6 +431,7 @@
                 @endphp
                 @if($linkHistory)
                     <a href="https://{{ $linkHistory }}" 
+                       onclick="event.stopPropagation();"
                        target="_blank" 
                        rel="noopener noreferrer"
                        class="text-sm text-purple-600 hover:text-purple-800 hover:underline mt-1 inline-flex items-center gap-1">
@@ -505,4 +512,3 @@
     </div>
     @endif
 </div>
-

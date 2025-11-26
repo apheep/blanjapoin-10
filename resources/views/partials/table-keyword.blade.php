@@ -37,12 +37,14 @@
                         </td>
                         <td class="px-4 py-4">
                             <div class="flex space-x-2">
+                                @if ($keyword->status === 'pending')
                                 <button type="button"
                                         onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
                                         class="text-blue-600 hover:text-blue-900 transition-colors"
                                         title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                @endif
 
                                 <button type="button"
                                         onclick="showDeleteConfirmation('Keyword', '{{ $keyword->nama_produk }}', {{ $keyword->id }})"
