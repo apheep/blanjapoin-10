@@ -4,7 +4,7 @@
 @endphp
 
 <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto keyword-table-scroll">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                 <tr>
@@ -120,9 +120,14 @@
                         </td>
                         <td class="px-4 py-4">
                             @if($keyword->image)
-                                <img src="{{ asset('storage/' . $keyword->image) }}" 
-                                     alt="{{ $keyword->nama_produk }}" 
-                                     class="h-10 w-16 object-cover rounded">
+                                <a href="{{ asset('storage/' . $keyword->image) }}"
+                                   target="_blank"
+                                   rel="noreferrer"
+                                   class="group block w-24 h-12 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition duration-150 hover:border-gray-300 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
+                                    <img src="{{ asset('storage/' . $keyword->image) }}" 
+                                         alt="{{ $keyword->nama_produk }}" 
+                                         class="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105">
+                                </a>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -130,17 +135,23 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="12" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="13" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data keyword.
                         </td>
                     </tr>
                 @endforelse
+
+                <tr id="keyword-filter-empty-row" class="hidden">
+                    <td colspan="13" class="px-4 py-6 text-center text-sm text-gray-500">
+                        Tidak ada keyword pada rentang tanggal yang dipilih.
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
     
     @if($keywordPaginator->hasPages())
-        <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
+        <div class="keyword-pagination-container bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
             <div class="text-sm text-gray-600">
                 Menampilkan <span class="font-semibold">{{ $keywordPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywordPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $keywordPaginator->total() }}</span> data
             </div>
@@ -318,22 +329,30 @@
 
             @if($keyword->image)
             <div class="mt-2 pt-2 border-t border-gray-200">
-                <button type="button" 
-                        onclick="previewKeywordImage('{{ asset('storage/' . $keyword->image) }}', '{{ basename($keyword->image) }}')"
-                        class="w-full h-20 rounded-md overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
+                <a href="{{ asset('storage/' . $keyword->image) }}"
+                   target="_blank"
+                   rel="noreferrer"
+                   class="group relative block w-full h-20 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm transition duration-150 hover:border-gray-300 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
                     <img src="{{ asset('storage/' . $keyword->image) }}" 
                          alt="{{ $keyword->nama_produk }}" 
-                         class="h-full w-full object-cover">
-                </button>
+                         class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105">
+                    <span class="pointer-events-none absolute inset-x-4 bottom-3 rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white text-center">
+                        Lihat gambar
+                    </span>
+                </a>
             </div>
             @endif
         </div>
     @empty
         <p class="text-sm text-center text-gray-500">Belum ada data keyword.</p>
     @endforelse
+
+    <div id="keyword-filter-empty-card" class="hidden text-sm text-center text-gray-500 bg-white border border-dashed border-gray-200 rounded-xl px-4 py-5">
+        Tidak ada keyword pada rentang tanggal yang dipilih.
+    </div>
     
     @if($keywordPaginator->hasPages())
-        <div class="bg-white px-4 py-4 border-t border-gray-200 flex flex-col items-center justify-center space-y-3 rounded-xl">
+        <div class="keyword-pagination-container bg-white px-4 py-4 border-t border-gray-200 flex flex-col items-center justify-center space-y-3 rounded-xl">
             <div class="text-sm text-gray-600 text-center">
                 Menampilkan <span class="font-semibold">{{ $keywordPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywordPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $keywordPaginator->total() }}</span> data
             </div>
