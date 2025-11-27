@@ -7,6 +7,7 @@ use App\Models\Keyword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MerchantController extends Controller
@@ -350,7 +351,7 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Generate link history
+       // Generate link history
         $linkHistory = route('link.history', $decodedCode);
         $linkHistoryFull = url($linkHistory);
 
@@ -403,9 +404,9 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('link-history', [
+        return view('trx-history', [
             'merchant' => $merchant,
-            'keywords' => $keywords,
+            'histories' => $keywords,
         ]);
     }
 }
