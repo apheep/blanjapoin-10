@@ -34,6 +34,8 @@ class KeywordController extends Controller
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
+                'rtx'               => 'nullable|string|max:255',
+                'sisa_stock'        => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
             ]);
 
@@ -92,6 +94,8 @@ class KeywordController extends Controller
                 'end_date'      => $endDate,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
+                'rtx'           => $request->rtx,
+                'sisa_stock'    => $request->sisa_stock,
                 'status'        => $request->status ?? 'pending',
             ]);
 
@@ -145,6 +149,8 @@ class KeywordController extends Controller
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
+                'rtx'               => 'nullable|string|max:255',
+                'sisa_stock'        => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
             ]);
 
@@ -192,6 +198,8 @@ class KeywordController extends Controller
                 'end_date'      => $request->end_date,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
+                'rtx'           => $request->rtx,
+                'sisa_stock'    => $request->sisa_stock,
                 'status'        => $request->status ?? 'pending',
             ]);
 
