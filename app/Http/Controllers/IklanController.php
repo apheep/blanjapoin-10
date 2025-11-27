@@ -27,12 +27,20 @@ class IklanController extends Controller
     {
         $request->validate([
             'image' => ['required', 'image', 'max:2048'],
+            'link_iklan' => ['nullable', 'url'],
         ]);
 
         $path = $request->file('image')->store('iklan', 'public');
 
+        $link = $request->input('link_iklan');
+        $link = is_string($link) ? trim($link) : null;
+        if ($link === '') {
+            $link = null;
+        }
+
         Iklan::create([
             'image_path' => $path,
+            'link_iklan' => $link,
         ]);
 
         return redirect()

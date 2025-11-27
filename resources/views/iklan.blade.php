@@ -35,7 +35,7 @@
         <div class="grid md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-lg p-6">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Tambah Iklan Baru</h2>
-                <p class="text-sm text-neutral-500 mb-5">Unggah file gambar (JPG, PNG, maksimal 2 MB).</p>
+                <p class="text-sm text-neutral-500 mb-5">Unggah file gambar dengan format 5:1 aspect ratio (JPG, PNG, maksimal 2 MB). </p>
                 <form id="uploadForm" action="{{ route('iklan.store') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
                     @csrf
                     <label class="block">
@@ -43,6 +43,12 @@
                         <input id="imageInput" type="file" name="image" accept="image/*"
                                class="mt-2 block w-full text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer">
                         <span id="fileError" class="text-xs text-rose-500 mt-2 hidden">Silakan pilih gambar terlebih dahulu.</span>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-semibold text-neutral-700">CTA Link </span>
+                        <input id="linkInput" type="url" name="link_iklan" value="{{ old('link_iklan') }}"
+                               placeholder="https://contoh.com/promo"
+                               class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
                     </label>
                     <button type="button" id="openConfirmModal" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition">
                         Simpan Iklan
@@ -53,6 +59,9 @@
             <div class="bg-white rounded-2xl shadow-lg p-6">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Preview Banner</h2>
                 <p class="text-sm text-neutral-500 mb-4">Gambar pertama pada daftar akan menjadi banner utama.</p>
+                @php
+                    $primaryBanner = $iklans->first();
+                @endphp
                 <div class="relative h-60 rounded-2xl overflow-hidden bg-neutral-100">
                     @if ($iklans->isNotEmpty())
                         <img src="{{ asset('storage/' . $iklans->first()->image_path) }}" alt="Preview Iklan" class="w-full h-full object-cover">
@@ -60,8 +69,20 @@
                         <div class="h-full w-full flex items-center justify-center text-neutral-500 text-sm font-medium">Belum ada iklan</div>
                     @endif
                 </div>
+                @if ($primaryBanner)
+                    <p class="text-xs text-neutral-500 mt-3">
+                        Link banner utama:
+                        @if ($primaryBanner->link_iklan)
+                            <a href="{{ $primaryBanner->link_iklan }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-orange-600 hover:text-orange-500 break-all">
+                                {{ $primaryBanner->link_iklan }}
+                            </a>
+                        @else
+                            <span class="text-neutral-400 font-medium">Belum ditentukan</span>
+                        @endif
+                    </p>
+                @endif
                 <p class="text-xs text-neutral-400 mt-3 leading-relaxed">
-                    Rekomendasi ukuran: 1920x800 piksel dengan format landscape. Simpan file ke storage publik agar dapat ditampilkan pada landing page.
+                    Rekomendasi ukuran 5:1 aspect ratio (1200x240 piksel) dengan format landscape.
                 </p>
             </div>
         </div>
@@ -78,23 +99,33 @@
                 <table class="min-w-full divide-y divide-neutral-100 text-sm">
                     <thead class="text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
                         <tr>
-                            <th class="py-3">Preview</th>
-                            <th class="py-3">Nama File</th>
-                            <th class="py-3">Diupload</th>
-                            <th class="py-3 text-right">Aksi</th>
+                        <th class="py-3 text-center">No</th>
+                        <th class="py-3 text-center">Preview</th>
+                         <th class="py-3 text-center">Link</th>
+                        <th class="py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-neutral-100">
                         @forelse ($iklans as $iklan)
                             <tr>
-                                <td class="py-3">
-                                    <div class="w-28 h-16 rounded-lg overflow-hidden bg-neutral-100">
+                                <td class="py-3 text-center">
+                                    {{ $loop->iteration }}
+                                </td>
+                                <td class="py-3 text-center flex items-center justify-center">
+                                    <div class="w-28 h-16 rounded-lg overflow-hidden bg-neutral-100 flex items-center justify-center">
                                         <img src="{{ asset('storage/' . $iklan->image_path) }}" alt="Iklan {{ $loop->iteration }}" class="w-full h-full object-cover">
                                     </div>
                                 </td>
-                                <td class="py-3 font-semibold text-neutral-700">{{ basename($iklan->image_path) }}</td>
-                                <td class="py-3 text-neutral-500">{{ $iklan->created_at?->format('d M Y H:i') ?? '-' }}</td>
-                                <td class="py-3 text-right">
+                                <td class="py-3 text-center text-xs text-neutral-500 max-w-[220px]">
+                                    @if ($iklan->link_iklan)
+                                        <a href="{{ $iklan->link_iklan }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-orange-600 hover:text-orange-500 break-words">
+                                            {{ $iklan->link_iklan }}
+                                        </a>
+                                    @else
+                                        <span class="text-neutral-400 font-medium">-</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 text-center">
                                     <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
                                         @csrf
                                         @method('DELETE')
@@ -106,7 +137,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-6 text-center text-neutral-500 font-medium">
+                            <td colspan="5" class="py-6 text-center text-neutral-500 font-medium">
                                     Belum ada data iklan. Tambahkan gambar melalui form di atas.
                                 </td>
                             </tr>
