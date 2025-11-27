@@ -77,10 +77,14 @@
                                     <!-- QR Code -->
                                     <td class="px-4 py-4 text-center" data-label="QR Code">
                                         <div id="qrcode" class="inline-block p-2 bg-white rounded-lg border border-gray-200"></div>
-                                        <div class="mt-2">
+                                        <div class="mt-2 flex items-center justify-center gap-4">
                                             <button onclick="downloadQRCode()" 
-                                                    class="text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                                                    class="text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150">
                                                 <i class="fas fa-download mr-1"></i>Download
+                                            </button>
+                                            <button onclick="printQRCode()" 
+                                                    class="text-xs text-gray-600 hover:text-gray-800 hover:underline transition-colors duration-150">
+                                                <i class="fas fa-print mr-1"></i>Print
                                             </button>
                                         </div>
                                     </td>
@@ -170,6 +174,46 @@
             } else {
                 alert('QR Code belum siap, silakan tunggu sebentar');
             }
+        }
+
+        function printQRCode() {
+            const qrCodeElement = document.getElementById('qrcode');
+            const canvas = qrCodeElement.querySelector('canvas');
+            if (!canvas) {
+                alert('QR Code belum siap, silakan tunggu sebentar');
+                return;
+            }
+
+            const dataUrl = canvas.toDataURL('image/png');
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('Tidak dapat membuka jendela baru untuk cetak.');
+                return;
+            }
+
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Print QR Code</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            min-height: 100vh;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${dataUrl}" alt="QR Code" width="250" height="250" />
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
         }
     </script>
 </body>

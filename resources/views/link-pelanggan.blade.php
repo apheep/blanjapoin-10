@@ -35,8 +35,9 @@
     <!-- Main Content -->
     <div class="mx-auto max-w-[1120px]">
         <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+            @include('partials.banner-carousel', ['iklans' => $iklans])
 
-                <div class="flex flex-wrap items-start justify-between gap-4 pl-1">
+                <div class="flex flex-wrap items-start justify-between gap-4 pl-1 mt-6">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mt-4">Voucher</p>
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</h1>
