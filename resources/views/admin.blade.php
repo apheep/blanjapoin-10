@@ -31,6 +31,33 @@
         * {
             box-sizing: border-box;
         }
+        /* Hide horizontal scrollbar on keyword desktop table but keep scrollability */
+        .keyword-table-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .keyword-table-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .dashboard-entrance {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 360ms ease-out, transform 360ms ease-out;
+        }
+        .dashboard-entrance.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .dashboard-entrance button,
+        .dashboard-entrance a,
+        .dashboard-entrance input,
+        .dashboard-entrance select {
+            transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+        }
+        .dashboard-entrance button:active,
+        .dashboard-entrance a:active {
+            transform: translateY(1px);
+        }
     </style>
 
 </head>
@@ -46,7 +73,7 @@
         <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
     @endif
 @include('partials.navbar-admin')
-        <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+        <main class="dashboard-entrance max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
             @php
                 $tabParam = request()->get('tab', 'merchant');
                 // Normalize: if tab is not 'keyword', default to 'merchant'
@@ -215,7 +242,11 @@
                     rows.forEach((row, index) => {
                         const s = (row.dataset.status || '').toLowerCase();
                         const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        const shouldShow = (status === 'all' || normalized === status);
+                        const matchesStatus = (status === 'all' || normalized === status);
+                        const matchesDate = (row.dataset.dateFilterMatch ?? 'true') !== 'false';
+                        const shouldShow = matchesStatus && matchesDate;
+
+                        row.dataset.statusHidden = matchesStatus ? 'false' : 'true';
                         
                         if (shouldShow) {
                             row.style.opacity = '0';
@@ -240,7 +271,11 @@
                     cards.forEach((card, index) => {
                         const s = (card.dataset.status || '').toLowerCase();
                         const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        const shouldShow = (status === 'all' || normalized === status);
+                        const matchesStatus = (status === 'all' || normalized === status);
+                        const matchesDate = (card.dataset.dateFilterMatch ?? 'true') !== 'false';
+                        const shouldShow = matchesStatus && matchesDate;
+
+                        card.dataset.statusHidden = matchesStatus ? 'false' : 'true';
                         
                         if (shouldShow) {
                             card.style.opacity = '0';
@@ -738,10 +773,13 @@
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
+                            <button type="button" id="keywordSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                                &times;
+                            </button>
                         </div>
                         
                         @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
@@ -793,10 +831,13 @@
                     
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" id="merchantSearch" placeholder="Search merchant..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="merchantSearch" placeholder="Search merchant..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
+                            <button type="button" id="merchantSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                                &times;
+                            </button>
                         </div>
                         
                     </div>
@@ -810,15 +851,17 @@
         
 
         <script>
-        // Search functionality for Merchant table - AJAX search across all pages
+// Search functionality for Merchant table - AJAX search across all pages
     
 const merchantSearchInput = document.getElementById('merchantSearch');
+const merchantSearchClear = document.getElementById('merchantSearchClear');
 let merchantSearchTimeout;
 let currentMerchantQuery = new URL(window.location.href).searchParams.get('merchant_search') || '';
 
 if (merchantSearchInput && currentMerchantQuery) {
     merchantSearchInput.value = currentMerchantQuery;
     fetchMerchantTable(buildMerchantSearchRequestUrl());
+    if (merchantSearchClear) merchantSearchClear.classList.remove('hidden');
 }
 
 // Trigger search hanya saat ENTER
@@ -842,6 +885,9 @@ merchantSearchInput?.addEventListener('keydown', (event) => {
 // Kalau input dikosongkan → reload ke data awal (route admin)
 merchantSearchInput?.addEventListener('input', (event) => {
     const value = event.target.value.trim();
+    if (merchantSearchClear) {
+        merchantSearchClear.classList.toggle('hidden', value.length === 0);
+    }
 
     if (value === '') {
         currentMerchantQuery = '';
@@ -858,6 +904,57 @@ merchantSearchInput?.addEventListener('input', (event) => {
         window.location.href = url.toString();
     }
 });
+
+merchantSearchClear?.addEventListener('click', () => {
+    if (!merchantSearchInput) return;
+    merchantSearchInput.value = '';
+    currentMerchantQuery = '';
+    if (merchantSearchClear) merchantSearchClear.classList.add('hidden');
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'merchant');
+    url.searchParams.delete('merchant_search');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+});
+
+
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function escapeSingleQuotes(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/'/g, "\\'");
+}
+
+function truncateText(value, limit) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    return str.length > limit ? str.slice(0, limit) + '...' : str;
+}
+
+function extractBlanjapoinCode(link) {
+    if (!link) return null;
+    const trimmed = link.replace(/^https?:\/\//i, '').trim();
+    const [pathWithoutQuery] = trimmed.split('?');
+    const normalized = pathWithoutQuery.replace(/\/+$/, '');
+    const segments = normalized.split('/');
+    const dashIndex = segments.findIndex(segment => segment.toLowerCase() === 'dash');
+    if (dashIndex !== -1 && segments[dashIndex + 1]) {
+        return segments[dashIndex + 1];
+    }
+    if (segments.length >= 2) {
+        return segments[segments.length - 1];
+    }
+    return null;
+}
 
 
 function buildMerchantSearchRequestUrl(sourceHref = null) {
@@ -927,39 +1024,118 @@ function updateMerchantTable(data) {
         const tableBody = document.getElementById('merchant-table-body');
         if (tableBody) {
             if (!merchants || merchants.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="14" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
             } else {
-                tableBody.innerHTML = merchants.map((merchant, index) => `
-                    <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
+                tableBody.innerHTML = merchants.map((merchant, index) => {
+                    const rowNumber = (pagination.current_page - 1) * pagination.per_page + index + 1;
+                    const categoryAttrValue = escapeHtml(merchant.kategori || 'All');
+                    const merchantName = escapeHtml(merchant.nama_merchant || '-');
+                    const merchantNameForDelete = escapeSingleQuotes(merchant.nama_merchant || '');
+                    const categoryText = escapeHtml(merchant.kategori) || '-';
+                    const namaPicText = escapeHtml(merchant.nama_pic) || '-';
+                    const daerahCell = merchant.daerah
+                        ? escapeHtml(merchant.daerah)
+                        : '<span class="text-gray-400">-</span>';
+                    const detailRaw = merchant.detail_daerah || '';
+                    const detailCell = detailRaw
+                        ? `<span class="truncate block max-w-xs" title="${escapeHtml(detailRaw)}">${escapeHtml(truncateText(detailRaw, 30))}</span>`
+                        : '<span class="text-gray-400">-</span>';
+                    const latLongCell = merchant.lat && merchant.long
+                        ? `<span class="text-xs">${escapeHtml(merchant.lat)}, ${escapeHtml(merchant.long)}</span>`
+                        : '<span class="text-gray-400">-</span>';
+                    const waDigits = merchant.wa_pic ? merchant.wa_pic.replace(/[^0-9]/g, '') : '';
+                    const waCell = waDigits
+                        ? `<a href="https://wa.me/${waDigits}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline">
+                                ${escapeHtml(merchant.wa_pic)}
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const gmapCell = merchant.link_gmap
+                        ? `<a href="${escapeHtml(merchant.link_gmap)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-map-marker-alt text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const blanjapoinCode = extractBlanjapoinCode(merchant.link_blanjapoin);
+                    const dashboardCell = blanjapoinCode
+                        ? `<a href="${escapeHtml(`/dash/${encodeURIComponent(blanjapoinCode)}`)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-link text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const pelangganCell = blanjapoinCode
+                        ? `<a href="${escapeHtml(`/u/${encodeURIComponent(blanjapoinCode)}`)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-link text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const historyCell = blanjapoinCode
+                        ? `<a href="${escapeHtml(`/history/${encodeURIComponent(blanjapoinCode)}`)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-purple-600 hover:text-purple-800 hover:underline inline-flex items-center gap-1">
+                                <i class="fas fa-link text-xs"></i>
+                                <span class="truncate max-w-xs">Link</span>
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+                    const logoPath = merchant.logo_merchant ? `/storage/${encodeURI(merchant.logo_merchant)}` : '';
+                    const logoCell = logoPath
+                        ? `<a href="${escapeHtml(logoPath)}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
+                                <img src="${escapeHtml(logoPath)}"
+                                     alt="${escapeHtml(merchant.nama_merchant || '')}"
+                                     class="h-full w-full object-cover">
+                            </a>`
+                        : '<span class="text-gray-400">-</span>';
+
+                    return `
+                    <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${categoryAttrValue}"
                         onclick="window.location='/merchants/${merchant.id}'">
-                        <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${(pagination.current_page - 1) * pagination.per_page + index + 1}</td>
+                        <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${rowNumber}</td>
                         <td class="px-4 py-4 w-20 text-center">
                             <div class="flex items-center justify-center h-full">
                                 <button type="button"
-                                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
+                                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchantNameForDelete}', ${merchant.id})"
                                         class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
                                         title="Hapus">
                                     <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
                                 </button>
                             </div>
                         </td>
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.daerah}</td>
-                        <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">${merchant.nama_merchant}</td>
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.kategori || '-'}</td>
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">
-                            ${merchant.logo_merchant ? `
-                                <a href="/storage/${merchant.logo_merchant}" 
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
-                                    <img src="/storage/${merchant.logo_merchant}" 
-                                         alt="${merchant.nama_merchant}" 
-                                         class="h-full w-full object-cover">
-                                </a>
-                            ` : '<span class="text-gray-400">-</span>'}
-                        </td>
+                        <td class="px-4 py-4 text-center text-sm font-semibold text-gray-900">${merchantName}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${categoryText}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${namaPicText}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${waCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${daerahCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${detailCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${latLongCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${gmapCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${dashboardCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${pelangganCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">${historyCell}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700" >${logoCell}</td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
             }
         }
 
@@ -1072,13 +1248,28 @@ function searchPage(page) {
 
       
         const keywordSearchInput = document.getElementById('keywordSearch');
+        const keywordSearchClear = document.getElementById('keywordSearchClear');
         let keywordSearchTimeout;
         let currentKeywordQuery = new URL(window.location.href).searchParams.get('keyword_search') || '';
 
         if (keywordSearchInput && currentKeywordQuery) {
             keywordSearchInput.value = currentKeywordQuery;
             fetchKeywordTable(buildKeywordSearchRequestUrl());
+            if (keywordSearchClear) keywordSearchClear.classList.remove('hidden');
         }
+
+        keywordSearchClear?.addEventListener('click', () => {
+            if (!keywordSearchInput) return;
+            keywordSearchInput.value = '';
+            currentKeywordQuery = '';
+            if (keywordSearchTimeout) {
+                clearTimeout(keywordSearchTimeout);
+            }
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 10);
+            keywordSearchClear.classList.add('hidden');
+        });
 
         // Trigger search hanya saat Enter, tapi kalau input dikosongkan,
         // otomatis reset tabel tanpa perlu Enter lagi.
@@ -1101,6 +1292,9 @@ function searchPage(page) {
 
         keywordSearchInput?.addEventListener('input', (event) => {
             const value = event.target.value.trim();
+            if (keywordSearchClear) {
+                keywordSearchClear.classList.toggle('hidden', value.length === 0);
+            }
 
             // Kalau dikosongkan, langsung reset ke semua data
             if (value === '' && currentKeywordQuery !== '') {
@@ -1160,13 +1354,17 @@ function searchPage(page) {
             .then(data => {
                 if (data.html) {
                     // Ganti konten setelah animasi keluar selesai
-                    setTimeout(() => {
-                        container.innerHTML = data.html;
-                        attachKeywordPaginationHandlers();
-                        updateKeywordUrlState();
+                        setTimeout(() => {
+                            container.innerHTML = data.html;
+                            attachKeywordPaginationHandlers();
+                            updateKeywordUrlState();
+                            // Re-apply date filter if user set one before the table reload
+                            if (window.dateFilterState?.dateFilterKeyword && (window.dateFilterState.dateFilterKeyword.start || window.dateFilterState.dateFilterKeyword.end)) {
+                                applyDateFilterCompact('dateFilterKeyword');
+                            }
 
-                        // Trigger reflow sebelum animasi masuk
-                        void container.offsetWidth;
+                            // Trigger reflow sebelum animasi masuk
+                            void container.offsetWidth;
 
                         // Animasi masuk (fade + slide up)
                         container.style.opacity = '1';
@@ -1318,6 +1516,11 @@ function searchPage(page) {
                     }
                 }
             });
+
+            const dashboardMain = document.querySelector('main.dashboard-entrance');
+            if (dashboardMain) {
+                requestAnimationFrame(() => dashboardMain.classList.add('is-visible'));
+            }
         });
 
     </script>

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('iklans', function (Blueprint $table) {
             $table->id();
             $table->string('image_path');
+            $table->string('link_iklan')->nullable();
             $table->timestamps();
         });
     }
