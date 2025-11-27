@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Merchant;
 use App\Models\Keyword;
+use App\Models\Iklan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -293,9 +294,12 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $iklans = Iklan::latest()->get();
+
         return view('link-pelanggan', [
             'merchant' => $merchant,
             'keywords' => $keywords,
+            'iklans' => $iklans,
         ]);
     }
 
