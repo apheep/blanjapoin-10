@@ -16,6 +16,12 @@ use App\Models\Keyword;
 use App\Models\Merchant;
 use App\Models\Iklan;
 
+//route history all
+Route::get('/history-all', function () {
+    return view('history-all');
+});
+
+
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
     $keywords = Keyword::with('merchant')->get();
