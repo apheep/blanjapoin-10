@@ -10,12 +10,12 @@
                 <tr>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Daerah</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMap</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Blanjapoin</th>
@@ -47,9 +47,6 @@
                             </div>
                         </td>
 
-                        {{-- Daerah --}}
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->daerah }}</td>
-
                         {{-- Merchant --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">{{ $merchant->nama_merchant }}</td>
 
@@ -63,6 +60,7 @@
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->wa_pic)
                                 <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $merchant->wa_pic) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-blue-800 hover:underline">
@@ -72,6 +70,9 @@
                                 <span class="text-gray-400">-</span>
                             @endif
                         </td>
+
+                        {{-- Daerah --}}
+                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->daerah }}</td>
 
                         {{-- Detail Daerah --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
@@ -97,6 +98,7 @@
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->link_gmap)
                                 <a href="{{ $merchant->link_gmap }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
@@ -124,6 +126,7 @@
                             @endphp
                             @if($codeDashboard)
                                 <a href="{{ route('link.dashboard', $codeDashboard) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-orange-600 hover:text-orange-800 hover:underline inline-flex items-center gap-1">
@@ -151,6 +154,7 @@
                             @endphp
                             @if($codePelanggan)
                                 <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
@@ -178,7 +182,8 @@
                                 }
                             @endphp
                             @if($linkHistory)
-                                <a href="https://{{ $linkHistory }}" 
+                                <a href="{{ route('link.history', $codePelanggan) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="text-purple-600 hover:text-purple-800 hover:underline inline-flex items-center gap-1">
@@ -194,6 +199,7 @@
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->logo_merchant)
                                 <a href="{{ asset('storage/' . $merchant->logo_merchant) }}" 
+                                   onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
                                    class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
@@ -264,198 +270,184 @@
     @endif
 </div>
 <!-- ======================= MOBILE / CARD VIEW (DINAMIS) ======================= -->
-<div class="md:hidden space-y-3" id="merchant-cards-container">
-    @forelse($merchantPaginator as $merchant)
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row cursor-pointer" data-category="{{ $merchant->kategori ?? 'All' }}"
+<div class="md:hidden space-y-4" id="merchant-cards-container">
+    @forelse($merchants as $merchant)
+        @php
+            $codeDashboardMobile = null;
+            $codePelanggan = null;
+            $linkHistory = null;
+            if($merchant->link_blanjapoin) {
+                $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                $parts = explode('/', $link);
+                if(count($parts) >= 3 && $parts[1] === 'dash') {
+                    $codeDashboardMobile = end($parts);
+                    $codePelanggan = $codeDashboardMobile;
+                    $linkHistory = $parts[0] . '/history/' . $codeDashboardMobile;
+                }
+            }
+        @endphp
+
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden merchant-row cursor-pointer transition duration-200 hover:shadow-2xl"
+             data-category="{{ $merchant->kategori ?? 'All' }}"
              onclick="window.location='{{ route('merchants.show', $merchant->id) }}'">
-            {{-- Header dengan No dan Actions --}}
-            <div class="flex items-start justify-between pb-3 border-b border-gray-200">
+            <div class="px-4 py-3 bg-gradient-to-br from-[#FDF7F1] to-white border-b border-gray-100 flex items-center justify-between gap-3">
                 <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">No</p>
-                    <p class="text-sm font-medium text-gray-900 mt-1">{{ ($merchantPaginator->currentPage() - 1) * $merchantPaginator->perPage() + $loop->iteration }}</p>
+                    <p class="text-[10px] text-orange-700 uppercase tracking-wide">No</p>
+                    <p class="text-base font-semibold text-gray-900">{{ ($merchants->currentPage() - 1) * $merchants->perPage() + $loop->iteration }}</p>
                 </div>
-                <div class="flex items-center">
+                <button type="button"
+                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
+                        class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 transition-colors"
+                        title="Hapus">
+                    <i class="fas fa-trash text-base"></i>
+                </button>
+            </div>
+
+            <div class="px-4 py-4 space-y-3">
+                <div class="grid grid-cols-2 gap-3 text-sm text-gray-700">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Merchant</p>
+                        <p class="text-base font-semibold text-gray-900">{{ $merchant->nama_merchant }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Kategori</p>
+                        <p class="text-base text-gray-700">{{ $merchant->kategori ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Nama PIC</p>
+                        <p class="text-base text-gray-700">{{ $merchant->nama_pic ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Daerah</p>
+                        <p class="text-base text-gray-700">{{ $merchant->daerah ?? '-' }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Detail Merchant</span>
                     <button type="button"
-                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
-                            class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
-                            title="Hapus">
-                        <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
+                            id="merchant-detail-btn-{{ $merchant->id }}"
+                            onclick="event.stopPropagation(); toggleMerchantDetails({{ $merchant->id }})"
+                            class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D97706] rounded-full px-3 py-1.5 border border-[#D97706]/40 bg-white shadow-sm hover:bg-[#FDE68A]/50 transition">
+                        <i id="merchant-detail-icon-{{ $merchant->id }}" class="fas fa-chevron-down text-[11px] transition-transform duration-200"></i>
+                        <span id="merchant-detail-text-{{ $merchant->id }}">Lihat detail Merchant</span>
                     </button>
                 </div>
-            </div>
 
-            {{-- Daerah --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Daerah</p>
-                <p class="text-sm text-gray-700 mt-1">{{ $merchant->daerah }}</p>
-            </div>
+                <div id="merchant-details-{{ $merchant->id }}" class="hidden space-y-3 border border-gray-100 rounded-2xl bg-[#fafafc] p-3 text-sm text-gray-700">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">WA PIC</p>
+                        @if($merchant->wa_pic)
+                            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $merchant->wa_pic) }}"
+                               onclick="event.stopPropagation();"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-900">
+                                <i class="fab fa-whatsapp text-[11px]"></i>
+                                {{ $merchant->wa_pic }}
+                            </a>
+                        @else
+                            <p class="text-xs text-gray-400 mt-1">-</p>
+                        @endif
+                    </div>
 
-            {{-- Merchant --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Merchant</p>
-                <p class="text-sm font-semibold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</p>
-            </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Detail Alamat</p>
+                        <p class="text-xs text-gray-700 mt-1">{{ Str::limit($merchant->detail_daerah, 80, '...') ?? '-' }}</p>
+                    </div>
 
-            {{-- Kategori --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kategori</p>
-                <p class="text-sm text-gray-700 mt-1">{{ $merchant->kategori ?? '-' }}</p>
-            </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Koordinat</p>
+                            @if($merchant->lat && $merchant->long)
+                                <p class="text-xs text-gray-700 mt-1">{{ $merchant->lat }}, {{ $merchant->long }}</p>
+                            @else
+                                <p class="text-xs text-gray-400 mt-1">-</p>
+                            @endif
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link GMaps</p>
+                            @if($merchant->link_gmap)
+                                <a href="{{ $merchant->link_gmap }}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-map-marker-alt text-[11px]"></i>
+                                    Buka Peta
+                                </a>
+                            @else
+                                <p class="text-xs text-gray-400 mt-1">-</p>
+                            @endif
+                        </div>
+                    </div>
 
-            {{-- Nama PIC --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Nama PIC</p>
-                <p class="text-sm text-gray-700 mt-1">{{ $merchant->nama_pic ?? '-' }}</p>
-            </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link Blanjapoin</p>
+                            @if($codeDashboardMobile)
+                                <a href="{{ route('link.dashboard', $codeDashboardMobile) }}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-800">
+                                    <i class="fas fa-link text-[11px]"></i>
+                                    Buka Link
+                                </a>
+                            @else
+                                <p class="text-xs text-gray-400 mt-1">-</p>
+                            @endif
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link Pelanggan</p>
+                            @if($codePelanggan)
+                                <a href="{{ route('link.pelanggan', $codePelanggan) }}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-link text-[11px]"></i>
+                                    Buka Link
+                                </a>
+                            @else
+                                <p class="text-xs text-gray-400 mt-1">-</p>
+                            @endif
+                        </div>
+                    </div>
 
-            {{-- WA PIC --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">WA PIC</p>
-                @if($merchant->wa_pic)
-                    <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $merchant->wa_pic) }}" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-block">
-                        {{ $merchant->wa_pic }}
-                    </a>
-                @else
-                    <p class="text-sm text-gray-400 mt-1">-</p>
-                @endif
-            </div>
-
-            {{-- Detail Daerah --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Detail Daerah</p>
-                <p class="text-sm text-gray-700 mt-1">{{ $merchant->detail_daerah ?? '-' }}</p>
-            </div>
-
-            {{-- Lat/Long --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Koordinat</p>
-                @if($merchant->lat && $merchant->long)
-                    <p class="text-sm text-gray-700 mt-1">{{ $merchant->lat }}, {{ $merchant->long }}</p>
-                @else
-                    <p class="text-sm text-gray-400 mt-1">-</p>
-                @endif
-            </div>
-
-            {{-- Link Google Maps --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Google Maps</p>
-                @if($merchant->link_gmap)
-                    <a href="{{ $merchant->link_gmap }}" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
-                        <i class="fas fa-map-marker-alt text-xs"></i>
-                        <span class="truncate max-w-full">Buka Peta</span>
-                    </a>
-                @else
-                    <p class="text-sm text-gray-400 mt-1">-</p>
-                @endif
-            </div>
-
-            {{-- Link Blanjapoin (Dashboard) --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Blanjapoin</p>
-                @php
-                    $codeDashboardMobile = null;
-                    if($merchant->link_blanjapoin) {
-                        // Remove http:// or https:// if present
-                        $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
-                        // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
-                        $parts = explode('/', $link);
-                        if(count($parts) >= 3 && $parts[1] === 'dash') {
-                            $codeDashboardMobile = end($parts);
-                        }
-                    }
-                @endphp
-                @if($codeDashboardMobile)
-                    <a href="{{ route('link.dashboard', $codeDashboardMobile) }}" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       class="text-sm text-orange-600 hover:text-orange-800 hover:underline mt-1 inline-flex items-center gap-1">
-                        <i class="fas fa-link text-xs"></i>
-                        <span class="truncate max-w-full">Buka Link</span>
-                    </a>
-                @else
-                    <p class="text-sm text-gray-400 mt-1">-</p>
-                @endif
-            </div>
-
-            {{-- Link Pelanggan --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link Pelanggan</p>
-                @php
-                    $codePelanggan = null;
-                    if($merchant->link_blanjapoin) {
-                        // Remove http:// or https:// if present
-                        $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
-                        // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
-                        $parts = explode('/', $link);
-                        if(count($parts) >= 3 && $parts[1] === 'dash') {
-                            $codePelanggan = end($parts);
-                        }
-                    }
-                @endphp
-                @if($codePelanggan)
-                    <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       class="text-sm text-blue-600 hover:text-blue-800 hover:underline mt-1 inline-flex items-center gap-1">
-                        <i class="fas fa-link text-xs"></i>
-                        <span class="truncate max-w-full">Buka Link</span>
-                    </a>
-                @else
-                    <p class="text-sm text-gray-400 mt-1">-</p>
-                @endif
-            </div>
-
-            {{-- Link History --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Link History</p>
-                @php
-                    $linkHistory = null;
-                    if($merchant->link_blanjapoin) {
-                        // Remove http:// or https:// if present
-                        $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
-                        // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
-                        $parts = explode('/', $link);
-                        if(count($parts) >= 3 && $parts[1] === 'dash') {
-                            $code = end($parts);
-                            $linkHistory = $parts[0] . '/history/' . $code;
-                        }
-                    }
-                @endphp
-                @if($linkHistory)
-                    <a href="https://{{ $linkHistory }}" 
-                       target="_blank" 
-                       rel="noopener noreferrer"
-                       class="text-sm text-purple-600 hover:text-purple-800 hover:underline mt-1 inline-flex items-center gap-1">
-                        <i class="fas fa-link text-xs"></i>
-                        <span class="truncate max-w-full">Buka Link</span>
-                    </a>
-                @else
-                    <p class="text-sm text-gray-400 mt-1">-</p>
-                @endif
-            </div>
-
-            {{-- Logo Merchant --}}
-            <div>
-                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Logo Merchant</p>
-                <div class="mt-2 flex items-center space-x-2">
-                    @if($merchant->logo_merchant)
-                        <button type="button" 
-                                onclick="previewMerchantLogo('{{ asset('storage/' . $merchant->logo_merchant) }}', '{{ basename($merchant->logo_merchant) }}')"
-                                class="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
-                            <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" 
-                                 alt="{{ $merchant->nama_merchant }}" 
-                                 class="h-full w-full object-cover">
-                        </button>
-                        <span class="text-sm text-gray-700 font-medium">{{ $merchant->nama_merchant }}</span>
-                    @else
-                        <span class="text-sm text-gray-400">-</span>
-                    @endif
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link History</p>
+                            @if($linkHistory)
+                                <a href="https://{{ $linkHistory }}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800">
+                                    <i class="fas fa-link text-[11px]"></i>
+                                    Buka Link
+                                </a>
+                            @else
+                                <p class="text-xs text-gray-400 mt-1">-</p>
+                            @endif
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Logo</p>
+                            @if($merchant->logo_merchant)
+                                <a href="{{ asset('storage/' . $merchant->logo_merchant) }}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="mt-1 inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors">
+                                    <img src="{{ asset('storage/' . $merchant->logo_merchant) }}"
+                                         alt="{{ $merchant->nama_merchant }}"
+                                         class="h-full w-full object-cover">
+                                </a>
+                            @else
+                                <span class="text-xs text-gray-400 mt-1 inline-block">-</span>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -510,3 +502,18 @@
     @endif
 </div>
 
+<script>
+    function toggleMerchantDetails(id) {
+        const details = document.getElementById(`merchant-details-${id}`);
+        const text = document.getElementById(`merchant-detail-text-${id}`);
+        const icon = document.getElementById(`merchant-detail-icon-${id}`);
+        if (!details) return;
+        const isHidden = details.classList.toggle('hidden');
+            if (text) {
+                text.textContent = isHidden ? 'Lihat detail Merchant' : 'Tutup detail Merchant';
+            }
+        if (icon) {
+            icon.classList.toggle('rotate-180', !isHidden);
+        }
+    }
+</script>

@@ -8,7 +8,9 @@
       <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       @if(Auth::check() && Auth::user()->can_approve == 1) 
         <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>       @endif
+        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>      
+        <a href="{{ route('iklan.index') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Iklan</a>      
+         @endif
       </div>
 
        <div class="relative">
@@ -78,6 +80,10 @@
         <a href="{{ route('user.management') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="fa-solid fa-users w-5 text-gray-500"></i>
           <span class="font-medium">User Management</span>
+        </a>
+        <a href="{{ route('iklan.index') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-image w-5 text-gray-500"></i>
+          <span class="font-medium">Iklan</span>
         </a>
       @endif
     </div>

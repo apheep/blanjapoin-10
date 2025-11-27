@@ -30,8 +30,37 @@
     </div>
    </nav>
 
-  <div class="mx-auto max-w-[1120px]">
-   <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+ <div class="mx-auto max-w-[1120px]">
+  <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+   @php
+    $bannerItems = collect($iklans ?? [])
+        ->map(function ($iklan) {
+            $imagePath = $iklan?->image_path;
+            if (!$imagePath) {
+                return null;
+            }
+
+            $link = trim((string) ($iklan->link_iklan ?? ''));
+
+            return [
+                'image' => '/storage/' . ltrim($imagePath, '/'),
+                'link' => $link !== '' ? $link : null,
+            ];
+        })
+        ->filter()
+        ->values();
+
+    if ($bannerItems->isEmpty()) {
+        $bannerItems = collect([
+            [
+                'image' => '/logo.png',
+                'link' => null,
+            ],
+        ]);
+    }
+
+    $activeBannerSrc = data_get($bannerItems->first(), 'image', '/logo.png');
+   @endphp
     <section class="mt-1 md:mt-1 opacity-0 translate-y-8 transition-all duration-700 ease-out" id="bannerSection">
      <div class="relative group">
       <!-- Navigation Arrows -->
@@ -44,28 +73,33 @@
       </button>
       
       <div class="relative h-56 sm:h-64 md:h-80 lg:h-96 rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl md:shadow-3xl shadow-neutral-400/20 drop-shadow-2xl md:drop-shadow-3xl ring-1 ring-white/20 transition-all duration-300 hover:shadow-3xl hover:scale-[1.02]">
+      <a id="bannerLink" href="{{ route('home') }}" target="_self" class="block h-full w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400" aria-label="Buka banner">
 
       <!-- Background Image -->
       <img id="bannerImage"
-          src="{{ asset('storage/iklan/iklan1.jpeg') }}"
+          src="{{ $activeBannerSrc }}"
           alt="Banner Promo"
           class="w-full h-full object-cover transition-all duration-700 rounded-3xl md:rounded-[2.5rem]"
           loading="lazy">
+      </a>
 
       <!-- Gradient Overlay 1 -->
-      <div class="absolute inset-0 bg-gradient-to-br from-black/20 via-black/10 to-transparent rounded-3xl md:rounded-[2.5rem]"></div>
+      <div class="absolute inset-0 bg-gradient-to-br from-black/20 via-black/10 to-transparent rounded-3xl md:rounded-[2.5rem] pointer-events-none"></div>
 
       <!-- Gradient Overlay 2 -->
-      <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent rounded-3xl md:rounded-[2.5rem]"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent rounded-3xl md:rounded-[2.5rem] pointer-events-none"></div>
 
       </div>
 
       
       <!-- Carousel Dots -->
       <div class="mt-2 md:mt-3/2 flex items-center justify-center gap-3 md:gap-3">
-       <span onclick="goToSlide(0)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
-       <span onclick="goToSlide(1)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
-       <span onclick="goToSlide(2)" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>
+       @php
+        $dotsHtml = $bannerItems->map(function ($item, $index) {
+            return '<span onclick="goToSlide(' . $index . ')" class="carousel-dot h-3 w-3 md:h-3 md:w-3 rounded-full bg-neutral-300 transition-all hover:scale-125 cursor-pointer hover:bg-orange-400 shadow-lg"></span>';
+        })->implode('');
+       @endphp
+       {!! $dotsHtml !!}
       </div>
      </div>
     </section>
@@ -371,90 +405,139 @@
     });
    });
 
-   // Carousel configuration
-   const slides = [
-    '{{ asset("storage/iklan/iklan1.jpeg") }}',
-    '{{ asset("storage/iklan/iklan2.jpeg") }}',
-    '{{ asset("storage/iklan/iklan3.jpeg") }}'
-   ];
-   
-   let currentSlide = 0;
-   let autoSlideInterval;
-   
-   // Get elements
-   const bannerImage = document.getElementById('bannerImage');
-   const dots = document.querySelectorAll('.carousel-dot');
-   
-   // Update slide
-   function updateSlide(index) {
-    currentSlide = index;
+  // Carousel configuration
+  const slides = <?php echo $bannerItems->values()->toJson(); ?>;
+  const defaultLink = <?php echo json_encode(route('home')); ?>;
+  
+  let currentSlide = 0;
+  let autoSlideInterval;
+  
+  // Get elements
+ const bannerImage = document.getElementById('bannerImage');
+ const bannerLink = document.getElementById('bannerLink');
+ const dots = document.querySelectorAll('.carousel-dot');
+ const carouselSection = document.getElementById('bannerSection');
+ 
+ // Update slide
+ function updateSlide(index) {
+  if (!slides.length || !bannerImage) {
+   return;
+  }
+
+   currentSlide = index;
+   const slide = slides[currentSlide];
+   if (!slide) {
+    return;
+   }
+
+   const slideImage = slide.image ?? '';
+   const slideLinkValue = slide.link ?? '';
+   const normalizedLink = typeof slideLinkValue === 'string' ? slideLinkValue.trim() : '';
+   const hasLink = normalizedLink.length > 0;
+
+   if (bannerLink) {
+    bannerLink.href = hasLink ? normalizedLink : defaultLink;
+    if (hasLink) {
+     bannerLink.setAttribute('target', '_blank');
+     bannerLink.setAttribute('rel', 'noopener noreferrer');
+    } else {
+     bannerLink.setAttribute('target', '_self');
+     bannerLink.removeAttribute('rel');
+    }
+   }
+
+   // Fade effect
+   bannerImage.style.opacity = '0';
+
+   setTimeout(() => {
+    if (slideImage) {
+     bannerImage.src = slideImage;
+    }
+    bannerImage.style.opacity = '1';
+   }, 250);
     
-    // Fade effect
-    bannerImage.style.opacity = '0';
-    
-    setTimeout(() => {
-     bannerImage.src = slides[currentSlide];
-     bannerImage.style.opacity = '1';
-    }, 250);
-    
-    // Update dots
-    dots.forEach((dot, i) => {
-     if (i === currentSlide) {
-      dot.classList.remove('bg-neutral-300', 'w-2', 'md:w-2.5');
-      dot.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-rose-500', 'w-8', 'md:w-10', 'shadow-md');
-     } else {
-      dot.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-rose-500', 'w-8', 'md:w-10', 'shadow-md');
-      dot.classList.add('bg-neutral-300', 'w-2', 'md:w-2.5');
-     }
-    });
+   // Update dots
+   dots.forEach((dot, i) => {
+    if (i === currentSlide) {
+     dot.classList.remove('bg-neutral-300', 'w-2', 'md:w-2.5');
+     dot.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-rose-500', 'w-8', 'md:w-10', 'shadow-md');
+    } else {
+     dot.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-rose-500', 'w-8', 'md:w-10', 'shadow-md');
+     dot.classList.add('bg-neutral-300', 'w-2', 'md:w-2.5');
+    }
+   });
+  }
+  
+  // Next slide
+  function nextSlide() {
+   if (!slides.length) {
+    return;
    }
-   
-   // Next slide
-   function nextSlide() {
-    currentSlide = (currentSlide + 1) % slides.length;
-    updateSlide(currentSlide);
-    resetAutoSlide();
+
+   currentSlide = (currentSlide + 1) % slides.length;
+   updateSlide(currentSlide);
+   resetAutoSlide();
+  }
+  
+  // Previous slide
+  function prevSlide() {
+   if (!slides.length) {
+    return;
    }
-   
-   // Previous slide
-   function prevSlide() {
-    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-    updateSlide(currentSlide);
-    resetAutoSlide();
+
+   currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+   updateSlide(currentSlide);
+   resetAutoSlide();
+  }
+  
+  // Go to specific slide
+  function goToSlide(index) {
+   if (!slides.length) {
+    return;
    }
-   
-   // Go to specific slide
-   function goToSlide(index) {
-    updateSlide(index);
-    resetAutoSlide();
+
+   const normalizedIndex = Math.max(0, Math.min(index, slides.length - 1));
+   updateSlide(normalizedIndex);
+   resetAutoSlide();
+  }
+  
+  // Auto slide
+  function startAutoSlide() {
+   if (slides.length < 2) {
+    return;
    }
-   
-   // Auto slide
-   function startAutoSlide() {
-    autoSlideInterval = setInterval(() => {
-     nextSlide();
-    }, 2000); // Change slide every 5 seconds
+
+   autoSlideInterval = setInterval(() => {
+    nextSlide();
+   }, 5000); // Change slide every 5 seconds
+  }
+  
+  // Reset auto slide
+  function resetAutoSlide() {
+   if (slides.length < 2) {
+    return;
    }
-   
-   // Reset auto slide
-   function resetAutoSlide() {
-    clearInterval(autoSlideInterval);
-    startAutoSlide();
-   }
-   
-   // Initialize
-   updateSlide(0);
+
+   clearInterval(autoSlideInterval);
    startAutoSlide();
-   
-   // Pause on hover
-   const carouselSection = document.querySelector('section');
-   carouselSection.addEventListener('mouseenter', () => {
-    clearInterval(autoSlideInterval);
-   });
-   
-   carouselSection.addEventListener('mouseleave', () => {
-    startAutoSlide();
-   });
+  }
+  
+  // Initialize
+  updateSlide(0);
+  if (slides.length > 1) {
+   startAutoSlide();
+  }
+  
+  // Pause on hover
+ if (carouselSection && slides.length > 1) {
+  carouselSection.addEventListener('mouseenter', () => {
+   clearInterval(autoSlideInterval);
+  });
+  
+  carouselSection.addEventListener('mouseleave', () => {
+   startAutoSlide();
+  });
+ }
 
    // Toggle Shop Cards
    let shopCardsExpanded = false;
@@ -785,7 +868,7 @@
    });
 
    // Location searchable select (combobox)
-   const serverLocations = @json($locationList);
+  const serverLocations = <?php echo $locationList->toJson(); ?>;
    const locations = ['All', ...serverLocations];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');

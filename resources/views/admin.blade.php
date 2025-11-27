@@ -40,6 +40,32 @@
             to {
                 opacity: 1;
             }
+        /* Hide horizontal scrollbar on keyword desktop table but keep scrollability */
+        .keyword-table-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .keyword-table-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .dashboard-entrance {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 360ms ease-out, transform 360ms ease-out;
+        }
+        .dashboard-entrance.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .dashboard-entrance button,
+        .dashboard-entrance a,
+        .dashboard-entrance input,
+        .dashboard-entrance select {
+            transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+        }
+        .dashboard-entrance button:active,
+        .dashboard-entrance a:active {
+            transform: translateY(1px);
         }
     </style>
 
@@ -56,7 +82,7 @@
         <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
     @endif
 @include('partials.navbar-admin')
-        <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+        <main class="dashboard-entrance max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
             @php
                 $tabParam = request()->get('tab', 'merchant');
                 // Normalize: if tab is not 'keyword', default to 'merchant'
@@ -225,7 +251,11 @@
                     rows.forEach((row, index) => {
                         const s = (row.dataset.status || '').toLowerCase();
                         const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        const shouldShow = (status === 'all' || normalized === status);
+                        const matchesStatus = (status === 'all' || normalized === status);
+                        const matchesDate = (row.dataset.dateFilterMatch ?? 'true') !== 'false';
+                        const shouldShow = matchesStatus && matchesDate;
+
+                        row.dataset.statusHidden = matchesStatus ? 'false' : 'true';
                         
                         if (shouldShow) {
                             row.style.opacity = '0';
@@ -250,7 +280,11 @@
                     cards.forEach((card, index) => {
                         const s = (card.dataset.status || '').toLowerCase();
                         const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        const shouldShow = (status === 'all' || normalized === status);
+                        const matchesStatus = (status === 'all' || normalized === status);
+                        const matchesDate = (card.dataset.dateFilterMatch ?? 'true') !== 'false';
+                        const shouldShow = matchesStatus && matchesDate;
+
+                        card.dataset.statusHidden = matchesStatus ? 'false' : 'true';
                         
                         if (shouldShow) {
                             card.style.opacity = '0';
@@ -753,10 +787,13 @@
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
+                            <button type="button" id="keywordSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                                &times;
+                            </button>
                         </div>
                         
                         @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
@@ -808,10 +845,13 @@
                     
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" id="merchantSearch" placeholder="Search merchant..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="merchantSearch" placeholder="Search merchant..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
+                            <button type="button" id="merchantSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                                &times;
+                            </button>
                         </div>
                         
                     </div>
@@ -974,13 +1014,28 @@
         // Keyword search & pagination (AJAX across all pages)
         ////////////////////////////////////////////////////////////////////
         const keywordSearchInput = document.getElementById('keywordSearch');
+        const keywordSearchClear = document.getElementById('keywordSearchClear');
         let keywordSearchTimeout;
         let currentKeywordQuery = new URL(window.location.href).searchParams.get('keyword_search') || '';
 
         if (keywordSearchInput && currentKeywordQuery) {
             keywordSearchInput.value = currentKeywordQuery;
             fetchKeywordTable(buildKeywordSearchRequestUrl());
+            if (keywordSearchClear) keywordSearchClear.classList.remove('hidden');
         }
+
+        keywordSearchClear?.addEventListener('click', () => {
+            if (!keywordSearchInput) return;
+            keywordSearchInput.value = '';
+            currentKeywordQuery = '';
+            if (keywordSearchTimeout) {
+                clearTimeout(keywordSearchTimeout);
+            }
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 10);
+            keywordSearchClear.classList.add('hidden');
+        });
 
         // Trigger search hanya saat Enter, tapi kalau input dikosongkan,
         // otomatis reset tabel tanpa perlu Enter lagi.
@@ -1003,6 +1058,9 @@
 
         keywordSearchInput?.addEventListener('input', (event) => {
             const value = event.target.value.trim();
+            if (keywordSearchClear) {
+                keywordSearchClear.classList.toggle('hidden', value.length === 0);
+            }
 
             // Kalau dikosongkan, langsung reset ke semua data
             if (value === '' && currentKeywordQuery !== '') {
@@ -1062,13 +1120,17 @@
             .then(data => {
                 if (data.html) {
                     // Ganti konten setelah animasi keluar selesai
-                    setTimeout(() => {
-                        container.innerHTML = data.html;
-                        attachKeywordPaginationHandlers();
-                        updateKeywordUrlState();
+                        setTimeout(() => {
+                            container.innerHTML = data.html;
+                            attachKeywordPaginationHandlers();
+                            updateKeywordUrlState();
+                            // Re-apply date filter if user set one before the table reload
+                            if (window.dateFilterState?.dateFilterKeyword && (window.dateFilterState.dateFilterKeyword.start || window.dateFilterState.dateFilterKeyword.end)) {
+                                applyDateFilterCompact('dateFilterKeyword');
+                            }
 
-                        // Trigger reflow sebelum animasi masuk
-                        void container.offsetWidth;
+                            // Trigger reflow sebelum animasi masuk
+                            void container.offsetWidth;
 
                         // Animasi masuk (fade + slide up)
                         container.style.opacity = '1';
@@ -1220,6 +1282,11 @@
                     }
                 }
             });
+
+            const dashboardMain = document.querySelector('main.dashboard-entrance');
+            if (dashboardMain) {
+                requestAnimationFrame(() => dashboardMain.classList.add('is-visible'));
+            }
         });
 
     </script>

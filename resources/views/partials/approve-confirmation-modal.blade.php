@@ -35,7 +35,7 @@
             <button onclick="closeApproveVerificationModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Batal
             </button>
-            <button onclick="confirmApprove()" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
+            <button onclick="confirmApprove()" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300">
                 <i class="fas fa-check-circle mr-2"></i>
                 Ya, Approve
             </button>
@@ -77,7 +77,7 @@
         
         <!-- Modal Footer -->
         <div class="flex items-center justify-center px-6 py-4 bg-gray-50 rounded-b-2xl">
-            <button onclick="closeApproveSuccessModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
+            <button onclick="closeApproveSuccessModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300">
                 <i class="fas fa-check mr-2"></i>
                 OK
             </button>
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
             <button onclick="closeRejectVerificationModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Batal</button>
-            <button onclick="confirmReject()" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-lg hover:shadow-lg transition-all duration-300"><i class="fas fa-times mr-2"></i>Ya, Reject</button>
+            <button onclick="confirmReject()" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300"><i class="fas fa-times mr-2"></i>Ya, Reject</button>
         </div>
     </div>
     </div>
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
         <div class="flex items-center justify-center px-6 py-4 bg-gray-50 rounded-b-2xl">
-            <button onclick="closeRejectSuccessModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-lg hover:shadow-lg transition-all duration-300"><i class="fas fa-check mr-2"></i>OK</button>
+            <button onclick="closeRejectSuccessModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300"><i class="fas fa-check mr-2"></i>OK</button>
         </div>
     </div>
     </div>
