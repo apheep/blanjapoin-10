@@ -1,15 +1,11 @@
-@php
-    $merchantPaginator = $merchants->appends(array_merge(request()->query(), ['tab' => 'merchant']));
-@endphp
-
-<!-- ======================= DESKTOP / TABLE VIEW (DINAMIS) ======================= -->
-<div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
+<div class="bg-white rounded-xl shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Quick Access</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
@@ -26,9 +22,8 @@
             </thead>
 
             <tbody class="bg-white divide-y divide-gray-200" id="merchant-table-body">
-                @forelse($merchantPaginator as $merchant)
-                    <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="{{ $merchant->kategori ?? 'All' }}"
-                        onclick="window.location='{{ route('merchants.show', $merchant->id) }}'">
+                @forelse($merchants as $merchant)
+                    <tr class="hover:bg-gray-50 transition-colors merchant-row bg-white" data-category="{{ $merchant->kategori ?? 'All' }}">
 
                         {{-- No --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">
@@ -44,6 +39,32 @@
                                         title="Hapus">
                                     <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
                                 </button>
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-4 w-32 text-center">
+                            <div class="relative inline-flex justify-center merchant-quick-wrapper">
+                                <button type="button" onclick="toggleMerchantQuickMenu(event, {{ $merchant->id }})"
+                                        class="view-trigger inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold text-white bg-gradient-to-r from-[#F81611] via-[#F97316] to-[#F0B100] shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F0B100] transition duration-200 ease-out">
+                                    <i class="fas fa-eye"></i>
+                                    <span class="text-[11px]">View</span>
+                                    <i class="fas fa-chevron-down view-trigger-chevron text-[10px]"></i>
+                                </button>
+                                <div id="merchant-quick-menu-{{ $merchant->id }}"
+                                     class="merchant-quick-menu hidden absolute left-1/2 top-full mt-2 w-44 -translate-x-1/2 bg-white border border-gray-200 rounded-2xl py-1 z-50 opacity-0 -translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out">
+                                    <a href="{{ route('merchants.show', $merchant->id) }}"
+                                       onclick="event.stopPropagation();"
+                                       class="merchant-quick-option flex items-center gap-2 px-4 py-2 text-[12px] font-semibold text-gray-700">
+                                        <i class="fas fa-clipboard-list text-[12px] text-gray-500"></i>
+                                        Keyword
+                                    </a>
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); handleTransactionHistoryClick(event, {{ json_encode($merchant->nama_merchant) }});"
+                                            class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-700 text-left">
+                                        <i class="fas fa-clock text-[12px] text-gray-500"></i>
+                                        Transaction History
+                                    </button>
+                                </div>
                             </div>
                         </td>
 
@@ -268,9 +289,8 @@
         </div>
     </div>
     @endif
-</div>
-<!-- ======================= MOBILE / CARD VIEW (DINAMIS) ======================= -->
-<div class="md:hidden space-y-4" id="merchant-cards-container">
+</div><!-- ======================= MOBILE / CARD VIEW (DINAMIS) ======================= -->
+<div class="hidden space-y-4" id="merchant-cards-container">
     @forelse($merchants as $merchant)
         @php
             $codeDashboardMobile = null;
@@ -287,9 +307,8 @@
             }
         @endphp
 
-        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden merchant-row cursor-pointer transition duration-200 hover:shadow-2xl"
-             data-category="{{ $merchant->kategori ?? 'All' }}"
-             onclick="window.location='{{ route('merchants.show', $merchant->id) }}'">
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden merchant-row transition duration-200 hover:shadow-2xl"
+             data-category="{{ $merchant->kategori ?? 'All' }}">
             <div class="px-4 py-3 bg-gradient-to-br from-[#FDF7F1] to-white border-b border-gray-100 flex items-center justify-between gap-3">
                 <div>
                     <p class="text-[10px] text-orange-700 uppercase tracking-wide">No</p>
@@ -323,15 +342,39 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-3">
                     <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Detail Merchant</span>
                     <button type="button"
-                            id="merchant-detail-btn-{{ $merchant->id }}"
-                            onclick="event.stopPropagation(); toggleMerchantDetails({{ $merchant->id }})"
                             class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D97706] rounded-full px-3 py-1.5 border border-[#D97706]/40 bg-white shadow-sm hover:bg-[#FDE68A]/50 transition">
-                        <i id="merchant-detail-icon-{{ $merchant->id }}" class="fas fa-chevron-down text-[11px] transition-transform duration-200"></i>
-                        <span id="merchant-detail-text-{{ $merchant->id }}">Lihat detail Merchant</span>
+                        <i class="fas fa-chevron-down text-[11px] transition-transform duration-200"></i>
+                        <span>Lihat detail Merchant</span>
                     </button>
+                </div>
+                <div class="flex justify-end mt-2">
+                    <div class="relative inline-flex merchant-quick-wrapper">
+                        <button type="button"
+                                onclick="toggleMerchantQuickMenu(event, 'mobile-{{ $merchant->id }}')"
+                                class="view-trigger inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold text-white bg-gradient-to-r from-[#F81611] via-[#F97316] to-[#F0B100] shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F0B100] transition duration-200 ease-out">
+                            <i class="fas fa-eye"></i>
+                            <span class="text-[11px]">View</span>
+                            <i class="fas fa-chevron-down view-trigger-chevron text-[10px]"></i>
+                        </button>
+                        <div id="merchant-quick-menu-mobile-{{ $merchant->id }}"
+                             class="merchant-quick-menu hidden absolute left-1/2 top-full mt-2 w-44 -translate-x-1/2 bg-white border border-gray-200 rounded-2xl py-1 z-50 opacity-0 -translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out">
+                            <a href="{{ route('merchants.show', $merchant->id) }}"
+                               onclick="event.stopPropagation();"
+                               class="merchant-quick-option flex items-center gap-2 px-4 py-2 text-[12px] font-semibold text-gray-700">
+                                <i class="fas fa-clipboard-list text-[12px] text-gray-500"></i>
+                                Keyword
+                            </a>
+                            <button type="button"
+                                    onclick="event.stopPropagation(); handleTransactionHistoryClick(event, {{ json_encode($merchant->nama_merchant) }});"
+                                    class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-700 text-left">
+                                <i class="fas fa-clock text-[12px] text-gray-500"></i>
+                                Transaction History
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="merchant-details-{{ $merchant->id }}" class="hidden space-y-3 border border-gray-100 rounded-2xl bg-[#fafafc] p-3 text-sm text-gray-700">
@@ -501,19 +544,69 @@
     </div>
     @endif
 </div>
-
 <script>
-    function toggleMerchantDetails(id) {
-        const details = document.getElementById(`merchant-details-${id}`);
-        const text = document.getElementById(`merchant-detail-text-${id}`);
-        const icon = document.getElementById(`merchant-detail-icon-${id}`);
-        if (!details) return;
-        const isHidden = details.classList.toggle('hidden');
-            if (text) {
-                text.textContent = isHidden ? 'Lihat detail Merchant' : 'Tutup detail Merchant';
-            }
-        if (icon) {
-            icon.classList.toggle('rotate-180', !isHidden);
+    const MENU_ANIMATION_DELAY = 200;
+
+    function toggleMerchantQuickMenu(event, identifier) {
+        event.stopPropagation();
+        const menu = document.getElementById(`merchant-quick-menu-${identifier}`);
+        if (!menu) return;
+        const isOpen = menu.classList.contains('quick-menu-open');
+        closeAllQuickMenus();
+        if (!isOpen) {
+            openQuickMenu(menu);
         }
     }
+
+    function openQuickMenu(menu) {
+        menu.classList.remove('hidden');
+        requestAnimationFrame(() => setMenuState(menu, true));
+    }
+
+    function closeQuickMenu(menu) {
+        if (!menu.classList.contains('quick-menu-open')) {
+            return;
+        }
+        setMenuState(menu, false);
+        setTimeout(() => {
+            if (!menu.classList.contains('quick-menu-open')) {
+                menu.classList.add('hidden');
+            }
+        }, MENU_ANIMATION_DELAY);
+    }
+
+    function setMenuState(menu, isOpen) {
+        menu.classList.toggle('opacity-100', isOpen);
+        menu.classList.toggle('opacity-0', !isOpen);
+        menu.classList.toggle('translate-y-0', isOpen);
+        menu.classList.toggle('-translate-y-1', !isOpen);
+        menu.classList.toggle('scale-100', isOpen);
+        menu.classList.toggle('scale-95', !isOpen);
+        menu.classList.toggle('pointer-events-auto', isOpen);
+        menu.classList.toggle('pointer-events-none', !isOpen);
+        menu.classList.toggle('quick-menu-open', isOpen);
+
+        const wrapper = menu.closest('.merchant-quick-wrapper');
+        const arrow = wrapper?.querySelector('.view-trigger-chevron');
+        if (arrow) {
+            arrow.classList.toggle('rotate-180', isOpen);
+        }
+    }
+
+    function closeAllQuickMenus() {
+        document.querySelectorAll('.merchant-quick-menu').forEach(menu => closeQuickMenu(menu));
+    }
+
+    function handleTransactionHistoryClick(event, merchantName) {
+        event.stopPropagation();
+        alert(`Transaction history for ${merchantName} is not linked yet.`);
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.merchant-quick-wrapper')) {
+            closeAllQuickMenus();
+        }
+    });
 </script>
+
+
