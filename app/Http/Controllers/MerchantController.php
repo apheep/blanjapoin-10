@@ -225,33 +225,38 @@ class MerchantController extends Controller
 
     public function search(Request $request)
     {
-        $searchTerm = $request->input('q', '');
+        $searchTerm = trim($request->input('q', ''));
         $page = $request->input('page', 1);
         
-        $merchants = Merchant::where('nama_merchant', 'like', "%{$searchTerm}%")
-                    ->orWhere('daerah', 'like', "%{$searchTerm}%")
-                    ->orWhere('kategori', 'like', "%{$searchTerm}%")
-                    ->orderBy('id')
-                    ->paginate(15, ['*'], 'page', $page);
+        $merchantsQuery = Merchant::query();
         
-        if ($request->wantsJson()) {
+        // Hanya filter jika search term tidak kosong
+        if ($searchTerm !== '') {
+            $merchantsQuery->where(function ($query) use ($searchTerm) {
+                $query->where('nama_merchant', 'like', "%{$searchTerm}%")
+                    ->orWhere('daerah', 'like', "%{$searchTerm}%")
+                      ->orWhere('kategori', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        $merchants = $merchantsQuery
+            ->orderBy('id')
+            ->paginate(10, ['*'], 'page', $page)
+            ->appends($request->query());
+        
+        if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'merchants' => $merchants->items(),
-                'pagination' => [
-                    'current_page' => $merchants->currentPage(),
-                    'last_page' => $merchants->lastPage(),
-                    'per_page' => $merchants->perPage(),
-                    'total' => $merchants->total(),
-                    'from' => $merchants->firstItem(),
-                    'to' => $merchants->lastItem(),
-                    'has_more_pages' => $merchants->hasMorePages(),
-                    'next_page_url' => $merchants->nextPageUrl(),
-                    'prev_page_url' => $merchants->previousPageUrl(),
-                ]
+                'html' => view('partials.table-merchant', [
+                    'merchants' => $merchants
+                ])->render(),
             ]);
         }
         
-        return view('admin', compact('merchants'));
+        // Untuk non-AJAX request (seperti pagination link), perlu semua variable yang diperlukan view admin
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        $allMerchants = Merchant::orderBy('nama_merchant')->get();
+        
+        return view('admin', compact('merchants', 'keywords', 'allMerchants'));
     }
 
     /**
