@@ -24,6 +24,8 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SKB</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">TRX</th> 
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sisa Stock</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Periode</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Image</th>
                 </tr>
@@ -110,6 +112,12 @@
                         <td class="px-4 py-4">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
                         </td>
+                        <td class="px-4 py-4 text-sm text-gray-900">
+                            <div class="font-medium">{{ $keyword->trx ?? '-' }}</div>
+                        </td>
+                        <td class="px-4 py-4">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ $keyword->sisa_stock ?? 0 }}</span>
+                        </td>
                         <td class="px-4 py-4 text-xs text-gray-500">
                             @if($keyword->start_date || $keyword->end_date)
                                 <div>{{ $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d/m/Y') : '-' }}</div>
@@ -135,14 +143,14 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="13" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="15" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data keyword.
                         </td>
                     </tr>
                 @endforelse
 
                 <tr id="keyword-filter-empty-row" class="hidden">
-                    <td colspan="13" class="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colspan="15" class="px-4 py-6 text-center text-sm text-gray-500">
                         Tidak ada keyword pada rentang tanggal yang dipilih.
                     </td>
                 </tr>
@@ -251,6 +259,28 @@
                 <div class="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
                     <p class="text-[11px] text-blue-600 font-medium mb-1 uppercase tracking-wide">Stock</p>
                     <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-blue-600 text-white">{{ $keyword->stock }}</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-purple-50 rounded-lg p-2.5 border border-purple-100">
+                    <p class="text-[11px] text-purple-600 font-medium mb-1 uppercase tracking-wide">TRX</p>
+                    <p class="text-xs font-bold text-purple-900">{{ $keyword->trx ?? 0 }}</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-2.5 border border-green-100">
+                    <p class="text-[11px] text-green-600 font-medium mb-1 uppercase tracking-wide">Sisa Stock</p>
+                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-green-600 text-white">{{ $keyword->sisa_stock ?? 0 }}</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-white rounded-lg p-2.5 border border-gray-100">
+                    <p class="text-[11px] text-gray-500 font-medium mb-1 uppercase tracking-wide">TRX</p>
+                    <p class="text-xs font-bold text-gray-900">{{ $keyword->trx ?? 0 }}</p>
+                </div>
+                <div class="bg-white rounded-lg p-2.5 border border-gray-100">
+                    <p class="text-[11px] text-gray-500 font-medium mb-1 uppercase tracking-wide">Sisa Stock</p>
+                    <p class="text-xs font-bold text-gray-900">{{ $keyword->sisa_stock ?? '-' }}</p>
                 </div>
             </div>
 

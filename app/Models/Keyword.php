@@ -23,6 +23,8 @@ class Keyword extends Model
         'end_date',
         'image',
         'stock',
+        'rtx',
+        'sisa_stock',
         'status',
     ];
 
