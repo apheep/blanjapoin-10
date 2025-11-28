@@ -217,8 +217,7 @@
         }
     </script>
 </body>
-</html>
-<style>
+</html><style>
     /* Mobile-friendly stack for dashboard table */
     @media (max-width: 640px) {
         .responsive-dashboard-table thead {
@@ -266,3 +265,4 @@
         }
     }
 </style>
+

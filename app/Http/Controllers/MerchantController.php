@@ -360,8 +360,8 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-       // Generate link history
-        $linkHistory = route('link.history', $decodedCode);
+        // Generate link history
+        $linkHistory = route('link.history.all', $decodedCode);
         $linkHistoryFull = url($linkHistory);
 
         return view('link-dashboard', [
@@ -416,6 +416,52 @@ class MerchantController extends Controller
         return view('trx-history', [
             'merchant' => $merchant,
             'histories' => $keywords,
+        ]);
+    }
+
+    public function linkHistoryAll($code)
+    {
+        $decodedCode = urldecode($code);
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for history-all code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        $keywordQuery = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('created_at', 'desc');
+
+        $historyPaginator = (clone $keywordQuery)
+            ->paginate(12, ['*'], 'history_page')
+            ->withQueryString();
+
+        $keywordPaginator = (clone $keywordQuery)
+            ->paginate(12, ['*'], 'keyword_page')
+            ->withQueryString();
+
+        return view('history-all', [
+            'merchant' => $merchant,
+            'histories' => $historyPaginator,
+            'keywordPaginator' => $keywordPaginator,
         ]);
     }
 }

@@ -23,6 +23,22 @@
 
             <tbody class="bg-white divide-y divide-gray-200" id="merchant-table-body">
                 @forelse($merchants as $merchant)
+                    @php
+                        $codeDashboard = null;
+                        $codePelanggan = null;
+                        $historyUrl = null;
+
+                        if ($merchant->link_blanjapoin) {
+                            $cleanLink = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
+                            $parts = explode('/', $cleanLink);
+                            if (count($parts) >= 3 && $parts[1] === 'dash') {
+                                $codeDashboard = end($parts);
+                                $codePelanggan = $codeDashboard;
+                                $historyUrl = route('link.history', $codePelanggan);
+                            }
+                        }
+                    @endphp
+
                     <tr class="hover:bg-gray-50 transition-colors merchant-row bg-white" data-category="{{ $merchant->kategori ?? 'All' }}">
 
                         {{-- No --}}
@@ -58,12 +74,23 @@
                                         <i class="fas fa-clipboard-list text-[12px] text-gray-500"></i>
                                         Keyword
                                     </a>
-                                    <button type="button"
-                                            onclick="event.stopPropagation(); handleTransactionHistoryClick(event, {{ json_encode($merchant->nama_merchant) }});"
-                                            class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-700 text-left">
-                                        <i class="fas fa-clock text-[12px] text-gray-500"></i>
-                                        Transaction History
-                                    </button>
+                                    @if($historyUrl)
+                                        <a href="{{ $historyUrl }}"
+                                           onclick="event.stopPropagation();"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-700 text-left">
+                                            <i class="fas fa-clock text-[12px] text-gray-500"></i>
+                                            History Transaksi
+                                        </a>
+                                    @else
+                                        <button type="button"
+                                                disabled
+                                                class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-700 text-left cursor-not-allowed">
+                                            <i class="fas fa-clock text-[12px] text-gray-500"></i>
+                                            History Transaksi
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -133,18 +160,6 @@
 
                         {{-- Link Blanjapoin (Dashboard) --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @php
-                                $codeDashboard = null;
-                                if($merchant->link_blanjapoin) {
-                                    // Remove http:// or https:// if present
-                                    $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
-                                    // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
-                                    $parts = explode('/', $link);
-                                    if(count($parts) >= 3 && $parts[1] === 'dash') {
-                                        $codeDashboard = end($parts);
-                                    }
-                                }
-                            @endphp
                             @if($codeDashboard)
                                 <a href="{{ route('link.dashboard', $codeDashboard) }}" 
                                    onclick="event.stopPropagation();"
@@ -161,18 +176,6 @@
 
                         {{-- Link Pelanggan --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @php
-                                $codePelanggan = null;
-                                if($merchant->link_blanjapoin) {
-                                    // Remove http:// or https:// if present
-                                    $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
-                                    // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
-                                    $parts = explode('/', $link);
-                                    if(count($parts) >= 3 && $parts[1] === 'dash') {
-                                        $codePelanggan = end($parts);
-                                    }
-                                }
-                            @endphp
                             @if($codePelanggan)
                                 <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
                                    onclick="event.stopPropagation();"
@@ -189,21 +192,8 @@
 
                         {{-- Link History --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @php
-                                $linkHistory = null;
-                                if($merchant->link_blanjapoin) {
-                                    // Remove http:// or https:// if present
-                                    $link = preg_replace('#^https?://#', '', trim($merchant->link_blanjapoin));
-                                    // Extract code from link_blanjapoin (e.g., "blanjapoin.id/dash/unsur" -> "unsur")
-                                    $parts = explode('/', $link);
-                                    if(count($parts) >= 3 && $parts[1] === 'dash') {
-                                        $code = end($parts);
-                                        $linkHistory = $parts[0] . '/history/' . $code;
-                                    }
-                                }
-                            @endphp
-                            @if($linkHistory)
-                                <a href="{{ route('link.history', $codePelanggan) }}" 
+                            @if($historyUrl)
+                                <a href="{{ $historyUrl }}" 
                                    onclick="event.stopPropagation();"
                                    target="_blank" 
                                    rel="noopener noreferrer"
@@ -302,7 +292,7 @@
                 if(count($parts) >= 3 && $parts[1] === 'dash') {
                     $codeDashboardMobile = end($parts);
                     $codePelanggan = $codeDashboardMobile;
-                    $linkHistory = $parts[0] . '/history/' . $codeDashboardMobile;
+                    $linkHistory = route('link.history', $codeDashboardMobile);
                 }
             }
         @endphp
@@ -367,12 +357,23 @@
                                 <i class="fas fa-clipboard-list text-[12px] text-gray-500"></i>
                                 Keyword
                             </a>
-                            <button type="button"
-                                    onclick="event.stopPropagation(); handleTransactionHistoryClick(event, {{ json_encode($merchant->nama_merchant) }});"
-                                    class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-700 text-left">
-                                <i class="fas fa-clock text-[12px] text-gray-500"></i>
-                                Transaction History
-                            </button>
+                            @if($linkHistory)
+                                <a href="{{ $linkHistory }}"
+                                   onclick="event.stopPropagation();"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-700 text-left">
+                                    <i class="fas fa-clock text-[12px] text-gray-500"></i>
+                                    History Transaksi
+                                </a>
+                            @else
+                                <button type="button"
+                                        disabled
+                                        class="merchant-quick-option flex items-center gap-2 px-4 py-2 w-full text-[12px] font-semibold text-gray-400 text-left cursor-not-allowed">
+                                    <i class="fas fa-clock text-[12px] text-gray-300"></i>
+                                    History Transaksi
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -462,7 +463,7 @@
                         <div>
                             <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link History</p>
                             @if($linkHistory)
-                                <a href="https://{{ $linkHistory }}"
+                                <a href="{{ $linkHistory }}"
                                    onclick="event.stopPropagation();"
                                    target="_blank"
                                    rel="noopener noreferrer"
@@ -595,11 +596,6 @@
 
     function closeAllQuickMenus() {
         document.querySelectorAll('.merchant-quick-menu').forEach(menu => closeQuickMenu(menu));
-    }
-
-    function handleTransactionHistoryClick(event, merchantName) {
-        event.stopPropagation();
-        alert(`Transaction history for ${merchantName} is not linked yet.`);
     }
 
     document.addEventListener('click', function (event) {
