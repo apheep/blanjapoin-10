@@ -94,8 +94,8 @@ class KeywordController extends Controller
                 'end_date'      => $endDate,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
-                'rtx'           => $request->rtx,
-                'sisa_stock'    => $request->sisa_stock,
+                // 'rtx'           => $request->rtx,
+                // 'sisa_stock'    => $request->sisa_stock,
                 'status'        => $request->status ?? 'pending',
             ]);
 

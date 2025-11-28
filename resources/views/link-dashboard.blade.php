@@ -74,15 +74,20 @@
         <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
             <!-- Header Section -->
             <div class="animate-fade-in-up">
-                <div class="flex flex-wrap items-start justify-between gap-4 mt-6">
-                    <div>
+                <div class="flex flex-wrap items-center justify-between gap-4 mt-6">
+                    <div class="flex-1 min-w-[220px]">
                         <p class="text-xs font-semibold uppercase tracking-wider text-purple-600 flex items-center gap-2">
                             <i class="fas fa-chart-line"></i> Dashboard
                         </p>
                         <h1 class="text-3xl sm:text-4xl font-bold bg-black bg-clip-text text-transparent mt-1 break-words">
-                            {{ $merchant->nama_merchant }}
+                            Hello {{ $merchant->nama_merchant }}
                         </h1>
                     </div>
+                    @if($merchant->logo_merchant)
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white shadow-lg border border-gray-100 flex items-center justify-center overflow-hidden">
+                            <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" alt="Logo {{ $merchant->nama_merchant }}" class="w-full h-full object-contain p-2">
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -90,38 +95,38 @@
             <section class="mt-8 space-y-6 animate-fade-in-up" style="animation-delay: 0.2s;">
                 
                 <!-- QR Code Card - Featured -->
-                <div class="gradient-card rounded-3xl shadow-2xl p-8 text-white overflow-hidden relative">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-                    <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
+                <div class="gradient-card rounded-3xl shadow-2xl p-6 md:p-8 text-white overflow-hidden relative">
+                    <div class="absolute top-0 right-0 w-48 h-48 md:w-56 md:h-56 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+                    <div class="absolute bottom-0 left-0 w-36 h-36 md:w-44 md:h-44 bg-white/10 rounded-full -ml-16 -mb-16"></div>
                     
                     <div class="relative z-10">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                                <i class="fas fa-qrcode text-2xl"></i>
+                        <div class="flex items-center gap-3 mb-4 md:mb-6">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                                <i class="fas fa-qrcode text-xl md:text-2xl"></i>
                             </div>
                             <div>
-                                <h2 class="text-2xl font-bold">QR Code Pelanggan</h2>
-                                <p class="text-white/80 text-sm">Scan untuk akses cepat</p>
+                                <h2 class="text-xl md:text-2xl font-bold">QR Code Pelanggan</h2>
+                                <p class="text-white/80 text-xs md:text-sm">Scan untuk akses cepat</p>
                             </div>
                         </div>
                         
-                        <div class="flex flex-col md:flex-row items-center gap-8">
+                        <div class="flex flex-row items-start gap-3 md:gap-6 w-full overflow-x-auto">
                             <!-- QR Code Display -->
-                            <div class="qr-container p-6 rounded-2xl shadow-xl">
-                                <div id="qrcode" class="inline-block"></div>
+                            <div class="qr-container p-2.5 md:p-3 rounded-2xl shadow-xl bg-white flex-shrink-0">
+                                <div id="qrcode" class="inline-block w-24 h-24 md:w-28 md:h-28"></div>
                             </div>
                             
                             <!-- QR Actions -->
-                            <div class="flex-1 w-full space-y-4">
+                            <div class="flex-1 min-w-[160px] md:min-w-[200px] space-y-3 md:space-y-4 sm:pl-2">
                                 <button onclick="downloadQRCode()" 
-                                        class="w-full bg-white text-purple-600 hover:bg-purple-50 py-4 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl">
-                                    <i class="fas fa-download text-lg"></i>
-                                    <span>Download QR Code</span>
+                                        class="w-full bg-white text-purple-600 hover:bg-purple-50 py-3 md:py-4 px-5 md:px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl">
+                                    <i class="fas fa-download text-base md:text-lg"></i>
+                                    <span>Download</span>
                                 </button>
                                 <button onclick="printQRCode()" 
-                                        class="w-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 py-4 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 border-2 border-white/30">
-                                    <i class="fas fa-print text-lg"></i>
-                                    <span>Print QR Code</span>
+                                        class="w-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 py-3 md:py-4 px-5 md:px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 border-2 border-white/30">
+                                    <i class="fas fa-print text-base md:text-lg"></i>
+                                    <span>Print</span>
                                 </button>
                             </div>
                         </div>
@@ -129,61 +134,39 @@
                 </div>
 
                 <!-- Links Grid -->
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- Link Pelanggan Card -->
-                    <div class="stat-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                        <div class="flex items-start gap-4">
-                            <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-link text-blue-600 text-xl"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-lg font-bold text-gray-900 mb-1">Link Pelanggan</h3>
-                                <p class="text-sm text-gray-500 mb-4">Bagikan link ini ke pelanggan Anda</p>
-                                
-                                <div class="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                                    <a href="{{ $linkPelanggan }}" 
-                                       target="_blank" 
-                                       rel="noopener noreferrer"
-                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium break-all block mb-2">
-                                        {{ $linkPelanggan }}
-                                    </a>
-                                </div>
-                                
-                                <button onclick="copyToClipboard('{{ $linkPelanggan }}')" 
-                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
-                                    <i class="fas fa-copy"></i>
-                                    <span>Copy Link</span>
-                                </button>
-                            </div>
+                <div class="flex flex-col xl:flex-row gap-4 items-stretch">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                        <!-- Link Pelanggan Button -->
+                        <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
+                            <a href="{{ $linkPelanggan }}"
+                               class="w-12 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg transition-all duration-200"
+                               title="Kunjungi link pelanggan">
+                                <i class="fas fa-link text-lg"></i>
+                                <span class="sr-only">Link Pelanggan</span>
+                            </a>
+                            <div class="text-sm font-semibold text-gray-700">Link Pelanggan</div>
                         </div>
-                    </div>
 
-                    <!-- History Card -->
-                    <div class="stat-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                        <div class="flex items-start gap-4">
-                            <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-history text-purple-600 text-xl"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-lg font-bold text-gray-900 mb-1">History Transaksi</h3>
-                                <p class="text-sm text-gray-500 mb-4">Lihat riwayat transaksi pelanggan</p>
-                                
-                                <div class="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
-                                    <a href="{{ $linkHistory }}" 
-                                       target="_blank" 
-                                       rel="noopener noreferrer"
-                                       class="text-purple-600 hover:text-purple-800 text-sm font-medium break-all block mb-2">
-                                        {{ $linkHistory }}
-                                    </a>
-                                </div>
-                                
-                                <button onclick="copyToClipboard('{{ $linkHistory }}')" 
-                                        class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
-                                    <i class="fas fa-copy"></i>
-                                    <span>Copy Link</span>
-                                </button>
-                            </div>
+                        <!-- History Button -->
+                        <div class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
+                            <a href="{{ $linkHistory }}"
+                               class="w-12 h-12 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-lg transition-all duration-200"
+                               title="Kunjungi link riwayat transaksi">
+                                <i class="fas fa-history text-lg"></i>
+                                <span class="sr-only">History Transaksi</span>
+                            </a>
+                            <div class="text-sm font-semibold text-gray-700">History Transaksi</div>
                         </div>
+
+                        <!-- Logout Button -->
+                        <form method="POST" action="{{ route('logout') }}" class="stat-card bg-gradient-to-br from-red-50 to-red-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
+                            @csrf
+                            <button type="submit" class="w-12 h-12 rounded-2xl bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-all duration-200" title="Keluar akun">
+                                <i class="fas fa-arrow-right-from-bracket text-lg"></i>
+                                <span class="sr-only">Logout</span>
+                            </button>
+                            <div class="text-sm font-semibold text-gray-700">Logout</div>
+                        </form>
                     </div>
                 </div>
 
@@ -221,8 +204,8 @@
             if (typeof QRCode !== 'undefined' && qrCodeElement) {
                 new QRCode(qrCodeElement, {
                     text: linkPelanggan,
-                    width: 180,
-                    height: 180,
+                    width: 100,
+                    height: 100,
                     colorDark: '#5b21b6',
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
