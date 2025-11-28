@@ -16,11 +16,6 @@ use App\Models\Keyword;
 use App\Models\Merchant;
 use App\Models\Iklan;
 
-//route history all
-Route::get('/history-all', function () {
-    return view('history-all');
-});
-
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
@@ -83,6 +78,9 @@ Route::get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('
 
 // Route untuk link history (public, tidak perlu login)
 Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
+
+// Route untuk history page versi lengkap tanpa login
+Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
 
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {

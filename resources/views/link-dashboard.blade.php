@@ -12,10 +12,54 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @include('partials.head')
+    <style>
+        .gradient-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .gradient-border {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .qr-container {
+            background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
+        }
+    </style>
 </head>
-<body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
+<body class="bg-gradient-to-br from-gray-50 via-white to-purple-50 text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
     <!-- Navbar -->
-    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full shadow-sm sm:shadow-none">
+    <nav id="navbar" class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg transition-shadow duration-300 w-full shadow-sm">
         <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-3 md:py-5 lg:py-6">
             <div class="flex items-center justify-center sm:justify-start">
                 <a href="{{ route('home') }}" class="inline-flex items-center">
@@ -25,96 +69,140 @@
         </div>
     </nav>
 
-
-
-
     <!-- Main Content -->
     <div class="mx-auto max-w-[1120px]">
         <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mt-4">Dashboard</p>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1 break-words">{{ $merchant->nama_merchant }}</h1>
-                
+            <!-- Header Section -->
+            <div class="animate-fade-in-up">
+                <div class="flex flex-wrap items-start justify-between gap-4 mt-6">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-purple-600 flex items-center gap-2">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </p>
+                        <h1 class="text-3xl sm:text-4xl font-bold bg-black bg-clip-text text-transparent mt-1 break-words">
+                            {{ $merchant->nama_merchant }}
+                        </h1>
+                    </div>
                 </div>
             </div>
 
-            <!-- Table Section -->
-            <section class="mt-8">
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 responsive-dashboard-table">
-                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Pelanggan</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">QR Code</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">History</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-4 py-4 text-sm font-medium text-gray-900" data-label="No">1</td>
-                                    
-                                    <!-- Link Pelanggan -->
-                                    <td class="px-4 py-4" data-label="Link Pelanggan">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <a href="{{ $linkPelanggan }}" 
-                                               target="_blank" 
-                                               rel="noopener noreferrer"
-                                               class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-2 text-sm font-medium max-w-full">
-                                                <i class="fas fa-link"></i>
-                                                <span class="truncate max-w-full sm:max-w-md">{{ $linkPelanggan }}</span>
-                                            </a>
-                                            <button onclick="copyToClipboard('{{ $linkPelanggan }}')" 
-                                                    class="text-gray-500 hover:text-gray-700 transition-colors"
-                                                    title="Copy Link">
-                                                <i class="fas fa-copy text-sm"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- QR Code -->
-                                    <td class="px-4 py-4 text-center" data-label="QR Code">
-                                        <div id="qrcode" class="inline-block p-2 bg-white rounded-lg border border-gray-200"></div>
-                                        <div class="mt-2 flex items-center justify-center gap-4">
-                                            <button onclick="downloadQRCode()" 
-                                                    class="text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-150">
-                                                <i class="fas fa-download mr-1"></i>Download
-                                            </button>
-                                            <button onclick="printQRCode()" 
-                                                    class="text-xs text-gray-600 hover:text-gray-800 hover:underline transition-colors duration-150">
-                                                <i class="fas fa-print mr-1"></i>Print
-                                            </button>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- History -->
-                                    <td class="px-4 py-4" data-label="History">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <a href="{{ $linkHistory }}" 
-                                               target="_blank" 
-                                               rel="noopener noreferrer"
-                                               class="text-purple-600 hover:text-purple-800 hover:underline inline-flex items-center gap-2 text-sm font-medium max-w-full">
-                                                <i class="fas fa-history"></i>
-                                                <span class="truncate max-w-full sm:max-w-md">{{ $linkHistory }}</span>
-                                            </a>
-                                            <button onclick="copyToClipboard('{{ $linkHistory }}')" 
-                                                    class="text-gray-500 hover:text-gray-700 transition-colors"
-                                                    title="Copy Link">
-                                                <i class="fas fa-copy text-sm"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <!-- Dashboard Cards Section -->
+            <section class="mt-8 space-y-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+                
+                <!-- QR Code Card - Featured -->
+                <div class="gradient-card rounded-3xl shadow-2xl p-8 text-white overflow-hidden relative">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
+                    <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24"></div>
+                    
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                                <i class="fas fa-qrcode text-2xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold">QR Code Pelanggan</h2>
+                                <p class="text-white/80 text-sm">Scan untuk akses cepat</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row items-center gap-8">
+                            <!-- QR Code Display -->
+                            <div class="qr-container p-6 rounded-2xl shadow-xl">
+                                <div id="qrcode" class="inline-block"></div>
+                            </div>
+                            
+                            <!-- QR Actions -->
+                            <div class="flex-1 w-full space-y-4">
+                                <button onclick="downloadQRCode()" 
+                                        class="w-full bg-white text-purple-600 hover:bg-purple-50 py-4 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl">
+                                    <i class="fas fa-download text-lg"></i>
+                                    <span>Download QR Code</span>
+                                </button>
+                                <button onclick="printQRCode()" 
+                                        class="w-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 py-4 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3 border-2 border-white/30">
+                                    <i class="fas fa-print text-lg"></i>
+                                    <span>Print QR Code</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
+
+                <!-- Links Grid -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Link Pelanggan Card -->
+                    <div class="stat-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                        <div class="flex items-start gap-4">
+                            <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-link text-blue-600 text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-bold text-gray-900 mb-1">Link Pelanggan</h3>
+                                <p class="text-sm text-gray-500 mb-4">Bagikan link ini ke pelanggan Anda</p>
+                                
+                                <div class="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                                    <a href="{{ $linkPelanggan }}" 
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium break-all block mb-2">
+                                        {{ $linkPelanggan }}
+                                    </a>
+                                </div>
+                                
+                                <button onclick="copyToClipboard('{{ $linkPelanggan }}')" 
+                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+                                    <i class="fas fa-copy"></i>
+                                    <span>Copy Link</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History Card -->
+                    <div class="stat-card bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                        <div class="flex items-start gap-4">
+                            <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-history text-purple-600 text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-bold text-gray-900 mb-1">History Transaksi</h3>
+                                <p class="text-sm text-gray-500 mb-4">Lihat riwayat transaksi pelanggan</p>
+                                
+                                <div class="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200">
+                                    <a href="{{ $linkHistory }}" 
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       class="text-purple-600 hover:text-purple-800 text-sm font-medium break-all block mb-2">
+                                        {{ $linkHistory }}
+                                    </a>
+                                </div>
+                                
+                                <button onclick="copyToClipboard('{{ $linkHistory }}')" 
+                                        class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+                                    <i class="fas fa-copy"></i>
+                                    <span>Copy Link</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- <!-- Info Banner -->
+                <div class="bg-gradient-to-r from-orange-50 to-rose-50 rounded-2xl p-6 border border-orange-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-info-circle text-orange-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-1">Cara Penggunaan</h4>
+                            <p class="text-sm text-gray-600">Bagikan QR Code atau Link Pelanggan kepada customer Anda untuk melakukan redeem poin Telkomsel dengan mudah.</p>
+                        </div>
+                    </div>
+                </div>
+            </section> --}}
 
             <!-- Footer -->
-            <footer class="mt-16 pb-12 text-center">
+            <footer class="mt-16 pb-12 text-center animate-fade-in-up" style="animation-delay: 0.4s;">
                 <div class="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-50 to-rose-50 shadow-sm ring-1 ring-neutral-200/50 mb-4">
                     <div class="text-sm font-semibold text-neutral-700">✨ Redeem Poin Telkomsel</div>
                 </div>
@@ -123,7 +211,7 @@
         </main>
     </div>
 
-    <!-- Script untuk generate QR Code -->
+    <!-- Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Generate QR Code
@@ -133,9 +221,9 @@
             if (typeof QRCode !== 'undefined' && qrCodeElement) {
                 new QRCode(qrCodeElement, {
                     text: linkPelanggan,
-                    width: 150,
-                    height: 150,
-                    colorDark: '#000000',
+                    width: 180,
+                    height: 180,
+                    colorDark: '#5b21b6',
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
                 });
@@ -145,15 +233,14 @@
         // Function untuk copy link ke clipboard
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function() {
-                // Show success message
                 const button = event.target.closest('button');
                 const originalHTML = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-check text-green-600"></i>';
-                button.classList.add('text-green-600');
+                button.innerHTML = '<i class="fas fa-check"></i><span>Tersalin!</span>';
+                button.classList.add('!bg-green-600', '!hover:bg-green-700');
                 
                 setTimeout(() => {
                     button.innerHTML = originalHTML;
-                    button.classList.remove('text-green-600');
+                    button.classList.remove('!bg-green-600', '!hover:bg-green-700');
                 }, 2000);
             }).catch(function(err) {
                 console.error('Failed to copy: ', err);
@@ -194,75 +281,42 @@
             printWindow.document.write(`
                 <html>
                 <head>
-                    <title>Print QR Code</title>
+                    <title>Print QR Code - {{ $merchant->nama_merchant }}</title>
                     <style>
                         body {
                             margin: 0;
                             display: flex;
+                            flex-direction: column;
                             align-items: center;
                             justify-content: center;
                             min-height: 100vh;
+                            font-family: 'Poppins', sans-serif;
+                        }
+                        h1 {
+                            margin-bottom: 20px;
+                            color: #333;
+                        }
+                        img {
+                            border: 3px solid #5b21b6;
+                            border-radius: 10px;
+                            padding: 10px;
+                            background: white;
                         }
                     </style>
                 </head>
                 <body>
-                    <img src="${dataUrl}" alt="QR Code" width="250" height="250" />
+                    <h1>{{ $merchant->nama_merchant }}</h1>
+                    <img src="${dataUrl}" alt="QR Code" width="300" height="300" />
+                    <p style="margin-top: 20px; color: #666;">Scan untuk akses link pelanggan</p>
                 </body>
                 </html>
             `);
             printWindow.document.close();
             printWindow.focus();
-            printWindow.print();
-            printWindow.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
         }
     </script>
 </body>
 </html>
-<style>
-    /* Mobile-friendly stack for dashboard table */
-    @media (max-width: 640px) {
-        .responsive-dashboard-table thead {
-            display: none;
-        }
-        .responsive-dashboard-table tbody tr {
-            display: block;
-            margin-bottom: 14px;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-        }
-        .responsive-dashboard-table tbody tr td {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding: 12px 16px;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .responsive-dashboard-table tbody tr td:last-child {
-            border-bottom: none;
-        }
-        .responsive-dashboard-table tbody tr td::before {
-            content: attr(data-label);
-            font-weight: 600;
-            color: #4b5563;
-            font-size: 13px;
-            margin-right: 16px;
-        }
-        .responsive-dashboard-table tbody tr td[data-label="QR Code"] {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-        }
-        .responsive-dashboard-table tbody tr td[data-label="QR Code"]::before {
-            margin-right: 0;
-        }
-        .responsive-dashboard-table .truncate {
-            max-width: 100%;
-        }
-        main {
-            padding-left: 14px;
-            padding-right: 14px;
-        }
-    }
-</style>

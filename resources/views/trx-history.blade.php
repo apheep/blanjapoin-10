@@ -14,28 +14,37 @@
     @include('partials.head')
 </head>
 <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
-    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full shadow-sm">
-        <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
-            <div class="flex items-center">
-                <a href="{{ route('home') }}">
-                    <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-                </a>
-            </div>
-        </div>
-    </nav>
+    @include('partials.navbar-admin')
 
+    
     <div class="mx-auto max-w-[1120px]">
         <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
-            <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mt-4">History</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">History</p>
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">Riwayat Transaksi</h1>
-                    <p class="text-sm text-gray-600 max-w-2xl mt-2">
-                        Koleksi semua transaksi pengguna dengan detail MSISDN, merchant, produk, poin, dan status terbaru.
-                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <a href="{{ route('admin', ['tab' => 'all']) }}"
+                       class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors gap-1">
+                        <i class="fas fa-arrow-left text-s"></i>
+                        <span>Kembali</span>
+                    </a>
                 </div>
             </div>
 
+            <form method="GET" action="{{ request()->url() }}" class="mt-6 flex flex-wrap items-center gap-3 justify-end">
+                <div class="relative w-full max-w-[240px]">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input name="q"
+                           value="{{ request()->query('q', '') }}"
+                           class="w-full rounded-full border border-gray-200 bg-white px-10 py-2 text-sm placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 focus:outline-none"
+                           placeholder="Search keyword..." />
+                </div>
+                <div class="flex flex-wrap items-center gap-3 justify-end">
+                    @include('partials.date-filter', ['filterId' => 'trxHistoryDateFilter'])
+                </div>
+            </form>
             @php
                 $historySource = $histories ?? collect();
 
@@ -78,72 +87,6 @@
                         </thead>
 
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($historyPaginator as $history)
-                                @php
-                                    $displayDate = $history->tanggal ?? $history->transaction_date ?? $history->created_at ?? null;
-                                    $formattedDate = $displayDate ? \Carbon\Carbon::parse($displayDate)->format('d/m/Y H:i') : '-';
-                                    $msisdn = $history->msisdn ?? $history->phone ?? $history->client_msisdn ?? '-';
-                                    $merchantName = $history->merchant->nama_merchant ?? $history->merchant_name ?? '-';
-                                    $productName = $history->product_name ?? $history->product ?? $history->nama_produk ?? '-';
-                                    $keywordsDisplay = $history->keywords ?? $history->keyword ?? '-';
-                                    $pointsValue = $history->total_poin ?? $history->total_points ?? $history->points ?? $history->poin ?? '-';
-                                    $merchantCity = $history->merchant->daerah ?? $history->merchant_city ?? $history->city ?? '-';
-                                    $statusRaw = $history->status ?? $history->transaction_status ?? null;
-                                    $statusLabel = $statusRaw ? ucfirst($statusRaw) : '-';
-                                    $statusNormalized = $statusRaw ? strtolower(trim((string) $statusRaw)) : '';
-                                    $statusClasses = 'bg-gray-100 text-gray-700';
-
-                                    if ($statusNormalized !== '') {
-                                        if (str_contains($statusNormalized, 'success') || str_contains($statusNormalized, 'selesai') || str_contains($statusNormalized, 'done')) {
-                                            $statusClasses = 'bg-green-100 text-green-800';
-                                        } elseif (str_contains($statusNormalized, 'pending') || str_contains($statusNormalized, 'proses') || str_contains($statusNormalized, 'menunggu')) {
-                                            $statusClasses = 'bg-yellow-100 text-yellow-800';
-                                        } elseif (str_contains($statusNormalized, 'fail') || str_contains($statusNormalized, 'reject') || str_contains($statusNormalized, 'gagal')) {
-                                            $statusClasses = 'bg-red-100 text-red-800';
-                                        } else {
-                                            $statusClasses = 'bg-blue-100 text-blue-800';
-                                        }
-                                    }
-                                @endphp
-
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-4 py-4 text-sm font-medium text-gray-900">
-                                        {{ ($historyPaginator->currentPage() - 1) * $historyPaginator->perPage() + $loop->iteration }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm text-gray-700">
-                                        {{ $formattedDate }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm text-gray-900">
-                                        {{ $msisdn }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm text-gray-900">
-                                        {{ $merchantName }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm text-gray-900">
-                                        {{ $productName }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm text-gray-700">
-                                        {{ $keywordsDisplay }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm font-semibold text-right text-gray-900">
-                                        {{ $pointsValue }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm text-gray-900">
-                                        {{ $merchantCity }}
-                                    </td>
-                                    <td class="px-4 py-4 text-sm">
-                                        <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClasses }}">
-                                            {{ $statusLabel }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">
-                                        Belum ada data transaksi.
-                                    </td>
-                                </tr>
-                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -287,6 +230,20 @@
                 <div class="text-xs text-neutral-500 font-medium">© 2025 BelanjaPoin. All rights reserved.</div>
             </footer>
         </main>
-    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dateToggle = document.querySelector("button[onclick*=\"toggleDateFilterCompact('trxHistoryDateFilter')\"]");
+        if (!dateToggle) {
+            return;
+        }
+
+        dateToggle.setAttribute('type', 'button');
+        dateToggle.addEventListener('click', function (event) {
+            event.preventDefault();
+        });
+    });
+</script>
 </body>
 </html>
