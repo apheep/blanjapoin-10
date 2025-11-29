@@ -40,6 +40,7 @@
             to {
                 opacity: 1;
             }
+        }
         /* Hide horizontal scrollbar on keyword desktop table but keep scrollability */
         .keyword-table-scroll {
             -ms-overflow-style: none;
@@ -794,7 +795,7 @@
                                 class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
                             >
                                 <i class="fas fa-file-excel mr-2"></i>
-                                Export Excel
+                                Export
                             </a>
                         </div>
                     </div>
@@ -859,7 +860,7 @@
                                 class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
                             >
                                 <i class="fas fa-file-excel mr-2"></i>
-                                Export Excel
+                                Export
                             </a>
                         </div>
                     </div>
