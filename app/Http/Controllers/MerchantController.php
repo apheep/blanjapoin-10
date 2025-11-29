@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\Keyword;
 use App\Models\Iklan;
+use App\Exports\MerchantsExport;
+use App\Exports\MerchantKeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MerchantController extends Controller
 {
@@ -463,5 +466,18 @@ class MerchantController extends Controller
             'histories' => $historyPaginator,
             'keywordPaginator' => $keywordPaginator,
         ]);
+    }
+
+    public function exportExcel()
+    {
+        $fileName = 'merchants_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new MerchantsExport, $fileName);
+    }
+
+    public function exportKeywordsExcel(Merchant $merchant)
+    {
+        $merchantName = str_replace([' ', '/', '\\'], '_', $merchant->nama_merchant);
+        $fileName = 'keywords_' . $merchantName . '_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new MerchantKeywordsExport($merchant->id, $merchant->nama_merchant), $fileName);
     }
 }

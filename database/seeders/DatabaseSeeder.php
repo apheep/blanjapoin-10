@@ -17,6 +17,7 @@ public function run(): void
         PortalUserSeeder::class,
         MerchantSeeder::class,
         KeywordSeeder::class,
+        PortalUserSeeder::class, // add portal user seeder
     ]);
 }
 }

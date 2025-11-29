@@ -787,6 +787,16 @@
                                 Add
                             </button>
                         </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('keywords.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export Excel
+                            </a>
+                        </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
@@ -841,6 +851,16 @@
                                 <i class="fas fa-upload mr-2"></i>
                                 Upload
                             </button>
+                        </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('merchants.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export Excel
+                            </a>
                         </div>
                     </div>
                     
