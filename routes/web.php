@@ -163,6 +163,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin', [MerchantController::class, 'index'])->name('admin');
     Route::get('/dashboard', [MerchantController::class, 'index'])->name('dashboard');
     Route::get('/merchants/search', [MerchantController::class, 'search'])->name('merchants.search');
+    Route::get('/merchants/export/excel', [MerchantController::class, 'exportExcel'])->name('merchants.export.excel');
+    Route::get('/merchants/{merchant}/keywords/export/excel', [MerchantController::class, 'exportKeywordsExcel'])->name('merchants.keywords.export.excel');
 
     // Resource CRUD merchant (index sudah dipakai di atas)
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
@@ -176,6 +178,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
+    Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
 
     // Iklan management
     Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');

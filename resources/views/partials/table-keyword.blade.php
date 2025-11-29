@@ -3,7 +3,7 @@
     $keywordPaginator = $keywords->appends(array_merge(request()->query(), ['tab' => 'keyword']));
 @endphp
 
-<div class="bg-white rounded-xl shadow overflow-hidden">
+<div class="bg-white rounded-xl shadow overflow-hidden mt-4">
     <div class="overflow-x-auto keyword-table-scroll">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
@@ -38,7 +38,7 @@
                             {{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}
                         </td>
                         <td class="px-4 py-4">
-                            <div class="flex space-x-2">
+                            <div class="flex justify-center items-center space-x-2">
                                 @if ($keyword->status === 'pending')
                                 <button type="button"
                                         onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
