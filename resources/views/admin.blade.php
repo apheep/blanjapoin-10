@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    @include('partials.head')
      <style>
         /* Font optimization for Poppins */
         body {
@@ -40,6 +41,7 @@
             to {
                 opacity: 1;
             }
+        }
         /* Hide horizontal scrollbar on keyword desktop table but keep scrollability */
         .keyword-table-scroll {
             -ms-overflow-style: none;
@@ -755,8 +757,8 @@
             <div id="section-keyword" class="transition-all duration-300 {{ $activeTab === 'keyword' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
                 <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Keyword</h2>
                 
-                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                    <div class="flex space-x-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                    <div class="flex flex-wrap items-center gap-3">
                         <div class="relative">
                             <button id="statusBtnKeyword" onclick="toggleKeywordStatusDropdown()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-filter mr-2"></i>
@@ -774,14 +776,28 @@
                         </div>
 
                         <div class="relative">
+                            @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
+                        </div>
+
+                        <div class="relative">
                             <button
                                 type="button"
                                 onclick="openUploadKeyword()"
                                 class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                                 <i class="fas fa-plus mr-2"></i>
-                                Add Keyword
+                                Add
                             </button>
+                        </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('keywords.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
                         </div>
                     </div>
 
@@ -791,14 +807,11 @@
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
-                            <button type="button" id="keywordSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
-                                &times;
-                            </button>
                         </div>
-                        
-                        @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
+                        <button type="button" id="keywordSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                            &times;
+                        </button>
                     </div>
-                    
                 </div>
                 
                 <div id="keyword-table-container">
@@ -840,6 +853,16 @@
                                 <i class="fas fa-upload mr-2"></i>
                                 Upload
                             </button>
+                        </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('merchants.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
                         </div>
                     </div>
                     

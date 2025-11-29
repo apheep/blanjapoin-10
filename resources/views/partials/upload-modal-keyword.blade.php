@@ -108,13 +108,13 @@
                         <!-- Row 4: Diskon (Persen + Rupiah) -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Diskon <span class="text-red-500">*</span> (Pilih salah satu)</label>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div class="flex items-center gap-2">
+                                    <span class="w-12 text-center text-gray-600 font-medium shrink-0">%</span>
                                     <input type="number" name="diskon_percent" id="diskonPercent" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="0" min="0" max="100" onchange="validateDiskon()">
-                                    <span class="text-gray-600 font-medium">%</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="text-gray-600 font-medium">Rp</span>
+                                    <span class="w-12 text-center text-gray-600 font-medium shrink-0">Rp</span>
                                     <input type="number" name="diskon_rupiah" id="diskonRupiah" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="0" onchange="validateDiskon()">
                                 </div>
                             </div>

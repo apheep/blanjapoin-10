@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\Keyword;
 use App\Models\Iklan;
+use App\Exports\MerchantsExport;
+use App\Exports\MerchantKeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MerchantController extends Controller
 {
@@ -360,8 +363,8 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-       // Generate link history
-        $linkHistory = route('link.history', $decodedCode);
+        // Generate link history
+        $linkHistory = route('link.history.all', $decodedCode);
         $linkHistoryFull = url($linkHistory);
 
         return view('link-dashboard', [
@@ -417,5 +420,64 @@ class MerchantController extends Controller
             'merchant' => $merchant,
             'histories' => $keywords,
         ]);
+    }
+
+    public function linkHistoryAll($code)
+    {
+        $decodedCode = urldecode($code);
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for history-all code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        $keywordQuery = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('created_at', 'desc');
+
+        $historyPaginator = (clone $keywordQuery)
+            ->paginate(12, ['*'], 'history_page')
+            ->withQueryString();
+
+        $keywordPaginator = (clone $keywordQuery)
+            ->paginate(12, ['*'], 'keyword_page')
+            ->withQueryString();
+
+        return view('history-all', [
+            'merchant' => $merchant,
+            'histories' => $historyPaginator,
+            'keywordPaginator' => $keywordPaginator,
+        ]);
+    }
+
+    public function exportExcel()
+    {
+        $fileName = 'merchants_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new MerchantsExport, $fileName);
+    }
+
+    public function exportKeywordsExcel(Merchant $merchant)
+    {
+        $merchantName = str_replace([' ', '/', '\\'], '_', $merchant->nama_merchant);
+        $fileName = 'keywords_' . $merchantName . '_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new MerchantKeywordsExport($merchant->id, $merchant->nama_merchant), $fileName);
     }
 }

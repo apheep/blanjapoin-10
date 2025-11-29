@@ -14,8 +14,10 @@ public function run(): void
 {
     $this->call([
         LoginSeeder::class,
+        PortalUserSeeder::class,
         MerchantSeeder::class,
         KeywordSeeder::class,
+        PortalUserSeeder::class, // add portal user seeder
     ]);
 }
 }
