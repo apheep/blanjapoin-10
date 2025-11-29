@@ -74,7 +74,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-[#f8fafc]">
+<body class="min-h-screen bg-white">
 <style>
 .page-enter{opacity:0;transform:translateY(8px)}
 .page-enter-active{opacity:1;transform:translateY(0);transition:opacity .3s ease,transform .3s ease}
@@ -92,113 +92,72 @@
         <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
     @endif
 
-<nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full page-enter">
-    <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
-     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-6">
-       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-      </div>
-
-      <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      @if(Auth::check() && Auth::user()->can_approve == 1) 
-        <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>       @endif
-      </div>
-
-       <div class="relative">
-        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg shadow-orange-300/50 drop-shadow-lg ring-1 ring-white/30 transition-all hover:shadow-xl hover:shadow-orange-400/50 hover:drop-shadow-xl hover:scale-105 active:scale-95">
-         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 md:h-4 md:w-4 opacity-95">
-          <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
-         </svg>
-         <span class="tracking-tight">{{ Auth::user()->username }}</span>
-         <svg id="userDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3 w-3 md:h-3.5 md:w-3.5 opacity-95 transition-transform duration-300">
-          <path d="M7 10l5 5 5-5z"/>
-         </svg>
-        </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-50 backdrop-blur-sm">
-         <div class="py-1">
-          <form method="POST" action="{{ route('logout') }}">
-           @csrf
-           <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-             <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clip-rule="evenodd" />
-            </svg>
-            <span>Logout</span>
-           </button>
-          </form>
-         </div>
-        </div>
-       </div>
-      </div>
-     </div>
-    </div>
-   </nav>
-
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 page-enter">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Overview</p>
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</h1>
-                <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                    <span class="inline-flex items-center gap-1">
-                        <i class="fas fa-map-marker-alt text-gray-400"></i>
-                        {{ $merchant->daerah ?? '-' }}
-                    </span>
-                    <span class="inline-flex items-center gap-1">
-                        <i class="fas fa-tags text-gray-400"></i>
-                        {{ $merchant->kategori ?? '-' }}
-                    </span>
-                    <span class="inline-flex items-center gap-1">
-                        <i class="fas fa-key text-gray-400"></i>
-                        {{ $keywordPaginator->total() }} Keyword
-                    </span>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin', ['tab' => 'all']) }}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+@include('partials.navbar-admin')
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 page-enter ">
+        <div class="space-y-4 mt-6">
+            <div class="space-y-2">
+                <a href="{{ route('admin', ['tab' => 'all']) }}" class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
                     <i class="fas fa-arrow-left text-xs"></i>
                     <span>Kembali</span>
                 </a>
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-0">Overview</p>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-0">{{ $merchant->nama_merchant }}</h1>
             </div>
-        </div>
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                <span class="inline-flex items-center gap-1">
+                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                    {{ $merchant->daerah ?? '-' }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                    <i class="fas fa-tags text-gray-400"></i>
+                    {{ $merchant->kategori ?? '-' }}
+                </span>
+                <span class="inline-flex items-center gap-1">
+                    <i class="fas fa-key text-gray-400"></i>
+                    {{ $keywordPaginator->total() }} Keyword
+                </span>
+            </div>
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="relative overflow-visible">
+                        <button id="statusBtnDetail" onclick="toggleStatusDropdownDetail()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-filter mr-2"></i>
+                            Status
+                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                        </button>
+                        <div id="statusDropdownDetail" class="hidden absolute left-0 right-0 md:left-0 md:right-auto mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full max-w-[18rem] md:w-56 z-50 pointer-events-auto">
+                            <div class="py-1 space-y-1">
+                                <a href="#" data-status="all" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('all'); return false;">All</a>
+                                <a href="#" data-status="pending" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('pending'); return false;">Pending</a>
+                                <a href="#" data-status="reject" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('reject'); return false;">Rejected</a>
+                                <a href="#" data-status="approve" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('approve'); return false;">Approved</a>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="flex space-x-3">
-                <div class="relative overflow-visible">
-                    <button id="statusBtnDetail" onclick="toggleStatusDropdownDetail()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-filter mr-2"></i>
-                        Status
-                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                    </button>
-                    <div id="statusDropdownDetail" class="hidden absolute left-0 right-0 md:left-0 md:right-auto mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full max-w-[18rem] md:w-56 z-50 pointer-events-auto">
-                        <div class="py-1 space-y-1">
-                            <a href="#" data-status="all" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('all'); return false;">All</a>
-                            <a href="#" data-status="pending" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('pending'); return false;">Pending</a>
-                            <a href="#" data-status="reject" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('reject'); return false;">Rejected</a>
-                            <a href="#" data-status="approve" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('approve'); return false;">Approved</a>
+                    <div class="flex items-center gap-2  ">
+                        <div class="flex-1">
+                            @include('partials.date-filter', ['filterId' => 'dateFilterMerchantDetail'])
+                        </div>
+                        <div class="flex-1">
+                            <button type="button" onclick="openUploadKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors w-full">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add
+                            </button>
                         </div>
                     </div>
                 </div>
-
-                <button type="button" onclick="openUploadKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                    <i class="fas fa-plus mr-2"></i>
-                    Add Keyword
-                </button>
-            </div>
-
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                <div class="relative w-full sm:w-auto">
-                    <input type="text" id="keywordSearchDetail" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-9 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                    <div class="absolute left-3 top-2.5 text-gray-400">
-                        <i class="fas fa-search text-sm"></i>
+                <div class="w-full lg:w-64">
+                    <div class="relative">
+                        <input type="text" id="keywordSearchDetail" placeholder="Search keyword..." class="w-full pl-10 pr-10 py-2 rounded-full border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+                        <div class="absolute left-3 top-2.5 text-gray-400">
+                            <i class="fas fa-search text-sm"></i>
+                        </div>
+                        <button type="button" id="keywordSearchDetailClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                            &times;
+                        </button>
                     </div>
-                    <button type="button" id="keywordSearchDetailClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
-                        &times;
-                    </button>
                 </div>
-
-                @include('partials.date-filter', ['filterId' => 'dateFilterMerchantDetail'])
             </div>
         </div>
 
