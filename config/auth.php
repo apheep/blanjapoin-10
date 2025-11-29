@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'portal' => [
+            'driver' => 'session',
+            'provider' => 'portal_users',
+        ],
     ],
 
     /*
@@ -63,6 +67,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'portal_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\PortalUser::class,
         ],
 
         // 'users' => [
@@ -94,6 +103,12 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        'portal_users' => [
+            'provider' => 'portal_users',
+            'table' => 'portal_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],

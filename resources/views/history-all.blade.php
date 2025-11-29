@@ -97,74 +97,7 @@
                                 </tr>
                             </thead>
 
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($historyPaginator as $history)
-                                    @php
-                                    $displayDate = $history->tanggal ?? $history->transaction_date ?? $history->created_at ?? null;
-                                    $formattedDate = $displayDate ? \Carbon\Carbon::parse($displayDate)->format('d/m/Y H:i') : '-';
-                                    $msisdn = $history->msisdn ?? $history->phone ?? $history->client_msisdn ?? '-';
-                                    $merchantName = $history->merchant->nama_merchant ?? $history->merchant_name ?? '-';
-                                    $productName = $history->product_name ?? $history->product ?? $history->nama_produk ?? '-';
-                                    $keywordsDisplay = $history->keywords ?? $history->keyword ?? '-';
-                                    $pointsValue = $history->total_poin ?? $history->total_points ?? $history->points ?? $history->poin ?? '-';
-                                    $merchantCity = $history->merchant->daerah ?? $history->merchant_city ?? $history->city ?? '-';
-                                    $statusRaw = $history->status ?? $history->transaction_status ?? null;
-                                    $statusLabel = $statusRaw ? ucfirst($statusRaw) : '-';
-                                    $statusNormalized = $statusRaw ? strtolower(trim((string) $statusRaw)) : '';
-                                    $statusClasses = 'bg-gray-100 text-gray-700';
-
-                                    if ($statusNormalized !== '') {
-                                        if (str_contains($statusNormalized, 'success') || str_contains($statusNormalized, 'selesai') || str_contains($statusNormalized, 'done')) {
-                                            $statusClasses = 'bg-green-100 text-green-800';
-                                        } elseif (str_contains($statusNormalized, 'pending') || str_contains($statusNormalized, 'proses') || str_contains($statusNormalized, 'menunggu')) {
-                                            $statusClasses = 'bg-yellow-100 text-yellow-800';
-                                        } elseif (str_contains($statusNormalized, 'fail') || str_contains($statusNormalized, 'reject') || str_contains($statusNormalized, 'gagal')) {
-                                            $statusClasses = 'bg-red-100 text-red-800';
-                                        } else {
-                                            $statusClasses = 'bg-blue-100 text-blue-800';
-                                        }
-                                    }
-                                    @endphp
-
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-4 py-4 text-sm font-medium text-gray-900">
-                                            {{ ($historyPaginator->currentPage() - 1) * $historyPaginator->perPage() + $loop->iteration }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm text-gray-700">
-                                            {{ $formattedDate }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm text-gray-900">
-                                            {{ $msisdn }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm text-gray-900">
-                                            {{ $merchantName }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm text-gray-900">
-                                            {{ $productName }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm text-gray-700">
-                                            {{ $keywordsDisplay }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm font-semibold text-right text-gray-900">
-                                            {{ $pointsValue }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm text-gray-900">
-                                            {{ $merchantCity }}
-                                        </td>
-                                        <td class="px-4 py-4 text-sm">
-                                            <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClasses }}">
-                                                {{ $statusLabel }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">
-                                            Belum ada data transaksi.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
+                            <tbody class="bg-white divide-y divide-gray-200"></tbody>
                         </table>
                     </div>
 

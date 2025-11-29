@@ -11,6 +11,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
 use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PortalAuthController;
 use App\Http\Controllers\KeywordController;
 use App\Models\Keyword;
 use App\Models\Merchant;
@@ -73,8 +74,17 @@ Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchan
 // Route untuk link pelanggan (public, tidak perlu login)
 Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
 
-// Route untuk link dashboard (public, tidak perlu login)
-Route::get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
+// Portal merchant authentication
+Route::middleware('guest:portal')->group(function () {
+    Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
+    Route::post('/merchant-login', [PortalAuthController::class, 'login'])->name('portal.login.post');
+    Route::get('/merchant-login/google', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
+    Route::get('/merchant-login/google/callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+});
+Route::post('/merchant-logout', [PortalAuthController::class, 'logout'])->name('portal.logout');
+
+// Route untuk link dashboard (wajib login portal)
+Route::middleware('portal.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
 
 // Route untuk link history (public, tidak perlu login)
 Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
@@ -171,6 +181,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');
     Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
     Route::delete('/iklan/{iklan}', [IklanController::class, 'destroy'])->name('iklan.destroy');
+
+    // History All (requires login)
+    Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
 
     // Manajemen user
     Route::get('/user-management', [UserController::class, 'index'])->name('user.management');
