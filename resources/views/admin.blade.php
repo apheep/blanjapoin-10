@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    @include('partials.head')
      <style>
         /* Font optimization for Poppins */
         body {
@@ -40,6 +41,7 @@
             to {
                 opacity: 1;
             }
+        }
         /* Hide horizontal scrollbar on keyword desktop table but keep scrollability */
         .keyword-table-scroll {
             -ms-overflow-style: none;
@@ -787,6 +789,16 @@
                                 Add
                             </button>
                         </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('keywords.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
+                        </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
@@ -841,6 +853,16 @@
                                 <i class="fas fa-upload mr-2"></i>
                                 Upload
                             </button>
+                        </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('merchants.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
                         </div>
                     </div>
                     

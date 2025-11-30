@@ -145,6 +145,15 @@
                                 Add
                             </button>
                         </div>
+                        <div class="flex-1">
+                            <a
+                                href="{{ route('merchants.keywords.export.excel', $merchant->id) }}"
+                                class="flex items-center justify-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors w-full"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export Excel
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="w-full lg:w-64">

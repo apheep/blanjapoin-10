@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Keyword;
 use App\Models\Merchant;
+use App\Exports\KeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KeywordController extends Controller
 {
@@ -94,8 +97,8 @@ class KeywordController extends Controller
                 'end_date'      => $endDate,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
-                'rtx'           => $request->rtx,
-                'sisa_stock'    => $request->sisa_stock,
+                // 'rtx'           => $request->rtx,
+                // 'sisa_stock'    => $request->sisa_stock,
                 'status'        => $request->status ?? 'pending',
             ]);
 
@@ -118,7 +121,7 @@ class KeywordController extends Controller
             return redirect()->route('keywords.index')->with('success', 'Keyword berhasil ditambahkan!');
         } catch (\Exception $e) {
             // Log error untuk debugging
-            \Log::error('Error creating keyword: ' . $e->getMessage());
+            Log::error('Error creating keyword: ' . $e->getMessage());
             
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -226,7 +229,7 @@ class KeywordController extends Controller
             return back()->withErrors(['error' => $message])->withInput();
         } catch (\Exception $e) {
             // Log error untuk debugging
-            \Log::error('Error updating keyword: ' . $e->getMessage());
+            Log::error('Error updating keyword: ' . $e->getMessage());
             
             if ($request->wantsJson()) {
                 return response()->json([
@@ -355,11 +358,17 @@ class KeywordController extends Controller
                 'keyword' => $keyword
             ], 200);
         } catch (\Exception $e) {
-            \Log::error('Error rejecting keyword: ' . $e->getMessage());
+            Log::error('Error rejecting keyword: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menolak keyword: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function exportExcel()
+    {
+        $fileName = 'keywords_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new KeywordsExport, $fileName);
     }
 }
