@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 
+@include('partials.head')
+
+
 @section('content')
 @include('partials.navbar-admin')
 <div id="iklanPage" class="min-h-screen bg-white pt-28 md:pt-32 pb-12 opacity-0 transition-opacity duration-500">
