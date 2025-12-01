@@ -38,7 +38,7 @@
                             rel="noopener noreferrer"
                             data-voucher-card="true"
                             data-point="{{ $point }}"
-                            class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-2xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 flex flex-col h-full"
+                            class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-2xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 flex flex-col h-full @if($loop->iteration > 2) hidden md:flex @endif"
                         >
                             <div class="relative px-3 pt-3 pb-2 sm:px-4 sm:pt-4 sm:pb-3 flex-shrink-0">
                                 <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">

@@ -1,6 +1,6 @@
-    <section id="section-shop" class="mt-10 md:mt-14 mb-10 md:mb-14">
+<section id="section-shop" class="mt-10 md:mt-14 mb-10 md:mb-14">
      <div class="mb-4 md:mb-6 flex items-center justify-between">
-      <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🛍️ Belanja</h2>
+      <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🛍 Belanja</h2>
      </div>
      @php
        $shopCategory = 'belanja';
@@ -21,6 +21,7 @@
        $locationName = optional($keyword->merchant)->daerah ?? '';
        $searchName = strtolower(trim($merchantName . ' ' . $productName));
        $searchLocation = strtolower($locationName);
+       $uniqueId = 'shop-card-' . $keyword->id;
       @endphp
       <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
        <!-- Mobile Layout -->
@@ -34,15 +35,29 @@
          <h3 class="text-2xl font-bold text-neutral-900 leading-tight">
           {{ ($keyword->merchant)->nama_merchant}}
          </h3>
-         <div class="text-sm text-neutral-600 leading-relaxed">
+         <div class="text-[11px] text-neutral-600 leading-relaxed">
           @if(!is_null($keyword->diskon))
-          <div class="font-bold text-red-500 flex items-center gap-2">
+          <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
            <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
            <span class="text-xl font-bold text-red-500">{{ $keyword->diskon }}</span>
           </div>
           @endif
           @if($keyword->skb)
-          <div>{{ $keyword->skb }}</div>
+          <div class="relative">
+           <div id="{{ $uniqueId }}-text" class="line-clamp-3 transition-all duration-300">
+            {{ $keyword->skb }}
+           </div>
+           <button 
+            id="{{ $uniqueId }}-btn" 
+            onclick="event.stopPropagation(); toggleDescription('{{ $uniqueId }}')" 
+            class="hidden mt-1 text-orange-600 font-semibold flex items-center gap-1 hover:text-orange-700 transition-colors"
+           >
+            <span id="{{ $uniqueId }}-btn-text">See details</span>
+            <svg id="{{ $uniqueId }}-arrow" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+            </svg>
+           </button>
+          </div>
           @endif
          </div>
          <div class="inline-flex items-center gap-1.5 bg-white rounded-full px-0.5 py-0.5 self-start">
@@ -95,7 +110,7 @@
          <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
           <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
          </div>
-         <div class="absolute bottom-3 right-3 md:bottom-4 md:right-4 bg-gradient-to-r from-black/90 to-black/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
+         <div class="absolute bottom-2 right-4 md:bottom-3 md:right-5 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
           <span class="inline-flex items-center gap-1.5">
            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
            <span>Stock: {{ $keyword->stock }}</span>
@@ -157,6 +172,7 @@
         $locationName = optional($keyword->merchant)->daerah ?? '';
         $searchName = strtolower(trim($merchantName . ' ' . $productName));
         $searchLocation = strtolower($locationName);
+        $uniqueId = 'shop-card-extra-' . $keyword->id;
        @endphp
        <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer h-full min-h-[280px]">
         <!-- Mobile Layout -->
@@ -170,15 +186,29 @@
           <h3 class="text-2xl font-bold text-neutral-900 leading-tight">
            {{ ($keyword->merchant)->nama_merchant}}
           </h3>
-          <div class="text-sm text-neutral-600 leading-relaxed">
+          <div class="text-[11px] text-neutral-600 leading-relaxed">
            @if(!is_null($keyword->diskon))
-           <div class="font-bold text-red-500 flex items-center gap-2">
+           <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
             <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
             <span class="text-xl font-bold text-red-500">{{ $keyword->diskon }}</span>
            </div>
            @endif
            @if($keyword->skb)
-           <div>{{ $keyword->skb }}</div>
+           <div class="relative">
+            <div id="{{ $uniqueId }}-text" class="line-clamp-3 transition-all duration-300">
+             {{ $keyword->skb }}
+            </div>
+            <button 
+             id="{{ $uniqueId }}-btn" 
+             onclick="event.stopPropagation(); toggleDescription('{{ $uniqueId }}')" 
+             class="hidden mt-1 text-orange-600 font-semibold flex items-center gap-1 hover:text-orange-700 transition-colors"
+            >
+             <span id="{{ $uniqueId }}-btn-text">See details</span>
+             <svg id="{{ $uniqueId }}-arrow" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+             </svg>
+            </button>
+           </div>
            @endif
           </div>
           <div class="inline-flex items-center gap-1.5 bg-white rounded-full px-0.5 py-0.5 self-start">
@@ -231,7 +261,7 @@
           <div class="aspect-[2/1] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
            <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
           </div>
-          <div class="absolute bottom-3 right-3 md:bottom-4 md:right-4 bg-gradient-to-r from-black/90 to-black/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
+          <div class="absolute bottom-2 right-4 md:bottom-3 md:right-5 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
            <span class="inline-flex items-center gap-1.5">
             <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
             <span>Stock: {{ $keyword->stock }}</span>
@@ -290,4 +320,47 @@
         </span>
        </button>
       </div>
-    </section>
+
+<!-- JavaScript untuk toggle description -->
+<script>
+function toggleDescription(uniqueId) {
+    const textElement = document.getElementById(uniqueId + '-text');
+    const btnElement = document.getElementById(uniqueId + '-btn');
+    const btnTextElement = document.getElementById(uniqueId + '-btn-text');
+    const arrowElement = document.getElementById(uniqueId + '-arrow');
+    
+    if (textElement.classList.contains('line-clamp-3')) {
+        // Expand
+        textElement.classList.remove('line-clamp-3');
+        btnTextElement.textContent = 'Show less';
+        arrowElement.classList.add('rotate-180');
+    } else {
+        // Collapse
+        textElement.classList.add('line-clamp-3');
+        btnTextElement.textContent = 'See details';
+        arrowElement.classList.remove('rotate-180');
+    }
+}
+
+// Check if text is truncated and show button
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for all description elements
+    const cards = document.querySelectorAll('[id$="-text"]');
+    
+    cards.forEach(function(textElement) {
+        const uniqueId = textElement.id.replace('-text', '');
+        const btnElement = document.getElementById(uniqueId + '-btn');
+        
+        if (btnElement) {
+            // Check if content is truncated
+            const lineHeight = parseFloat(getComputedStyle(textElement).lineHeight);
+            const maxHeight = lineHeight * 3; // 3 lines
+            
+            if (textElement.scrollHeight > maxHeight + 2) { // +2 for tolerance
+                btnElement.classList.remove('hidden');
+            }
+        }
+    });
+});
+</script>
+</section>
