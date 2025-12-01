@@ -21,7 +21,7 @@
    </div>
   </div>
   <div class="w-full bg-white relative overflow-hidden"></div>
-  <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none"
+  <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none hidden md:block"
      style="background-image: url('{{ asset('dot_background.png') }}');
             background-repeat: repeat;
             background-size: cover;
@@ -42,13 +42,13 @@
     @include('partials.banner-carousel', ['iklans' => $iklans])
 
     <div class="relative mt-4 md:mt-8">
-     <div class="pointer-events-none select-none absolute left-1/2 -top-24 md:-top-10 -z-10"
+     <div class="pointer-events-none select-none absolute left-1/2 top-0 md:-top-10 -z-10"
           style="transform: translateX(-50%); width: 100vw; height: 780px; overflow: hidden;">
-      <img src="{{ asset('wave.png') }}" alt="" class="w-full h-auto -mt-20 md:-mt-36">
+      <img src="{{ asset('wave.png') }}" alt="" class="w-full h-auto mt-70 md:-mt-36">
      </div>
 
      <section class="relative z-10 space-y-10 md:space-y-12"></section>
-      <div class="-mt-10">
+     <div class="mt-10 md:-mt-10">
        @include('partials.spesial_promo', ['specialPromos' => $specialPromos ?? null])
       </div>
 
