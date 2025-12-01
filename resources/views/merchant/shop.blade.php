@@ -47,7 +47,7 @@
          </div>
          <div class="inline-flex items-center gap-1.5 bg-white rounded-full px-0.5 py-0.5 self-start">
           <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
-          <span class="text-[20px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
+          <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
          </div>
          <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100 mt-auto">
           <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
@@ -84,7 +84,7 @@
          <div class="text-right flex-shrink-0 ml-2">
           <div class="inline-flex items-center gap-2">
            <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-10 h-10 object-contain">
-           <span class="text-base md:text-2xl font-black text-red-600">{{ $keyword->diskon }}</span>
+           <span class="text-base md:text-3xl font-black text-red-600">{{ $keyword->diskon }}</span>
           </div>
          </div>
          @endif
@@ -95,7 +95,7 @@
          <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
           <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
          </div>
-         <div class="absolute bottom-3 right-3 md:bottom-4 md:right-4 bg-gradient-to-r from-black/90 to-black/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
+         <div class="absolute bottom-3 right-4 md:bottom-4 md:right-5 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
           <span class="inline-flex items-center gap-1.5">
            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
            <span>Stock: {{ $keyword->stock }}</span>
@@ -109,7 +109,7 @@
           {{ $productName ?: $merchantName }}
          </h4>
          @if($keyword->skb)
-         <p class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2">
+         <p class="text-xs md:text-xs text-neutral-600 mb-2.5 leading-relaxed line-clamp-2">
           {{ $keyword->skb }}
          </p>
          @endif
@@ -183,7 +183,7 @@
           </div>
           <div class="inline-flex items-center gap-1.5 bg-white rounded-full px-0.5 py-0.5 self-start">
            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
-           <span class="text-[20px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
+           <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
           </div>
           <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100 mt-auto">
            <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
@@ -220,7 +220,7 @@
           <div class="text-right flex-shrink-0 ml-2">
            <div class="inline-flex items-center gap-2">
             <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-10 h-10 object-contain">
-            <span class="text-base md:text-2xl font-black text-red-600">{{ $keyword->diskon }}</span>
+            <span class="text-base md:text-3xl font-black text-red-600">{{ $keyword->diskon }}</span>
            </div>
           </div>
           @endif
@@ -231,7 +231,7 @@
           <div class="aspect-[2/1] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
            <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
           </div>
-          <div class="absolute bottom-3 right-3 md:bottom-4 md:right-4 bg-gradient-to-r from-black/90 to-black/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
+          <div class="absolute bottom-3 right-4 md:bottom-4 md:right-5 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
            <span class="inline-flex items-center gap-1.5">
             <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
             <span>Stock: {{ $keyword->stock }}</span>
