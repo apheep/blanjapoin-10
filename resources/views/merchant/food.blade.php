@@ -1,6 +1,6 @@
 <section id="section-food" class="mt-10 md:mt-14 mb-10 md:mb-14">
     <div class="mb-4 md:mb-6 flex items-center justify-between">
-        <h2 class="text-2xl md:text-3xl font-black text-neutral-900"> Kuliner</h2>
+        <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🍔​ Kuliner</h2>
     </div>
 
     @php
@@ -9,12 +9,12 @@
             return $keyword->merchant && $keyword->merchant->kategori === $foodCategory
                 && $keyword->status === 'approve';
         })->values();
-        $visibleKeywords = $foodKeywords->take(2);
-        $extraKeywords = $foodKeywords->slice(2);
+        $visibleKeywords = $foodKeywords->take(3);
+        $extraKeywords = $foodKeywords->slice(3);
     @endphp
 
     <!-- Card utama (2 pertama) -->
-    <div id="foodCardContainer" data-voucher-container="true" data-voucher-section="food" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-2 lg:gap-5 items-stretch px-1">
+    <div id="foodCardContainer" data-voucher-container="true" data-voucher-section="food" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
         @forelse($visibleKeywords as $keyword)
             @php
                 $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -24,7 +24,7 @@
                 $searchLocation = strtolower($locationName);
                 $uniqueId = 'food-card-' . $keyword->id;
             @endphp
-            <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
+            <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px] {{ $loop->iteration === 3 ? 'hidden lg:block' : '' }}">
                 <!-- Mobile Layout -->
                 <div class="lg:hidden flex flex-col h-full">
                     <div class="relative">
@@ -125,9 +125,21 @@
                             {{ $productName ?: $merchantName }}
                         </h4>
                         @if($keyword->skb)
-                            <p class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2">
-                                {{ $keyword->skb }}
-                            </p>
+                            <div class="relative">
+                                <p id="{{ $uniqueId }}-text-desktop" class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2 transition-all duration-300">
+                                    {{ $keyword->skb }}
+                                </p>
+                                <button 
+                                    id="{{ $uniqueId }}-btn-desktop" 
+                                    onclick="event.stopPropagation(); toggleDescriptionDesktop('{{ $uniqueId }}')" 
+                                    class="hidden text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors text-xs"
+                                >
+                                    <span id="{{ $uniqueId }}-btn-text-desktop">See details</span>
+                                    <svg id="{{ $uniqueId }}-arrow-desktop" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         @endif
                         @if($keyword->end_date)
                             <div class="flex items-center gap-1.5 text-xs text-neutral-500 mb-3">
@@ -156,7 +168,7 @@
                 </div>
             </article>
         @empty
-            <div class="col-span-2 text-center text-neutral-500 text-sm py-6">
+            <div class="col-span-3 text-center text-neutral-500 text-sm py-6">
                 Belum ada data promo untuk kategori Food.
             </div>
         @endforelse
@@ -165,7 +177,7 @@
     <!-- Card ekstra (See All) -->
     @if($extraKeywords->isNotEmpty())
         <div id="extraFoodCard" class="group max-h-0 overflow-hidden opacity-0 scale-y-0 origin-top transition-all duration-500 ease-in-out mt-6 md:mt-10">
-            <div data-voucher-container="true" data-voucher-section="food" data-container-type="extra" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-2 lg:gap-5 items-stretch px-1">
+            <div data-voucher-container="true" data-voucher-section="food" data-container-type="extra" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
                 @foreach($extraKeywords as $keyword)
                     @php
                         $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -322,8 +334,9 @@
         </button>
     </div>
 
-    <!-- JavaScript untuk toggle description -->
+    <!-- JavaScript untuk toggle description dan See All (mengikuti pola Shop) -->
     <script>
+        // Function to toggle description (Mobile)
         function toggleDescription(uniqueId) {
             const textElement = document.getElementById(uniqueId + '-text');
             const btnElement = document.getElementById(uniqueId + '-btn');
@@ -343,25 +356,106 @@
             }
         }
 
-        // Check if text is truncated and show button
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check for all description elements
-            const cards = document.querySelectorAll('[id$="-text"]');
+        // Function to toggle description (Desktop)
+        function toggleDescriptionDesktop(uniqueId) {
+            const textElement = document.getElementById(uniqueId + '-text-desktop');
+            const btnElement = document.getElementById(uniqueId + '-btn-desktop');
+            const btnTextElement = document.getElementById(uniqueId + '-btn-text-desktop');
+            const arrowElement = document.getElementById(uniqueId + '-arrow-desktop');
             
-            cards.forEach(function(textElement) {
+            if (textElement.classList.contains('line-clamp-2')) {
+                // Expand
+                textElement.classList.remove('line-clamp-2');
+                btnTextElement.textContent = 'Show less';
+                arrowElement.classList.add('rotate-180');
+            } else {
+                // Collapse
+                textElement.classList.add('line-clamp-2');
+                btnTextElement.textContent = 'See details';
+                arrowElement.classList.remove('rotate-180');
+            }
+        }
+
+        // Function to check if text is truncated and show button (Mobile & Desktop)
+        function checkTruncatedTextFood() {
+            // Check Mobile version (3 lines)
+            const mobileTextElements = document.querySelectorAll('[id$="-text"]:not([id$="-text-desktop"])');
+            
+            mobileTextElements.forEach(function(textElement) {
+                const parentCard = textElement.closest('.voucher-card');
+                if (!parentCard || parentCard.offsetParent === null) {
+                    return;
+                }
+                
                 const uniqueId = textElement.id.replace('-text', '');
                 const btnElement = document.getElementById(uniqueId + '-btn');
                 
                 if (btnElement) {
-                    // Check if content is truncated
-                    const lineHeight = parseFloat(getComputedStyle(textElement).lineHeight);
-                    const maxHeight = lineHeight * 3; // 3 lines
+                    const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
                     
-                    if (textElement.scrollHeight > maxHeight + 2) { // +2 for tolerance
+                    if (isOverflowing) {
                         btnElement.classList.remove('hidden');
+                        btnElement.classList.add('flex');
+                    } else {
+                        btnElement.classList.add('hidden');
+                        btnElement.classList.remove('flex');
                     }
                 }
             });
+            
+            // Check Desktop version (2 lines)
+            const desktopTextElements = document.querySelectorAll('[id$="-text-desktop"]');
+            
+            desktopTextElements.forEach(function(textElement) {
+                const parentCard = textElement.closest('.voucher-card');
+                if (!parentCard || parentCard.offsetParent === null) {
+                    return;
+                }
+                
+                const uniqueId = textElement.id.replace('-text-desktop', '');
+                const btnElement = document.getElementById(uniqueId + '-btn-desktop');
+                
+                if (btnElement) {
+                    const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
+                    
+                    if (isOverflowing) {
+                        btnElement.classList.remove('hidden');
+                        btnElement.classList.add('flex');
+                    } else {
+                        btnElement.classList.add('hidden');
+                        btnElement.classList.remove('flex');
+                    }
+                }
+            });
+        }
+
+        // Hook ke toggleFoodCards (dipanggil dari tombol See All)
+        const originalToggleFoodCards = window.toggleFoodCards;
+        window.toggleFoodCards = function() {
+            if (typeof originalToggleFoodCards === 'function') {
+                originalToggleFoodCards();
+            }
+
+            // Setelah animasi, cek ulang truncation
+            setTimeout(function() {
+                checkTruncatedTextFood();
+            }, 500);
+        };
+
+        // Check on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                checkTruncatedTextFood();
+            }, 100);
+        });
+
+        // Re-check on resize
+        let resizeTimerFood;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimerFood);
+            resizeTimerFood = setTimeout(function() {
+                checkTruncatedTextFood();
+            }, 250);
         });
     </script>
 </section>
