@@ -8,12 +8,12 @@
        return $keyword->merchant && $keyword->merchant->kategori === $shopCategory
        && $keyword->status === 'approve';
         })->values();
-      $visibleKeywords = $shopKeywords->take(2);
-      $extraKeywords = $shopKeywords->slice(2);
+      $visibleKeywords = $shopKeywords->take(3);
+      $extraKeywords = $shopKeywords->slice(3);
      @endphp
 
-     <!-- Card utama (2 pertama) -->
-     <div id="shopCardContainer" data-voucher-container="true" data-voucher-section="shop" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-2 lg:gap-5 items-stretch px-1">
+     <!-- Card utama (3 pertama) -->
+     <div id="shopCardContainer" data-voucher-container="true" data-voucher-section="shop" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
       @forelse($visibleKeywords as $keyword)
       @php
        $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -23,7 +23,7 @@
        $searchLocation = strtolower($locationName);
        $uniqueId = 'shop-card-' . $keyword->id;
       @endphp
-      <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
+      <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px] {{ $loop->iteration === 3 ? 'hidden lg:block' : '' }}">
        <!-- Mobile Layout -->
        <div class="lg:hidden flex flex-col h-full">
         <div class="relative">
@@ -50,7 +50,7 @@
            <button 
             id="{{ $uniqueId }}-btn" 
             onclick="event.stopPropagation(); toggleDescription('{{ $uniqueId }}')" 
-            class="hidden mt-1 text-orange-600 font-semibold flex items-center gap-1 hover:text-orange-700 transition-colors"
+            class="hidden mt-1 text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors"
            >
             <span id="{{ $uniqueId }}-btn-text">See details</span>
             <svg id="{{ $uniqueId }}-arrow" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,15 +118,27 @@
          </div>
         </div>
 
-        <!-- Details -->
+                 <!-- Details -->
         <div class="flex flex-col px-4 md:px-5 pb-4 md:pb-5 flex-1 min-h-0">
          <h4 class="text-base md:text-lg font-black text-neutral-900 mb-2 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
           {{ $productName ?: $merchantName }}
          </h4>
          @if($keyword->skb)
-         <p class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2">
-          {{ $keyword->skb }}
-         </p>
+         <div class="relative">
+          <p id="{{ $uniqueId }}-text-desktop" class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2 transition-all duration-300">
+           {{ $keyword->skb }}
+          </p>
+          <button 
+           id="{{ $uniqueId }}-btn-desktop" 
+           onclick="event.stopPropagation(); toggleDescriptionDesktop('{{ $uniqueId }}')" 
+           class="hidden text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors text-xs"
+          >
+           <span id="{{ $uniqueId }}-btn-text-desktop">See details</span>
+           <svg id="{{ $uniqueId }}-arrow-desktop" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+           </svg>
+          </button>
+         </div>
          @endif
          @if($keyword->end_date)
          <div class="flex items-center gap-1.5 text-xs text-neutral-500 mb-3">
@@ -155,7 +167,7 @@
        </div>
       </article>
       @empty
-      <div class="col-span-2 text-center text-neutral-500 text-sm py-6">
+      <div class="col-span-3 text-center text-neutral-500 text-sm py-6">
        Belum ada data promo untuk kategori ini.
       </div>
       @endforelse
@@ -164,7 +176,7 @@
     <!-- Card ekstra (See All) -->
      @if($extraKeywords->isNotEmpty())
      <div id="extraShopCard" class="group max-h-0 overflow-hidden opacity-0 scale-y-0 origin-top transition-all duration-500 ease-in-out mt-6 md:mt-10">
-      <div data-voucher-container="true" data-voucher-section="shop" data-container-type="extra" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-2 lg:gap-5 items-stretch px-1">
+      <div data-voucher-container="true" data-voucher-section="shop" data-container-type="extra" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
        @foreach($extraKeywords as $keyword)
        @php
         $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
@@ -201,7 +213,7 @@
             <button 
              id="{{ $uniqueId }}-btn" 
              onclick="event.stopPropagation(); toggleDescription('{{ $uniqueId }}')" 
-             class="hidden mt-1 text-orange-600 font-semibold flex items-center gap-1 hover:text-orange-700 transition-colors"
+             class="hidden mt-1 text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors"
             >
              <span id="{{ $uniqueId }}-btn-text">See details</span>
              <svg id="{{ $uniqueId }}-arrow" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,9 +287,21 @@
            {{ $productName ?: $merchantName }}
           </h4>
           @if($keyword->skb)
-          <p class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2">
-           {{ $keyword->skb }}
-          </p>
+          <div class="relative">
+           <p id="{{ $uniqueId }}-text-desktop" class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2 transition-all duration-300">
+            {{ $keyword->skb }}
+           </p>
+           <button 
+            id="{{ $uniqueId }}-btn-desktop" 
+            onclick="event.stopPropagation(); toggleDescriptionDesktop('{{ $uniqueId }}')" 
+            class="hidden text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors text-xs"
+           >
+            <span id="{{ $uniqueId }}-btn-text-desktop">See details</span>
+            <svg id="{{ $uniqueId }}-arrow-desktop" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+            </svg>
+           </button>
+          </div>
           @endif
           @if($keyword->end_date)
           <div class="flex items-center gap-1.5 text-xs text-neutral-500 mb-3">
@@ -321,8 +345,9 @@
        </button>
       </div>
 
-<!-- JavaScript untuk toggle description -->
+<!-- JavaScript untuk toggle description dan See All -->
 <script>
+// Function to toggle description (Mobile)
 function toggleDescription(uniqueId) {
     const textElement = document.getElementById(uniqueId + '-text');
     const btnElement = document.getElementById(uniqueId + '-btn');
@@ -342,25 +367,127 @@ function toggleDescription(uniqueId) {
     }
 }
 
-// Check if text is truncated and show button
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for all description elements
-    const cards = document.querySelectorAll('[id$="-text"]');
+// Function to toggle description (Desktop)
+function toggleDescriptionDesktop(uniqueId) {
+    const textElement = document.getElementById(uniqueId + '-text-desktop');
+    const btnElement = document.getElementById(uniqueId + '-btn-desktop');
+    const btnTextElement = document.getElementById(uniqueId + '-btn-text-desktop');
+    const arrowElement = document.getElementById(uniqueId + '-arrow-desktop');
     
-    cards.forEach(function(textElement) {
+    if (textElement.classList.contains('line-clamp-2')) {
+        // Expand
+        textElement.classList.remove('line-clamp-2');
+        btnTextElement.textContent = 'Show less';
+        arrowElement.classList.add('rotate-180');
+    } else {
+        // Collapse
+        textElement.classList.add('line-clamp-2');
+        btnTextElement.textContent = 'See details';
+        arrowElement.classList.remove('rotate-180');
+    }
+}
+
+// Function to check if text is truncated and show button
+function checkTruncatedText() {
+    // Check Mobile version (3 lines)
+    const mobileTextElements = document.querySelectorAll('[id$="-text"]:not([id$="-text-desktop"])');
+    
+    mobileTextElements.forEach(function(textElement) {
+        // Skip jika parent card hidden
+        const parentCard = textElement.closest('.voucher-card');
+        if (!parentCard || parentCard.offsetParent === null) {
+            return;
+        }
+        
         const uniqueId = textElement.id.replace('-text', '');
         const btnElement = document.getElementById(uniqueId + '-btn');
         
         if (btnElement) {
-            // Check if content is truncated
-            const lineHeight = parseFloat(getComputedStyle(textElement).lineHeight);
-            const maxHeight = lineHeight * 3; // 3 lines
+            // Check if content is actually truncated
+            const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
             
-            if (textElement.scrollHeight > maxHeight + 2) { // +2 for tolerance
+            if (isOverflowing) {
                 btnElement.classList.remove('hidden');
+                btnElement.classList.add('flex');
+            } else {
+                btnElement.classList.add('hidden');
+                btnElement.classList.remove('flex');
             }
         }
     });
+    
+    // Check Desktop version (2 lines)
+    const desktopTextElements = document.querySelectorAll('[id$="-text-desktop"]');
+    
+    desktopTextElements.forEach(function(textElement) {
+        // Skip jika parent card hidden
+        const parentCard = textElement.closest('.voucher-card');
+        if (!parentCard || parentCard.offsetParent === null) {
+            return;
+        }
+        
+        const uniqueId = textElement.id.replace('-text-desktop', '');
+        const btnElement = document.getElementById(uniqueId + '-btn-desktop');
+        
+        if (btnElement) {
+            // Check if content is actually truncated
+            const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
+            
+            if (isOverflowing) {
+                btnElement.classList.remove('hidden');
+                btnElement.classList.add('flex');
+            } else {
+                btnElement.classList.add('hidden');
+                btnElement.classList.remove('flex');
+            }
+        }
+    });
+}
+
+// Function to toggle Shop Cards (See All functionality)
+function toggleShopCards() {
+    const extraCard = document.getElementById('extraShopCard');
+    const btn = document.getElementById('shopSeeAllBtn');
+    const btnText = document.getElementById('shopSeeAllText');
+    const btnArrow = document.getElementById('shopSeeAllArrow');
+    
+    if (!extraCard) return;
+    
+    if (extraCard.classList.contains('max-h-0')) {
+        // Show extra cards
+        extraCard.classList.remove('max-h-0', 'opacity-0', 'scale-y-0');
+        extraCard.classList.add('max-h-[5000px]', 'opacity-100', 'scale-y-100');
+        btnText.textContent = 'Show Less';
+        btnArrow.querySelector('svg').style.transform = 'rotate(180deg)';
+        
+        // PENTING: Check truncated text setelah card muncul
+        setTimeout(function() {
+            checkTruncatedText();
+        }, 500); // Tunggu animasi selesai
+    } else {
+        // Hide extra cards
+        extraCard.classList.add('max-h-0', 'opacity-0', 'scale-y-0');
+        extraCard.classList.remove('max-h-[5000px]', 'opacity-100', 'scale-y-100');
+        btnText.textContent = 'See All';
+        btnArrow.querySelector('svg').style.transform = 'rotate(0deg)';
+    }
+}
+
+// Check on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Delay sedikit untuk memastikan semua styles sudah applied
+    setTimeout(function() {
+        checkTruncatedText();
+    }, 100);
+});
+
+// Optional: Re-check on window resize (untuk responsive)
+let resizeTimer;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+        checkTruncatedText();
+    }, 250);
 });
 </script>
 </section>
