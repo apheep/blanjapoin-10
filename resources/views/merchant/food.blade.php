@@ -1,6 +1,6 @@
 <section id="section-food" class="mt-10 md:mt-14 mb-10 md:mb-14">
     <div class="mb-4 md:mb-6 flex items-center justify-between">
-        <h2 class="text-2xl md:text-3xl font-black text-neutral-900"> Kuliner</h2>
+        <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🍔​ Kuliner</h2>
     </div>
 
     @php
