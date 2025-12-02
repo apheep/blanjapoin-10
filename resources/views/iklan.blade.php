@@ -212,6 +212,7 @@
 </div>
 
 <script>
+// Script khusus halaman iklan
 document.addEventListener('DOMContentLoaded', function () {
     const page = document.getElementById('iklanPage');
     if (page) {
@@ -318,6 +319,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 closeModal(deleteModal, deleteModalContent);
             }
         });
+    }
+});
+
+// Dropdown user (desktop) – sama seperti di halaman admin
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    const arrow = document.getElementById('userDropdownArrow');
+    if (!dropdown) return;
+
+    if (dropdown.classList.contains('opacity-0')) {
+        dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
+        dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+    } else {
+        dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+        dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Tutup dropdown jika klik di luar
+document.addEventListener('click', function(event) {
+    const btn = document.getElementById('userDropdownBtn');
+    const dropdown = document.getElementById('userDropdown');
+    if (!btn || !dropdown) return;
+
+    if (!btn.contains(event.target) && !dropdown.contains(event.target) && dropdown.classList.contains('opacity-100')) {
+        toggleUserDropdown();
     }
 });
 </script>
