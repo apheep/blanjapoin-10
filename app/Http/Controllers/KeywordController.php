@@ -37,8 +37,7 @@ class KeywordController extends Controller
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
-                'rtx'               => 'nullable|string|max:255',
-                'sisa_stock'        => 'nullable|integer|min:0',
+
                 'status'            => 'nullable|in:approve,pending,reject',
             ]);
 
@@ -97,8 +96,6 @@ class KeywordController extends Controller
                 'end_date'      => $endDate,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
-                // 'rtx'           => $request->rtx,
-                // 'sisa_stock'    => $request->sisa_stock,
                 'status'        => $request->status ?? 'pending',
             ]);
 
@@ -152,8 +149,6 @@ class KeywordController extends Controller
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
-                'rtx'               => 'nullable|string|max:255',
-                'sisa_stock'        => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
             ]);
 
@@ -201,8 +196,6 @@ class KeywordController extends Controller
                 'end_date'      => $request->end_date,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
-                'rtx'           => $request->rtx,
-                'sisa_stock'    => $request->sisa_stock,
                 'status'        => $request->status ?? 'pending',
             ]);
 
@@ -264,8 +257,16 @@ class KeywordController extends Controller
     public function search(Request $request)
     {
         $searchTerm = trim($request->get('q', ''));
+        $status = $request->get('status');
+        $merchantId = $request->get('merchant_id');
 
         $keywordsQuery = Keyword::with('merchant')
+            ->when($merchantId, function ($query) use ($merchantId) {
+                $query->where('merchant_key', $merchantId);
+            })
+            ->when(in_array($status, ['approve', 'pending', 'reject']), function ($query) use ($status) {
+                $query->where('status', $status);
+            })
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
                 $query->where(function ($subQuery) use ($searchTerm) {
                     $subQuery->where('nama_produk', 'like', "%{$searchTerm}%")
@@ -282,6 +283,7 @@ class KeywordController extends Controller
             })
             ->orderBy('id');
 
+        // Paginate standar 10 data per halaman (baik dengan atau tanpa filter status)
         $keywords = $keywordsQuery->paginate(10)->appends($request->query());
 
         if ($request->ajax()) {

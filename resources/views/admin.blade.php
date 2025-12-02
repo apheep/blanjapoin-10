@@ -168,6 +168,7 @@
 
                 function toggleKeywordStatusDropdown() {
                     const dropdown = document.getElementById('statusDropdownKeyword');
+                    const arrow = document.getElementById('statusArrowKeyword');
                     if (!dropdown) return;
                     
                     const isHidden = dropdown.classList.contains('hidden');
@@ -187,12 +188,15 @@
                             dropdown.classList.remove('opacity-0', 'translate-y-1');
                             dropdown.classList.add('opacity-100', 'translate-y-0');
                         });
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
                     } else {
                         dropdown.classList.remove('opacity-100', 'translate-y-0');
                         dropdown.classList.add('opacity-0', 'translate-y-1');
                         setTimeout(() => dropdown.classList.add('hidden'), 150);
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
                     }
                 }
+
 
                 function filterKeywordByStatus(status) {
                     const button = document.getElementById('statusBtnKeyword');
@@ -220,7 +224,7 @@
                     }
 
                     button.className = buttonClasses;
-                    button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
+                    button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i id="statusArrowKeyword" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>`;
 
                     // ====== (update dropdown item active state) ======
                     const dropdownItems = document.querySelectorAll('#statusDropdownKeyword a[data-status]');
@@ -249,76 +253,29 @@
                         }
                     });
 
-                    const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-                    rows.forEach((row, index) => {
-                        const s = (row.dataset.status || '').toLowerCase();
-                        const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        const matchesStatus = (status === 'all' || normalized === status);
-                        const matchesDate = (row.dataset.dateFilterMatch ?? 'true') !== 'false';
-                        const shouldShow = matchesStatus && matchesDate;
-
-                        row.dataset.statusHidden = matchesStatus ? 'false' : 'true';
-                        
-                        if (shouldShow) {
-                            row.style.opacity = '0';
-                            row.style.transform = 'translateY(-10px)';
-                            row.style.display = '';
-                            setTimeout(() => {
-                                row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                                row.style.opacity = '1';
-                                row.style.transform = 'translateY(0)';
-                            }, index * 20);
-                        } else {
-                            row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-                            row.style.opacity = '0';
-                            row.style.transform = 'translateY(-10px)';
-                            setTimeout(() => {
-                                row.style.display = 'none';
-                            }, 200);
-                        }
-                    });
-
-                    const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-                    cards.forEach((card, index) => {
-                        const s = (card.dataset.status || '').toLowerCase();
-                        const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        const matchesStatus = (status === 'all' || normalized === status);
-                        const matchesDate = (card.dataset.dateFilterMatch ?? 'true') !== 'false';
-                        const shouldShow = matchesStatus && matchesDate;
-
-                        card.dataset.statusHidden = matchesStatus ? 'false' : 'true';
-                        
-                        if (shouldShow) {
-                            card.style.opacity = '0';
-                            card.style.transform = 'translateY(-10px)';
-                            card.style.display = '';
-                            setTimeout(() => {
-                                card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                                card.style.opacity = '1';
-                                card.style.transform = 'translateY(0)';
-                            }, index * 20);
-                        } else {
-                            card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-                            card.style.opacity = '0';
-                            card.style.transform = 'translateY(-10px)';
-                            setTimeout(() => {
-                                card.style.display = 'none';
-                            }, 200);
-                        }
-                    });
+                    // Reload seluruh tabel keyword dari server dengan filter status ini
+                    if (typeof fetchKeywordTable === 'function' && typeof buildKeywordSearchRequestUrl === 'function') {
+                        const requestUrl = buildKeywordSearchRequestUrl();
+                        fetchKeywordTable(requestUrl);
+                    }
 
                     toggleKeywordStatusDropdown();
                 }
 
                 document.addEventListener('click', function(event) {
-                    if (!event.target.closest('#statusDropdownKeyword') && 
-                        !event.target.closest('#statusBtnKeyword')) {
-                        const dropdown = document.getElementById('statusDropdownKeyword');
-                        if (dropdown) {
-                            dropdown.classList.add('hidden');
-                        }
+                if (!event.target.closest('#statusDropdownKeyword') && 
+                    !event.target.closest('#statusBtnKeyword')) {
+                    const dropdown = document.getElementById('statusDropdownKeyword');
+                    const arrow = document.getElementById('statusArrowKeyword');
+                    if (dropdown) {
+                        dropdown.classList.add('hidden');
                     }
-                });
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+
 
                 ////////////////////////////////////////////////////////////////////
                 // Category Dropdown & Filter for Merchant and Telkom
@@ -353,6 +310,7 @@
 
                 function toggleKategoriDropdownMerchant() {
                     const dropdown = document.getElementById('kategoriDropdownMerchant');
+                    const arrow = document.getElementById('kategoriArrowMerchant');
                     if (!dropdown) return;
 
                     const isHidden = dropdown.classList.contains('hidden');
@@ -370,34 +328,13 @@
                             dropdown.classList.remove('opacity-0', 'translate-y-1');
                             dropdown.classList.add('opacity-100', 'translate-y-0');
                         });
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
                     } else {
                         hideDropdown(dropdown);
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
                     }
                 }
 
-                function toggleKategoriDropdownTelkom() {
-                    const dropdown = document.getElementById('kategoriDropdownTelkom');
-                    if (!dropdown) return;
-
-                    const isHidden = dropdown.classList.contains('hidden');
-                    const otherDropdowns = document.querySelectorAll("[id^='kategoriDropdown']");
-
-                    otherDropdowns.forEach(dd => {
-                        if (dd.id !== 'kategoriDropdownTelkom' && !dd.classList.contains('hidden')) {
-                            hideDropdown(dd);
-                        }
-                    });
-
-                    if (isHidden) {
-                        dropdown.classList.remove('hidden');
-                        requestAnimationFrame(() => {
-                            dropdown.classList.remove('opacity-0', 'translate-y-1');
-                            dropdown.classList.add('opacity-100', 'translate-y-0');
-                        });
-                    } else {
-                        hideDropdown(dropdown);
-                    }
-                }
 
                 document.addEventListener('click', function(event) {
                     const merchantDropdown = document.getElementById('kategoriDropdownMerchant');
@@ -410,7 +347,12 @@
 
                     if (!clickMerchant && merchantDropdown && !merchantDropdown.classList.contains('hidden')) {
                         hideDropdown(merchantDropdown);
+                        const merchantArrow = document.getElementById('kategoriArrowMerchant');
+                        if (merchantArrow) {
+                            merchantArrow.style.transform = 'rotate(0deg)';
+                        }
                     }
+
 
                     if (!clickTelkom && telkomDropdown && !telkomDropdown.classList.contains('hidden')) {
                         hideDropdown(telkomDropdown);
@@ -536,8 +478,9 @@
                         button.innerHTML = `
                             <i class="fas fa-list mr-2"></i>
                             ${label}
-                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                            <i id="kategoriArrowMerchant" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                         `;
+
                     }
 
                     // ====== (update dropdown item active state) ======
@@ -607,7 +550,17 @@
                         }
                     }
 
-                    // Mapping table type to actual DOM elements
+                    // ==== MERCHANT TABLE: gunakan filter ke server (bukan hanya data di halaman saat ini) ====
+                    if (tableType === 'merchant') {
+                        // Saat reapply (mis. setelah pagination AJAX), cukup perbarui tampilan tombol & dropdown saja,
+                        // jangan trigger request baru supaya tidak loop.
+                        if (!reapply && typeof fetchMerchantTable === 'function' && typeof buildMerchantSearchRequestUrl === 'function') {
+                            fetchMerchantTable(buildMerchantSearchRequestUrl());
+                        }
+                        return;
+                    }
+
+                    // Mapping table type to actual DOM elements (saat ini dipakai untuk telkom)
                     let tableBodyId = '';
                     let rowClass = '';
 
@@ -763,8 +716,9 @@
                             <button id="statusBtnKeyword" onclick="toggleKeywordStatusDropdown()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-filter mr-2"></i>
                                 Status
-                                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                <i id="statusArrowKeyword" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                             </button>
+
                             <div id="statusDropdownKeyword" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-56 sm:max-w-none max-w-full z-40 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
                                 <div class="py-1">
                                     <a href="#" id="status-item-all" data-status="all" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
@@ -828,8 +782,9 @@
                             <button id="kategoriBtnMerchant" onclick="toggleKategoriDropdownMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-list mr-2"></i>
                                 Kategori
-                                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                <i id="kategoriArrowMerchant" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                             </button>
+
                             <div id="kategoriDropdownMerchant" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-64 sm:max-w-none max-w-full z-50 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
                                 <div class="py-1">
                                     <a href="#" id="dropdown-item-semua" data-category="Semua" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
@@ -891,6 +846,12 @@
         // Search functionality for Merchant table - aligned with section rendering
         let merchantSearchTimeout;
         let currentMerchantQuery = new URL(window.location.href).searchParams.get('merchant_search') || '';
+        // Simpan kategori merchant yang sedang aktif (untuk dikirim ke server)
+        if (typeof selectedCategory === 'undefined') {
+            selectedCategory = { merchant: 'Semua',};
+        } else if (!selectedCategory.merchant) {
+            selectedCategory.merchant = 'Semua';
+        }
         const merchantSearchInput = document.getElementById('merchantSearch');
         
         if (merchantSearchInput && currentMerchantQuery) {
@@ -942,6 +903,11 @@
             }
             searchUrl.searchParams.set('tab', 'merchant');
             searchUrl.searchParams.set('page', '1');
+            // Sertakan kategori bila dipilih selain "Semua"
+            const activeCategory = (selectedCategory?.merchant || 'Semua');
+            if (activeCategory && activeCategory !== 'Semua') {
+                searchUrl.searchParams.set('category', activeCategory);
+            }
             return searchUrl.toString();
         }
 
@@ -1028,6 +994,13 @@
             } else {
                 url.searchParams.delete('merchant_search');
             }
+            // Simpan kategori aktif ke URL supaya bisa dibuka ulang dengan filter yang sama
+            const activeCategory = (selectedCategory?.merchant || 'Semua');
+            if (activeCategory && activeCategory !== 'Semua') {
+                url.searchParams.set('category', activeCategory);
+            } else {
+                url.searchParams.delete('category');
+            }
             window.history.replaceState({}, '', url);
         }
 
@@ -1104,7 +1077,8 @@
             const searchUrl = new URL('/keywords/search', window.location.origin);
 
             base.searchParams.forEach((value, key) => {
-                if (key === 'tab' || key === 'keyword_search') {
+                // abaikan parameter yang akan kita kelola sendiri
+                if (key === 'tab' || key === 'keyword_search' || key === 'status') {
                     return;
                 }
                 searchUrl.searchParams.set(key, value);
@@ -1114,6 +1088,13 @@
                 searchUrl.searchParams.set('q', currentKeywordQuery);
             } else {
                 searchUrl.searchParams.delete('q');
+            }
+
+            // sertakan filter status jika sedang aktif (selain 'all')
+            if (selectedKeywordStatus && selectedKeywordStatus !== 'all') {
+                searchUrl.searchParams.set('status', selectedKeywordStatus);
+            } else {
+                searchUrl.searchParams.delete('status');
             }
 
             searchUrl.searchParams.set('tab', 'keyword');

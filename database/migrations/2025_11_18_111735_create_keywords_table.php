@@ -20,7 +20,7 @@ return new class extends Migration
                 $table->string('redeem')->nullable();
                 $table->string('diskon')->nullable();
                 $table->text('skb')->nullable();
-                $table->string('rtx')->nullable();
+                $table->string('trx')->nullable();
                 $table->integer('sisa_stock')->nullable();
                 $table->date('start_date')->nullable();
                 $table->date('end_date')->nullable();

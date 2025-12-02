@@ -232,6 +232,8 @@ function updateKeywordDisplay(id, status, name) {
     var statusCell = document.getElementById('keyword-status-' + id);
     var actionMobile = document.getElementById('keyword-action-mobile-' + id);
     var statusMobile = document.getElementById('keyword-status-mobile-' + id);
+    // Tombol edit (desktop) di kolom "Actions"
+    var editButton = document.querySelector('[data-keyword-edit-id="' + id + '"]');
 
     if (status === 'approve') {
         var approvedBadge = '<div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm"><i class="fas fa-check-circle text-green-600"></i><span>Approved</span></div>';
@@ -247,6 +249,11 @@ function updateKeywordDisplay(id, status, name) {
         var statusBadgeR = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>';
         if (statusCell) statusCell.innerHTML = statusBadgeR;
         if (statusMobile) statusMobile.innerHTML = '<p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p><div class="mt-1">' + statusBadgeR + '</div>';
+    }
+
+    // Setelah status bukan lagi "pending", hilangkan tombol Edit tanpa perlu reload page
+    if (editButton) {
+        editButton.remove();
     }
 }
 </script>
