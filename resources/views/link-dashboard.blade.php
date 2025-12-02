@@ -135,7 +135,7 @@
 
                 <!-- Links Grid -->
                 <div class="flex flex-col xl:flex-row gap-4 items-stretch">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                    <div class="grid grid-cols-3 gap-4 flex-1">
                         <!-- Link Pelanggan Button -->
                         <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
                             <a href="{{ $linkPelanggan }}"
@@ -144,7 +144,7 @@
                                 <i class="fas fa-link text-lg"></i>
                                 <span class="sr-only">Link Pelanggan</span>
                             </a>
-                            <div class="text-sm font-semibold text-gray-700">Link Pelanggan</div>
+                            <div class="text-sm font-semibold text-gray-700 text-center">Link Pelanggan</div>
                         </div>
 
                         <!-- History Button -->
@@ -155,7 +155,7 @@
                                 <i class="fas fa-history text-lg"></i>
                                 <span class="sr-only">History Transaksi</span>
                             </a>
-                            <div class="text-sm font-semibold text-gray-700">History Transaksi</div>
+                            <div class="text-sm font-semibold text-gray-700 text-center">History Transaksi</div>
                         </div>
 
                         <!-- Logout Button -->
@@ -165,31 +165,14 @@
                                 <i class="fas fa-arrow-right-from-bracket text-lg"></i>
                                 <span class="sr-only">Logout</span>
                             </button>
-                            <div class="text-sm font-semibold text-gray-700">Logout</div>
+                            <div class="text-sm font-semibold text-gray-700 text-center">Logout</div>
                         </form>
                     </div>
                 </div>
 
-                {{-- <!-- Info Banner -->
-                <div class="bg-gradient-to-r from-orange-50 to-rose-50 rounded-2xl p-6 border border-orange-100">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-info-circle text-orange-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900 mb-1">Cara Penggunaan</h4>
-                            <p class="text-sm text-gray-600">Bagikan QR Code atau Link Pelanggan kepada customer Anda untuk melakukan redeem poin Telkomsel dengan mudah.</p>
-                        </div>
-                    </div>
-                </div>
-            </section> --}}
-
             <!-- Footer -->
             <footer class="mt-16 pb-12 text-center animate-fade-in-up" style="animation-delay: 0.4s;">
-                <div class="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-50 to-rose-50 shadow-sm ring-1 ring-neutral-200/50 mb-4">
-                    <div class="text-sm font-semibold text-neutral-700">✨ Redeem Poin Telkomsel</div>
-                </div>
-                <div class="text-xs text-neutral-500 font-medium">© 2025 BelanjaPoin. All rights reserved.</div>
+                <div class="text-xs text-neutral-500 font-medium">© 2025 BelanjaPoin.</div>
             </footer>
         </main>
     </div>
