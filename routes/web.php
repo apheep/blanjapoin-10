@@ -6,31 +6,91 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use App\Http\Controllers\IklanController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MultiUserController;
 use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PortalAuthController;
 use App\Http\Controllers\KeywordController;
 use App\Models\Keyword;
 use App\Models\Merchant;
+use App\Models\Iklan;
+
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
     $keywords = Keyword::with('merchant')->get();
-    $locations = Merchant::query()
+    $iklans = Iklan::latest()->get();
+    
+    // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+    $allDaerah = Merchant::query()
         ->whereNotNull('daerah')
         ->where('daerah', '!=', '')
         ->distinct()
-        ->orderBy('daerah')
         ->pluck('daerah');
+    
+    // Ekstrak hanya kabupaten/kota dari daerah
+    // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+    $locations = $allDaerah->map(function($daerah) {
+        $daerah = trim($daerah);
+        
+        // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+        if (strpos($daerah, ',') !== false) {
+            $parts = explode(',', $daerah);
+            $kabupatenKota = trim($parts[0]);
+            
+            // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
+            $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+            
+            return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+        }
+        
+        // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
+        if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
+            return trim($matches[1]);
+        }
+        
+        // Jika tidak ada format khusus, gunakan seluruhnya
+        return $daerah;
+    })
+    ->filter(function($item) {
+        // Hapus yang kosong atau terlalu pendek
+        return !empty($item) && strlen($item) > 1;
+    })
+    ->unique() // Hapus duplikat
+    ->sort()
+    ->values();
 
     return view('welcome', [
         'keywords' => $keywords,
         'locations' => $locations,
+        'iklans' => $iklans,
     ]);
 })->name('home');
 
 Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchant.search');
+
+// Route untuk link pelanggan (public, tidak perlu login)
+Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
+
+// Portal merchant authentication
+Route::middleware('guest:portal')->group(function () {
+    Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
+    Route::post('/merchant-login', [PortalAuthController::class, 'login'])->name('portal.login.post');
+    Route::get('/merchant-login/google', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
+    Route::get('/merchant-login/google/callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+});
+Route::post('/merchant-logout', [PortalAuthController::class, 'logout'])->name('portal.logout');
+
+// Route untuk link dashboard (wajib login portal)
+Route::middleware('portal.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
+
+// Route untuk link history (public, tidak perlu login)
+Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
+
+// Route untuk history page versi lengkap tanpa login
+Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
 
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
@@ -50,16 +110,51 @@ Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
         $keywords = Keyword::with('merchant')->get();
-        $locations = Merchant::query()
+        $iklans = Iklan::latest()->get();
+        
+        // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+        $allDaerah = Merchant::query()
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->distinct()
-            ->orderBy('daerah')
             ->pluck('daerah');
+        
+        // Ekstrak hanya kabupaten/kota dari daerah
+        // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+        $locations = $allDaerah->map(function($daerah) {
+            $daerah = trim($daerah);
+            
+            // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+            if (strpos($daerah, ',') !== false) {
+                $parts = explode(',', $daerah);
+                $kabupatenKota = trim($parts[0]);
+                
+                // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
+                $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+                
+                return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+            }
+            
+            // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
+            if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
+                return trim($matches[1]);
+            }
+            
+            // Jika tidak ada format khusus, gunakan seluruhnya
+            return $daerah;
+        })
+        ->filter(function($item) {
+            // Hapus yang kosong atau terlalu pendek
+            return !empty($item) && strlen($item) > 1;
+        })
+        ->unique() // Hapus duplikat
+        ->sort()
+        ->values();
 
         return view('welcome', [
             'keywords' => $keywords,
             'locations' => $locations,
+            'iklans' => $iklans,
         ]);
     })->name('welcome');
 
@@ -68,6 +163,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin', [MerchantController::class, 'index'])->name('admin');
     Route::get('/dashboard', [MerchantController::class, 'index'])->name('dashboard');
     Route::get('/merchants/search', [MerchantController::class, 'search'])->name('merchants.search');
+    Route::get('/merchants/export/excel', [MerchantController::class, 'exportExcel'])->name('merchants.export.excel');
+    Route::get('/merchants/{merchant}/keywords/export/excel', [MerchantController::class, 'exportKeywordsExcel'])->name('merchants.keywords.export.excel');
 
     // Resource CRUD merchant (index sudah dipakai di atas)
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
@@ -81,6 +178,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
+    Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
+
+    // Iklan management
+    Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');
+    Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
+    Route::delete('/iklan/{iklan}', [IklanController::class, 'destroy'])->name('iklan.destroy');
+
+    // History All (requires login)
+    Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
 
     // Manajemen user
     Route::get('/user-management', [UserController::class, 'index'])->name('user.management');

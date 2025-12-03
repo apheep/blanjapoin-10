@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Merchant;
 use App\Models\Keyword;
+use App\Models\Iklan;
+use App\Exports\MerchantsExport;
+use App\Exports\MerchantKeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MerchantController extends Controller
 {
@@ -225,32 +230,260 @@ class MerchantController extends Controller
 
     public function search(Request $request)
     {
-        $searchTerm = $request->input('q', '');
+        $searchTerm = trim($request->input('q', ''));
         $page = $request->input('page', 1);
+        $category = $request->input('category');
         
-        $merchants = Merchant::where('nama_merchant', 'like', "%{$searchTerm}%")
+        $merchantsQuery = Merchant::query();
+        
+        // Hanya filter jika search term tidak kosong
+        if ($searchTerm !== '') {
+            $merchantsQuery->where(function ($query) use ($searchTerm) {
+                $query->where('nama_merchant', 'like', "%{$searchTerm}%")
                     ->orWhere('daerah', 'like', "%{$searchTerm}%")
-                    ->orWhere('kategori', 'like', "%{$searchTerm}%")
-                    ->orderBy('id')
-                    ->paginate(15, ['*'], 'page', $page);
+                      ->orWhere('kategori', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Filter berdasarkan kategori spesifik jika dipilih
+        if ($category && strtolower($category) !== 'semua') {
+            $merchantsQuery->where('kategori', $category);
+        }
         
-        if ($request->wantsJson()) {
+        $merchants = $merchantsQuery
+            ->orderBy('id')
+            ->paginate(10, ['*'], 'page', $page)
+            ->appends($request->query());
+        
+        if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'merchants' => $merchants->items(),
-                'pagination' => [
-                    'current_page' => $merchants->currentPage(),
-                    'last_page' => $merchants->lastPage(),
-                    'per_page' => $merchants->perPage(),
-                    'total' => $merchants->total(),
-                    'from' => $merchants->firstItem(),
-                    'to' => $merchants->lastItem(),
-                    'has_more_pages' => $merchants->hasMorePages(),
-                    'next_page_url' => $merchants->nextPageUrl(),
-                    'prev_page_url' => $merchants->previousPageUrl(),
-                ]
+                'html' => view('partials.table-merchant', [
+                    'merchants' => $merchants
+                ])->render(),
             ]);
         }
         
-        return view('admin', compact('merchants'));
+        // Untuk non-AJAX request (seperti pagination link), perlu semua variable yang diperlukan view admin
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        $allMerchants = Merchant::orderBy('nama_merchant')->get();
+        
+        return view('admin', compact('merchants', 'keywords', 'allMerchants'));
+    }
+
+    /**
+     * Menampilkan halaman link pelanggan dengan voucher merchant
+     * Route: /u/{code}
+     */
+    public function linkPelanggan($code)
+    {
+        // Decode URL encoded characters (e.g., h%26m -> h&m)
+        $decodedCode = urldecode($code);
+        
+        // Cari merchant berdasarkan code dari link_blanjapoin
+        // Format link_blanjapoin: "blanjapoin.id/dash/{code}"
+        // Coba dengan code yang sudah di-decode dan juga dengan yang masih encoded
+        $merchant = Merchant::where(function($query) use ($decodedCode, $code) {
+                // Cari dengan code yang sudah di-decode
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $decodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '%')
+                      // Juga coba dengan code yang masih encoded (jika berbeda)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $code)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            abort(404, 'Merchant tidak ditemukan');
+        }
+
+        // Ambil semua voucher/keyword yang approved untuk merchant ini
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->where('status', 'approve')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $iklans = Iklan::latest()->get();
+
+        return view('link-pelanggan', [
+            'merchant' => $merchant,
+            'keywords' => $keywords,
+            'iklans' => $iklans,
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman link dashboard dengan table link pelanggan, QR code, dan history
+     * Route: /dash/{code}
+     */
+    public function linkDashboard($code)
+    {
+        // Decode URL encoded characters (e.g., h%26m -> h&m)
+        $decodedCode = urldecode($code);
+        
+        // Escape special characters untuk LIKE query
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+        
+        // Cari merchant berdasarkan code dari link_blanjapoin
+        // Format link_blanjapoin: "blanjapoin.id/dash/{code}" atau bisa juga "https://blanjapoin.id/dash/{code}"
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                // Cari dengan berbagai format yang mungkin
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      // Juga coba dengan code yang masih encoded
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            // Log untuk debugging
+            Log::warning('Merchant not found for code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+                'search_patterns' => [
+                    '%/dash/' . $escapedDecodedCode,
+                    '%dash/' . $escapedDecodedCode,
+                    '%/dash/' . $escapedCode,
+                    '%dash/' . $escapedCode,
+                ],
+                'sample_merchants' => Merchant::whereNotNull('link_blanjapoin')->take(5)->pluck('link_blanjapoin', 'id')->toArray()
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Generate link pelanggan
+        $linkPelanggan = route('link.pelanggan', $decodedCode);
+        $linkPelangganFull = url($linkPelanggan);
+
+        // Ambil semua history keyword untuk merchant ini (semua status, diurutkan dari terbaru)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Generate link history
+        $linkHistory = route('link.history.all', $decodedCode);
+        $linkHistoryFull = url($linkHistory);
+
+        return view('link-dashboard', [
+            'merchant' => $merchant,
+            'linkPelanggan' => $linkPelangganFull,
+            'linkHistory' => $linkHistoryFull,
+            'keywords' => $keywords,
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman link history dengan history keyword merchant
+     * Route: /history/{code}
+     */
+    public function linkHistory($code)
+    {
+        // Decode URL encoded characters (e.g., h%26m -> h&m)
+        $decodedCode = urldecode($code);
+        
+        // Escape special characters untuk LIKE query
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+        
+        // Cari merchant berdasarkan code dari link_blanjapoin
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for history code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Ambil semua history keyword untuk merchant ini (semua status, diurutkan dari terbaru)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('trx-history', [
+            'merchant' => $merchant,
+            'histories' => $keywords,
+        ]);
+    }
+
+    public function linkHistoryAll($code)
+    {
+        $decodedCode = urldecode($code);
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for history-all code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        $keywordQuery = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('created_at', 'desc');
+
+        $historyPaginator = (clone $keywordQuery)
+            ->paginate(12, ['*'], 'history_page')
+            ->withQueryString();
+
+        $keywordPaginator = (clone $keywordQuery)
+            ->paginate(12, ['*'], 'keyword_page')
+            ->withQueryString();
+
+        return view('history-all', [
+            'merchant' => $merchant,
+            'histories' => $historyPaginator,
+            'keywordPaginator' => $keywordPaginator,
+        ]);
+    }
+
+    public function exportExcel()
+    {
+        $fileName = 'merchants_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new MerchantsExport, $fileName);
+    }
+
+    public function exportKeywordsExcel(Merchant $merchant)
+    {
+        $merchantName = str_replace([' ', '/', '\\'], '_', $merchant->nama_merchant);
+        $fileName = 'keywords_' . $merchantName . '_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new MerchantKeywordsExport($merchant->id, $merchant->nama_merchant), $fileName);
     }
 }

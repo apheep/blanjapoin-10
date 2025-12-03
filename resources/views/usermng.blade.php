@@ -18,100 +18,9 @@
 </head>
 @include('partials.head')
 <body class="min-h-screen bg-white font-poppins">
-<nav id="navbar" class="sticky top-0 z-20 bg-white/90 backdrop-blur-sm transition-shadow duration-300 w-full shadow-sm ring-1 ring-neutral-200/60">
-    <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
-     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-6">
-       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-      </div>
+@include('partials.navbar-admin')
 
-      <!-- Centered primary navigation (desktop only, untouched) -->
-      <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      @if(Auth::check() && Auth::user()->can_approve == 1) 
-        <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>
-       @endif
-      </div>
-
-      <div class="flex items-center gap-4">
-       <!-- Mobile hamburger -->
-       <button id="openSidebar" class="md:hidden text-gray-700 text-2xl pr-4">
-         <i class="fa-solid fa-bars"></i>
-       </button>
-       <div class="relative hidden md:block">
-        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg ring-1 ring-white/30 active:scale-95 transition-all">
-          <i class="fa-solid fa-user"></i>
-          <span>{{ Auth::user()->username }}</span>
-          <i id="userDropdownArrow" class="fa-solid fa-chevron-down text-xs"></i>
-        </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out backdrop-blur-sm">
-          <div class="py-1">
-            <form method="POST" action="{{ route('logout') }}">@csrf
-              <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50">
-                <i class="fa-solid fa-right-from-bracket"></i> Logout
-              </button>
-            </form>
-          </div>
-        </div>
-       </div>
-      </div>
-     </div>
-    </div>
-   </nav>
-
-<!-- Mobile Sidebar -->
-<div id="mobileSidebar" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-  <div id="sidebarPanel" class="bg-white w-72 h-full shadow-xl transform translate-x-full transition-transform duration-300 ml-auto flex flex-col">
-    <!-- Header -->
-    <div class="border-b border-gray-200 p-4">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-3">
-          <img src="/logo.png" alt="BlanjaPoin" class="h-8 w-auto" />
-        </div>
-        <button id="closeSidebar" class="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="mt-4 pt-4 border-t border-gray-100">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-user text-gray-600"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-900 truncate">{{ Auth::user()->username ?? 'User' }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Menu Items -->
-    <div class="flex-1 overflow-y-auto py-2">
-      @if(Auth::check() && Auth::user()->can_approve == 1)
-        <a href="{{ route('admin') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-home w-5 text-gray-500"></i>
-          <span class="font-medium">Home</span>
-        </a>
-        <a href="{{ route('user.management') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-users w-5 text-gray-500"></i>
-          <span class="font-medium">User Management</span>
-        </a>
-      @endif
-    </div>
-
-    <!-- Footer / Logout -->
-    <div class="border-t border-gray-200 p-4">
-      <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
-          <i class="fa-solid fa-right-from-bracket text-sm"></i>
-          <span>Logout</span>
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<script>
+<!-- <script>
   const openSidebar = document.getElementById('openSidebar');
   const closeSidebar = document.getElementById('closeSidebar');
   const mobileSidebar = document.getElementById('mobileSidebar');
@@ -151,7 +60,7 @@
       closeSidebarFunc();
     }
   });
-</script>
+</script> -->
     <!-- Flash Message Container -->
     @if(session('success'))
         <div data-flash-message="{{ session('success') }}" data-flash-type="success" class="hidden"></div>
@@ -163,9 +72,9 @@
         <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
     @endif
 
-  <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 transform transition-all duration-500 opacity-0 translate-y-3">
+  <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 transform transition-all duration-500 opacity-0 translate-y-3 mt-4">
     <div class="flex items-center justify-between gap-4 flex-wrap">
-      <div class="pl-4">
+      <div class="pl-2">
         <h1 class="text-2xl md:text-3xl font-black tracking-tight text-neutral-900">User Management</h1>
       </div>
       <div class="flex items-center gap-2 pr-4">
@@ -424,6 +333,93 @@
       <div class="flex items-center justify-end gap-2 px-6 py-4 border-t bg-white">
         <button class="px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" id="btn-cancel-create">Batal</button>
         <button class="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-95 transition-all" id="btn-save-create">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Confirmation Modal -->
+  <div id="createUserVerificationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="createUserVerificationContent">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-user-plus text-orange-600 text-lg"></i>
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg font-semibold text-gray-900">Konfirmasi Buat Akun</h3>
+            <p class="text-sm text-gray-500">Pastikan data sudah benar</p>
+          </div>
+        </div>
+        <button onclick="closeCreateUserVerificationModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-orange-100 to-yellow-100 mb-4">
+            <i class="fas fa-user-plus text-orange-600 text-2xl"></i>
+          </div>
+          <h4 class="text-lg font-medium text-gray-900 mb-2" id="createUserItemName">Username</h4>
+          <p class="text-sm text-gray-600 mb-6" id="createUserItemDescription">
+            Apakah Anda yakin ingin membuat akun baru dengan data ini?
+          </p>
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
+        <button onclick="closeCreateUserVerificationModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Batal
+        </button>
+        <button onclick="confirmCreateUser()" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300">
+          <i class="fas fa-check-circle mr-2"></i>
+          Ya, Buat Akun
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Success Modal -->
+  <div id="createUserSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="createUserSuccessContent">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+            <i class="fas fa-check text-green-600 text-lg"></i>
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg font-semibold text-gray-900">Berhasil!</h3>
+            <p class="text-sm text-gray-500">Akun berhasil dibuat</p>
+          </div>
+        </div>
+        <button onclick="closeCreateUserSuccessModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-6">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 mb-4">
+            <i class="fas fa-check-circle text-green-600 text-3xl"></i>
+          </div>
+          <h4 class="text-lg font-medium text-gray-900 mb-2">Akun Berhasil Dibuat!</h4>
+          <p class="text-sm text-gray-600 mb-6">
+            Akun <span id="createUserSuccessItemName" class="font-semibold"></span> telah berhasil dibuat dan sekarang aktif di sistem.
+          </p>
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-center px-6 py-4 bg-gray-50 rounded-b-2xl">
+        <button onclick="closeCreateUserSuccessModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
+          <i class="fas fa-check mr-2"></i>
+          OK
+        </button>
       </div>
     </div>
   </div>
@@ -792,8 +788,8 @@
       if (showingTotalEl) showingTotalEl.textContent = parseInt(showingTotalEl.textContent || '0', 10) + 1;
     }
 
-    // createUser: attempt AJAX create and insert row if API returns user
-    async function createUser() {
+    // createUser: show confirmation modal first
+    function createUser() {
       const username = document.getElementById('create-username').value.trim();
       const password = document.getElementById('create-password').value.trim();
       const role = document.getElementById('create-role').value;
@@ -816,6 +812,20 @@
       }
 
       if (!isValid) return;
+
+      // Show confirmation modal
+      showCreateUserConfirmation(username, role, canApprove);
+    }
+
+    // confirmCreateUser: actually create the user after confirmation
+    async function confirmCreateUser() {
+      const username = document.getElementById('create-username').value.trim();
+      const password = document.getElementById('create-password').value.trim();
+      const role = document.getElementById('create-role').value;
+      const canApprove = document.getElementById('create-can-approve').checked;
+
+      // Close confirmation modal
+      closeCreateUserVerificationModal();
 
       try {
         const response = await fetch('/api/users', {
@@ -846,7 +856,8 @@
           return;
         }
 
-        showToast(data.message || 'User berhasil dibuat');
+        // Show success modal
+        showCreateUserSuccessModal(username);
         closeCreateModal();
 
         // If API returned the created user object, insert the row without reload
@@ -861,6 +872,92 @@
         console.error('Error:', error);
         showToast('Terjadi kesalahan', 'error');
       }
+    }
+
+    // Show create user confirmation modal
+    function showCreateUserConfirmation(username, role, canApprove) {
+      const roleText = role === 'admin' ? 'Admin' : 'User';
+      const approveText = canApprove ? ' (Dapat Approve)' : '';
+      
+      document.getElementById('createUserItemName').textContent = username;
+      document.getElementById('createUserItemDescription').textContent = 
+        `Apakah Anda yakin ingin membuat akun baru dengan username "${username}" sebagai ${roleText}${approveText}?`;
+      
+      const modal = document.getElementById('createUserVerificationModal');
+      const modalContent = document.getElementById('createUserVerificationContent');
+      
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      setTimeout(() => {
+        if (modalContent) {
+          modalContent.style.transform = 'scale(1)';
+          modalContent.style.opacity = '1';
+        }
+      }, 10);
+    }
+
+    // Close create user verification modal
+    function closeCreateUserVerificationModal() {
+      const modal = document.getElementById('createUserVerificationModal');
+      const modalContent = document.getElementById('createUserVerificationContent');
+      
+      if (modalContent) {
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+      }
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (modalContent) {
+          modalContent.style.transform = 'scale(0.95)';
+          modalContent.style.opacity = '0';
+        }
+      }, 300);
+    }
+
+    // Show create user success modal
+    function showCreateUserSuccessModal(username) {
+      document.getElementById('createUserSuccessItemName').textContent = username;
+      
+      const modal = document.getElementById('createUserSuccessModal');
+      const modalContent = document.getElementById('createUserSuccessContent');
+      
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      
+      setTimeout(() => {
+        if (modalContent) {
+          modalContent.style.transform = 'scale(1)';
+          modalContent.style.opacity = '1';
+        }
+      }, 10);
+      
+      // Auto close after 3 seconds
+      setTimeout(() => {
+        closeCreateUserSuccessModal();
+      }, 3000);
+    }
+
+    // Close create user success modal
+    function closeCreateUserSuccessModal() {
+      const modal = document.getElementById('createUserSuccessModal');
+      const modalContent = document.getElementById('createUserSuccessContent');
+      
+      if (modalContent) {
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+      }
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        if (modalContent) {
+          modalContent.style.transform = 'scale(0.95)';
+          modalContent.style.opacity = '0';
+        }
+      }, 300);
     }
 
     // Bulk functions left as stubs (no row checkboxes present)

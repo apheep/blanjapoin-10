@@ -20,11 +20,13 @@ return new class extends Migration
                 $table->string('redeem')->nullable();
                 $table->string('diskon')->nullable();
                 $table->text('skb')->nullable();
+                $table->string('trx')->nullable();
+                $table->integer('sisa_stock')->nullable();
                 $table->date('start_date')->nullable();
                 $table->date('end_date')->nullable();
                 $table->string('image')->nullable();
                 $table->integer('stock')->default(0);
-
+                
                 // kolom status
                 $table->enum('status', ['approve', 'pending', 'reject'])->default('pending');
 

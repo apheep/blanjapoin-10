@@ -4,15 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Keyword;
 use App\Models\Merchant;
+use App\Exports\KeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KeywordController extends Controller
 {
     public function index()
     {
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(15);
+        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
@@ -33,6 +37,7 @@ class KeywordController extends Controller
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
+
                 'status'            => 'nullable|in:approve,pending,reject',
             ]);
 
@@ -113,7 +118,7 @@ class KeywordController extends Controller
             return redirect()->route('keywords.index')->with('success', 'Keyword berhasil ditambahkan!');
         } catch (\Exception $e) {
             // Log error untuk debugging
-            \Log::error('Error creating keyword: ' . $e->getMessage());
+            Log::error('Error creating keyword: ' . $e->getMessage());
             
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -217,7 +222,7 @@ class KeywordController extends Controller
             return back()->withErrors(['error' => $message])->withInput();
         } catch (\Exception $e) {
             // Log error untuk debugging
-            \Log::error('Error updating keyword: ' . $e->getMessage());
+            Log::error('Error updating keyword: ' . $e->getMessage());
             
             if ($request->wantsJson()) {
                 return response()->json([
@@ -251,30 +256,46 @@ class KeywordController extends Controller
 
     public function search(Request $request)
     {
-        $searchTerm = $request->get('q', '');
-        
-        $keywords = Keyword::with('merchant')
-            ->where('nama_produk', 'like', "%{$searchTerm}%")
-            ->orWhereHas('merchant', function ($query) use ($searchTerm) {
-                $query->where('nama_merchant', 'like', "%{$searchTerm}%");
-            })
-            ->paginate(15);
+        $searchTerm = trim($request->get('q', ''));
+        $status = $request->get('status');
+        $merchantId = $request->get('merchant_id');
 
-        if ($request->wantsJson()) {
+        $keywordsQuery = Keyword::with('merchant')
+            ->when($merchantId, function ($query) use ($merchantId) {
+                $query->where('merchant_key', $merchantId);
+            })
+            ->when(in_array($status, ['approve', 'pending', 'reject']), function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $query->where(function ($subQuery) use ($searchTerm) {
+                    $subQuery->where('nama_produk', 'like', "%{$searchTerm}%")
+                        ->orWhere('keyword_id', 'like', "%{$searchTerm}%")
+                        ->orWhere('cta_link', 'like', "%{$searchTerm}%")
+                        ->orWhere('redeem', 'like', "%{$searchTerm}%")
+                        ->orWhere('diskon', 'like', "%{$searchTerm}%")
+                        ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
+                            $merchantQuery->where('nama_merchant', 'like', "%{$searchTerm}%")
+                                ->orWhere('kategori', 'like', "%{$searchTerm}%")
+                                ->orWhere('daerah', 'like', "%{$searchTerm}%");
+                        });
+                });
+            })
+            ->orderBy('id');
+
+        // Paginate standar 10 data per halaman (baik dengan atau tanpa filter status)
+        $keywords = $keywordsQuery->paginate(10)->appends($request->query());
+
+        if ($request->ajax()) {
             return response()->json([
-                'keywords' => $keywords->items(),
-                'pagination' => [
-                    'current_page' => $keywords->currentPage() ?? 1,
-                    'per_page' => $keywords->perPage() ?? 15,
-                    'total' => $keywords->total() ?? 0,
-                    'last_page' => $keywords->lastPage() ?? 1,
-                    'from' => $keywords->firstItem() ?? 0,
-                    'to' => $keywords->lastItem() ?? 0,
-                ]
+                'html' => view('partials.table-keyword', ['keywords' => $keywords])->render(),
             ]);
         }
 
-        return view('admin', compact('keywords'));
+        $merchants = Merchant::orderBy('id')->paginate(10);
+        $allMerchants = Merchant::orderBy('nama_merchant')->get();
+
+        return view('admin', compact('keywords', 'merchants', 'allMerchants'));
     }
 
     public function publicSearch(Request $request)
@@ -339,11 +360,17 @@ class KeywordController extends Controller
                 'keyword' => $keyword
             ], 200);
         } catch (\Exception $e) {
-            \Log::error('Error rejecting keyword: ' . $e->getMessage());
+            Log::error('Error rejecting keyword: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menolak keyword: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function exportExcel()
+    {
+        $fileName = 'keywords_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new KeywordsExport, $fileName);
     }
 }

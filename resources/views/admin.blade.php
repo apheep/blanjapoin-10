@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    @include('partials.head')
      <style>
         /* Font optimization for Poppins */
         body {
@@ -22,6 +23,7 @@
             text-rendering: optimizeLegibility;
             font-feature-settings: 'kern' 1;
             letter-spacing: -0.01em;
+            animation: fadeIn 0.3s ease-in-out;
         }
         /* Prevent horizontal scroll on mobile */
         html, body {
@@ -30,6 +32,42 @@
         }
         * {
             box-sizing: border-box;
+        }
+        /* Animasi fade-in untuk halaman */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        /* Hide horizontal scrollbar on keyword desktop table but keep scrollability */
+        .keyword-table-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .keyword-table-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .dashboard-entrance {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 360ms ease-out, transform 360ms ease-out;
+        }
+        .dashboard-entrance.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .dashboard-entrance button,
+        .dashboard-entrance a,
+        .dashboard-entrance input,
+        .dashboard-entrance select {
+            transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+        }
+        .dashboard-entrance button:active,
+        .dashboard-entrance a:active {
+            transform: translateY(1px);
         }
     </style>
 
@@ -45,49 +83,8 @@
     @if($errors->any())
         <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
     @endif
-
-    <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
-    <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
-     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-6">
-       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-      </div>
-
-      <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      @if(Auth::check() && Auth::user()->can_approve == 1) 
-        <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>       @endif
-      </div>
-
-       <div class="relative">
-        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg shadow-orange-300/50 drop-shadow-lg ring-1 ring-white/30 transition-all hover:shadow-xl hover:shadow-orange-400/50 hover:drop-shadow-xl hover:scale-105 active:scale-95">
-         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 md:h-4 md:w-4 opacity-95">
-          <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
-         </svg>
-         <span class="tracking-tight">{{ Auth::user()->username }}</span>
-         <svg id="userDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3 w-3 md:h-3.5 md:w-3.5 opacity-95 transition-transform duration-300">
-          <path d="M7 10l5 5 5-5z"/>
-         </svg>
-        </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-50 backdrop-blur-sm">
-         <div class="py-1">
-          <form method="POST" action="{{ route('logout') }}">
-           @csrf
-           <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-             <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clip-rule="evenodd" />
-            </svg>
-            <span>Logout</span>
-           </button>
-          </form>
-         </div>
-        </div>
-       </div>
-      </div>
-     </div>
-    </div>
-   </nav>
-        <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+@include('partials.navbar-admin')
+        <main class="dashboard-entrance max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
             @php
                 $tabParam = request()->get('tab', 'merchant');
                 // Normalize: if tab is not 'keyword', default to 'merchant'
@@ -171,6 +168,7 @@
 
                 function toggleKeywordStatusDropdown() {
                     const dropdown = document.getElementById('statusDropdownKeyword');
+                    const arrow = document.getElementById('statusArrowKeyword');
                     if (!dropdown) return;
                     
                     const isHidden = dropdown.classList.contains('hidden');
@@ -190,12 +188,15 @@
                             dropdown.classList.remove('opacity-0', 'translate-y-1');
                             dropdown.classList.add('opacity-100', 'translate-y-0');
                         });
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
                     } else {
                         dropdown.classList.remove('opacity-100', 'translate-y-0');
                         dropdown.classList.add('opacity-0', 'translate-y-1');
                         setTimeout(() => dropdown.classList.add('hidden'), 150);
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
                     }
                 }
+
 
                 function filterKeywordByStatus(status) {
                     const button = document.getElementById('statusBtnKeyword');
@@ -223,34 +224,58 @@
                     }
 
                     button.className = buttonClasses;
-                    button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
+                    button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i id="statusArrowKeyword" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>`;
 
-                    const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-                    rows.forEach(row => {
-                        const s = (row.dataset.status || '').toLowerCase();
-                        const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        row.style.display = (status === 'all' || normalized === status) ? '' : 'none';
+                    // ====== (update dropdown item active state) ======
+                    const dropdownItems = document.querySelectorAll('#statusDropdownKeyword a[data-status]');
+                    dropdownItems.forEach(item => {
+                        const itemStatus = item.getAttribute('data-status');
+                        const normalizedItemStatus = (itemStatus || '').toLowerCase();
+                        const normalizedCurrentStatus = (status || '').toLowerCase();
+
+                        // Reset semua item ke state default
+                        item.classList.remove('bg-gray-100', 'bg-yellow-100', 'bg-red-100', 'bg-green-100',
+                            'text-gray-900', 'text-yellow-900', 'text-red-900', 'text-green-900');
+
+                        // Apply active state jika status cocok
+                        if (normalizedItemStatus === normalizedCurrentStatus || 
+                            (normalizedCurrentStatus === 'all' && normalizedItemStatus === 'all')) {
+                            
+                            if (status === 'all') {
+                                item.classList.add('bg-gray-100', 'text-gray-900');
+                            } else if (status === 'pending') {
+                                item.classList.add('bg-yellow-100', 'text-yellow-900');
+                            } else if (status === 'reject') {
+                                item.classList.add('bg-red-100', 'text-red-900');
+                            } else if (status === 'approve') {
+                                item.classList.add('bg-green-100', 'text-green-900');
+                            }
+                        }
                     });
 
-                    const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-                    cards.forEach(card => {
-                        const s = (card.dataset.status || '').toLowerCase();
-                        const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                        card.style.display = (status === 'all' || normalized === status) ? '' : 'none';
-                    });
+                    // Reload seluruh tabel keyword dari server dengan filter status ini
+                    if (typeof fetchKeywordTable === 'function' && typeof buildKeywordSearchRequestUrl === 'function') {
+                        const requestUrl = buildKeywordSearchRequestUrl();
+                        fetchKeywordTable(requestUrl);
+                    }
 
                     toggleKeywordStatusDropdown();
                 }
 
                 document.addEventListener('click', function(event) {
-                    if (!event.target.closest('#statusDropdownKeyword') && 
-                        !event.target.closest('#statusBtnKeyword')) {
-                        const dropdown = document.getElementById('statusDropdownKeyword');
-                        if (dropdown) {
-                            dropdown.classList.add('hidden');
-                        }
+                if (!event.target.closest('#statusDropdownKeyword') && 
+                    !event.target.closest('#statusBtnKeyword')) {
+                    const dropdown = document.getElementById('statusDropdownKeyword');
+                    const arrow = document.getElementById('statusArrowKeyword');
+                    if (dropdown) {
+                        dropdown.classList.add('hidden');
                     }
-                });
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(0deg)';
+                    }
+                }
+            });
+
 
                 ////////////////////////////////////////////////////////////////////
                 // Category Dropdown & Filter for Merchant and Telkom
@@ -260,6 +285,12 @@
                     merchant: 'Semua',
                     telkom: 'Semua'
                 };
+
+                function hideDropdown(dropdown) {
+                    dropdown.classList.remove('opacity-100', 'translate-y-0');
+                    dropdown.classList.add('opacity-0', 'translate-y-1');
+                    setTimeout(() => dropdown.classList.add('hidden'), 150);
+                }
 
                 function closeAllDropdowns() {
                     const dropdownIds = [
@@ -271,68 +302,74 @@
 
                     dropdownIds.forEach(id => {
                         const dropdown = document.getElementById(id);
-                        if (dropdown) {
-                            dropdown.classList.add('hidden');
-                            dropdown.style.opacity = '0';
-                            dropdown.style.transform = 'translateY(-10px)';
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
                         }
                     });
                 }
 
                 function toggleKategoriDropdownMerchant() {
                     const dropdown = document.getElementById('kategoriDropdownMerchant');
+                    const arrow = document.getElementById('kategoriArrowMerchant');
                     if (!dropdown) return;
-                    
-                    if (dropdown.classList.contains('hidden')) {
-                        closeAllDropdowns();
+
+                    const isHidden = dropdown.classList.contains('hidden');
+                    const otherDropdowns = document.querySelectorAll("[id^='kategoriDropdown']");
+
+                    otherDropdowns.forEach(dd => {
+                        if (dd.id !== 'kategoriDropdownMerchant' && !dd.classList.contains('hidden')) {
+                            hideDropdown(dd);
+                        }
+                    });
+
+                    if (isHidden) {
                         dropdown.classList.remove('hidden');
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
-                        setTimeout(() => {
-                            dropdown.style.opacity = '1';
-                            dropdown.style.transform = 'translateY(0)';
-                        }, 10);
+                        requestAnimationFrame(() => {
+                            dropdown.classList.remove('opacity-0', 'translate-y-1');
+                            dropdown.classList.add('opacity-100', 'translate-y-0');
+                        });
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
                     } else {
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
-                        setTimeout(() => dropdown.classList.add('hidden'), 150);
+                        hideDropdown(dropdown);
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
                     }
                 }
 
-                function toggleKategoriDropdownTelkom() {
-                    const dropdown = document.getElementById('kategoriDropdownTelkom');
-                    if (!dropdown) return;
-                    
-                    if (dropdown.classList.contains('hidden')) {
-                        closeAllDropdowns();
-                        dropdown.classList.remove('hidden');
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
-                        setTimeout(() => {
-                            dropdown.style.opacity = '1';
-                            dropdown.style.transform = 'translateY(0)';
-                        }, 10);
-                    } else {
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-10px)';
-                        setTimeout(() => dropdown.classList.add('hidden'), 150);
-                    }
-                }
 
                 document.addEventListener('click', function(event) {
-                    const kategoriDropdownMerchant = document.getElementById('kategoriDropdownMerchant');
-                    const kategoriDropdownTelkom = document.getElementById('kategoriDropdownTelkom');
-                    
-                    const isClickInsideAnyDropdown = 
-                        (kategoriDropdownMerchant && kategoriDropdownMerchant.contains(event.target)) ||
-                        (kategoriDropdownTelkom && kategoriDropdownTelkom.contains(event.target)) ||
-                        (event.target.closest('#kategoriBtnMerchant')) ||
-                        (event.target.closest('#kategoriBtnTelkom')) ||
-                        (event.target.closest('#kategoriBtnAll1')) ||
-                        (event.target.closest('#kategoriBtnAll3'));
+                    const merchantDropdown = document.getElementById('kategoriDropdownMerchant');
+                    const telkomDropdown = document.getElementById('kategoriDropdownTelkom');
 
-                    if (!isClickInsideAnyDropdown) {
-                        closeAllDropdowns();
+                    const clickMerchant = event.target.closest('#kategoriDropdownMerchant') || event.target.closest('#kategoriBtnMerchant');
+                    const clickTelkom = event.target.closest('#kategoriDropdownTelkom') || event.target.closest('#kategoriBtnTelkom');
+                    const clickAll1 = event.target.closest('#kategoriDropdownAll1') || event.target.closest('#kategoriBtnAll1');
+                    const clickAll3 = event.target.closest('#kategoriDropdownAll3') || event.target.closest('#kategoriBtnAll3');
+
+                    if (!clickMerchant && merchantDropdown && !merchantDropdown.classList.contains('hidden')) {
+                        hideDropdown(merchantDropdown);
+                        const merchantArrow = document.getElementById('kategoriArrowMerchant');
+                        if (merchantArrow) {
+                            merchantArrow.style.transform = 'rotate(0deg)';
+                        }
+                    }
+
+
+                    if (!clickTelkom && telkomDropdown && !telkomDropdown.classList.contains('hidden')) {
+                        hideDropdown(telkomDropdown);
+                    }
+
+                    if (!clickAll1) {
+                        const dropdownAll1 = document.getElementById('kategoriDropdownAll1');
+                        if (dropdownAll1 && !dropdownAll1.classList.contains('hidden')) {
+                            hideDropdown(dropdownAll1);
+                        }
+                    }
+
+                    if (!clickAll3) {
+                        const dropdownAll3 = document.getElementById('kategoriDropdownAll3');
+                        if (dropdownAll3 && !dropdownAll3.classList.contains('hidden')) {
+                            hideDropdown(dropdownAll3);
+                        }
                     }
                 });
 
@@ -394,17 +431,20 @@
                 // Filtering Function
                 ////////////////////////////////////////////////////////////////////
 
-                function filterTable(tableType, category) {
-                    closeAllDropdowns();
+                function filterTable(tableType, category, options = {}) {
+                    const { reapply = false } = options;
+                    const previousCategory = selectedCategory[tableType] || 'Semua';
+                    let targetCategory = category || 'Semua';
+                    const normalizedIncoming = (targetCategory || '').toLowerCase();
 
-                    const incomingCategory = category || '';
-                    const normalizedIncoming = incomingCategory.toLowerCase();
-
-                    const prev = selectedCategory[tableType] || 'Semua';
-                    if ((prev || '').toLowerCase() === normalizedIncoming) {
-                        category = 'Semua';
+                    if (reapply) {
+                        targetCategory = previousCategory;
+                    } else if ((previousCategory || '').toLowerCase() === normalizedIncoming) {
+                        targetCategory = 'Semua';
                     }
-                    selectedCategory[tableType] = category;
+
+                    selectedCategory[tableType] = targetCategory;
+                    category = targetCategory;
 
                     // ====== (update label & style tombol kategori) ======
                     let buttonId = '';
@@ -438,11 +478,89 @@
                         button.innerHTML = `
                             <i class="fas fa-list mr-2"></i>
                             ${label}
-                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                            <i id="kategoriArrowMerchant" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                         `;
+
                     }
 
-                    // Mapping table type to actual DOM elements
+                    // ====== (update dropdown item active state) ======
+                    if (tableType === 'merchant') {
+                        const dropdownItems = document.querySelectorAll('#kategoriDropdownMerchant a[data-category]');
+                        dropdownItems.forEach(item => {
+                            const itemCategory = item.getAttribute('data-category');
+                            const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                            const normalizedCurrentCategory = (category || '').toLowerCase();
+
+                            // Reset semua item ke state default
+                            item.classList.remove('bg-gray-100', 'bg-gradient-to-r', 
+                                'from-orange-100', 'to-red-100', 'text-orange-900',
+                                'from-purple-100', 'to-pink-100', 'text-purple-900',
+                                'from-blue-100', 'to-cyan-100', 'text-blue-900',
+                                'from-green-100', 'to-emerald-100', 'text-green-900',
+                                'from-rose-100', 'to-pink-100', 'text-rose-900',
+                                'from-red-100', 'to-orange-100', 'text-red-900',
+                                'text-gray-900');
+
+                            // Apply active state jika kategori cocok
+                            if (normalizedItemCategory === normalizedCurrentCategory || 
+                                (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                                
+                                if (category === 'Semua') {
+                                    item.classList.add('bg-gray-100', 'text-gray-900');
+                                } else if (category === 'Kuliner') {
+                                    item.classList.add('bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'text-orange-900');
+                                } else if (category === 'Hiburan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'text-purple-900');
+                                } else if (category === 'Liburan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'text-blue-900');
+                                } else if (category === 'Belanja') {
+                                    item.classList.add('bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'text-green-900');
+                                } else if (category === 'Kecantikan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-rose-100', 'to-pink-100', 'text-rose-900');
+                                } else {
+                                    item.classList.add('bg-gradient-to-r', 'from-red-100', 'to-orange-100', 'text-red-900');
+                                }
+                            }
+                        });
+
+                        const dropdown = document.getElementById('kategoriDropdownMerchant');
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
+                        }
+                    } else if (tableType === 'telkom') {
+                        const dropdownItems = document.querySelectorAll('#kategoriDropdownTelkom a[data-category]');
+                        dropdownItems.forEach(item => {
+                            const itemCategory = item.getAttribute('data-category');
+                            const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                            const normalizedCurrentCategory = (category || '').toLowerCase();
+
+                            item.classList.remove('bg-gray-100', 'text-gray-900', 'bg-gradient-to-r',
+                                'from-orange-100', 'to-red-100', 'text-orange-900',
+                                'from-purple-100', 'to-pink-100', 'text-purple-900');
+
+                            if (normalizedItemCategory === normalizedCurrentCategory || 
+                                (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                                item.classList.add('bg-gray-100', 'text-gray-900');
+                            }
+                        });
+
+                        const dropdown = document.getElementById('kategoriDropdownTelkom');
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
+                        }
+                    }
+
+                    // ==== MERCHANT TABLE: gunakan filter ke server (bukan hanya data di halaman saat ini) ====
+                    if (tableType === 'merchant') {
+                        // Saat reapply (mis. setelah pagination AJAX), cukup perbarui tampilan tombol & dropdown saja,
+                        // jangan trigger request baru supaya tidak loop.
+                        if (!reapply && typeof fetchMerchantTable === 'function' && typeof buildMerchantSearchRequestUrl === 'function') {
+                            fetchMerchantTable(buildMerchantSearchRequestUrl());
+                        }
+                        return;
+                    }
+
+                    // Mapping table type to actual DOM elements (saat ini dipakai untuk telkom)
                     let tableBodyId = '';
                     let rowClass = '';
 
@@ -459,15 +577,26 @@
 
                     if (tableBody) {
                         const rows = tableBody.querySelectorAll(`.${rowClass}`);
-                        rows.forEach(row => {
+                        rows.forEach((row, index) => {
                             const rowCategory = (row.getAttribute('data-category') || '').toLowerCase();
-
-                            if (!normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all') {
+                            const shouldShow = !normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all' || rowCategory === normalizedSelected;
+                            
+                            if (shouldShow) {
+                                row.style.opacity = '0';
+                                row.style.transform = 'translateY(-10px)';
                                 row.style.display = '';
-                            } else if (rowCategory === normalizedSelected) {
-                                row.style.display = '';
+                                setTimeout(() => {
+                                    row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                    row.style.opacity = '1';
+                                    row.style.transform = 'translateY(0)';
+                                }, index * 20);
                             } else {
-                                row.style.display = 'none';
+                                row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                                row.style.opacity = '0';
+                                row.style.transform = 'translateY(-10px)';
+                                setTimeout(() => {
+                                    row.style.display = 'none';
+                                }, 200);
                             }
                         });
                     }
@@ -477,15 +606,26 @@
                         const cardsContainer = document.getElementById('merchant-cards-container');
                         if (cardsContainer) {
                             const cards = cardsContainer.querySelectorAll('[data-category]');
-                            cards.forEach(card => {
+                            cards.forEach((card, index) => {
                                 const cardCategory = (card.getAttribute('data-category') || '').toLowerCase();
-
-                                if (!normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all') {
+                                const shouldShow = !normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all' || cardCategory === normalizedSelected;
+                                
+                                if (shouldShow) {
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'translateY(-10px)';
                                     card.style.display = '';
-                                } else if (cardCategory === normalizedSelected) {
-                                    card.style.display = '';
+                                    setTimeout(() => {
+                                        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                        card.style.opacity = '1';
+                                        card.style.transform = 'translateY(0)';
+                                    }, index * 20);
                                 } else {
-                                    card.style.display = 'none';
+                                    card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'translateY(-10px)';
+                                    setTimeout(() => {
+                                        card.style.display = 'none';
+                                    }, 200);
                                 }
                             });
                         }
@@ -565,58 +705,32 @@
                     });
                 }
 
-                document.querySelectorAll('.keyword-pagination').forEach(link => {
-                    link.addEventListener('click', function(event) {
-                        event.preventDefault();
-                        const url = this.getAttribute('href');
-
-                        fetch(url, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                        .then(response => response.text())
-                        .then(html => {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(html, 'text/html');
-                            const newTable = doc.querySelector('#keyword-table-container');
-                            
-                            if (newTable) {
-                                document.querySelector('#keyword-table-container').innerHTML = newTable.innerHTML;
-                            }
-
-                            try {
-                                const newUrl = new URL(url, window.location.origin);
-                                window.history.replaceState({}, '', newUrl);
-                            } catch (e) {
-                                console.warn('Tidak bisa update URL state:', e);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Keyword pagination AJAX error:', error);
-                            window.location.href = url;
-                        });
-                    });
-                });
             </script>
 
             <div id="section-keyword" class="transition-all duration-300 {{ $activeTab === 'keyword' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
                 <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Keyword</h2>
                 
-                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                    <div class="flex space-x-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                    <div class="flex flex-wrap items-center gap-3">
                         <div class="relative">
                             <button id="statusBtnKeyword" onclick="toggleKeywordStatusDropdown()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-filter mr-2"></i>
                                 Status
-                                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                <i id="statusArrowKeyword" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                             </button>
-                            <div id="statusDropdownKeyword" class="hidden absolute md:left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-56 z-40">
+
+                            <div id="statusDropdownKeyword" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-56 sm:max-w-none max-w-full z-40 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
                                 <div class="py-1">
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-200 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-rose-100 hover:text-red-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
+                                    <a href="#" id="status-item-all" data-status="all" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
+                                    <a href="#" id="status-item-pending" data-status="pending" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
+                                    <a href="#" id="status-item-reject" data-status="reject" class="block px-4 py-2 text-sm text-gray-700 hover:bg-red-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
+                                    <a href="#" id="status-item-approve" data-status="approve" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-100 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="relative">
+                            @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
                         </div>
 
                         <div class="relative">
@@ -626,25 +740,37 @@
                                 class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                                 <i class="fas fa-plus mr-2"></i>
-                                Add Keyword
+                                Add
                             </button>
+                        </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('keywords.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
                         </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
                         </div>
-                        
-                        @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
+                        <button type="button" id="keywordSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                            &times;
+                        </button>
                     </div>
-                    
                 </div>
-
-                @include('partials.table-keyword')
+                
+                <div id="keyword-table-container">
+                    @include('partials.table-keyword')
+                </div>
             </div>
 
             <div id="section-merchant" class="transition-all duration-300 {{ $activeTab === 'merchant' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
@@ -656,18 +782,19 @@
                             <button id="kategoriBtnMerchant" onclick="toggleKategoriDropdownMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-list mr-2"></i>
                                 Kategori
-                                <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                                <i id="kategoriArrowMerchant" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                             </button>
-                            <div id="kategoriDropdownMerchant" class="hidden absolute mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
+
+                            <div id="kategoriDropdownMerchant" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-64 sm:max-w-none max-w-full z-50 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
                                 <div class="py-1">
-                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-orange-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kuliner'); return false;">Kuliner</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-purple-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-blue-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 hover:text-blue-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-green-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-rose-700 hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 hover:text-rose-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-orange-50 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
-                                    <a href="#" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-orange-50 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merchandise'); return false;">Merchandise</a>
+                                    <a href="#" id="dropdown-item-semua" data-category="Semua" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
+                                    <a href="#" id="dropdown-item-kuliner" data-category="Kuliner" class="block px-4 py-2 text-sm text-orange-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kuliner'); return false;">Kuliner</a>
+                                    <a href="#" id="dropdown-item-hiburan" data-category="Hiburan" class="block px-4 py-2 text-sm text-purple-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
+                                    <a href="#" id="dropdown-item-liburan" data-category="Liburan" class="block px-4 py-2 text-sm text-blue-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
+                                    <a href="#" id="dropdown-item-belanja" data-category="Belanja" class="block px-4 py-2 text-sm text-green-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
+                                    <a href="#" id="dropdown-item-kecantikan" data-category="Kecantikan" class="block px-4 py-2 text-sm text-rose-700 hover:bg-gradient-to-r hover:from-rose-100 hover:to-pink-100 hover:text-rose-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
+                                    <a href="#" id="dropdown-item-telkomsel" data-category="Telkomsel Packet" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-orange-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
+                                    <a href="#" id="dropdown-item-merchandise" data-category="Merchandise" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-orange-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merchandise'); return false;">Merchandise</a>
                                 </div>
                             </div>
                         </div>
@@ -682,208 +809,368 @@
                                 Upload
                             </button>
                         </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('merchants.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
+                        </div>
                     </div>
                     
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                         <div class="relative w-full sm:w-auto">
-                            <input type="text" placeholder="Search..." class="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <input type="text" id="merchantSearch" placeholder="Search merchant..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
                             <div class="absolute left-3 top-2.5 text-gray-400">
                                 <i class="fas fa-search text-sm"></i>
                             </div>
+                            <button type="button" id="merchantSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                                &times;
+                            </button>
                         </div>
                         
                     </div>
                 </div>
                 
-                @include('partials.table-merchant')
+                <div id="merchant-table-container">
+                    @include('partials.table-merchant')
+                </div>
             </div>
         </main>
         
 
         <script>
-        // Search functionality for Merchant table - AJAX search across all pages
-        document.getElementById('merchantSearch').addEventListener('keyup', function(e) {
-            clearTimeout(searchTimeout);
-            const searchTerm = e.target.value.trim();
-            
-            // If search is empty, reload the page to show all merchants
-            if (searchTerm === '') {
-                location.reload();
+        // Search functionality for Merchant table - aligned with section rendering
+        let merchantSearchTimeout;
+        let currentMerchantQuery = new URL(window.location.href).searchParams.get('merchant_search') || '';
+        // Simpan kategori merchant yang sedang aktif (untuk dikirim ke server)
+        if (typeof selectedCategory === 'undefined') {
+            selectedCategory = { merchant: 'Semua',};
+        } else if (!selectedCategory.merchant) {
+            selectedCategory.merchant = 'Semua';
+        }
+        const merchantSearchInput = document.getElementById('merchantSearch');
+        
+        if (merchantSearchInput && currentMerchantQuery) {
+            merchantSearchInput.value = currentMerchantQuery;
+            fetchMerchantTable(buildMerchantSearchRequestUrl(), true);
+        }
+
+        merchantSearchInput?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            event.preventDefault();
+            currentMerchantQuery = event.target.value.trim();
+
+            if (merchantSearchTimeout) {
+                clearTimeout(merchantSearchTimeout);
+            }
+
+            merchantSearchTimeout = setTimeout(() => {
+                fetchMerchantTable(buildMerchantSearchRequestUrl());
+            }, 50);
+        });
+
+        merchantSearchInput?.addEventListener('input', (event) => {
+            const value = event.target.value.trim();
+
+            if (value === '' && currentMerchantQuery !== '') {
+                currentMerchantQuery = '';
+
+                if (merchantSearchTimeout) {
+                    clearTimeout(merchantSearchTimeout);
+                }
+
+                merchantSearchTimeout = setTimeout(() => {
+                    fetchMerchantTable(buildMerchantSearchRequestUrl());
+                }, 50);
+            }
+        });
+
+        function buildMerchantSearchRequestUrl(sourceHref = null) {
+            if (sourceHref) {
+                return sourceHref;
+            }
+
+            const searchUrl = new URL('/merchants/search', window.location.origin);
+            if (currentMerchantQuery) {
+                searchUrl.searchParams.set('q', currentMerchantQuery);
+            }
+            searchUrl.searchParams.set('tab', 'merchant');
+            searchUrl.searchParams.set('page', '1');
+            // Sertakan kategori bila dipilih selain "Semua"
+            const activeCategory = (selectedCategory?.merchant || 'Semua');
+            if (activeCategory && activeCategory !== 'Semua') {
+                searchUrl.searchParams.set('category', activeCategory);
+            }
+            return searchUrl.toString();
+        }
+
+        function reapplyMerchantCategoryFilter() {
+            if (typeof selectedCategory === 'undefined') {
+                return;
+            }
+
+            if (!selectedCategory.merchant) {
+                selectedCategory.merchant = 'Semua';
+            }
+
+            filterTable('merchant', selectedCategory.merchant, { reapply: true });
+        }
+
+        function fetchMerchantTable(requestUrl, skipTransition = false) {
+            const url = requestUrl || buildMerchantSearchRequestUrl();
+            const container = document.getElementById('merchant-table-container');
+
+            if (!container) {
                 return;
             }
             
-            // Debounce the search request
-            searchTimeout = setTimeout(() => {
-                fetch(`/merchants/search?q=${encodeURIComponent(searchTerm)}`, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                })
+            if (!skipTransition) {
+                container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                container.style.opacity = '0';
+                container.style.transform = 'translateY(8px)';
+            }
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
-                    updateMerchantTable(data);
+                    if (!data.html) {
+                        return;
+                    }
+
+                    const delay = skipTransition ? 0 : 200;
+                    setTimeout(() => {
+                        container.innerHTML = data.html;
+                        attachMerchantPaginationHandlers();
+                        updateMerchantUrlState();
+                        reapplyMerchantCategoryFilter();
+
+                        if (!skipTransition) {
+                            void container.offsetWidth;
+                            container.style.opacity = '1';
+                            container.style.transform = 'translateY(0)';
+                        }
+                    }, delay);
                 })
                 .catch(error => console.error('Search error:', error));
-            }, 300);
+        }
+
+        function attachMerchantPaginationHandlers() {
+            const container = document.getElementById('merchant-table-container');
+            if (!container) return;
+
+            container.querySelectorAll('.merchant-pagination-link').forEach(link => {
+                const linkUrl = new URL(link.href, window.location.origin);
+                const isMerchantSearchPath = linkUrl.pathname === '/merchants/search';
+
+                link.addEventListener('click', function(event) {
+                    if (!isMerchantSearchPath) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    fetchMerchantTable(this.href);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+        }
+
+        function updateMerchantUrlState() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'merchant');
+            if (currentMerchantQuery) {
+                url.searchParams.set('merchant_search', currentMerchantQuery);
+            } else {
+                url.searchParams.delete('merchant_search');
+            }
+            // Simpan kategori aktif ke URL supaya bisa dibuka ulang dengan filter yang sama
+            const activeCategory = (selectedCategory?.merchant || 'Semua');
+            if (activeCategory && activeCategory !== 'Semua') {
+                url.searchParams.set('category', activeCategory);
+            } else {
+                url.searchParams.delete('category');
+            }
+            window.history.replaceState({}, '', url);
+        }
+
+        attachMerchantPaginationHandlers();
+
+        ////////////////////////////////////////////////////////////////////
+        // Keyword search & pagination (AJAX across all pages)
+        ////////////////////////////////////////////////////////////////////
+        const keywordSearchInput = document.getElementById('keywordSearch');
+        const keywordSearchClear = document.getElementById('keywordSearchClear');
+        let keywordSearchTimeout;
+        let currentKeywordQuery = new URL(window.location.href).searchParams.get('keyword_search') || '';
+
+        if (keywordSearchInput && currentKeywordQuery) {
+            keywordSearchInput.value = currentKeywordQuery;
+            fetchKeywordTable(buildKeywordSearchRequestUrl());
+            if (keywordSearchClear) keywordSearchClear.classList.remove('hidden');
+        }
+
+        keywordSearchClear?.addEventListener('click', () => {
+            if (!keywordSearchInput) return;
+            keywordSearchInput.value = '';
+            currentKeywordQuery = '';
+            if (keywordSearchTimeout) {
+                clearTimeout(keywordSearchTimeout);
+            }
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 10);
+            keywordSearchClear.classList.add('hidden');
         });
-        
-        function updateMerchantTable(data) {
-            const merchants = data.merchants;
-            const pagination = data.pagination;
-            
-            // Update table body
-            const tableBody = document.getElementById('merchant-table-body');
-            if (tableBody) {
-                if (merchants.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="11" class="px-4 py-4 text-center text-sm text-gray-500">Belum ada data merchant.</td></tr>';
-                } else {
-                    tableBody.innerHTML = merchants.map((merchant, index) => `
-                        <tr class="hover:bg-gray-50 transition-colors merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
-                            onclick="window.location='/merchants/${merchant.id}'">
-                            <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">${(pagination.current_page - 1) * pagination.per_page + index + 1}</td>
-                            <td class="px-4 py-4 w-20 text-center">
-                                <div class="flex items-center justify-center h-full">
-                                    <button type="button"
-                                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
-                                            class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
-                                            title="Hapus">
-                                        <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
-                                    </button>
-                                </div>
-                            </td>
-                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.daerah}</td>
-                            <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">${merchant.nama_merchant}</td>
-                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">${merchant.kategori || '-'}</td>
-                            <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">
-                                ${merchant.logo_merchant ? `
-                                    <a href="/storage/${merchant.logo_merchant}" 
-                                       target="_blank" 
-                                       rel="noopener noreferrer"
-                                       class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
-                                        <img src="/storage/${merchant.logo_merchant}" 
-                                             alt="${merchant.nama_merchant}" 
-                                             class="h-full w-full object-cover">
-                                    </a>
-                                ` : '<span class="text-gray-400">-</span>'}
-                            </td>
-                        </tr>
-                    `).join('');
-                }
+
+        // Trigger search hanya saat Enter, tapi kalau input dikosongkan,
+        // otomatis reset tabel tanpa perlu Enter lagi.
+        keywordSearchInput?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
             }
-            
-            // Update mobile cards
-            const cardsContainer = document.getElementById('merchant-cards-container');
-            if (cardsContainer) {
-                if (merchants.length === 0) {
-                    cardsContainer.innerHTML = '<p class="text-sm text-center text-gray-500">Belum ada data merchant.</p>';
-                } else {
-                    cardsContainer.innerHTML = merchants.map((merchant, index) => `
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-3 merchant-row cursor-pointer" data-category="${merchant.kategori || 'All'}"
-                             onclick="window.location='/merchants/${merchant.id}'">
-                            <div class="flex items-start justify-between pb-3 border-b border-gray-200">
-                                <div>
-                                    <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">No</p>
-                                    <p class="text-sm font-medium text-gray-900 mt-1">${(pagination.current_page - 1) * pagination.per_page + index + 1}</p>
-                                </div>
-                                <div class="flex items-center">
-                                    <button type="button"
-                                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', '${merchant.nama_merchant.replace(/'/g, "\\'")}', ${merchant.id})"
-                                            class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
-                                            title="Hapus">
-                                        <i class="fas fa-trash text-red-600 text-lg leading-none"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Daerah</p>
-                                <p class="text-sm text-gray-700 mt-1">${merchant.daerah}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Merchant</p>
-                                <p class="text-sm font-semibold text-gray-900 mt-1">${merchant.nama_merchant}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Kategori</p>
-                                <p class="text-sm text-gray-700 mt-1">${merchant.kategori || '-'}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Logo Merchant</p>
-                                <div class="mt-2 flex items-center space-x-2">
-                                    ${merchant.logo_merchant ? `
-                                        <button type="button" 
-                                                onclick="event.stopPropagation(); previewMerchantLogo('/storage/${merchant.logo_merchant}', '${merchant.logo_merchant.split('/').pop()}')"
-                                                class="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors">
-                                            <img src="/storage/${merchant.logo_merchant}" 
-                                                 alt="${merchant.nama_merchant}" 
-                                                 class="h-full w-full object-cover">
-                                        </button>
-                                        <span class="text-sm text-gray-700 font-medium">${merchant.nama_merchant}</span>
-                                    ` : '<span class="text-sm text-gray-400">-</span>'}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                }
+
+            event.preventDefault();
+            currentKeywordQuery = event.target.value.trim();
+
+            if (keywordSearchTimeout) {
+                clearTimeout(keywordSearchTimeout);
             }
-            
-            // Update pagination
-            updatePagination(pagination);
-        }
-        
-        function updatePagination(pagination) {
-            const paginationContainer = document.querySelector('.bg-white.px-4.py-4.border-t.border-gray-200');
-            if (!paginationContainer) return;
-            
-            let paginationHTML = `
-                <div class="text-sm text-gray-600">
-                    Menampilkan <span class="font-semibold">${pagination.from || 0}</span> hingga <span class="font-semibold">${pagination.to || 0}</span> dari <span class="font-semibold">${pagination.total}</span> data
-                </div>
-                <div class="flex items-center space-x-2">
-            `;
-            
-            // Previous button
-            if (pagination.current_page === 1) {
-                paginationHTML += '<button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-left"></i></button>';
+
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 50);
+        });
+
+        keywordSearchInput?.addEventListener('input', (event) => {
+            const value = event.target.value.trim();
+            if (keywordSearchClear) {
+                keywordSearchClear.classList.toggle('hidden', value.length === 0);
+            }
+
+            // Kalau dikosongkan, langsung reset ke semua data
+            if (value === '' && currentKeywordQuery !== '') {
+                currentKeywordQuery = '';
+
+                if (keywordSearchTimeout) {
+                    clearTimeout(keywordSearchTimeout);
+                }
+
+                keywordSearchTimeout = setTimeout(() => {
+                    fetchKeywordTable(buildKeywordSearchRequestUrl());
+                }, 50);
+            }
+        });
+
+        function buildKeywordSearchRequestUrl(sourceHref = null) {
+            const base = new URL(sourceHref || '/keywords', window.location.origin);
+            const searchUrl = new URL('/keywords/search', window.location.origin);
+
+            base.searchParams.forEach((value, key) => {
+                // abaikan parameter yang akan kita kelola sendiri
+                if (key === 'tab' || key === 'keyword_search' || key === 'status') {
+                    return;
+                }
+                searchUrl.searchParams.set(key, value);
+            });
+
+            if (currentKeywordQuery) {
+                searchUrl.searchParams.set('q', currentKeywordQuery);
             } else {
-                paginationHTML += `<button onclick="searchPage(${pagination.current_page - 1})" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-left"></i></button>`;
+                searchUrl.searchParams.delete('q');
             }
-            
-            // Page numbers
-            for (let i = 1; i <= pagination.last_page; i++) {
-                if (i === pagination.current_page) {
-                    paginationHTML += `<button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">${i}</button>`;
-                } else {
-                    paginationHTML += `<button onclick="searchPage(${i})" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">${i}</button>`;
-                }
-            }
-            
-            // Next button
-            if (pagination.current_page === pagination.last_page) {
-                paginationHTML += '<button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-right"></i></button>';
+
+            // sertakan filter status jika sedang aktif (selain 'all')
+            if (selectedKeywordStatus && selectedKeywordStatus !== 'all') {
+                searchUrl.searchParams.set('status', selectedKeywordStatus);
             } else {
-                paginationHTML += `<button onclick="searchPage(${pagination.current_page + 1})" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-right"></i></button>`;
+                searchUrl.searchParams.delete('status');
             }
-            
-            paginationHTML += '</div>';
-            paginationContainer.innerHTML = paginationHTML;
+
+            searchUrl.searchParams.set('tab', 'keyword');
+            return searchUrl.toString();
         }
-        
-        function searchPage(page) {
-            const searchTerm = document.getElementById('merchantSearch').value.trim();
-            if (!searchTerm) return;
-            
-            fetch(`/merchants/search?q=${encodeURIComponent(searchTerm)}&page=${page}`, {
+
+        function fetchKeywordTable(requestUrl) {
+            const url = requestUrl || buildKeywordSearchRequestUrl();
+            const container = document.getElementById('keyword-table-container');
+
+            if (!container) {
+                return;
+            }
+
+            // Animasi keluar (fade + slight slide)
+            container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(8px)';
+
+            fetch(url, {
                 headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 }
             })
             .then(response => response.json())
             .then(data => {
-                updateMerchantTable(data);
-                window.scrollTo(0, 0);
+                if (data.html) {
+                    // Ganti konten setelah animasi keluar selesai
+                        setTimeout(() => {
+                            container.innerHTML = data.html;
+                            attachKeywordPaginationHandlers();
+                            updateKeywordUrlState();
+                            // Re-apply date filter if user set one before the table reload
+                            if (window.dateFilterState?.dateFilterKeyword && (window.dateFilterState.dateFilterKeyword.start || window.dateFilterState.dateFilterKeyword.end)) {
+                                applyDateFilterCompact('dateFilterKeyword');
+                            }
+
+                            // Trigger reflow sebelum animasi masuk
+                            void container.offsetWidth;
+
+                        // Animasi masuk (fade + slide up)
+                        container.style.opacity = '1';
+                        container.style.transform = 'translateY(0)';
+                    }, 200);
+                }
             })
-            .catch(error => console.error('Search error:', error));
+            .catch(error => console.error('Keyword search error:', error));
         }
+
+        function attachKeywordPaginationHandlers() {
+            const container = document.getElementById('keyword-table-container');
+            if (!container) return;
+
+            container.querySelectorAll('.keyword-pagination-link').forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const requestUrl = buildKeywordSearchRequestUrl(this.href);
+                    fetchKeywordTable(requestUrl);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+        }
+
+        function updateKeywordUrlState() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'keyword');
+            if (currentKeywordQuery) {
+                url.searchParams.set('keyword_search', currentKeywordQuery);
+            } else {
+                url.searchParams.delete('keyword_search');
+            }
+            window.history.replaceState({}, '', url);
+        }
+
+        attachKeywordPaginationHandlers();
 
         function toggleUserDropdown() {
             const dropdown = document.getElementById('userDropdown');
@@ -930,19 +1217,80 @@
             document.body.appendChild(modal);
         }
 
-        // Keyword search functionality
-        document.getElementById('keywordSearch')?.addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(query) ? '' : 'none';
+        // Initialize dropdown active state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update dropdown item active state for merchant
+            const merchantCategory = selectedCategory.merchant || 'Semua';
+            const dropdownItems = document.querySelectorAll('#kategoriDropdownMerchant a[data-category]');
+            dropdownItems.forEach(item => {
+                const itemCategory = item.getAttribute('data-category');
+                const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                const normalizedCurrentCategory = (merchantCategory || '').toLowerCase();
+
+                // Reset semua item ke state default
+                item.classList.remove('bg-gray-100', 'bg-gradient-to-r', 
+                    'from-orange-100', 'to-red-100', 'text-orange-900',
+                    'from-purple-100', 'to-pink-100', 'text-purple-900',
+                    'from-blue-100', 'to-cyan-100', 'text-blue-900',
+                    'from-green-100', 'to-emerald-100', 'text-green-900',
+                    'from-rose-100', 'to-pink-100', 'text-rose-900',
+                    'from-red-100', 'to-orange-100', 'text-red-900',
+                    'text-gray-900');
+
+                // Apply active state jika kategori cocok
+                if (normalizedItemCategory === normalizedCurrentCategory || 
+                    (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                    
+                    if (merchantCategory === 'Semua') {
+                        item.classList.add('bg-gray-100', 'text-gray-900');
+                    } else if (merchantCategory === 'Kuliner') {
+                        item.classList.add('bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'text-orange-900');
+                    } else if (merchantCategory === 'Hiburan') {
+                        item.classList.add('bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'text-purple-900');
+                    } else if (merchantCategory === 'Liburan') {
+                        item.classList.add('bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'text-blue-900');
+                    } else if (merchantCategory === 'Belanja') {
+                        item.classList.add('bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'text-green-900');
+                    } else if (merchantCategory === 'Kecantikan') {
+                        item.classList.add('bg-gradient-to-r', 'from-rose-100', 'to-pink-100', 'text-rose-900');
+                    } else {
+                        item.classList.add('bg-gradient-to-r', 'from-red-100', 'to-orange-100', 'text-red-900');
+                    }
+                }
             });
-            const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? '' : 'none';
+
+            // Update dropdown item active state for keyword status
+            const keywordStatus = selectedKeywordStatus || 'all';
+            const statusDropdownItems = document.querySelectorAll('#statusDropdownKeyword a[data-status]');
+            statusDropdownItems.forEach(item => {
+                const itemStatus = item.getAttribute('data-status');
+                const normalizedItemStatus = (itemStatus || '').toLowerCase();
+                const normalizedCurrentStatus = (keywordStatus || '').toLowerCase();
+
+                // Reset semua item ke state default
+                item.classList.remove('bg-gray-100', 'bg-yellow-100', 'bg-red-100', 'bg-green-100',
+                    'text-gray-900', 'text-yellow-900', 'text-red-900', 'text-green-900');
+
+                // Apply active state jika status cocok
+                if (normalizedItemStatus === normalizedCurrentStatus || 
+                    (normalizedCurrentStatus === 'all' && normalizedItemStatus === 'all')) {
+                    
+                    if (keywordStatus === 'all') {
+                        item.classList.add('bg-gray-100', 'text-gray-900');
+                    } else if (keywordStatus === 'pending') {
+                        item.classList.add('bg-yellow-100', 'text-yellow-900');
+                    } else if (keywordStatus === 'reject') {
+                        item.classList.add('bg-red-100', 'text-red-900');
+                    } else if (keywordStatus === 'approve') {
+                        item.classList.add('bg-green-100', 'text-green-900');
+                    }
+                }
             });
+
+            const dashboardMain = document.querySelector('main.dashboard-entrance');
+            if (dashboardMain) {
+                requestAnimationFrame(() => dashboardMain.classList.add('is-visible'));
+            }
         });
 
     </script>
