@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Iklan;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -15,7 +16,7 @@ class IklanController extends Controller
      */
     public function index(): View
     {
-        $iklans = Iklan::latest()->get();
+        $iklans = Iklan::orderBy('order', 'asc')->get();
 
         return view('iklan', compact('iklans'));
     }
@@ -38,9 +39,13 @@ class IklanController extends Controller
             $link = null;
         }
 
+        // Get the highest order value and add 1
+        $maxOrder = Iklan::max('order') ?? 0;
+        
         Iklan::create([
             'image_path' => $path,
             'link_iklan' => $link,
+            'order' => $maxOrder + 1,
         ]);
 
         return redirect()
@@ -62,5 +67,25 @@ class IklanController extends Controller
         return redirect()
             ->route('iklan.index')
             ->with('success', 'Iklan berhasil dihapus.');
+    }
+
+    /**
+     * Update the order of iklans.
+     */
+    public function updateOrder(Request $request): JsonResponse
+    {
+        $request->validate([
+            'orders' => ['required', 'array'],
+            'orders.*' => ['required', 'integer', 'exists:iklans,id'],
+        ]);
+
+        foreach ($request->orders as $order => $id) {
+            Iklan::where('id', $id)->update(['order' => $order + 1]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Urutan iklan berhasil diperbarui.',
+        ]);
     }
 }

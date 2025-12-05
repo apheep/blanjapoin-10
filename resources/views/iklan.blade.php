@@ -6,16 +6,15 @@
 
 @section('content')
 @include('partials.navbar-admin')
-<div id="iklanPage" class="min-h-screen bg-white pt-28 md:pt-32 pb-12 opacity-0 transition-opacity duration-500">
+<div id="iklanPage" class="min-h-screen bg-white pt-20 md:pt-32 pb-12 opacity-0 transition-opacity duration-500">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex flex-row items-center justify-between gap-3 pl-2">
             <div>
-                <p class="text-sm text-neutral-500 font-semibold tracking-wide uppercase mb-1">Landing Page</p>
-                <h1 class="text-2xl md:text-3xl font-bold text-neutral-800">Manajemen Iklan</h1>
+                <h1 class="text-2xl md:text-3xl font-bold text-neutral-800">Landing Page</h1>
                 <p class="text-sm text-neutral-500">Atur banner yang tampil pada halaman utama pengguna.</p>
             </div>
-            <a href="{{ route('home') }}" target="_blank" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold shadow-md hover:shadow-lg transition">
-                Lihat Landing Page
+            <a href="{{ route('home') }}" target="_blank" class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md hover:shadow-lg transition flex-shrink-0" title="Lihat Landing Page">
+                <i class="fas fa-external-link-alt"></i>
             </a>
         </div>
 
@@ -36,7 +35,7 @@
         @endif
 
         <div class="grid md:grid-cols-2 gap-6">
-            <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-neutral-100">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Tambah Iklan Baru</h2>
                 <p class="text-sm text-neutral-500 mb-5">Unggah file gambar dengan format 5:1 aspect ratio (JPG, PNG, maksimal 2 MB). </p>
                 <form id="uploadForm" action="{{ route('iklan.store') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
@@ -59,7 +58,7 @@
                 </form>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-neutral-100">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Preview Banner</h2>
                 <p class="text-sm text-neutral-500 mb-4">Gambar pertama pada daftar akan menjadi banner utama.</p>
                 @php
@@ -84,9 +83,6 @@
                         @endif
                     </p>
                 @endif
-                <p class="text-xs text-neutral-400 mt-3 leading-relaxed">
-                    Rekomendasi ukuran 5:1 aspect ratio (1200x240 piksel) dengan format landscape.
-                </p>
             </div>
         </div>
 
@@ -102,16 +98,22 @@
                 <table class="min-w-full divide-y divide-neutral-100 text-sm">
                     <thead class="text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
                         <tr>
-                        <th class="py-3 text-center">No</th>
+                        <th class="py-3 text-center w-12 md:w-12 pr-3 md:pr-0"></th>
+                        <th class="py-3 text-left pl-3 md:pl-0">No</th>
                         <th class="py-3 text-center">Preview</th>
                          <th class="py-3 text-center">Link</th>
                         <th class="py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-neutral-100">
+                    <tbody id="iklanTableBody" class="divide-y divide-neutral-100">
                         @forelse ($iklans as $iklan)
-                            <tr>
-                                <td class="py-3 text-center">
+                            <tr data-iklan-id="{{ $iklan->id }}" class="cursor-move hover:bg-neutral-50 transition-colors draggable-row">
+                                <td class="py-3 text-center pr-3 md:pr-0">
+                                    <div class="flex items-center justify-center cursor-grab active:cursor-grabbing">
+                                        <i class="fas fa-grip-vertical text-neutral-400 hover:text-neutral-600 transition-colors"></i>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-left  pl-3 md:pl-0">
                                     {{ $loop->iteration }}
                                 </td>
                                 <td class="py-3 text-center flex items-center justify-center">
@@ -132,15 +134,15 @@
                                     <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center px-3 py-2 rounded-lg border border-rose-200 text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger">
-                                            Hapus
+                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                            <td colspan="5" class="py-6 text-center text-neutral-500 font-medium">
+                            <td colspan="6" class="py-6 text-center text-neutral-500 font-medium">
                                     Belum ada data iklan. Tambahkan gambar melalui form di atas.
                                 </td>
                             </tr>
@@ -319,6 +321,122 @@ document.addEventListener('DOMContentLoaded', function () {
                 closeModal(deleteModal, deleteModalContent);
             }
         });
+    }
+
+    // Drag and Drop functionality untuk reorder iklan
+    const tableBody = document.getElementById('iklanTableBody');
+    if (tableBody) {
+        let draggedRow = null;
+        let draggedOverRow = null;
+
+        const rows = tableBody.querySelectorAll('.draggable-row');
+        
+        rows.forEach(row => {
+            // Make row draggable
+            row.setAttribute('draggable', 'true');
+            
+            row.addEventListener('dragstart', function(e) {
+                draggedRow = this;
+                this.style.opacity = '0.5';
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+            });
+
+            row.addEventListener('dragend', function(e) {
+                this.style.opacity = '';
+                rows.forEach(r => {
+                    r.classList.remove('border-t-2', 'border-orange-500');
+                });
+            });
+
+            row.addEventListener('dragover', function(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (draggedRow && this !== draggedRow) {
+                    rows.forEach(r => {
+                        r.classList.remove('border-t-2', 'border-orange-500');
+                    });
+                    this.classList.add('border-t-2', 'border-orange-500');
+                    draggedOverRow = this;
+                }
+                return false;
+            });
+
+            row.addEventListener('dragleave', function(e) {
+                this.classList.remove('border-t-2', 'border-orange-500');
+            });
+
+            row.addEventListener('drop', function(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+
+                if (draggedRow && this !== draggedRow) {
+                    const allRows = Array.from(tableBody.querySelectorAll('.draggable-row'));
+                    const draggedIndex = allRows.indexOf(draggedRow);
+                    const targetIndex = allRows.indexOf(this);
+
+                    if (draggedIndex < targetIndex) {
+                        tableBody.insertBefore(draggedRow, this.nextSibling);
+                    } else {
+                        tableBody.insertBefore(draggedRow, this);
+                    }
+
+                    // Update nomor urut
+                    updateRowNumbers();
+                    
+                    // Save order to server
+                    saveOrder();
+                }
+
+                rows.forEach(r => {
+                    r.classList.remove('border-t-2', 'border-orange-500');
+                });
+
+                return false;
+            });
+        });
+
+        function updateRowNumbers() {
+            const rows = tableBody.querySelectorAll('.draggable-row');
+            rows.forEach((row, index) => {
+                const noCell = row.querySelector('td:nth-child(2)');
+                if (noCell) {
+                    noCell.textContent = index + 1;
+                }
+            });
+        }
+
+        function saveOrder() {
+            const rows = tableBody.querySelectorAll('.draggable-row');
+            const orders = Array.from(rows).map(row => {
+                return parseInt(row.getAttribute('data-iklan-id'));
+            });
+
+            fetch('{{ route("iklan.reorder") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ orders: orders })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Optional: Show success message
+                    console.log('Urutan berhasil diperbarui');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert on error
+                location.reload();
+            });
+        }
     }
 });
 
