@@ -117,15 +117,23 @@
                     {{ $keywordPaginator->total() }} Keyword
                 </span>
             </div>
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                 <div class="flex flex-wrap items-center gap-3">
+                    <!-- Status filter -->
                     <div class="relative overflow-visible">
-                        <button id="statusBtnDetail" onclick="toggleStatusDropdownDetail()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                        <button
+                            id="statusBtnDetail"
+                            onclick="toggleStatusDropdownDetail()"
+                            class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
                             <i class="fas fa-filter mr-2"></i>
                             Status
-                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                            <i id="statusArrowDetail" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                         </button>
-                        <div id="statusDropdownDetail" class="hidden absolute left-0 right-0 md:left-0 md:right-auto mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full max-w-[18rem] md:w-56 z-50 pointer-events-auto">
+                        <div
+                            id="statusDropdownDetail"
+                            class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-56 sm:max-w-none max-w-full z-50 pointer-events-auto"
+                        >
                             <div class="py-1 space-y-1">
                                 <a href="#" data-status="all" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('all'); return false;">All</a>
                                 <a href="#" data-status="pending" class="status-dropdown-option block px-4 py-2 text-sm text-gray-700 rounded-lg transition-colors duration-200" onclick="filterKeywordByStatusDetail('pending'); return false;">Pending</a>
@@ -135,34 +143,53 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2  ">
-                        <div class="flex-1">
-                            @include('partials.date-filter', ['filterId' => 'dateFilterMerchantDetail'])
-                        </div>
-                        <div class="flex-1">
-                            <button type="button" onclick="openUploadKeyword()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors w-full">
-                                <i class="fas fa-plus mr-2"></i>
-                                Add
-                            </button>
-                        </div>
-                        <div class="flex-1">
-                            <a
-                                href="{{ route('merchants.keywords.export.excel', $merchant->id) }}"
-                                class="flex items-center justify-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors w-full"
-                            >
-                                <i class="fas fa-file-excel mr-2"></i>
-                                Export Excel
-                            </a>
-                        </div>
+                    <!-- Date filter -->
+                    <div class="relative">
+                        @include('partials.date-filter', ['filterId' => 'dateFilterMerchantDetail'])
+                    </div>
+
+                    <!-- Add button -->
+                    <div class="relative">
+                        <button
+                            type="button"
+                            onclick="openUploadKeyword()"
+                            class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                            <i class="fas fa-plus mr-2"></i>
+                            Add
+                        </button>
+                    </div>
+
+                    <!-- Export Excel button -->
+                    <div class="relative">
+                        <a
+                            href="{{ route('merchants.keywords.export.excel', $merchant->id) }}"
+                            class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                        >
+                            <i class="fas fa-file-excel mr-2"></i>
+                            Export
+                        </a>
                     </div>
                 </div>
-                <div class="w-full lg:w-64">
-                    <div class="relative">
-                        <input type="text" id="keywordSearchDetail" placeholder="Search keyword..." class="w-full pl-10 pr-10 py-2 rounded-full border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent">
+
+                <!-- Search -->
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-64">
+                        <input
+                            type="text"
+                            id="keywordSearchDetail"
+                            placeholder="Search keyword..."
+                            class="w-full pl-10 pr-10 py-2 rounded-full border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                        >
                         <div class="absolute left-3 top-2.5 text-gray-400">
                             <i class="fas fa-search text-sm"></i>
                         </div>
-                        <button type="button" id="keywordSearchDetailClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                        <button
+                            type="button"
+                            id="keywordSearchDetailClear"
+                            class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                            aria-label="Clear search"
+                        >
                             &times;
                         </button>
                     </div>
@@ -170,7 +197,9 @@
             </div>
         </div>
 
-        @include('partials.table-keyword')
+        <div id="keyword-table-container-detail">
+            @include('partials.table-keyword')
+        </div>
 
     </main>
 
@@ -185,21 +214,38 @@
     </script>
 
     <script>
-        let detailSelectedStatus = 'all';
+        // =======================
+        // Keyword filter & search (merchant detail) - AJAX like main Keyword section
+        // =======================
+        let detailSelectedStatus = new URL(window.location.href).searchParams.get('status') || 'all';
+        let currentDetailKeywordQuery = new URL(window.location.href).searchParams.get('keyword_search') || '';
 
         function toggleStatusDropdownDetail() {
             const dropdown = document.getElementById('statusDropdownDetail');
+            const arrow = document.getElementById('statusArrowDetail');
             if (!dropdown) return;
             setActiveStatusOption(detailSelectedStatus);
             if (dropdown.classList.contains('hidden')) {
                 dropdown.classList.remove('hidden');
                 dropdown.classList.add('fade-in-up');
                 setTimeout(() => { dropdown.classList.add('show'); }, 10);
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
             } else {
                 dropdown.classList.add('hidden');
                 dropdown.classList.remove('show');
                 dropdown.classList.remove('fade-in-up');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
             }
+        }
+
+        function setActiveStatusOption(status) {
+            const options = document.querySelectorAll('#statusDropdownDetail .status-dropdown-option');
+            options.forEach((opt) => {
+                opt.classList.remove('active-all', 'active-pending', 'active-reject', 'active-approve');
+                if (opt.dataset.status === status) {
+                    opt.classList.add('active-' + status);
+                }
+            });
         }
 
         function filterKeywordByStatusDetail(status) {
@@ -229,117 +275,177 @@
             }
 
             button.className = buttonClasses;
-            button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
+            button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i id="statusArrowDetail" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>`;
 
-            const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-            rows.forEach((row, index) => {
-                const s = (row.dataset.status || '').toLowerCase();
-                const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                const matchesStatus = (status === 'all' || normalized === status);
-                const matchesDate = (row.dataset.dateFilterMatch ?? 'true') !== 'false';
-                const shouldShow = matchesStatus && matchesDate;
-
-                row.dataset.statusHidden = matchesStatus ? 'false' : 'true';
-                
-                if (shouldShow) {
-                    row.style.opacity = '0';
-                    row.style.transform = 'translateY(-10px)';
-                    row.style.display = '';
-                    setTimeout(() => {
-                        row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                        row.style.opacity = '1';
-                        row.style.transform = 'translateY(0)';
-                    }, index * 20);
-                } else {
-                    row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-                    row.style.opacity = '0';
-                    row.style.transform = 'translateY(-10px)';
-                    setTimeout(() => {
-                        row.style.display = 'none';
-                    }, 200);
-                }
-            });
-
-            const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-            cards.forEach((card, index) => {
-                const s = (card.dataset.status || '').toLowerCase();
-                const normalized = s === 'approved' ? 'approve' : s === 'rejected' ? 'reject' : s;
-                const matchesStatus = (status === 'all' || normalized === status);
-                const matchesDate = (card.dataset.dateFilterMatch ?? 'true') !== 'false';
-                const shouldShow = matchesStatus && matchesDate;
-
-                card.dataset.statusHidden = matchesStatus ? 'false' : 'true';
-                
-                if (shouldShow) {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(-10px)';
-                    card.style.display = '';
-                    setTimeout(() => {
-                        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, index * 20);
-                } else {
-                    card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(-10px)';
-                    setTimeout(() => {
-                        card.style.display = 'none';
-                    }, 200);
-                }
-            });
+            // Reload table from server with current status & search term
+            const requestUrl = buildDetailKeywordSearchRequestUrl();
+            fetchDetailKeywordTable(requestUrl);
 
             toggleStatusDropdownDetail();
-        }
-
-        function setActiveStatusOption(status) {
-            const options = document.querySelectorAll('#statusDropdownDetail .status-dropdown-option');
-            options.forEach((opt) => {
-                opt.classList.remove('active-all', 'active-pending', 'active-reject', 'active-approve');
-                if (opt.dataset.status === status) {
-                    opt.classList.add('active-' + status);
-                }
-            });
         }
 
         const keywordSearchDetail = document.getElementById('keywordSearchDetail');
         const keywordSearchDetailClear = document.getElementById('keywordSearchDetailClear');
 
-        function filterKeywordDetail(query) {
-            const lower = (query || '').toLowerCase();
-            const rows = document.querySelectorAll('#keyword-table-body tr.keyword-row');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(lower) ? '' : 'none';
-            });
-            const cards = document.querySelectorAll('#keyword-cards-container .keyword-row');
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(lower) ? '' : 'none';
-            });
-        }
-
-        keywordSearchDetail?.addEventListener('input', function(e) {
-            const query = e.target.value;
-            if (keywordSearchDetailClear) {
-                keywordSearchDetailClear.classList.toggle('hidden', query.length === 0);
+        keywordSearchDetail?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
             }
-            filterKeywordDetail(query);
+            event.preventDefault();
+            currentDetailKeywordQuery = event.target.value.trim();
+            fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
         });
 
-        keywordSearchDetailClear?.addEventListener('click', function() {
+        keywordSearchDetail?.addEventListener('input', (event) => {
+            const value = event.target.value.trim();
+            if (keywordSearchDetailClear) {
+                keywordSearchDetailClear.classList.toggle('hidden', value.length === 0);
+            }
+
+            // Jika dikosongkan, reset hasil
+            if (value === '' && currentDetailKeywordQuery !== '') {
+                currentDetailKeywordQuery = '';
+                fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+            }
+        });
+
+        keywordSearchDetailClear?.addEventListener('click', () => {
             if (!keywordSearchDetail) return;
             keywordSearchDetail.value = '';
-            filterKeywordDetail('');
+            currentDetailKeywordQuery = '';
+            fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
             keywordSearchDetailClear.classList.add('hidden');
         });
 
         document.addEventListener('click', function(event) {
             const dropdown = document.getElementById('statusDropdownDetail');
             const button = document.getElementById('statusBtnDetail');
+            const arrow = document.getElementById('statusArrowDetail');
             if (!dropdown || !button) return;
             if (!dropdown.contains(event.target) && !button.contains(event.target)) {
                 dropdown.classList.add('hidden');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+        });
+
+        function buildDetailKeywordSearchRequestUrl(sourceHref = null) {
+            const base = new URL(
+                sourceHref || ('/merchants/' + window.fixedMerchantId),
+                window.location.origin
+            );
+            const searchUrl = new URL('/keywords/search', window.location.origin);
+
+            base.searchParams.forEach((value, key) => {
+                // Abaikan param yang akan kita kelola sendiri
+                if (key === 'tab' || key === 'keyword_search' || key === 'status') {
+                    return;
+                }
+                searchUrl.searchParams.set(key, value);
+            });
+
+            if (currentDetailKeywordQuery) {
+                searchUrl.searchParams.set('q', currentDetailKeywordQuery);
+            } else {
+                searchUrl.searchParams.delete('q');
+            }
+
+            if (detailSelectedStatus && detailSelectedStatus !== 'all') {
+                searchUrl.searchParams.set('status', detailSelectedStatus);
+            } else {
+                searchUrl.searchParams.delete('status');
+            }
+
+            // Batasi ke merchant saat ini
+            if (window.fixedMerchantId) {
+                searchUrl.searchParams.set('merchant_id', window.fixedMerchantId);
+            }
+
+            searchUrl.searchParams.set('tab', 'keyword');
+            return searchUrl.toString();
+        }
+
+        function fetchDetailKeywordTable(requestUrl) {
+            const url = requestUrl || buildDetailKeywordSearchRequestUrl();
+            const container = document.getElementById('keyword-table-container-detail');
+            if (!container) return;
+
+            container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(8px)';
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.html) {
+                        setTimeout(() => {
+                            container.innerHTML = data.html;
+                            attachDetailKeywordPaginationHandlers();
+                            updateDetailKeywordUrlState();
+
+                            // Re-apply date filter jika sebelumnya sudah di-set
+                            if (window.dateFilterState?.dateFilterMerchantDetail &&
+                                (window.dateFilterState.dateFilterMerchantDetail.start || window.dateFilterState.dateFilterMerchantDetail.end)) {
+                                applyDateFilterCompact('dateFilterMerchantDetail');
+                            }
+
+                            void container.offsetWidth;
+                            container.style.opacity = '1';
+                            container.style.transform = 'translateY(0)';
+                        }, 200);
+                    }
+                })
+                .catch(error => console.error('Detail keyword search error:', error));
+        }
+
+        function attachDetailKeywordPaginationHandlers() {
+            const container = document.getElementById('keyword-table-container-detail');
+            if (!container) return;
+
+            container.querySelectorAll('.keyword-pagination-link').forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const requestUrl = buildDetailKeywordSearchRequestUrl(this.href);
+                    fetchDetailKeywordTable(requestUrl);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+        }
+
+        function updateDetailKeywordUrlState() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'keyword');
+
+            if (currentDetailKeywordQuery) {
+                url.searchParams.set('keyword_search', currentDetailKeywordQuery);
+            } else {
+                url.searchParams.delete('keyword_search');
+            }
+
+            if (detailSelectedStatus && detailSelectedStatus !== 'all') {
+                url.searchParams.set('status', detailSelectedStatus);
+            } else {
+                url.searchParams.delete('status');
+            }
+
+            window.history.replaceState({}, '', url);
+        }
+
+        // Inisialisasi status dropdown & pencarian saat halaman pertama kali load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (detailSelectedStatus !== 'all') {
+                setActiveStatusOption(detailSelectedStatus);
+                filterKeywordByStatusDetail(detailSelectedStatus);
+            } else if (currentDetailKeywordQuery) {
+                if (keywordSearchDetail) keywordSearchDetail.value = currentDetailKeywordQuery;
+                fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+                if (keywordSearchDetailClear) keywordSearchDetailClear.classList.remove('hidden');
+            } else {
+                attachDetailKeywordPaginationHandlers();
             }
         });
 
@@ -355,12 +461,6 @@
             if (stayEdit && window.detailRedirectUrl) stayEdit.value = '1';
         }
         document.addEventListener('DOMContentLoaded', applyDetailRedirect);
-
-        function toggleDateFilter(id) {
-            const dropdown = document.getElementById(id);
-            if (!dropdown) return;
-            dropdown.classList.toggle('hidden');
-        }
     </script>
 
     <script>

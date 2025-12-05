@@ -232,6 +232,7 @@ class MerchantController extends Controller
     {
         $searchTerm = trim($request->input('q', ''));
         $page = $request->input('page', 1);
+        $category = $request->input('category');
         
         $merchantsQuery = Merchant::query();
         
@@ -242,6 +243,11 @@ class MerchantController extends Controller
                     ->orWhere('daerah', 'like', "%{$searchTerm}%")
                       ->orWhere('kategori', 'like', "%{$searchTerm}%");
             });
+        }
+
+        // Filter berdasarkan kategori spesifik jika dipilih
+        if ($category && strtolower($category) !== 'semua') {
+            $merchantsQuery->where('kategori', $category);
         }
         
         $merchants = $merchantsQuery

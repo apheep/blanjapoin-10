@@ -10,6 +10,34 @@
   @vite(['resources/css/app.css','resources/js/app.js'])
 
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+   /* Wave background height: lebih tinggi di mobile, tetap seperti semula di desktop */
+   .wave-bg-mobile {
+    height: 1000px;
+   }
+   @media (min-width: 600px) {
+    .wave-bg-mobile {
+     height: 780px;
+    }
+   }
+   /* Khusus non-desktop (maks 1023px) */
+   .wave-img-mobile {
+    object-fit: cover;
+   }
+   /* HP kecil */
+   @media (max-width: 599px) {
+    .wave-img-mobile {
+     height: 540px;
+    }
+   }
+   /* Tablet / hp lebar, tapi masih bukan desktop */
+   @media (min-width: 600px) and (max-width: 1023px) {
+    .wave-img-mobile {
+     height: 830px;
+    }
+   }
+   
+  </style>
  </head>
  @include('partials.head')
 <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
@@ -21,14 +49,14 @@
    </div>
   </div>
   <div class="w-full bg-white relative overflow-hidden"></div>
-  <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none hidden md:block"
+  <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none block md:block"
      style="background-image: url('{{ asset('dot_background.png') }}');
             background-repeat: repeat;
             background-size: cover;
             opacity: 0.8;">
 </div>
    <div class="relative"></div>
-   <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full">
+   <nav id="navbar" class="sticky top-0 z-50 bg-white/80 backdrop-blur-sm transition-shadow duration-300 w-full">
     <div class="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-10 py-4 md:py-5 lg:py-6">
      <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -42,9 +70,9 @@
     @include('partials.banner-carousel', ['iklans' => $iklans])
 
     <div class="relative mt-4 md:mt-8">
-     <div class="pointer-events-none select-none absolute left-1/2 top-0 md:-top-10 -z-10"
-          style="transform: translateX(-50%); width: 100vw; height: 780px; overflow: hidden;">
-      <img src="{{ asset('wave.png') }}" alt="" class="w-full h-auto mt-70 md:-mt-36">
+     <div class="pointer-events-none select-none absolute left-1/2 top-0 md:-top-10 -z-10 wave-bg-mobile"
+          style="transform: translateX(-50%); width: 100vw; overflow: hidden;">
+      <img src="{{ asset('wave.png') }}" alt="" class="w-full h-135 md:h-auto mt-0 md:-mt-36 object-cover wave-img-mobile">
      </div>
 
      <section class="relative z-10 space-y-10 md:space-y-12"></section>
