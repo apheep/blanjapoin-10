@@ -47,10 +47,9 @@ class MerchantController extends Controller
             'link_blanjapoin_code' => 'nullable|string|max:255',
             'nama_pic'       => 'nullable|string|max:255',
             'wa_pic'         => 'nullable|string|max:20',
+            'email_pic'      => 'nullable|string|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
-            'lat'            => 'nullable|string|max:50',
-            'long'           => 'nullable|string|max:50',
             'link_gmap'      => 'nullable|string|max:500',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
@@ -98,15 +97,16 @@ class MerchantController extends Controller
             'link_blanjapoin' => $getValue($linkBlanjapoin),
             'nama_pic'       => $getValue($request->input('nama_pic', null)),
             'wa_pic'         => $getValue($request->input('wa_pic', null)),
+            'email_pic'      => $getValue($request->input('email_pic', null)),
             'daerah'         => $getValue($request->input('daerah', null)),
             'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
             // Ambil lat dan long sebagai string untuk mempertahankan nilai asli input
-            'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
-                                ? (string)$request->input('lat')
-                                : null,
-            'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
-                                ? (string)$request->input('long')
-                                : null,
+            // 'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
+            //                     ? (string)$request->input('lat')
+            //                     : null,
+            // 'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
+            //                     ? (string)$request->input('long')
+            //                     : null,
             'link_gmap'      => $getValue($request->input('link_gmap', null)),
             'logo_merchant'  => $logoPath,
         ];
