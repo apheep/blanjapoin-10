@@ -78,13 +78,18 @@ Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('lin
 Route::middleware('guest:portal')->group(function () {
     Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
     Route::post('/merchant-login', [PortalAuthController::class, 'login'])->name('portal.login.post');
-    Route::get('/merchant-login/google', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
-    Route::get('/merchant-login/google/callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+    
+    // Google OAuth routes (sesuai dokumentasi Socialite)
+    Route::get('/auth/redirect', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
+    Route::get('/auth-google-callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+    
+    // Debug route untuk melihat data Google OAuth (hapus di production)
+    Route::get('/debug/google-callback', [PortalAuthController::class, 'debugGoogleCallback'])->name('portal.google.debug');
 });
 Route::post('/merchant-logout', [PortalAuthController::class, 'logout'])->name('portal.logout');
 
-// Route untuk link dashboard (wajib login portal)
-Route::middleware('portal.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
+// Route untuk link dashboard (conditional auth berdasarkan email merchant)
+Route::middleware('merchant.email.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
 
 // Route untuk link history (public, tidak perlu login)
 Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
