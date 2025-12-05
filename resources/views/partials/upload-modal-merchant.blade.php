@@ -29,7 +29,7 @@
                         {{-- Nama Merchant --}}
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama Merchant <span class="text-red-500">*</span>
+                                Nama Merchant / Produk<span class="text-red-500">*</span>
                             </label>
                             <input type="text"
                                    name="nama_merchant"
@@ -108,7 +108,7 @@
                         {{-- Nama PIC --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama PIC Merchant
+                                Nama PIC Merchant / Produk
                             </label>
                             <input type="text"
                                    name="nama_pic"
@@ -125,6 +125,15 @@
                                    name="wa_pic"
                                    class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                                    placeholder="+6281234567890">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Email PIC
+                            </label>
+                            <input type="email"
+                                   name="email_pic"
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                   placeholder="Masukkan email PIC">
                         </div>
                     </div>
                 </div>
@@ -222,30 +231,6 @@
                         <input type="hidden" name="daerah" id="daerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Latitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Latitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       name="lat"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="-8.6705">
-                            </div>
-
-                            {{-- Longitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Longitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       name="long"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="115.2126">
-                            </div>
-
                             {{-- Link Google Maps --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">

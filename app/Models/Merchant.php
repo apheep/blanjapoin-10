@@ -26,9 +26,8 @@ class Merchant extends Model
         'link_blanjapoin',
         'nama_pic',
         'wa_pic',
+        'email_pic',
         'detail_daerah',
-        'lat',
-        'long',
         'link_gmap'
     ];
 
