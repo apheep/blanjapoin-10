@@ -128,7 +128,7 @@
                         >
                             <i class="fas fa-filter mr-2"></i>
                             Status
-                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                            <i id="statusArrowDetail" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
                         </button>
                         <div
                             id="statusDropdownDetail"
@@ -167,7 +167,7 @@
                             class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
                         >
                             <i class="fas fa-file-excel mr-2"></i>
-                            Export Excel
+                            Export
                         </a>
                     </div>
                 </div>
@@ -222,16 +222,19 @@
 
         function toggleStatusDropdownDetail() {
             const dropdown = document.getElementById('statusDropdownDetail');
+            const arrow = document.getElementById('statusArrowDetail');
             if (!dropdown) return;
             setActiveStatusOption(detailSelectedStatus);
             if (dropdown.classList.contains('hidden')) {
                 dropdown.classList.remove('hidden');
                 dropdown.classList.add('fade-in-up');
                 setTimeout(() => { dropdown.classList.add('show'); }, 10);
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
             } else {
                 dropdown.classList.add('hidden');
                 dropdown.classList.remove('show');
                 dropdown.classList.remove('fade-in-up');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
             }
         }
 
@@ -272,7 +275,7 @@
             }
 
             button.className = buttonClasses;
-            button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i class="fas fa-chevron-down ml-2 text-xs"></i>`;
+            button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i id="statusArrowDetail" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>`;
 
             // Reload table from server with current status & search term
             const requestUrl = buildDetailKeywordSearchRequestUrl();
@@ -317,9 +320,11 @@
         document.addEventListener('click', function(event) {
             const dropdown = document.getElementById('statusDropdownDetail');
             const button = document.getElementById('statusBtnDetail');
+            const arrow = document.getElementById('statusArrowDetail');
             if (!dropdown || !button) return;
             if (!dropdown.contains(event.target) && !button.contains(event.target)) {
                 dropdown.classList.add('hidden');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
             }
         });
 

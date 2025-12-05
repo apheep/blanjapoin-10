@@ -232,8 +232,7 @@ function updateKeywordDisplay(id, status, name) {
     var statusCell = document.getElementById('keyword-status-' + id);
     var actionMobile = document.getElementById('keyword-action-mobile-' + id);
     var statusMobile = document.getElementById('keyword-status-mobile-' + id);
-    // Tombol edit (desktop) di kolom "Actions"
-    var editButton = document.querySelector('[data-keyword-edit-id="' + id + '"]');
+    var keywordRow = document.getElementById('keyword-row-' + id);
 
     if (status === 'approve') {
         var approvedBadge = '<div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm"><i class="fas fa-check-circle text-green-600"></i><span>Approved</span></div>';
@@ -242,6 +241,8 @@ function updateKeywordDisplay(id, status, name) {
         var statusBadge = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>';
         if (statusCell) statusCell.innerHTML = statusBadge;
         if (statusMobile) statusMobile.innerHTML = '<p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p><div class="mt-1">' + statusBadge + '</div>';
+        // Update data-status pada row untuk filter
+        if (keywordRow) keywordRow.setAttribute('data-status', 'approve');
     } else if (status === 'reject') {
         var rejectedBadge = '<div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-red-100 to-rose-100 text-red-700 font-medium text-sm shadow-sm"><i class="fas fa-times text-red-600"></i><span>Rejected</span></div>';
         if (actionCell) actionCell.innerHTML = rejectedBadge;
@@ -249,12 +250,10 @@ function updateKeywordDisplay(id, status, name) {
         var statusBadgeR = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>';
         if (statusCell) statusCell.innerHTML = statusBadgeR;
         if (statusMobile) statusMobile.innerHTML = '<p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Status</p><div class="mt-1">' + statusBadgeR + '</div>';
+        // Update data-status pada row untuk filter
+        if (keywordRow) keywordRow.setAttribute('data-status', 'reject');
     }
-
-    // Setelah status bukan lagi "pending", hilangkan tombol Edit tanpa perlu reload page
-    if (editButton) {
-        editButton.remove();
-    }
+    // Tombol edit tetap ada untuk semua status, tidak dihapus
 }
 </script>
 <script>

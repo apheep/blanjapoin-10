@@ -21,7 +21,7 @@ use App\Models\Iklan;
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
     $keywords = Keyword::with('merchant')->get();
-    $iklans = Iklan::latest()->get();
+    $iklans = Iklan::orderBy('order', 'asc')->get();
     
     // Ambil semua daerah dan ekstrak hanya kabupaten/kota
     $allDaerah = Merchant::query()
@@ -110,7 +110,7 @@ Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
         $keywords = Keyword::with('merchant')->get();
-        $iklans = Iklan::latest()->get();
+        $iklans = Iklan::orderBy('order', 'asc')->get();
         
         // Ambil semua daerah dan ekstrak hanya kabupaten/kota
         $allDaerah = Merchant::query()
@@ -183,6 +183,7 @@ Route::middleware(['auth'])->group(function () {
     // Iklan management
     Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');
     Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
+    Route::post('/iklan/reorder', [IklanController::class, 'updateOrder'])->name('iklan.reorder');
     Route::delete('/iklan/{iklan}', [IklanController::class, 'destroy'])->name('iklan.destroy');
 
     // History All (requires login)
