@@ -9,8 +9,6 @@
           <div class="">
             <img src="{{ asset('/logo.png') }}" alt="" class="w-55 h-20">
           </div>
-          <!-- <h1 class="mt-3 text-2xl font-black tracking-tight text-neutral-900">Masuk</h1>
-          <p class="mt-1 text-sm text-neutral-600">Silakan login untuk melanjutkan</p> -->
         </div>
 
         @if(session('error'))

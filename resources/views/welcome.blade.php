@@ -10,9 +10,37 @@
   @vite(['resources/css/app.css','resources/js/app.js'])
 
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+   /* Wave background height: lebih tinggi di mobile, tetap seperti semula di desktop */
+   .wave-bg-mobile {
+    height: 1000px;
+   }
+   @media (min-width: 600px) {
+    .wave-bg-mobile {
+     height: 780px;
+    }
+   }
+   /* Khusus non-desktop (maks 1023px) */
+   .wave-img-mobile {
+    object-fit: cover;
+   }
+   /* HP kecil */
+   @media (max-width: 599px) {
+    .wave-img-mobile {
+     height: 540px;
+    }
+   }
+   /* Tablet / hp lebar, tapi masih bukan desktop */
+   @media (min-width: 600px) and (max-width: 1023px) {
+    .wave-img-mobile {
+     height: 830px;
+    }
+   }
+   
+  </style>
  </head>
  @include('partials.head')
- <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
+<body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
   <!-- Loading Spinner -->
   <div id="loadingSpinner" class="fixed inset-0 bg-white z-50 flex items-center justify-center" style="opacity: 1; display: flex;">
    <div class="flex flex-col items-center gap-4">
@@ -20,8 +48,16 @@
     <div class="text-sm font-semibold text-neutral-600">Loading Please wait...</div>
    </div>
   </div>
-   <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full">
-    <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
+  <div class="w-full bg-white relative overflow-hidden"></div>
+  <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none block md:block"
+     style="background-image: url('{{ asset('dot_background.png') }}');
+            background-repeat: repeat;
+            background-size: cover;
+            opacity: 0.8;">
+</div>
+   <div class="relative"></div>
+   <nav id="navbar" class="sticky top-0 z-50 bg-white/80 backdrop-blur-sm transition-shadow duration-300 w-full">
+    <div class="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-10 py-4 md:py-5 lg:py-6">
      <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
        <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
@@ -30,13 +66,23 @@
     </div>
    </nav>
 
- <div class="mx-auto max-w-[1120px]">
-  <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
-   @include('partials.banner-carousel', ['iklans' => $iklans])
+   <div class="mx-auto w-full max-w-[1400px] px-4 md:px-8 lg:px-10 pb-12 relative z-10">
+    @include('partials.banner-carousel', ['iklans' => $iklans])
 
-    <section class="mt-8 md:mt-10 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200" id="categorySection">
-     <!-- Mobile Version: 5 columns (4 categories + See All) -->
-     <div class="grid grid-cols-5 gap-2 md:hidden">
+    <div class="relative mt-4 md:mt-8">
+     <div class="pointer-events-none select-none absolute left-1/2 top-0 md:-top-10 -z-10 wave-bg-mobile"
+          style="transform: translateX(-50%); width: 100vw; overflow: hidden;">
+      <img src="{{ asset('wave.png') }}" alt="" class="w-full h-135 md:h-auto mt-0 md:-mt-36 object-cover wave-img-mobile">
+     </div>
+
+     <section class="relative z-10 space-y-10 md:space-y-12"></section>
+     <div class="mt-10 md:-mt-10">
+       @include('partials.spesial_promo', ['specialPromos' => $specialPromos ?? null])
+      </div>
+
+      <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-6 md:pt-10" id="categorySection">
+       <!-- Mobile Version: 5 columns (4 categories + See All) -->
+       <div class="grid grid-cols-5 gap-2 md:hidden">
       <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
         <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
@@ -69,8 +115,8 @@
       </button>
      </div>
 
-     <!-- Desktop Version: 6 columns (5 categories + See All) -->
-     <div class="hidden md:grid grid-cols-6 gap-4">
+       <!-- Desktop Version: 6 columns (5 categories + See All) -->
+       <div class="hidden md:grid grid-cols-6 gap-4">
       <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
         <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
@@ -107,10 +153,16 @@
        </span>
        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
       </button>
-     </div>
-    </section>
+       </div>
+      </div>
+     </section>
+    </div>
+   </div>
+  </div>
 
-    <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
+<div class="mx-auto w-full max-w-[1400px]">
+ <main class="px-4 md:px-8 lg:px-10 pb-12 md:pb-16">
+   <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
      <!-- Mobile Version -->
      <div class="md:hidden flex items-center gap-2">
       <div class="flex-1 rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">

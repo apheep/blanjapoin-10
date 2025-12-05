@@ -50,25 +50,31 @@
             Search Results for <span class="font-bold text-neutral-900">"{{ $query }}"</span>
         </div>
 
-        <!-- Results Grid -->
-        <div class="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:gap-5">
+        <!-- Results Grid (mengikuti layout card merchant: 2 mobile / 3 desktop) -->
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
             @forelse($searchResults as $result)
                 @php
                     $merchant = $result->merchant;
                     $merchantName = optional($merchant)->nama_merchant ?? '';
                     $productName = $result->nama_produk ?? '';
                     $locationName = optional($merchant)->daerah ?? '';
+                    $searchName = strtolower(trim($merchantName . ' ' . $productName));
+                    $searchLocation = strtolower($locationName);
+                    $uniqueId = 'search-card-' . $result->id;
                 @endphp
                 
                 <article 
+                    data-voucher-card="true"
+                    data-point="{{ (int) $result->redeem }}"
+                    data-search-name="{{ $searchName }}"
+                    data-search-location="{{ $searchLocation }}"
                     onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" 
-                    class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200 bg-white shadow-md transition-all hover:shadow-xl hover:scale-[1.01] hover:border-blue-200 cursor-pointer h-full"
+                    class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer h-full min-h-[280px]"
                 >
-                    <!-- Mobile Layout (2 columns) -->
+                    <!-- Mobile Layout -->
                     <div class="lg:hidden flex flex-col h-full">
-                        <!-- Image -->
                         <div class="relative">
-                            <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden">
+                            <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
                                 <img 
                                     src="{{ $result->image ? asset('storage/' . $result->image) : asset('storage/promo/promo-default.jpg') }}" 
                                     alt="{{ $productName }}" 
@@ -77,42 +83,48 @@
                                 >
                             </div>
                         </div>
-                        
-                        <!-- Content -->
                         <div class="flex flex-col p-3 space-y-2 flex-1">
-                            <!-- Merchant Name -->
-                            <h3 class="text-lg md:text-xl font-bold text-neutral-900 leading-tight line-clamp-2">
-                                {{ $merchantName ?: strtoupper(trim($productName)) }}
+                            <h3 class="text-2xl font-bold text-neutral-900 leading-tight">
+                                {{ $merchantName ?: $productName }}
                             </h3>
-                            
-                            <!-- Description -->
-                            <div class="text-xs md:text-sm text-neutral-600 leading-relaxed">
+                            <div class="text-[11px] text-neutral-600 leading-relaxed">
                                 @if(!is_null($result->diskon))
-                                <div class="font-bold text-neutral-800 mb-1">
-                                    Diskon <span class="text-base md:text-lg font-bold">{{ $result->diskon }}</span>
+                                <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
+                                    <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
+                                    <span class="text-xl font-bold text-red-500">{{ $result->diskon }}</span>
                                 </div>
                                 @endif
                                 @if($result->skb)
-                                <div class="line-clamp-2">{{ $result->skb }}</div>
+                                <div class="relative">
+                                    <div id="{{ $uniqueId }}-text" class="line-clamp-3 transition-all duration-300">
+                                        {{ $result->skb }}
+                                    </div>
+                                    <button 
+                                        id="{{ $uniqueId }}-btn" 
+                                        onclick="event.stopPropagation(); toggleDescriptionSearch('{{ $uniqueId }}')" 
+                                        class="hidden mt-1 text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors"
+                                    >
+                                        <span id="{{ $uniqueId }}-btn-text">See details</span>
+                                        <svg id="{{ $uniqueId }}-arrow" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
                                 @endif
                             </div>
-                            
-                            <!-- Points Badge -->
-                            <div class="inline-flex items-center gap-1.5 rounded-full px-0.5 py-0.5 self-start">
+                            <div class="inline-flex items-center gap-1.5 bg-white rounded-full px-0.5 py-0.5 self-start">
                                 <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
-                                <span class="text-lg md:text-xl font-bold text-red-600">{{ number_format($result->redeem, 0, ',', '.') }}</span>
+                                <span class="text-[20px] font-bold text-red-600">{{ number_format($result->redeem, 0, ',', '.') }}</span>
                             </div>
-                            
-                            <!-- Stock & Valid Info -->
-                            <div class="flex flex-col gap-0.5 pt-2 mt-auto border-t border-neutral-100">
+                            <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100 mt-auto">
                                 <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
                                     <span class="font-medium">Stock:</span>
-                                    <span class="font-bold text-neutral-800">{{ $result->stock }}</span>
+                                    <span class="font-semibold text-neutral-800">{{ $result->stock }}</span>
                                 </div>
                                 @if($result->end_date)
                                 <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
                                     <span class="font-medium">Valid until:</span>
-                                    <span class="font-bold text-neutral-800">
+                                    <span class="font-semibold text-neutral-800">
                                         {{ \Carbon\Carbon::parse($result->end_date)->format('d M Y') }}
                                     </span>
                                 </div>
@@ -121,71 +133,98 @@
                         </div>
                     </div>
 
-                    <!-- Desktop Layout (1 column horizontal) -->
-                    <div class="hidden lg:block">
-                        <div class="grid grid-cols-[auto_1fr_auto] gap-0 items-center">
-                            <!-- Left: Points & Logo -->
-                            <div class="p-4 md:p-6 flex flex-col items-start gap-3">
-                                <div class="inline-flex items-center gap-2 bg-white rounded-full px-3 py-1.5 shadow-md border border-orange-200">
-                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[10px] font-bold shadow-sm">P</span>
-                                    <span class="text-sm font-bold text-red-600">{{ number_format($result->redeem, 0, ',', '.') }}</span>
-                                </div>
+                    <!-- Desktop Layout -->
+                    <div class="hidden lg:flex flex-col h-full">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between p-4 md:p-5 border-b border-neutral-100 flex-shrink-0 min-h-[80px] md:min-h-[90px]">
+                            <div class="flex items-center gap-3 flex-1">
                                 @if($merchant && $merchant->logo_merchant)
-                                <div>
-                                    <img 
-                                        src="{{ asset('storage/' . $merchant->logo_merchant) }}" 
-                                        alt="{{ $merchantName }}" 
-                                        class="w-[100px] h-[100px] md:w-[140px] md:h-[140px] object-contain rounded-full" 
-                                        loading="lazy"
-                                    >
+                                <div class="relative flex-shrink-0">
+                                    <div class="absolute inset-0 rounded-xl blur-sm "></div>
+                                    <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" alt="{{ $merchantName }}" class="relative w-12 h-12 md:w-16 md:h-16 object-contain rounded-xl  shadow-md">
                                 </div>
+                                @else
+                                <div class="w-12 h-12 md:w-16 md:h-16 flex-shrink-0"></div>
                                 @endif
                             </div>
-                            
-                            <!-- Middle: Content -->
-                            <div class="p-4 md:p-6 flex flex-col justify-center">
-                                <h3 class="text-2xl md:text-3xl lg:text-4xl font-bold text-neutral-900 mb-3 leading-tight">
-                                    {{ $merchantName ?: strtoupper(trim($productName)) }}
-                                </h3>
-                                @if(!is_null($result->diskon))
-                                <div class="mb-2">
-                                    <div class="text-lg md:text-xl font-bold text-neutral-900 mb-1">Diskon</div>
-                                    <div class="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 leading-none mb-1">
-                                        {{ $result->diskon }}
-                                    </div>
-                                </div>
-                                @endif
-                                <div class="text-sm md:text-base text-neutral-700 leading-relaxed">
-                                    {{ $result->skb }}
+                            @if($result->diskon)
+                            <div class="text-right flex-shrink-0 ml-2">
+                                <div class="inline-flex items-center gap-2">
+                                    <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-10 h-10 object-contain">
+                                    <span class="text-base md:text-2xl font-black text-red-600">{{ $result->diskon }}</span>
                                 </div>
                             </div>
-                            
-                            <!-- Right: Image -->
-                            <div class="p-2 max-w-[400px] lg:max-w-[520px]">
-                                <div class="aspect-[6/3] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden">
-                                    <img 
-                                        src="{{ $result->image ? asset('storage/' . $result->image) : asset('storage/promo/promo-default.jpg') }}" 
-                                        alt="{{ $productName }}" 
-                                        class="w-full h-full object-cover" 
-                                        loading="lazy"
-                                    >
-                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Image with Stock Overlay -->
+                        <div class="relative px-4 md:px-5 pt-4 pb-3 flex-shrink-0">
+                            <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
+                                <img 
+                                    src="{{ $result->image ? asset('storage/' . $result->image) : asset('storage/promo/promo-default.jpg') }}" 
+                                    alt="{{ $productName }}" 
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                    loading="lazy"
+                                >
+                            </div>
+                            <div class="absolute bottom-2 right-4 md:bottom-3 md:right-5 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
+                                <span class="inline-flex items-center gap-1.5">
+                                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                    <span>Stock: {{ $result->stock }}</span>
+                                </span>
                             </div>
                         </div>
-                        
-                        <!-- Bottom Footer -->
-                        <div class="flex items-center justify-between px-4 md:px-6 py-2 bg-neutral-50 text-[10px] md:text-[11px] text-neutral-600">
-                            <span class="font-medium">Stock {{ $result->stock }}</span>
-                            @if($result->end_date)
-                            <span class="font-medium">
-                                Valid until {{ \Carbon\Carbon::parse($result->end_date)->format('d M Y') }}
-                            </span>
+
+                        <!-- Details -->
+                        <div class="flex flex-col px-4 md:px-5 pb-4 md:pb-5 flex-1 min-h-0">
+                            <h4 class="text-base md:text-lg font-black text-neutral-900 mb-2 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                {{ $productName ?: $merchantName }}
+                            </h4>
+                            @if($result->skb)
+                            <div class="relative">
+                                <p id="{{ $uniqueId }}-text-desktop" class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2 transition-all duration-300">
+                                    {{ $result->skb }}
+                                </p>
+                                <button 
+                                    id="{{ $uniqueId }}-btn-desktop" 
+                                    onclick="event.stopPropagation(); toggleDescriptionDesktopSearch('{{ $uniqueId }}')" 
+                                    class="hidden text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors text-xs"
+                                >
+                                    <span id="{{ $uniqueId }}-btn-text-desktop">See details</span>
+                                    <svg id="{{ $uniqueId }}-arrow-desktop" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             @endif
+                            @if($result->end_date)
+                            <div class="flex items-center gap-1.5 text-xs text-neutral-500 mb-3">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="truncate">Valid until: <span class="font-semibold text-neutral-700">{{ \Carbon\Carbon::parse($result->end_date)->format('d M Y') }}</span></span>
+                            </div>
+                            @endif
+                            <div class="mt-auto pt-3 border-t border-neutral-100">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
+                                        <span class="text-xl md:text-2xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                                            {{ number_format($result->redeem, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                        <svg class="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </article>
             @empty
-                <div class="col-span-2 lg:col-span-1 rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-8 md:p-10 text-center">
+                <div class="col-span-2 lg:col-span-3 rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-8 md:p-10 text-center">
                     <div class="text-neutral-400 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -212,6 +251,108 @@
         setTimeout(function () {
             spinner.style.display = 'none';
         }, 300);
+    });
+</script>
+
+<!-- JavaScript untuk toggle deskripsi di halaman Search (mengikuti pola shop.blade.php) -->
+<script>
+    // Toggle description (Mobile)
+    function toggleDescriptionSearch(uniqueId) {
+        const textElement = document.getElementById(uniqueId + '-text');
+        const btnTextElement = document.getElementById(uniqueId + '-btn-text');
+        const arrowElement = document.getElementById(uniqueId + '-arrow');
+
+        if (!textElement || !btnTextElement || !arrowElement) return;
+
+        if (textElement.classList.contains('line-clamp-3')) {
+            textElement.classList.remove('line-clamp-3');
+            btnTextElement.textContent = 'Show less';
+            arrowElement.classList.add('rotate-180');
+        } else {
+            textElement.classList.add('line-clamp-3');
+            btnTextElement.textContent = 'See details';
+            arrowElement.classList.remove('rotate-180');
+        }
+    }
+
+    // Toggle description (Desktop)
+    function toggleDescriptionDesktopSearch(uniqueId) {
+        const textElement = document.getElementById(uniqueId + '-text-desktop');
+        const btnTextElement = document.getElementById(uniqueId + '-btn-text-desktop');
+        const arrowElement = document.getElementById(uniqueId + '-arrow-desktop');
+
+        if (!textElement || !btnTextElement || !arrowElement) return;
+
+        if (textElement.classList.contains('line-clamp-2')) {
+            textElement.classList.remove('line-clamp-2');
+            btnTextElement.textContent = 'Show less';
+            arrowElement.classList.add('rotate-180');
+        } else {
+            textElement.classList.add('line-clamp-2');
+            btnTextElement.textContent = 'See details';
+            arrowElement.classList.remove('rotate-180');
+        }
+    }
+
+    // Cek apakah teks terpotong dan tampilkan tombol See details
+    function checkTruncatedTextSearch() {
+        // Mobile text (3 lines)
+        const mobileTextElements = document.querySelectorAll('[id$="-text"]:not([id$="-text-desktop"])');
+
+        mobileTextElements.forEach(function(textElement) {
+            const parentCard = textElement.closest('.voucher-card');
+            if (!parentCard || parentCard.offsetParent === null) return;
+
+            const uniqueId = textElement.id.replace('-text', '');
+            const btnElement = document.getElementById(uniqueId + '-btn');
+
+            if (btnElement) {
+                const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
+                if (isOverflowing) {
+                    btnElement.classList.remove('hidden');
+                    btnElement.classList.add('flex');
+                } else {
+                    btnElement.classList.add('hidden');
+                    btnElement.classList.remove('flex');
+                }
+            }
+        });
+
+        // Desktop text (2 lines)
+        const desktopTextElements = document.querySelectorAll('[id$="-text-desktop"]');
+
+        desktopTextElements.forEach(function(textElement) {
+            const parentCard = textElement.closest('.voucher-card');
+            if (!parentCard || parentCard.offsetParent === null) return;
+
+            const uniqueId = textElement.id.replace('-text-desktop', '');
+            const btnElement = document.getElementById(uniqueId + '-btn-desktop');
+
+            if (btnElement) {
+                const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
+                if (isOverflowing) {
+                    btnElement.classList.remove('hidden');
+                    btnElement.classList.add('flex');
+                } else {
+                    btnElement.classList.add('hidden');
+                    btnElement.classList.remove('flex');
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            checkTruncatedTextSearch();
+        }, 100);
+    });
+
+    let resizeTimerSearch;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimerSearch);
+        resizeTimerSearch = setTimeout(function() {
+            checkTruncatedTextSearch();
+        }, 250);
     });
 </script>
 @endsection
