@@ -13,8 +13,8 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMap</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Blanjapoin</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMaps</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Dashboard</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Pelanggan</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link History</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Logo</th>

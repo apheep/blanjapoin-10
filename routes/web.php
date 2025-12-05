@@ -92,6 +92,15 @@ Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name(
 // Route untuk history page versi lengkap tanpa login
 Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
 
+// Route untuk link keywords (wajib login portal)
+Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::class, 'linkKeywords'])->name('link.keywords');
+
+// Route untuk link reedem (wajib login portal)
+Route::middleware('portal.auth')->get('/reedem/{code}', [MerchantController::class, 'linkReedem'])->name('link.reedem');
+
+// Route untuk link trx-history (wajib login portal)
+Route::middleware('portal.auth')->get('/trx-history/{code}', [MerchantController::class, 'linkTrxHistory'])->name('link.trx-history');
+
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [LoginController::class, 'index'])->name('login');
