@@ -66,10 +66,14 @@
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">Riwayat Transaksi</h1>
                 </div>
                 <div class="flex-shrink-0">
-                    <a href="{{ route('admin', ['tab' => 'all']) }}"
+                    @php
+                        $code = request()->route('code');
+                        $decodedCode = $code ? urldecode($code) : '';
+                    @endphp
+                    <a href="{{ route('link.dashboard', $decodedCode) }}"
                        class="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors gap-1">
                         <i class="fas fa-arrow-left text-s"></i>
-                        <span>Kembali</span>
+                        <span>Kembali ke Dashboard</span>
                     </a>
                 </div>
             </div>
@@ -190,10 +194,7 @@
             </div>
 
             <footer class="mt-16 pb-12 text-center">
-                <div class="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-50 to-rose-50 shadow-sm ring-1 ring-neutral-200/50 mb-4">
-                    <div class="text-sm font-semibold text-neutral-700">✨ Riwayat Transaksi BlanjaPoin</div>
-                </div>
-                <div class="text-xs text-neutral-500 font-medium">© 2025 BelanjaPoin. All rights reserved.</div>
+                <div class="text-xs text-neutral-500 font-medium">© 2025 BelanjaPoin.</div>
             </footer>
         </main>
 </div>
