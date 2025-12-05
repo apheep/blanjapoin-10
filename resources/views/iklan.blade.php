@@ -60,7 +60,6 @@
 
             <div class="bg-white rounded-2xl shadow-lg p-6 border border-neutral-100">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Preview Banner</h2>
-                <p class="text-sm text-neutral-500 mb-4">Gambar pertama pada daftar akan menjadi banner utama.</p>
                 @php
                     $primaryBanner = $iklans->first();
                 @endphp
