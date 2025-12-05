@@ -211,7 +211,127 @@ class MerchantController extends Controller
         }
     }
 
-    // edit, update menyusul
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'nama_merchant'  => 'required|string|max:255',
+            'kategori'       => 'nullable|string|max:100',
+            'link_blanjapoin' => 'nullable|string|max:500',
+            'link_blanjapoin_code' => 'nullable|string|max:255',
+            'nama_pic'       => 'nullable|string|max:255',
+            'wa_pic'         => 'nullable|string|max:20',
+            'daerah'         => 'nullable|string|max:255',
+            'detail_alamat'  => 'nullable|string',
+            'lat'            => 'nullable|string|max:50',
+            'long'           => 'nullable|string|max:50',
+            'link_gmap'      => 'nullable|string|max:500',
+            'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+    
+        try {
+            $merchant = Merchant::findOrFail($id);
+            
+            // =====================
+            //  HANDLE LINK BLANJAPOIN
+            // =====================
+            $linkBlanjapoin = null;
+            
+            // Prioritas: link_blanjapoin (full) > link_blanjapoin_code
+            if ($request->filled('link_blanjapoin') && trim($request->link_blanjapoin) !== '') {
+                $linkBlanjapoin = trim($request->link_blanjapoin);
+            } elseif ($request->filled('link_blanjapoin_code') && trim($request->link_blanjapoin_code) !== '') {
+                $code = trim($request->link_blanjapoin_code);
+                $linkBlanjapoin = 'blanjapoin.id/dash/' . $code;
+            } else {
+                $linkBlanjapoin = $merchant->link_blanjapoin; // Keep existing if not provided
+            }
+        
+            // =====================
+            //  HANDLE UPLOAD LOGO
+            // =====================
+            $logoPath = $merchant->logo_merchant; // Keep existing logo by default
+        
+            if ($request->hasFile('logo_merchant')) {
+                // Delete old logo if exists
+                if ($merchant->logo_merchant && Storage::disk('public')->exists($merchant->logo_merchant)) {
+                    Storage::disk('public')->delete($merchant->logo_merchant);
+                }
+                // Simpan ke storage/app/public/merchants/
+                $logoPath = $request->file('logo_merchant')->store('merchants', 'public');
+            }
+        
+            // Helper function untuk convert empty string ke null
+            $getValue = function($value) {
+                if ($value === null) return null;
+                if (is_string($value)) {
+                    $trimmed = trim($value);
+                    return $trimmed === '' ? null : $trimmed;
+                }
+                return $value;
+            };
+            
+            // UPDATE DATA KE DATABASE
+            $merchantData = [
+                'nama_merchant'  => trim($request->input('nama_merchant', '')),
+                'kategori'       => $getValue($request->input('kategori', null)),
+                'link_blanjapoin' => $getValue($linkBlanjapoin),
+                'nama_pic'       => $getValue($request->input('nama_pic', null)),
+                'wa_pic'         => $getValue($request->input('wa_pic', null)),
+                'daerah'         => $getValue($request->input('daerah', null)),
+                'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
+                // Ambil lat dan long sebagai string untuk mempertahankan nilai asli input
+                'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
+                                    ? (string)$request->input('lat')
+                                    : null,
+                'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
+                                    ? (string)$request->input('long')
+                                    : null,
+                'link_gmap'      => $getValue($request->input('link_gmap', null)),
+                'logo_merchant'  => $logoPath,
+            ];
+            
+            // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
+            foreach ($merchantData as $key => $value) {
+                if ($value !== null && is_string($value) && trim($value) === '') {
+                    $merchantData[$key] = null;
+                }
+            }
+            
+            // Update merchant
+            $merchant->update($merchantData);
+            Log::info('Merchant updated successfully', ['id' => $merchant->id]);
+            
+            // Jika request dari AJAX, return JSON
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Merchant berhasil diupdate!',
+                    'merchant' => $merchant
+                ], 200);
+            }
+        
+            return redirect()->route('admin')->with('success', 'Merchant berhasil diupdate!');
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating merchant:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'merchant_id' => $id
+            ]);
+            
+            // Jika request dari AJAX, return JSON error
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengupdate merchant: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Gagal mengupdate merchant: ' . $e->getMessage()]);
+        }
+    }
 
     public function downloadFile($path)
     {
