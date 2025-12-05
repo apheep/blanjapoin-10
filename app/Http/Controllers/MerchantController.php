@@ -363,8 +363,8 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Generate link history
-        $linkHistory = route('link.history.all', $decodedCode);
+        // Generate link history (trx-history)
+        $linkHistory = route('link.trx-history', $decodedCode);
         $linkHistoryFull = url($linkHistory);
 
         return view('link-dashboard', [
@@ -465,6 +465,140 @@ class MerchantController extends Controller
             'merchant' => $merchant,
             'histories' => $historyPaginator,
             'keywordPaginator' => $keywordPaginator,
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman keywords history untuk merchant
+     * Route: /keywords/{code}
+     */
+    public function linkKeywords($code)
+    {
+        $decodedCode = urldecode($code);
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for keywords code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Ambil semua keywords untuk merchant ini (semua status, diurutkan dari terbaru)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('partials_dash.keywords-history', [
+            'merchant' => $merchant,
+            'keywords' => $keywords,
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman reedem untuk merchant
+     * Route: /reedem/{code}
+     */
+    public function linkReedem($code)
+    {
+        $decodedCode = urldecode($code);
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for reedem code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Ambil semua keywords untuk merchant ini yang memiliki redeem points (semua status, diurutkan dari terbaru)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->whereNotNull('redeem')
+            ->where('redeem', '!=', '')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('partials_dash.reedem', [
+            'merchant' => $merchant,
+            'keywords' => $keywords,
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman trx-history untuk merchant
+     * Route: /trx-history/{code}
+     */
+    public function linkTrxHistory($code)
+    {
+        $decodedCode = urldecode($code);
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for trx-history code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Ambil semua history keyword untuk merchant ini (semua status, diurutkan dari terbaru)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('partials_dash.trx-history', [
+            'merchant' => $merchant,
+            'histories' => $keywords,
         ]);
     }
 
