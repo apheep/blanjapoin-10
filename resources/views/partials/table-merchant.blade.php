@@ -46,9 +46,17 @@
                             {{ ($merchants->currentPage() - 1) * $merchants->perPage() + $loop->iteration }}
                         </td>
 
-                        {{-- Actions (ikon delete center) --}}
+                        {{-- Actions (ikon edit & delete center) --}}
                         <td class="px-4 py-4 w-20 text-center">
-                            <div class="flex items-center justify-center h-full">
+                            <div class="flex items-center justify-center gap-2 h-full">
+                                <button type="button"
+                                        id="merchant-edit-btn-{{ $merchant->id }}"
+                                        data-merchant-edit-id="{{ $merchant->id }}"
+                                        onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, {{ json_encode($merchant) }})"
+                                        class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
+                                        title="Edit">
+                                    <i class="fas fa-edit text-blue-600 text-lg leading-none"></i>
+                                </button>
                                 <button type="button"
                                         onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
                                         class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
@@ -304,12 +312,22 @@
                     <p class="text-[10px] text-orange-700 uppercase tracking-wide">No</p>
                     <p class="text-base font-semibold text-gray-900">{{ ($merchants->currentPage() - 1) * $merchants->perPage() + $loop->iteration }}</p>
                 </div>
-                <button type="button"
-                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
-                        class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 transition-colors"
-                        title="Hapus">
-                    <i class="fas fa-trash text-base"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            id="merchant-edit-btn-mobile-{{ $merchant->id }}"
+                            data-merchant-edit-id="{{ $merchant->id }}"
+                            onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, {{ json_encode($merchant) }})"
+                            class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-blue-100 text-blue-600 shadow-sm hover:bg-blue-50 transition-colors"
+                            title="Edit">
+                        <i class="fas fa-edit text-base"></i>
+                    </button>
+                    <button type="button"
+                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
+                            class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 transition-colors"
+                            title="Hapus">
+                        <i class="fas fa-trash text-base"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="px-4 py-4 space-y-3">
