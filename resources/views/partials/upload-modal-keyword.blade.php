@@ -28,10 +28,10 @@
                             <!-- Custom Dropdown -->
                             <div class="relative">
                                 <!-- Hidden select for form submission -->
-                                <select name="merchant_key" id="merchantSelect" class="hidden" required>
+                                <select name="merchant_key" id="merchantSelect" class="hidden" required onchange="checkMerchantEmail()">
                                     <option value="">-- Pilih Merchant --</option>
                                     @foreach($allMerchants as $merchant)
-                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}">{{ $merchant->nama_merchant }}</option>
+                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email ?? '' }}">{{ $merchant->nama_merchant }}</option>
                                     @endforeach
                                 </select>
                                 
@@ -67,7 +67,8 @@
                                                     class="merchant-option w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0"
                                                     data-value="{{ $merchant->id }}"
                                                     data-name="{{ $merchant->nama_merchant }}"
-                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}')">
+                                                    data-email="{{ $merchant->email ?? '' }}"
+                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}', '{{ $merchant->email ?? '' }}')">
                                                 {{ $merchant->nama_merchant }}
                                             </button>
                                         @endforeach
@@ -119,6 +120,42 @@
                                 </div>
                             </div>
                             <p id="diskonError" class="text-red-500 text-xs mt-1 hidden">Silakan isi salah satu dari diskon (persen atau rupiah)</p>
+                        </div>
+
+                        <!-- Row 4.5: Subsidi Diskon -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Subsidi Diskon</label>
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="subsidy_enabled" value="0" checked onchange="toggleSubsidyAmount()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">No</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="subsidy_enabled" value="1" onchange="toggleSubsidyAmount()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">Yes</span>
+                                </label>
+                            </div>
+                            <div id="subsidyAmountContainer" class="mt-3 hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Nominal Subsidi (Rupiah) <span class="text-red-500">*</span></label>
+                                <input type="number" name="subsidy_amount" id="subsidyAmount" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Masukkan nominal subsidi" min="0">
+                                <p id="subsidyAmountError" class="text-red-500 text-xs mt-1 hidden">Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes</p>
+                            </div>
+                        </div>
+
+                        <!-- Row 4.6: Diamond -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Diamond</label>
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="diamond_enabled" value="0" checked onchange="toggleDiamond()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">No</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="diamond_enabled" value="1" onchange="toggleDiamond()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">Yes</span>
+                                </label>
+                            </div>
+                            <p id="diamondError" class="text-red-500 text-xs mt-1 hidden">Diamond hanya bisa diaktifkan jika merchant memiliki email terdaftar</p>
                         </div>
 
                         <!-- Row 5: Stock -->
@@ -413,9 +450,15 @@ function toggleCustomMerchantDropdown() {
     }
 }
 
-function selectMerchant(merchantId, merchantName) {
+function selectMerchant(merchantId, merchantName, merchantEmail = '') {
     const merchantSelect = document.getElementById('merchantSelect');
     merchantSelect.value = merchantId;
+    
+    // Update option dengan email
+    const selectedOption = merchantSelect.options[merchantSelect.selectedIndex];
+    if (selectedOption) {
+        selectedOption.dataset.email = merchantEmail;
+    }
     
     const selectedText = document.getElementById('customMerchantSelectedText');
     selectedText.textContent = merchantName;
@@ -436,6 +479,7 @@ function selectMerchant(merchantId, merchantName) {
     
     toggleCustomMerchantDropdown();
     updateProductName();
+    checkMerchantEmail();
     merchantSelect.dispatchEvent(new Event('change'));
 }
 
@@ -526,6 +570,71 @@ function validateDateRange() {
     }
 }
 
+// Fungsi untuk toggle subsidy amount
+function toggleSubsidyAmount() {
+    const subsidyEnabled = document.querySelector('input[name="subsidy_enabled"]:checked');
+    const subsidyAmountContainer = document.getElementById('subsidyAmountContainer');
+    const subsidyAmount = document.getElementById('subsidyAmount');
+    const subsidyError = document.getElementById('subsidyAmountError');
+    
+    if (subsidyEnabled && subsidyEnabled.value === '1') {
+        subsidyAmountContainer.classList.remove('hidden');
+        if (subsidyAmount) subsidyAmount.required = true;
+    } else {
+        subsidyAmountContainer.classList.add('hidden');
+        if (subsidyAmount) {
+            subsidyAmount.required = false;
+            subsidyAmount.value = '';
+        }
+        if (subsidyError) subsidyError.classList.add('hidden');
+    }
+}
+
+// Fungsi untuk toggle diamond
+function toggleDiamond() {
+    const diamondEnabled = document.querySelector('input[name="diamond_enabled"]:checked');
+    const diamondError = document.getElementById('diamondError');
+    const merchantSelect = document.getElementById('merchantSelect');
+    
+    if (diamondEnabled && diamondEnabled.value === '1') {
+        // Cek apakah merchant memiliki email
+        if (merchantSelect && merchantSelect.value) {
+            const selectedOption = merchantSelect.options[merchantSelect.selectedIndex];
+            const merchantEmail = selectedOption ? (selectedOption.dataset.email || '') : '';
+            
+            if (!merchantEmail || merchantEmail.trim() === '') {
+                // Reset ke No jika merchant tidak punya email
+                const noRadio = document.querySelector('input[name="diamond_enabled"][value="0"]');
+                if (noRadio) noRadio.checked = true;
+                if (diamondError) diamondError.classList.remove('hidden');
+                return false;
+            } else {
+                if (diamondError) diamondError.classList.add('hidden');
+                return true;
+            }
+        } else {
+            // Reset ke No jika merchant belum dipilih
+            const noRadio = document.querySelector('input[name="diamond_enabled"][value="0"]');
+            if (noRadio) noRadio.checked = true;
+            if (diamondError) diamondError.classList.remove('hidden');
+            return false;
+        }
+    } else {
+        if (diamondError) diamondError.classList.add('hidden');
+        return true;
+    }
+}
+
+// Fungsi untuk mengecek email merchant
+function checkMerchantEmail() {
+    const merchantSelect = document.getElementById('merchantSelect');
+    const diamondEnabled = document.querySelector('input[name="diamond_enabled"]:checked');
+    
+    if (diamondEnabled && diamondEnabled.value === '1') {
+        toggleDiamond();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formUploadKeyword');
     if (form) {
@@ -534,6 +643,24 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validasi diskon sebelum submit
             if (!validateDiskon()) {
+                return false;
+            }
+            
+            // Validasi subsidy amount jika subsidy enabled
+            const subsidyEnabled = document.querySelector('input[name="subsidy_enabled"]:checked');
+            if (subsidyEnabled && subsidyEnabled.value === '1') {
+                const subsidyAmount = document.getElementById('subsidyAmount').value;
+                const subsidyError = document.getElementById('subsidyAmountError');
+                if (!subsidyAmount || subsidyAmount <= 0) {
+                    if (subsidyError) subsidyError.classList.remove('hidden');
+                    return false;
+                } else {
+                    if (subsidyError) subsidyError.classList.add('hidden');
+                }
+            }
+            
+            // Validasi diamond jika diamond enabled
+            if (!toggleDiamond()) {
                 return false;
             }
             
