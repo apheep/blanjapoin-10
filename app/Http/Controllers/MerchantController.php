@@ -46,12 +46,15 @@ class MerchantController extends Controller
             'link_blanjapoin' => 'nullable|string|max:500',
             'link_blanjapoin_code' => 'nullable|string|max:255',
             'nama_pic'       => 'nullable|string|max:255',
-            'wa_pic'         => 'nullable|string|max:20',
+            'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
             'email_pic'      => 'nullable|string|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
         ]);
     
         // =====================
@@ -77,6 +80,16 @@ class MerchantController extends Controller
         if ($request->hasFile('logo_merchant')) {
             // Simpan ke storage/app/public/merchants/
             $logoPath = $request->file('logo_merchant')->store('merchants', 'public');
+        }
+        
+        // =====================
+        //  HANDLE UPLOAD KTP
+        // =====================
+        $ktpPath = null;
+    
+        if ($request->hasFile('ktp_pic')) {
+            // Simpan ke storage/app/public/merchants/
+            $ktpPath = $request->file('ktp_pic')->store('merchants', 'public');
         }
     
         // Helper function untuk convert empty string ke null
@@ -109,6 +122,7 @@ class MerchantController extends Controller
             //                     : null,
             'link_gmap'      => $getValue($request->input('link_gmap', null)),
             'logo_merchant'  => $logoPath,
+            'ktp_pic'        => $ktpPath,
         ];
         
         // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
@@ -219,13 +233,15 @@ class MerchantController extends Controller
             'link_blanjapoin' => 'nullable|string|max:500',
             'link_blanjapoin_code' => 'nullable|string|max:255',
             'nama_pic'       => 'nullable|string|max:255',
-            'wa_pic'         => 'nullable|string|max:20',
+            'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
+            'email_pic'      => 'nullable|string|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
-            'lat'            => 'nullable|string|max:50',
-            'long'           => 'nullable|string|max:50',
             'link_gmap'      => 'nullable|string|max:500',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
         ]);
     
         try {
@@ -259,6 +275,20 @@ class MerchantController extends Controller
                 // Simpan ke storage/app/public/merchants/
                 $logoPath = $request->file('logo_merchant')->store('merchants', 'public');
             }
+            
+            // =====================
+            //  HANDLE UPLOAD KTP
+            // =====================
+            $ktpPath = $merchant->ktp_pic; // Keep existing KTP by default
+        
+            if ($request->hasFile('ktp_pic')) {
+                // Delete old KTP if exists
+                if ($merchant->ktp_pic && Storage::disk('public')->exists($merchant->ktp_pic)) {
+                    Storage::disk('public')->delete($merchant->ktp_pic);
+                }
+                // Simpan ke storage/app/public/merchants/
+                $ktpPath = $request->file('ktp_pic')->store('merchants', 'public');
+            }
         
             // Helper function untuk convert empty string ke null
             $getValue = function($value) {
@@ -277,17 +307,12 @@ class MerchantController extends Controller
                 'link_blanjapoin' => $getValue($linkBlanjapoin),
                 'nama_pic'       => $getValue($request->input('nama_pic', null)),
                 'wa_pic'         => $getValue($request->input('wa_pic', null)),
+                'email_pic'      => $getValue($request->input('email_pic', null)),
                 'daerah'         => $getValue($request->input('daerah', null)),
                 'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
-                // Ambil lat dan long sebagai string untuk mempertahankan nilai asli input
-                'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
-                                    ? (string)$request->input('lat')
-                                    : null,
-                'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
-                                    ? (string)$request->input('long')
-                                    : null,
                 'link_gmap'      => $getValue($request->input('link_gmap', null)),
                 'logo_merchant'  => $logoPath,
+                'ktp_pic'        => $ktpPath,
             ];
             
             // Pastikan tidak ada field yang kosong string, semua harus null jika kosong

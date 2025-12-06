@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nama_pic')->nullable();
             $table->string('wa_pic')->nullable();
             $table->string('email_pic')->nullable();
+            $table->string('ktp_pic')->nullable();
             $table->string('daerah')->nullable();
             $table->string('detail_daerah')->nullable();
             $table->text('link_gmap')->nullable();
