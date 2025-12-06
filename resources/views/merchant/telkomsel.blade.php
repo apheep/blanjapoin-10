@@ -4,7 +4,7 @@
  </div>
 
  @php
-  $telkomselCategory = 'Telkomsel';
+  $telkomselCategory = 'telkomsel';
   $telkomselKeywords = $keywords->filter(function ($keyword) use ($telkomselCategory) {
    return $keyword->merchant && $keyword->merchant->kategori === $telkomselCategory
     && $keyword->status === 'approve';

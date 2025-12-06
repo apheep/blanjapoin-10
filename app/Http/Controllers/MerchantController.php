@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\Keyword;
 use App\Models\Iklan;
+use App\Models\PortalUser;
 use App\Models\WithdrawRequest;
 use App\Exports\MerchantsExport;
 use App\Exports\MerchantKeywordsExport;
@@ -465,46 +466,49 @@ class MerchantController extends Controller
      * Menampilkan halaman link dashboard dengan table link pelanggan, QR code, dan history
      * Route: /dash/{code}
      */
-    public function linkDashboard($code)
+    public function linkDashboard($code, Request $request)
     {
         // Decode URL encoded characters (e.g., h%26m -> h&m)
         $decodedCode = urldecode($code);
         
-        // Escape special characters untuk LIKE query
-        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
-        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+        // Ambil merchant dari request (sudah di-set oleh middleware EnsureMerchantEmailAuth)
+        $merchant = $request->attributes->get('merchant');
         
-        // Cari merchant berdasarkan code dari link_blanjapoin
-        // Format link_blanjapoin: "blanjapoin.id/dash/{code}" atau bisa juga "https://blanjapoin.id/dash/{code}"
-        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                // Cari dengan berbagai format yang mungkin
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      // Juga coba dengan code yang masih encoded
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
-            })
-            ->whereNotNull('link_blanjapoin')
-            ->first();
+        if (!$merchant) {
+            // Fallback: jika merchant tidak ada di request, cari manual
+            $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+            $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+            
+            $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                    $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                })
+                ->whereNotNull('link_blanjapoin')
+                ->first();
+        }
 
         if (!$merchant) {
-            // Log untuk debugging
             Log::warning('Merchant not found for code', [
                 'code' => $code,
                 'decoded_code' => $decodedCode,
-                'search_patterns' => [
-                    '%/dash/' . $escapedDecodedCode,
-                    '%dash/' . $escapedDecodedCode,
-                    '%/dash/' . $escapedCode,
-                    '%dash/' . $escapedCode,
-                ],
-                'sample_merchants' => Merchant::whereNotNull('link_blanjapoin')->take(5)->pluck('link_blanjapoin', 'id')->toArray()
             ]);
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Cek apakah merchant punya email_pic dan email terdaftar di PortalUser
+        $hasEmail = !empty($merchant->email_pic) && trim($merchant->email_pic) !== '';
+        $showDiamond = false;
+        
+        if ($hasEmail) {
+            // Cek apakah email terdaftar di PortalUser
+            $portalUser = PortalUser::where('email', $merchant->email_pic)->first();
+            $showDiamond = $portalUser !== null;
         }
 
         // Generate link pelanggan
@@ -526,6 +530,7 @@ class MerchantController extends Controller
             'linkPelanggan' => $linkPelangganFull,
             'linkHistory' => $linkHistoryFull,
             'keywords' => $keywords,
+            'showDiamond' => $showDiamond,
         ]);
     }
 

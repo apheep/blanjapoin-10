@@ -91,6 +91,15 @@
                 </div>
             </div>
 
+            <!-- Diamond Logo Section -->
+            @if(isset($showDiamond) && $showDiamond)
+            <div class="mt-1 mb-1 flex justify-left animate-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="text-2xl sm:text-2xl md:text-2xl drop-shadow-lg filter">
+                    💎
+                </div>
+            </div>
+            @endif
+
             <!-- Dashboard Cards Section -->
             <section class="mt-8 space-y-6 animate-fade-in-up" style="animation-delay: 0.2s;">
                 
@@ -215,7 +224,7 @@
                     text: linkPelanggan,
                     width: 100,
                     height: 100,
-                    colorDark: '#5b21b6',
+                    colorDark: '#000000',
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
                 });
