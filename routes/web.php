@@ -98,6 +98,12 @@ Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::c
 // Route untuk link reedem (wajib login portal)
 Route::middleware('portal.auth')->get('/reedem/{code}', [MerchantController::class, 'linkReedem'])->name('link.reedem');
 
+// Route untuk link history-withdraw (wajib login portal)
+Route::middleware('portal.auth')->get('/history-withdraw/{code}', [MerchantController::class, 'linkHistoryWithdraw'])->name('link.history-withdraw');
+
+// Route untuk submit withdraw request (wajib login portal)
+Route::middleware('portal.auth')->post('/withdraw/submit', [MerchantController::class, 'submitWithdraw'])->name('withdraw.submit');
+
 // Route untuk link trx-history (wajib login portal)
 Route::middleware('portal.auth')->get('/trx-history/{code}', [MerchantController::class, 'linkTrxHistory'])->name('link.trx-history');
 
@@ -194,6 +200,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
     Route::post('/iklan/reorder', [IklanController::class, 'updateOrder'])->name('iklan.reorder');
     Route::delete('/iklan/{iklan}', [IklanController::class, 'destroy'])->name('iklan.destroy');
+
+    // Withdraw Approval
+    Route::get('/withdraw-approval', [MerchantController::class, 'withdrawApproval'])->name('withdraw.approval');
+    Route::post('/withdraw-approval/{withdrawRequest}/approve', [MerchantController::class, 'approveWithdraw'])->name('withdraw.approve');
+    Route::post('/withdraw-approval/{withdrawRequest}/reject', [MerchantController::class, 'rejectWithdraw'])->name('withdraw.reject');
 
     // History All (requires login)
     Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
