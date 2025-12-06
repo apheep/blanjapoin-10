@@ -29,7 +29,7 @@
                         {{-- Nama Merchant --}}
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama Merchant <span class="text-red-500">*</span>
+                                Nama Merchant / Produk<span class="text-red-500">*</span>
                             </label>
                             <input type="text"
                                    name="nama_merchant"
@@ -108,7 +108,7 @@
                         {{-- Nama PIC --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama PIC Merchant
+                                Nama PIC Merchant / Produk
                             </label>
                             <input type="text"
                                    name="nama_pic"
@@ -121,10 +121,48 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 WhatsApp PIC
                             </label>
-                            <input type="number"
-                                   name="wa_pic"
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent">
+                                <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">+62</span>
+                                <input type="text"
+                                       name="wa_pic_code"
+                                       id="waPicCode"
+                                       oninput="updateWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
+                                       class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
+                                       placeholder="81234567890">
+                                <input type="hidden" name="wa_pic" id="waPicFull">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Email PIC
+                            </label>
+                            <input type="email"
+                                   name="email_pic"
                                    class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                   placeholder="+6281234567890">
+                                   placeholder="Masukkan email PIC">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Upload KTP (Opsional)
+                            </label>
+                            <div class="relative">
+                                <input type="file"
+                                    id="uploadMerchantKtpInput"
+                                    name="ktp_pic"
+                                    accept="image/*"
+                                    class="hidden"
+                                    onchange="previewUploadMerchantKtp(this)">
+                                <button type="button"
+                                        onclick="document.getElementById('uploadMerchantKtpInput').click()"
+                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 focus:outline-none focus:border-orange-500 flex flex-col items-center justify-center text-gray-600 hover:text-orange-600 transition-all">
+                                <i class="fas fa-upload text-3xl mb-2"></i>
+                                <span id="uploadMerchantKtpText" class="text-sm">
+                                        Click to upload KTP
+                                    </span>
+                                <span class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG maks 2MB</span>
+                                </button>
+                                <div id="uploadMerchantKtpPreview" class="mt-3 hidden"></div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -222,30 +260,6 @@
                         <input type="hidden" name="daerah" id="daerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Latitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Latitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       name="lat"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="-8.6705">
-                            </div>
-
-                            {{-- Longitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Longitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       name="long"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="115.2126">
-                            </div>
-
                             {{-- Link Google Maps --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -355,6 +369,51 @@ function removeMerchantImage() {
 }
 
 // ======================
+// Preview & remove KTP
+// ======================
+function previewUploadMerchantKtp(input) {
+    const preview = document.getElementById('uploadMerchantKtpPreview');
+    const text = document.getElementById('uploadMerchantKtpText');
+    if (!preview) return;
+
+    preview.innerHTML = '';
+
+    if (input.files && input.files.length > 0) {
+        const file = input.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB');
+            input.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.classList.remove('hidden');
+            if (text) text.textContent = file.name;
+            const div = document.createElement('div');
+            div.className = 'relative';
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                <button type="button" onclick="removeUploadMerchantKtp()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            `;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.classList.add('hidden');
+        if (text) text.textContent = 'Click to upload KTP';
+    }
+}
+
+function removeUploadMerchantKtp() {
+    const input = document.getElementById('uploadMerchantKtpInput');
+    if (!input) return;
+    input.value = '';
+    previewUploadMerchantKtp(input);
+}
+
+// ======================
 // Open / Close modal
 // ======================
 function openUploadMerchant() {
@@ -430,6 +489,10 @@ function closeUploadMerchant() {
             document.getElementById('linkBlanjapoinCode').value = '';
             document.getElementById('linkBlanjapoinFull').value = '';
             
+            // Reset WA PIC
+            document.getElementById('waPicCode').value = '';
+            document.getElementById('waPicFull').value = '';
+            
             // Reset preview image
         const preview = document.getElementById('merchantImagePreview');
         const text = document.getElementById('merchantImageText');
@@ -438,6 +501,15 @@ function closeUploadMerchant() {
             preview.classList.add('hidden');
         }
         if (text) text.textContent = 'Click to upload Logo Merchant';
+        
+        // Reset preview KTP
+        const ktpPreview = document.getElementById('uploadMerchantKtpPreview');
+        const ktpText = document.getElementById('uploadMerchantKtpText');
+        if (ktpPreview) {
+            ktpPreview.innerHTML = '';
+            ktpPreview.classList.add('hidden');
+        }
+        if (ktpText) ktpText.textContent = 'Click to upload KTP';
         }
     }, 300);
 }
@@ -532,6 +604,16 @@ function updateLinkBlanjapoin() {
     // Format sesuai dengan yang diharapkan controller: blanjapoin.id/dash/{code}
     const fullLink = code ? `blanjapoin.id/dash/${code}` : '';
     document.getElementById('linkBlanjapoinFull').value = fullLink;
+}
+
+// ======================
+// Update WA PIC
+// ======================
+function updateWaPic() {
+    const code = document.getElementById('waPicCode').value.trim();
+    // Format: +62{code} (tanpa spasi)
+    const fullWa = code ? `+62${code}` : '';
+    document.getElementById('waPicFull').value = fullWa;
 }
 
 // ======================
@@ -1145,6 +1227,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update link blanjapoin sebelum submit
             updateLinkBlanjapoin();
+            
+            // Update WA PIC sebelum submit
+            updateWaPic();
             
             // Update daerah sebelum submit
             updateDaerahCombined();

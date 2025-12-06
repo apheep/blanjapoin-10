@@ -10,6 +10,7 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Email PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
@@ -125,7 +126,20 @@
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
+
+                        {{-- Email PIC --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->email_pic)
+                                <a href="mailto:{{ $merchant->email_pic }}" 
+                                   onclick="event.stopPropagation();"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline">
+                                    {{ $merchant->email_pic }}
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
                         </td>
+                        
 
                         {{-- Daerah --}}
                         <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->daerah }}</td>

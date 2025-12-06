@@ -124,11 +124,49 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 WhatsApp PIC
                             </label>
-                            <input type="number"
-                                   id="editMerchantWaPic"
-                                   name="wa_pic"
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent">
+                                <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">+62</span>
+                                <input type="text"
+                                       name="wa_pic_code"
+                                       id="editWaPicCode"
+                                       oninput="updateEditWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
+                                       class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
+                                       placeholder="81234567890">
+                                <input type="hidden" name="wa_pic" id="editWaPicFull">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Email PIC (Opsional)
+                            </label>
+                            <input type="email"
+                                   id="editMerchantEmailPic"
+                                   name="email_pic"
                                    class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                   placeholder="+6281234567890">
+                                   placeholder="Masukkan email PIC">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Upload KTP (Opsional)
+                            </label>
+                            <div class="relative">
+                                <input type="file"
+                                    id="editMerchantKtpInput"
+                                    name="ktp_pic"
+                                    accept="image/*"
+                                    class="hidden"
+                                    onchange="previewEditMerchantKtp(this)">
+                                <button type="button"
+                                        onclick="document.getElementById('editMerchantKtpInput').click()"
+                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 focus:outline-none focus:border-orange-500 flex flex-col items-center justify-center text-gray-600 hover:text-orange-600 transition-all">
+                                <i class="fas fa-upload text-3xl mb-2"></i>
+                                <span id="editMerchantKtpText" class="text-sm">
+                                        Click to upload KTP
+                                    </span>
+                                <span class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG maks 2MB</span>
+                                </button>
+                                <div id="editMerchantKtpPreview" class="mt-3 hidden"></div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -227,32 +265,6 @@
                         <input type="hidden" name="daerah" id="editDaerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Latitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Latitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       id="editMerchantLat"
-                                       name="lat"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="-8.6705">
-                            </div>
-
-                            {{-- Longitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Longitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       id="editMerchantLong"
-                                       name="long"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="115.2126">
-                            </div>
-
                             {{-- Link Google Maps --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -365,6 +377,51 @@ function removeEditMerchantImage() {
 }
 
 // ======================
+// Preview & remove KTP
+// ======================
+function previewEditMerchantKtp(input) {
+    const preview = document.getElementById('editMerchantKtpPreview');
+    const text = document.getElementById('editMerchantKtpText');
+    if (!preview) return;
+
+    preview.innerHTML = '';
+
+    if (input.files && input.files.length > 0) {
+        const file = input.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB');
+            input.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.classList.remove('hidden');
+            if (text) text.textContent = file.name;
+            const div = document.createElement('div');
+            div.className = 'relative';
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                <button type="button" onclick="removeEditMerchantKtp()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            `;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.classList.add('hidden');
+        if (text) text.textContent = 'Click to upload KTP';
+    }
+}
+
+function removeEditMerchantKtp() {
+    const input = document.getElementById('editMerchantKtpInput');
+    if (!input) return;
+    input.value = '';
+    previewEditMerchantKtp(input);
+}
+
+// ======================
 // Open / Close modal
 // ======================
 function openEditMerchant(id, merchantData) {
@@ -407,23 +464,30 @@ function openEditMerchant(id, merchantData) {
     
     // PIC - Pastikan semua field PIC terisi dengan benar dari data tabel
     const namaPicEl = document.getElementById('editMerchantNamaPic');
-    const waPicEl = document.getElementById('editMerchantWaPic');
+    const waPicCodeEl = document.getElementById('editWaPicCode');
+    const emailPicEl = document.getElementById('editMerchantEmailPic');
     if (namaPicEl) {
         namaPicEl.value = merchantData.nama_pic || '';
     }
-    if (waPicEl) {
-        // Pastikan nomor telepon terisi dengan benar dari data tabel
-        // Ambil langsung dari merchantData.wa_pic
+    if (waPicCodeEl) {
+        // Extract nomor dari wa_pic (hilangkan +62 jika ada)
         const waPicValue = merchantData.wa_pic || '';
-        console.log('Setting WA PIC value:', waPicValue);
-        // Set value langsung - ini akan langsung terisi saat modal dibuka
-        waPicEl.value = waPicValue;
-        // Set juga menggunakan setAttribute untuk memastikan value tersimpan
+        let waPicCode = '';
         if (waPicValue) {
-            waPicEl.setAttribute('value', waPicValue);
-            // Verifikasi value sudah ter-set
-            console.log('WA PIC value after set:', waPicEl.value);
+            // Jika dimulai dengan +62, hapus +62
+            if (waPicValue.startsWith('+62')) {
+                waPicCode = waPicValue.substring(3);
+            } else if (waPicValue.startsWith('62')) {
+                waPicCode = waPicValue.substring(2);
+            } else {
+                waPicCode = waPicValue;
+            }
         }
+        waPicCodeEl.value = waPicCode;
+        updateEditWaPic();
+    }
+    if (emailPicEl) {
+        emailPicEl.value = merchantData.email_pic || '';
     }
     
     // Lokasi - parse daerah untuk provinsi, kabupaten, kecamatan
@@ -444,8 +508,6 @@ function openEditMerchant(id, merchantData) {
     }
     
     document.getElementById('editMerchantDetailAlamat').value = merchantData.detail_daerah || '';
-    document.getElementById('editMerchantLat').value = merchantData.lat || '';
-    document.getElementById('editMerchantLong').value = merchantData.long || '';
     document.getElementById('editMerchantLinkGmap').value = merchantData.link_gmap || '';
     
     // Logo preview jika ada
@@ -465,6 +527,24 @@ function openEditMerchant(id, merchantData) {
         }
         if (text) text.textContent = 'Logo saat ini';
     }
+    
+    // KTP preview jika ada
+    if (merchantData.ktp_pic) {
+        const preview = document.getElementById('editMerchantKtpPreview');
+        const text = document.getElementById('editMerchantKtpText');
+        if (preview) {
+            preview.innerHTML = `
+                <div class="relative">
+                    <img src="/storage/${merchantData.ktp_pic}" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                    <button type="button" onclick="removeEditMerchantKtp()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+            `;
+            preview.classList.remove('hidden');
+        }
+        if (text) text.textContent = 'KTP saat ini';
+    }
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -482,16 +562,10 @@ function openEditMerchant(id, merchantData) {
         panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
         panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
         
-        // Pastikan semua field termasuk nomor telepon terisi setelah modal terbuka
+        // Pastikan semua field terisi setelah modal terbuka
         setTimeout(() => {
-            // Pastikan nomor telepon terisi dengan benar
-            const waPicEl = document.getElementById('editMerchantWaPic');
-            if (waPicEl && merchantData.wa_pic) {
-                waPicEl.value = merchantData.wa_pic;
-                // Force update value
-                waPicEl.dispatchEvent(new Event('input', { bubbles: true }));
-                waPicEl.dispatchEvent(new Event('change', { bubbles: true }));
-            }
+            // Update WA PIC setelah modal terbuka
+            updateEditWaPic();
         }, 50);
     });
 }
@@ -546,6 +620,10 @@ function closeEditMerchant() {
             document.getElementById('editLinkBlanjapoinCode').value = '';
             document.getElementById('editLinkBlanjapoinFull').value = '';
             
+            // Reset WA PIC
+            document.getElementById('editWaPicCode').value = '';
+            document.getElementById('editWaPicFull').value = '';
+            
             // Reset preview image
             const preview = document.getElementById('editMerchantImagePreview');
             const text = document.getElementById('editMerchantImageText');
@@ -554,6 +632,15 @@ function closeEditMerchant() {
                 preview.classList.add('hidden');
             }
             if (text) text.textContent = 'Click to upload Logo Merchant';
+            
+            // Reset preview KTP
+            const ktpPreview = document.getElementById('editMerchantKtpPreview');
+            const ktpText = document.getElementById('editMerchantKtpText');
+            if (ktpPreview) {
+                ktpPreview.innerHTML = '';
+                ktpPreview.classList.add('hidden');
+            }
+            if (ktpText) ktpText.textContent = 'Click to upload KTP';
         }
     }, 300);
 }
@@ -648,6 +735,16 @@ function updateEditLinkBlanjapoin() {
     // Format sesuai dengan yang diharapkan controller: blanjapoin.id/dash/{code}
     const fullLink = code ? `blanjapoin.id/dash/${code}` : '';
     document.getElementById('editLinkBlanjapoinFull').value = fullLink;
+}
+
+// ======================
+// Update WA PIC
+// ======================
+function updateEditWaPic() {
+    const code = document.getElementById('editWaPicCode').value.trim();
+    // Format: +62{code} (tanpa spasi)
+    const fullWa = code ? `+62${code}` : '';
+    document.getElementById('editWaPicFull').value = fullWa;
 }
 
 // ======================
@@ -903,6 +1000,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update link blanjapoin sebelum submit
             updateEditLinkBlanjapoin();
+            
+            // Update WA PIC sebelum submit
+            updateEditWaPic();
             
             // Update daerah sebelum submit
             updateEditDaerahCombined();

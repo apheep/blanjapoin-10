@@ -15,10 +15,10 @@ return new class extends Migration
             $table->string('link_blanjapoin')->nullable();
             $table->string('nama_pic')->nullable();
             $table->string('wa_pic')->nullable();
+            $table->string('email_pic')->nullable();
+            $table->string('ktp_pic')->nullable();
             $table->string('daerah')->nullable();
             $table->string('detail_daerah')->nullable();
-            $table->string('long', 50)->nullable(); // Longitude - string untuk mempertahankan nilai asli input
-            $table->string('lat', 50)->nullable(); // Latitude - string untuk mempertahankan nilai asli input
             $table->text('link_gmap')->nullable();
             $table->string('logo_merchant')->nullable();
             

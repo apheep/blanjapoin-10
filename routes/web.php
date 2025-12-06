@@ -78,13 +78,18 @@ Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('lin
 Route::middleware('guest:portal')->group(function () {
     Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
     Route::post('/merchant-login', [PortalAuthController::class, 'login'])->name('portal.login.post');
-    Route::get('/merchant-login/google', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
-    Route::get('/merchant-login/google/callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+    
+    // Google OAuth routes (sesuai dokumentasi Socialite)
+    Route::get('/auth/redirect', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
+    Route::get('/auth-google-callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+    
+    // Debug route untuk melihat data Google OAuth (hapus di production)
+    Route::get('/debug/google-callback', [PortalAuthController::class, 'debugGoogleCallback'])->name('portal.google.debug');
 });
 Route::post('/merchant-logout', [PortalAuthController::class, 'logout'])->name('portal.logout');
 
-// Route untuk link dashboard (wajib login portal)
-Route::middleware('portal.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
+// Route untuk link dashboard (conditional auth berdasarkan email merchant)
+Route::middleware('merchant.email.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
 
 // Route untuk link history (public, tidak perlu login)
 Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
@@ -97,6 +102,12 @@ Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::c
 
 // Route untuk link reedem (wajib login portal)
 Route::middleware('portal.auth')->get('/reedem/{code}', [MerchantController::class, 'linkReedem'])->name('link.reedem');
+
+// Route untuk link history-withdraw (wajib login portal)
+Route::middleware('portal.auth')->get('/history-withdraw/{code}', [MerchantController::class, 'linkHistoryWithdraw'])->name('link.history-withdraw');
+
+// Route untuk submit withdraw request (wajib login portal)
+Route::middleware('portal.auth')->post('/withdraw/submit', [MerchantController::class, 'submitWithdraw'])->name('withdraw.submit');
 
 // Route untuk link trx-history (wajib login portal)
 Route::middleware('portal.auth')->get('/trx-history/{code}', [MerchantController::class, 'linkTrxHistory'])->name('link.trx-history');
@@ -194,6 +205,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
     Route::post('/iklan/reorder', [IklanController::class, 'updateOrder'])->name('iklan.reorder');
     Route::delete('/iklan/{iklan}', [IklanController::class, 'destroy'])->name('iklan.destroy');
+
+    // Withdraw Approval
+    Route::get('/withdraw-approval', [MerchantController::class, 'withdrawApproval'])->name('withdraw.approval');
+    Route::post('/withdraw-approval/{withdrawRequest}/approve', [MerchantController::class, 'approveWithdraw'])->name('withdraw.approve');
+    Route::post('/withdraw-approval/{withdrawRequest}/reject', [MerchantController::class, 'rejectWithdraw'])->name('withdraw.reject');
 
     // History All (requires login)
     Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');

@@ -20,8 +20,6 @@ class MerchantSeeder extends Seeder
                 'nama_pic'       => 'Ayu Putu',
                 'wa_pic'         => '+6281234567890',
                 'daerah'         => 'denpasar',
-                'long'           => 115.2126,
-                'lat'            => -8.6705,
                 'link_gmap'      => 'https://maps.google.com/?q=-8.6705,115.2126',
                 'logo_merchant'  => '/storage/logos/clip-n-climb-bali.png',
                 'created_at'     => $now,
@@ -34,8 +32,7 @@ class MerchantSeeder extends Seeder
                 'nama_pic'       => 'Dr. Sari Dewi',
                 'wa_pic'         => '+6281234567891',
                 'daerah'         => 'denpasar',
-                'long'           => 115.2180,
-                'lat'            => -8.6750,
+
                 'link_gmap'      => 'https://maps.google.com/?q=-8.6750,115.2180',
                 'logo_merchant'  => '/storage/logos/eterna-aesthetic.png',
                 'created_at'     => $now,
@@ -300,6 +297,10 @@ class MerchantSeeder extends Seeder
                 'updated_at'     => $now,
             ],
         ];
+        foreach ($merchants as &$m) {
+            unset($m['long'], $m['lat']);
+        }
+        unset($m);
 
         DB::table('merchants')->insert($merchants);
     }
