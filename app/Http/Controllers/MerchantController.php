@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\Keyword;
 use App\Models\Iklan;
+use App\Models\WithdrawRequest;
 use App\Exports\MerchantsExport;
 use App\Exports\MerchantKeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -565,6 +568,138 @@ class MerchantController extends Controller
     }
 
     /**
+     * Menampilkan halaman history withdraw untuk merchant
+     * Route: /history-withdraw/{code}
+     */
+    public function linkHistoryWithdraw($code, Request $request)
+    {
+        $decodedCode = urldecode($code);
+        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+
+        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+            })
+            ->whereNotNull('link_blanjapoin')
+            ->first();
+
+        if (!$merchant) {
+            Log::warning('Merchant not found for history-withdraw code', [
+                'code' => $code,
+                'decoded_code' => $decodedCode,
+            ]);
+            abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Build query with date filter
+        $query = WithdrawRequest::where('merchant_id', $merchant->id);
+        
+        // Date filter (single date)
+        $date = $request->get('date');
+        if ($date) {
+            $query->whereDate('created_at', $date);
+        }
+        
+        // Get actual withdraw history from database
+        $withdrawHistory = $query->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('partials_dash.historywithdraw', [
+            'merchant' => $merchant,
+            'withdrawHistory' => $withdrawHistory,
+        ]);
+    }
+
+    /**
+     * Submit withdraw request
+     * Route: POST /withdraw/submit
+     */
+    public function submitWithdraw(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'merchant_id' => 'required|exists:merchants,id',
+            'amount' => 'required|numeric|min:1',
+            'payment_method' => 'required|in:bca,bni,bri,mandiri,linkaja,dana',
+            'account_number' => 'required|string|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // Format account number untuk e-wallet (hapus +62 dan leading 0)
+            $accountNumber = $request->account_number;
+            $isEWallet = in_array($request->payment_method, ['linkaja', 'dana']);
+            
+            if ($isEWallet) {
+                // Hapus +62 jika ada
+                $accountNumber = preg_replace('/^\+62/', '', $accountNumber);
+                // Hapus leading 0
+                $accountNumber = ltrim($accountNumber, '0');
+            }
+
+            // Generate transaction ID
+            $transactionId = 'WD' . date('YmdHis') . rand(1000, 9999);
+
+            // Prepare data untuk insert
+            $withdrawData = [
+                'merchant_id' => $request->merchant_id,
+                'nama' => 'Alexander', // Hardcoded untuk sekarang
+                'metode_penarikan' => $request->payment_method,
+                'jumlah' => $request->amount,
+                'transaction_id' => $transactionId,
+                'status' => 'pending', // Default status pending
+            ];
+
+            // Simpan ke kolom yang sesuai berdasarkan metode
+            if ($isEWallet) {
+                $withdrawData['no_ewallet'] = $accountNumber;
+                $withdrawData['no_rekening'] = null;
+            } else {
+                $withdrawData['no_rekening'] = $accountNumber;
+                $withdrawData['no_ewallet'] = null;
+            }
+
+            // Simpan ke database dengan status pending
+            $withdrawRequest = WithdrawRequest::create($withdrawData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengajuan penarikan saldo berhasil diajukan',
+                'data' => [
+                    'transaction_id' => $transactionId,
+                    'withdraw_id' => $withdrawRequest->id,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error submitting withdraw request', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengajukan penarikan saldo',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Menampilkan halaman trx-history untuk merchant
      * Route: /trx-history/{code}
      */
@@ -619,5 +754,89 @@ class MerchantController extends Controller
         $merchantName = str_replace([' ', '/', '\\'], '_', $merchant->nama_merchant);
         $fileName = 'keywords_' . $merchantName . '_' . date('Y-m-d_His') . '.xlsx';
         return Excel::download(new MerchantKeywordsExport($merchant->id, $merchant->nama_merchant), $fileName);
+    }
+
+    /**
+     * Menampilkan halaman withdraw approval untuk admin
+     * Route: /withdraw-approval
+     */
+    public function withdrawApproval(Request $request)
+    {
+        $query = WithdrawRequest::with(['merchant', 'approver']);
+        
+        // Search filter (case-insensitive)
+        $searchTerm = trim($request->get('q', ''));
+        if ($searchTerm !== '') {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(nama) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                  ->orWhereRaw('LOWER(metode_penarikan) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                  ->orWhereRaw('LOWER(no_rekening) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                  ->orWhereRaw('LOWER(no_ewallet) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                  ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
+                      $merchantQuery->whereRaw('LOWER(nama_merchant) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
+                  });
+            });
+        }
+        
+        // Date filter (single date)
+        $date = $request->get('date');
+        
+        if ($date) {
+            $query->whereDate('created_at', $date);
+        }
+        
+        // Order by created_at desc and paginate
+        $withdraws = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        return view('withdraw-approval', [
+            'withdraws' => $withdraws,
+        ]);
+    }
+
+    /**
+     * Approve withdraw request
+     * Route: POST /withdraw-approval/{withdrawRequest}/approve
+     */
+    public function approveWithdraw(WithdrawRequest $withdrawRequest)
+    {
+        if ($withdrawRequest->status !== 'pending') {
+            return redirect()->route('withdraw.approval')
+                ->with('error', 'Withdraw request sudah diproses sebelumnya.');
+        }
+
+        $withdrawRequest->update([
+            'status' => 'approved',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+        ]);
+
+        return redirect()->route('withdraw.approval')
+            ->with('success', 'Withdraw request berhasil disetujui.');
+    }
+
+    /**
+     * Reject withdraw request
+     * Route: POST /withdraw-approval/{withdrawRequest}/reject
+     */
+    public function rejectWithdraw(Request $request, WithdrawRequest $withdrawRequest)
+    {
+        if ($withdrawRequest->status !== 'pending') {
+            return redirect()->route('withdraw.approval')
+                ->with('error', 'Withdraw request sudah diproses sebelumnya.');
+        }
+
+        $request->validate([
+            'dec_reject' => 'required|string|max:500',
+        ]);
+
+        $withdrawRequest->update([
+            'status' => 'rejected',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'dec_reject' => $request->dec_reject,
+        ]);
+
+        return redirect()->route('withdraw.approval')
+            ->with('success', 'Withdraw request berhasil ditolak.');
     }
 }
