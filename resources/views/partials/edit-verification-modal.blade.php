@@ -127,17 +127,99 @@ function confirmEdit() {
         closeEditVerificationModal();
         
         setTimeout(() => {
-            if (editDataType === 'Merchant' && typeof closeEditMerchant === 'function') {
-                closeEditMerchant();
+            // Handle Merchant edit - submit form via AJAX
+            if (editDataType === 'Merchant') {
+                const form = document.getElementById('formEditMerchant');
+                if (form) {
+                    // Update link blanjapoin dan daerah sebelum membuat FormData baru
+                    if (typeof updateEditLinkBlanjapoin === 'function') {
+                        updateEditLinkBlanjapoin();
+                    }
+                    if (typeof updateEditDaerahCombined === 'function') {
+                        updateEditDaerahCombined();
+                    }
+                    
+                    // Buat FormData baru dari form untuk memastikan semua nilai terbaru terkirim
+                    const freshFormData = new FormData(form);
+                    
+                    // Get CSRF token
+                    const csrfInput = form.querySelector('input[name="_token"]');
+                    const csrfToken = csrfInput ? csrfInput.value : null;
+                    
+                    // Ensure CSRF token is in the FormData
+                    if (csrfToken && !freshFormData.has('_token')) {
+                        freshFormData.append('_token', csrfToken);
+                    }
+                    
+                    // Add _method for PUT request
+                    freshFormData.append('_method', 'PUT');
+                    
+                    // Debug: Log form data yang akan dikirim
+                    console.log('Sending edit merchant form data:');
+                    for (let [key, value] of freshFormData.entries()) {
+                        if (key !== 'logo_merchant') {
+                            console.log(key + ':', value);
+                        } else {
+                            console.log(key + ':', value instanceof File ? value.name : 'File');
+                        }
+                    }
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: freshFormData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP ${response.status}: ${text}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Store success message in sessionStorage
+                            sessionStorage.setItem('editSuccess', 'Merchant');
+                            
+                            // Close edit modal
+                            if (typeof closeEditMerchant === 'function') {
+                                closeEditMerchant();
+                            }
+                            
+                            // Show success modal
+                            setTimeout(() => {
+                                showEditSuccessModal(editDataType);
+                            }, 300);
+                            
+                            // Reload page after success modal
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3500);
+                        } else {
+                            alert('Gagal mengupdate data: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan saat mengupdate data.\n\n' + error.message);
+                    });
+                }
             } else if (editDataType === 'Merchandise' && typeof closeEditMerchandise === 'function') {
                 closeEditMerchandise();
+                setTimeout(() => {
+                    showEditSuccessModal(editDataType);
+                }, 500);
             } else if (editDataType === 'Telkom Package' && typeof closeEditTelkom === 'function') {
                 closeEditTelkom();
+                setTimeout(() => {
+                    showEditSuccessModal(editDataType);
+                }, 500);
             }
-            
-            setTimeout(() => {
-                showEditSuccessModal(editDataType);
-            }, 500);
         }, 300);
     }
 }
