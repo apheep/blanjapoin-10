@@ -484,10 +484,6 @@ class MerchantController extends Controller
         
         if (!$merchant) {
             // Fallback: jika merchant tidak ada di request, cari manual
-            // Pastikan $decodedCode terdefinisi sebelum digunakan
-            if (!isset($decodedCode)) {
-                $decodedCode = urldecode($code);
-            }
             $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
             $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
             
