@@ -7,7 +7,9 @@
         $foodCategory = 'kuliner';
         $foodKeywords = $keywords->filter(function ($keyword) use ($foodCategory) {
             return $keyword->merchant && $keyword->merchant->kategori === $foodCategory
-                && $keyword->status === 'approve';
+                && $keyword->status === 'approve'
+                && $keyword->is_active == 1
+                && $keyword->merchant->is_active == 1;
         })->values();
         $visibleKeywords = $foodKeywords->take(3);
         $extraKeywords = $foodKeywords->slice(3);

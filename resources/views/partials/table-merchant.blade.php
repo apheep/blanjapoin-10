@@ -7,6 +7,7 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Quick Access</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
@@ -106,6 +107,17 @@
 
                         {{-- Merchant --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">{{ $merchant->nama_merchant }}</td>
+
+                        {{-- Status Toggle --}}
+                        <td class="px-4 py-4 text-center">
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Status">
+                                <input type="checkbox" 
+                                       data-merchant-id="{{ $merchant->id }}" 
+                                       class="sr-only peer toggle-merchant-status" 
+                                       {{ $merchant->is_active ? 'checked' : '' }} />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                            </label>
+                        </td>
 
                         {{-- Kategori --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">{{ $merchant->kategori ?? '-' }}</td>
@@ -247,7 +259,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="14" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="15" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data merchant.
                         </td>
                     </tr>
@@ -349,6 +361,16 @@
                     <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Merchant</p>
                         <p class="text-base font-semibold text-gray-900">{{ $merchant->nama_merchant }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Status</p>
+                        <label class="relative inline-flex items-center cursor-pointer mt-1" title="Toggle Status">
+                            <input type="checkbox" 
+                                   data-merchant-id="{{ $merchant->id }}" 
+                                   class="sr-only peer toggle-merchant-status-mobile" 
+                                   {{ $merchant->is_active ? 'checked' : '' }} />
+                            <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                        </label>
                     </div>
                     <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Kategori</p>
@@ -635,4 +657,70 @@
             closeAllQuickMenus();
         }
     });
+
+    // Toggle Merchant Status
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach toggle listeners for server-rendered checkboxes (desktop)
+        document.querySelectorAll('.toggle-merchant-status').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleMerchantStatus(merchantId);
+            });
+        });
+
+        // Attach toggle listeners for mobile checkboxes
+        document.querySelectorAll('.toggle-merchant-status-mobile').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleMerchantStatus(merchantId);
+            });
+        });
+    });
+
+    // Function to toggle merchant status
+    async function toggleMerchantStatus(merchantId) {
+        try {
+            const response = await fetch(`/api/merchants/${merchantId}/toggle-status`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Gagal memperbarui status');
+            }
+
+            // Update both desktop and mobile checkboxes
+            const desktopCheckbox = document.querySelector(`.toggle-merchant-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-merchant-status-mobile[data-merchant-id="${merchantId}"]`);
+            
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = data.is_active;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = data.is_active;
+            }
+
+            console.log('Status merchant berhasil diperbarui');
+        } catch (error) {
+            console.error('Error toggling merchant status:', error);
+            // Revert checkboxes on error
+            const desktopCheckbox = document.querySelector(`.toggle-merchant-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-merchant-status-mobile[data-merchant-id="${merchantId}"]`);
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = !desktopCheckbox.checked;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = !mobileCheckbox.checked;
+            }
+            alert('Gagal memperbarui status: ' + error.message);
+        }
+    }
 </script>

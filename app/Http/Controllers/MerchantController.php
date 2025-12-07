@@ -51,7 +51,7 @@ class MerchantController extends Controller
             'link_blanjapoin_code' => 'nullable|string|max:255',
             'nama_pic'       => 'nullable|string|max:255',
             'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
-            'email_pic'      => 'nullable|string|max:255',
+            'email_pic'      => 'nullable|email|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
@@ -59,6 +59,7 @@ class MerchantController extends Controller
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
+            'email_pic.email' => 'Email PIC harus dalam format email yang valid',
         ]);
     
         // =====================
@@ -220,6 +221,11 @@ class MerchantController extends Controller
                 Storage::disk('public')->delete($merchant->logo_merchant);
             }
             
+            // Delete KTP file if exists
+            if ($merchant->ktp_pic && Storage::disk('public')->exists($merchant->ktp_pic)) {
+                Storage::disk('public')->delete($merchant->ktp_pic);
+            }
+            
             // Delete merchant record
             $merchant->delete();
             
@@ -238,7 +244,7 @@ class MerchantController extends Controller
             'link_blanjapoin_code' => 'nullable|string|max:255',
             'nama_pic'       => 'nullable|string|max:255',
             'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
-            'email_pic'      => 'nullable|string|max:255',
+            'email_pic'      => 'nullable|email|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
@@ -246,6 +252,7 @@ class MerchantController extends Controller
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
+            'email_pic.email' => 'Email PIC harus dalam format email yang valid',
         ]);
     
         try {
@@ -450,6 +457,7 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             ->where('status', 'approve')
+            ->where('is_active', 1)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -829,8 +837,8 @@ class MerchantController extends Controller
             if ($isEWallet) {
                 // Hapus +62 jika ada
                 $accountNumber = preg_replace('/^\+62/', '', $accountNumber);
-                // Hapus leading 0
-                $accountNumber = ltrim($accountNumber, '0');
+                // Hapus hanya leading 0 pertama (bukan semua leading zeros)
+                $accountNumber = preg_replace('/^0/', '', $accountNumber);
             }
 
             // Generate transaction ID
@@ -944,6 +952,11 @@ class MerchantController extends Controller
      */
     public function withdrawApproval(Request $request)
     {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return redirect()->route('home')->with('error', 'Unauthorized access');
+        }
+
         $query = WithdrawRequest::with(['merchant', 'approver']);
         
         // Search filter (case-insensitive)
@@ -981,6 +994,11 @@ class MerchantController extends Controller
      */
     public function approveWithdraw(WithdrawRequest $withdrawRequest)
     {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return redirect()->route('home')->with('error', 'Unauthorized access');
+        }
+
         if ($withdrawRequest->status !== 'pending') {
             return redirect()->route('withdraw.approval')
                 ->with('error', 'Withdraw request sudah diproses sebelumnya.');
@@ -1002,6 +1020,11 @@ class MerchantController extends Controller
      */
     public function rejectWithdraw(Request $request, WithdrawRequest $withdrawRequest)
     {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return redirect()->route('home')->with('error', 'Unauthorized access');
+        }
+
         if ($withdrawRequest->status !== 'pending') {
             return redirect()->route('withdraw.approval')
                 ->with('error', 'Withdraw request sudah diproses sebelumnya.');
@@ -1020,5 +1043,37 @@ class MerchantController extends Controller
 
         return redirect()->route('withdraw.approval')
             ->with('success', 'Withdraw request berhasil ditolak.');
+    }
+
+    /**
+     * Toggle merchant status (is_active)
+     */
+    public function toggleStatus(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $merchant = Merchant::findOrFail($id);
+            $merchant->is_active = $merchant->is_active ? 0 : 1;
+            $merchant->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status merchant berhasil diperbarui',
+                'is_active' => $merchant->is_active,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling merchant status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

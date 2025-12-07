@@ -28,6 +28,7 @@ class Keyword extends Model
         'trx',
         'sisa_stock',
         'status',
+        'is_active',
     ];
 
     public function merchant()
