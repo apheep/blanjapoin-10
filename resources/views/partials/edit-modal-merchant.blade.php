@@ -124,16 +124,20 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 WhatsApp PIC
                             </label>
-                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent">
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent" id="editWaPicContainer">
                                 <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">+62</span>
                                 <input type="text"
                                        name="wa_pic_code"
                                        id="editWaPicCode"
-                                       oninput="updateEditWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
+                                       oninput="validateEditWaPic(); updateEditWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
                                        class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
                                        placeholder="81234567890">
                                 <input type="hidden" name="wa_pic" id="editWaPicFull">
                             </div>
+                            <!-- <div id="editWaPicError" class="hidden mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Nomor WhatsApp harus menggunakan operator Indonesia yang valid (contoh: 812, 813, 821, 822, 823, 851, 852, 853, 814, 815, 816, 855, 856, 857, 858, 817, 818, 819, 859, 877, 878, 831, 832, 833, 838, 895, 896, 897, 898, 899, 881, 882, 883, 884, 885, 886, 887, 888, 889)</span>
+                            </div> -->
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -266,15 +270,29 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {{-- Link Google Maps --}}
-                            <div>
+                            <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                     Link Google Maps
                                 </label>
-                                <input type="url"
-                                       id="editMerchantLinkGmap"
-                                       name="link_gmap"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="https://maps.google.com/...">
+                                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                                    <input type="url"
+                                           id="editMerchantLinkGmap"
+                                           name="link_gmap"
+                                           class="w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                           placeholder="Paste link Google Maps atau pilih lokasi"
+                                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                                    <button type="button"
+                                            onclick="openMapPicker('edit')"
+                                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span>Pilih Lokasi</span>
+                                    </button>
+                                </div>
+                                <p class="mt-1.5 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung</span>
+                                    <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps</span>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -738,6 +756,71 @@ function updateEditLinkBlanjapoin() {
 }
 
 // ======================
+// Validate WA PIC (Indonesian Mobile Prefixes)
+// ======================
+function validateEditWaPic() {
+    const code = document.getElementById('editWaPicCode').value.trim();
+    const errorDiv = document.getElementById('editWaPicError');
+    const container = document.getElementById('editWaPicContainer');
+    
+    // Valid Indonesian mobile prefixes (without leading 0, since +62 is already there)
+    const validPrefixes = [
+        '811', '812', '813',
+        '821', '822', '823',
+        '851', '852', '853',
+        '814', '815', '816',
+        '855', '856', '857', '858',
+        '817', '818', '819',
+        '859',
+        '877', '878',
+        '831', '832', '833', '838',
+        '895', '896', '897', '898', '899',
+        '881', '882', '883', '884', '885', '886', '887', '888', '889'
+    ];
+    
+    // If empty, hide error
+    if (!code) {
+        if (errorDiv) errorDiv.classList.add('hidden');
+        if (container) {
+            container.classList.remove('border-red-500');
+            container.classList.add('border-gray-300');
+        }
+        return true;
+    }
+    
+    // Check if number starts with valid prefix (minimum 3 digits for prefix)
+    if (code.length >= 3) {
+        const prefix = code.substring(0, 3);
+        if (validPrefixes.includes(prefix)) {
+            if (errorDiv) errorDiv.classList.add('hidden');
+            if (container) {
+                container.classList.remove('border-red-500');
+                container.classList.add('border-gray-300');
+            }
+            return true;
+        }
+    }
+    
+    // Show error if prefix is invalid
+    if (code.length >= 3) {
+        if (errorDiv) errorDiv.classList.remove('hidden');
+        if (container) {
+            container.classList.add('border-red-500');
+            container.classList.remove('border-gray-300');
+        }
+        return false;
+    }
+    
+    // Hide error while typing (less than 3 digits)
+    if (errorDiv) errorDiv.classList.add('hidden');
+    if (container) {
+        container.classList.remove('border-red-500');
+        container.classList.add('border-gray-300');
+    }
+    return true;
+}
+
+// ======================
 // Update WA PIC
 // ======================
 function updateEditWaPic() {
@@ -1000,6 +1083,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update link blanjapoin sebelum submit
             updateEditLinkBlanjapoin();
+            
+            // Validate WA PIC
+            const waPicCode = document.getElementById('editWaPicCode').value.trim();
+            if (waPicCode && !validateEditWaPic()) {
+                alert('Nomor WhatsApp harus menggunakan operator Indonesia yang valid');
+                document.getElementById('editWaPicCode').focus();
+                return false;
+            }
             
             // Update WA PIC sebelum submit
             updateEditWaPic();

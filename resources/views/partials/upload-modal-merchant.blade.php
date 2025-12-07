@@ -121,16 +121,20 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 WhatsApp PIC
                             </label>
-                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent">
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent" id="waPicContainer">
                                 <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">+62</span>
                                 <input type="text"
                                        name="wa_pic_code"
                                        id="waPicCode"
-                                       oninput="updateWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
+                                       oninput="validateWaPic(); updateWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
                                        class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
                                        placeholder="81234567890">
                                 <input type="hidden" name="wa_pic" id="waPicFull">
                             </div>
+                            <!-- <div id="waPicError" class="hidden mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Nomor WhatsApp harus menggunakan operator Indonesia yang valid (contoh: 812, 813, 821, 822, 823, 851, 852, 853, 814, 815, 816, 855, 856, 857, 858, 817, 818, 819, 859, 877, 878, 831, 832, 833, 838, 895, 896, 897, 898, 899, 881, 882, 883, 884, 885, 886, 887, 888, 889)</span>
+                            </div> -->
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -261,14 +265,29 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {{-- Link Google Maps --}}
-                            <div>
+                            <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                     Link Google Maps
                                 </label>
-                                <input type="url"
-                                       name="link_gmap"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="https://maps.google.com/...">
+                                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                                    <input type="url"
+                                           name="link_gmap"
+                                           id="linkGmapInput"
+                                           class="w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                           placeholder="Paste link Google Maps atau pilih lokasi"
+                                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                                    <button type="button"
+                                            onclick="openMapPicker()"
+                                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span>Pilih Lokasi</span>
+                                    </button>
+                                </div>
+                                <p class="mt-1.5 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung</span>
+                                    <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps</span>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -316,6 +335,98 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+{{-- Modal Peta Google Maps untuk Memilih Lokasi --}}
+<style>
+    @media (min-width: 768px) {
+        #mapContainer {
+            min-height: 400px !important;
+            height: 400px !important;
+        }
+        #map {
+            height: 400px !important;
+        }
+    }
+    @media (max-width: 767px) {
+        #mapContainer {
+            min-height: 300px !important;
+            height: 300px !important;
+        }
+        #map {
+            height: 300px !important;
+        }
+    }
+</style>
+<div id="mapPickerModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-2 md:p-4">
+    <div id="mapPickerOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeMapPicker()"></div>
+    
+    <div id="mapPickerPanel" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] md:max-h-[80vh] flex flex-col overflow-hidden z-10 transform transition-all duration-300 scale-95 opacity-0 m-2 md:m-4">
+        {{-- Header Modal --}}
+        <div class="flex justify-between items-center px-5 py-3 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+            <h3 class="text-base font-bold text-gray-800">
+                <i class="fas fa-map-marker-alt text-orange-500 mr-2"></i>
+                Pilih Lokasi di Peta
+            </h3>
+            <button type="button"
+                    onclick="closeMapPicker()"
+                    class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/50 rounded-lg">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        {{-- Body Modal dengan Peta --}}
+        <div class="flex-1 flex flex-col overflow-y-auto" style="min-height: 400px;">
+            {{-- Search Box --}}
+            <div class="p-3 border-b">
+                <div class="flex gap-2">
+                    <input type="text"
+                           id="mapSearchInput"
+                           placeholder="Cari lokasi (contoh: Jalan Sudirman, Jakarta)..."
+                           class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm">
+                    <button type="button"
+                            onclick="searchLocation()"
+                            class="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            {{-- Peta Container --}}
+            <div id="mapContainer" class="flex-1 relative w-full" style="min-height: 300px; height: 300px;">
+                <div id="map" class="w-full h-full" style="z-index: 1; height: 300px; width: 100%; position: relative;"></div>
+                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 z-20 pointer-events-none">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-info-circle text-orange-500 mr-1"></i>
+                        Klik di peta untuk memilih lokasi
+                    </p>
+                </div>
+            </div>
+            
+            {{-- Info Lokasi yang Dipilih --}}
+            <div id="selectedLocationInfo" class="hidden p-3 border-t bg-gray-50 sticky bottom-0 z-30">
+                <div class="flex flex-col md:flex-row md:items-start gap-3">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-700 mb-1">Lokasi yang Dipilih:</p>
+                        <p id="selectedAddress" class="text-sm text-gray-600 break-words"></p>
+                        <p id="selectedCoordinates" class="text-xs text-gray-500 mt-1 break-words"></p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <button type="button"
+                                onclick="closeMapPicker()"
+                                class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
+                            Batal
+                        </button>
+                        <button type="button"
+                                onclick="confirmLocation()"
+                                class="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors whitespace-nowrap">
+                            <i class="fas fa-check mr-1"></i>Gunakan Lokasi Ini
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -604,6 +715,63 @@ function updateLinkBlanjapoin() {
     // Format sesuai dengan yang diharapkan controller: blanjapoin.id/dash/{code}
     const fullLink = code ? `blanjapoin.id/dash/${code}` : '';
     document.getElementById('linkBlanjapoinFull').value = fullLink;
+}
+
+// ======================
+// Validate WA PIC (Indonesian Mobile Prefixes)
+// ======================
+function validateWaPic() {
+    const code = document.getElementById('waPicCode').value.trim();
+    const errorDiv = document.getElementById('waPicError');
+    const container = document.getElementById('waPicContainer');
+    
+    // Valid Indonesian mobile prefixes (without leading 0, since +62 is already there)
+    const validPrefixes = [
+        '811', '812', '813',
+        '821', '822', '823',
+        '851', '852', '853',
+        '814', '815', '816',
+        '855', '856', '857', '858',
+        '817', '818', '819',
+        '859',
+        '877', '878',
+        '831', '832', '833', '838',
+        '895', '896', '897', '898', '899',
+        '881', '882', '883', '884', '885', '886', '887', '888', '889'
+    ];
+    
+    // If empty, hide error
+    if (!code) {
+        errorDiv.classList.add('hidden');
+        container.classList.remove('border-red-500');
+        container.classList.add('border-gray-300');
+        return true;
+    }
+    
+    // Check if number starts with valid prefix (minimum 3 digits for prefix)
+    if (code.length >= 3) {
+        const prefix = code.substring(0, 3);
+        if (validPrefixes.includes(prefix)) {
+            errorDiv.classList.add('hidden');
+            container.classList.remove('border-red-500');
+            container.classList.add('border-gray-300');
+            return true;
+        }
+    }
+    
+    // Show error if prefix is invalid
+    if (code.length >= 3) {
+        errorDiv.classList.remove('hidden');
+        container.classList.add('border-red-500');
+        container.classList.remove('border-gray-300');
+        return false;
+    }
+    
+    // Hide error while typing (less than 3 digits)
+    errorDiv.classList.add('hidden');
+    container.classList.remove('border-red-500');
+    container.classList.add('border-gray-300');
+    return true;
 }
 
 // ======================
@@ -1225,6 +1393,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
+            // Validate WA PIC
+            const waPicCode = document.getElementById('waPicCode').value.trim();
+            if (waPicCode && !validateWaPic()) {
+                alert('Nomor WhatsApp tidak valid. Mohon gunakan nomor dengan operator Indonesia yang valid.');
+                document.getElementById('waPicCode').focus();
+                return false;
+            }
+            
             // Update link blanjapoin sebelum submit
             updateLinkBlanjapoin();
             
@@ -1265,6 +1441,485 @@ document.addEventListener('DOMContentLoaded', function() {
                 closeUploadMerchant();
             }
         });
+    }
+});
+
+// ======================
+// OpenStreetMap Picker untuk Link Google Maps (GRATIS - Tidak perlu API key)
+// ======================
+let map;
+let marker;
+let selectedLocation = null;
+let mapInitialized = false;
+let currentMapPickerMode = 'upload'; // 'upload' or 'edit'
+
+// Load Leaflet CSS dan JS (GRATIS - OpenStreetMap)
+function loadLeafletMaps() {
+    if (window.L && window.L.map) {
+        return Promise.resolve();
+    }
+    
+    return new Promise((resolve, reject) => {
+        // Load Leaflet CSS terlebih dahulu
+        const loadCSS = () => {
+            if (!document.querySelector('link[href*="leaflet"]')) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                link.onload = () => {
+                    // Setelah CSS ter-load, load JS
+                    loadJS();
+                };
+                link.onerror = () => {
+                    // Tetap lanjutkan meskipun CSS error (bisa jadi sudah ada)
+                    loadJS();
+                };
+                document.head.appendChild(link);
+            } else {
+                loadJS();
+            }
+        };
+        
+        // Load Leaflet JS
+        const loadJS = () => {
+            if (!document.querySelector('script[src*="leaflet"]')) {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                script.onload = () => {
+                    // Tunggu sedikit untuk memastikan Leaflet benar-benar siap
+                    setTimeout(() => {
+                        if (window.L && window.L.map) {
+                            resolve();
+                        } else {
+                            reject(new Error('Leaflet gagal dimuat'));
+                        }
+                    }, 100);
+                };
+                script.onerror = () => {
+                    reject(new Error('Gagal memuat Leaflet. Pastikan koneksi internet aktif.'));
+                };
+                document.head.appendChild(script);
+            } else {
+                // Script sudah ada, tunggu sebentar dan resolve
+                setTimeout(() => {
+                    if (window.L && window.L.map) {
+                        resolve();
+                    } else {
+                        reject(new Error('Leaflet tidak tersedia'));
+                    }
+                }, 100);
+            }
+        };
+        
+        loadCSS();
+    });
+}
+
+// Buka modal map picker
+async function openMapPicker(mode = 'upload') {
+    currentMapPickerMode = mode || 'upload';
+    const modal = document.getElementById('mapPickerModal');
+    const overlay = document.getElementById('mapPickerOverlay');
+    const panel = document.getElementById('mapPickerPanel');
+    
+    if (!modal || !overlay || !panel) return;
+    
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+    
+    // Trigger reflow untuk memastikan transisi berjalan
+    void modal.offsetWidth;
+    
+    // Animasikan overlay dan panel
+    setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        overlay.classList.add('opacity-100');
+        panel.classList.remove('scale-95', 'opacity-0');
+        panel.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    
+    // Load Leaflet (GRATIS - tidak perlu API key)
+    if (!mapInitialized) {
+        try {
+            await loadLeafletMaps();
+            // Tunggu sedikit untuk memastikan Leaflet benar-benar loaded
+            await new Promise(resolve => setTimeout(resolve, 100));
+            mapInitialized = true;
+        } catch (error) {
+            console.error('Error loading Leaflet maps:', error);
+            alert('Gagal memuat peta. Pastikan koneksi internet aktif.');
+            closeMapPicker();
+            return;
+        }
+    }
+    
+    // Inisialisasi peta jika belum
+    if (!map) {
+        // Tunggu modal benar-benar terbuka dan container memiliki ukuran
+        waitForContainerSize(() => {
+            initMap();
+            // Invalidate size setelah peta dibuat untuk memastikan render yang benar
+            if (map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            }
+        });
+    } else {
+        // Cek jika ada link yang sudah terisi untuk centering peta
+        const inputId = currentMapPickerMode === 'edit' ? 'editMerchantLinkGmap' : 'linkGmapInput';
+        const inputElement = document.getElementById(inputId);
+        const existingLink = inputElement ? inputElement.value : '';
+        
+        // Reset peta ke lokasi default (Indonesia) atau ke lokasi dari link yang ada
+        setTimeout(() => {
+            updateMapHeight(); // Update tinggi responsif
+            if (existingLink) {
+                extractLocationFromLink(existingLink);
+            } else {
+                map.setView([-6.2088, 106.8456], 10); // Jakarta
+            }
+            map.invalidateSize(); // Penting untuk update ukuran setelah modal terbuka
+        }, 100);
+        if (marker) {
+            map.removeLayer(marker);
+            marker = null;
+        }
+        selectedLocation = null;
+        const infoDiv = document.getElementById('selectedLocationInfo');
+        if (infoDiv) {
+            infoDiv.classList.add('hidden');
+        }
+    }
+}
+
+// Tutup modal map picker
+function closeMapPicker() {
+    const modal = document.getElementById('mapPickerModal');
+    const overlay = document.getElementById('mapPickerOverlay');
+    const panel = document.getElementById('mapPickerPanel');
+    
+    if (!modal || !overlay || !panel) return;
+    
+    // Animasikan penutupan
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('opacity-0');
+    panel.classList.remove('scale-100', 'opacity-100');
+    panel.classList.add('scale-95', 'opacity-0');
+    
+    // Tunggu animasi selesai sebelum menyembunyikan modal
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300); // Sesuai dengan duration transition (300ms)
+}
+
+// Fungsi untuk menunggu container memiliki ukuran
+function waitForContainerSize(callback, maxAttempts = 30) {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) {
+        console.error('Map element tidak ditemukan');
+        return;
+    }
+    
+    let attempts = 0;
+    const checkSize = () => {
+        attempts++;
+        // Cek ukuran dengan berbagai cara
+        const rect = mapElement.getBoundingClientRect();
+        const width = rect.width || mapElement.offsetWidth || mapElement.clientWidth;
+        const height = rect.height || mapElement.offsetHeight || mapElement.clientHeight;
+        
+        if (width > 0 && height > 0) {
+            console.log('Map container siap, ukuran:', width, 'x', height);
+            callback();
+        } else if (attempts < maxAttempts) {
+            // Coba lagi dengan requestAnimationFrame untuk smooth checking
+            requestAnimationFrame(checkSize);
+        } else {
+            console.warn('Map container tidak memiliki ukuran setelah beberapa percobaan, menggunakan ukuran default');
+            // Tetap lanjutkan dengan ukuran default (Leaflet akan handle ini)
+            callback();
+        }
+    };
+    
+    // Mulai check setelah modal ter-render (beri waktu lebih untuk CSS transition)
+    setTimeout(() => {
+        requestAnimationFrame(checkSize);
+    }, 200);
+}
+
+// Inisialisasi peta
+function initMap() {
+    const mapElement = document.getElementById('map');
+    if (!mapElement || !window.L) {
+        console.error('Map element atau Leaflet tidak ditemukan');
+        return;
+    }
+    
+    // Pastikan element memiliki ukuran
+    const width = mapElement.offsetWidth || mapElement.clientWidth;
+    const height = mapElement.offsetHeight || mapElement.clientHeight;
+    
+    if (width === 0 || height === 0) {
+        console.warn('Map container belum memiliki ukuran, tunggu sebentar...');
+        // Coba lagi setelah delay
+        setTimeout(() => {
+            if (!map) {
+                initMap();
+            }
+        }, 200);
+        return;
+    }
+    
+    // Default lokasi: Jakarta, Indonesia
+    const defaultLocation = [-6.2088, 106.8456];
+    
+    try {
+        // Inisialisasi peta Leaflet
+        map = L.map(mapElement, {
+            zoomControl: true
+        }).setView(defaultLocation, 10);
+        
+        // Tambahkan tile layer OpenStreetMap (GRATIS)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Event listener untuk klik di peta
+        map.on('click', (e) => {
+            placeMarker([e.latlng.lat, e.latlng.lng]);
+        });
+        
+        // Invalidate size setelah peta dibuat dan update tinggi responsif
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                // Update tinggi peta berdasarkan ukuran layar
+                updateMapHeight();
+            }
+        }, 100);
+        
+        // Cek jika ada input yang sudah terisi (untuk centering peta)
+        const inputId = currentMapPickerMode === 'edit' ? 'editMerchantLinkGmap' : 'linkGmapInput';
+        const inputElement = document.getElementById(inputId);
+        const existingLink = inputElement ? inputElement.value : '';
+        if (existingLink) {
+            extractLocationFromLink(existingLink);
+        }
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        alert('Gagal menginisialisasi peta. Silakan refresh halaman dan coba lagi.');
+    }
+}
+
+// Update tinggi peta berdasarkan ukuran layar
+function updateMapHeight() {
+    const mapContainer = document.getElementById('mapContainer');
+    const mapElement = document.getElementById('map');
+    
+    if (!mapContainer || !mapElement) return;
+    
+    // Cek ukuran layar
+    const isMobile = window.innerWidth < 768;
+    const height = isMobile ? 300 : 400;
+    
+    mapContainer.style.height = height + 'px';
+    mapContainer.style.minHeight = height + 'px';
+    mapElement.style.height = height + 'px';
+    
+    // Invalidate size peta jika sudah ada
+    if (map) {
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    }
+}
+
+// Place marker di lokasi yang diklik
+function placeMarker(location) {
+    if (!map || !window.L) return;
+    
+    // Hapus marker lama jika ada
+    if (marker) {
+        map.removeLayer(marker);
+    }
+    
+    // Buat marker baru dengan icon custom
+    const customIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+    
+    marker = L.marker(location, {
+        draggable: true,
+        icon: customIcon
+    }).addTo(map);
+    
+    // Update lokasi saat marker di-drag
+    marker.on('dragend', (e) => {
+        const pos = marker.getLatLng();
+        getLocationInfo([pos.lat, pos.lng]);
+    });
+    
+    // Get info lokasi
+    getLocationInfo(location);
+    
+    // Center peta ke marker
+    map.setView(location, map.getZoom());
+}
+
+// Dapatkan info lokasi dari koordinat (menggunakan Nominatim - GRATIS)
+function getLocationInfo(location) {
+    const [lat, lng] = Array.isArray(location) ? location : [location.lat, location.lng];
+    
+    // Gunakan Nominatim untuk reverse geocoding (GRATIS)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.display_name) {
+                selectedLocation = {
+                    lat: lat,
+                    lng: lng,
+                    address: data.display_name,
+                };
+            } else {
+                selectedLocation = {
+                    lat: lat,
+                    lng: lng,
+                    address: 'Lokasi yang dipilih',
+                };
+            }
+            
+            // Update UI
+            document.getElementById('selectedAddress').textContent = selectedLocation.address;
+            document.getElementById('selectedCoordinates').textContent = 
+                `Koordinat: ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`;
+            document.getElementById('selectedLocationInfo').classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error getting location info:', error);
+            selectedLocation = {
+                lat: lat,
+                lng: lng,
+                address: 'Lokasi yang dipilih',
+            };
+            
+            document.getElementById('selectedAddress').textContent = selectedLocation.address;
+            document.getElementById('selectedCoordinates').textContent = 
+                `Koordinat: ${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`;
+            document.getElementById('selectedLocationInfo').classList.remove('hidden');
+        });
+}
+
+// Cari lokasi berdasarkan teks (menggunakan Nominatim - GRATIS)
+function searchLocation() {
+    const searchInput = document.getElementById('mapSearchInput');
+    const query = searchInput.value.trim();
+    
+    if (!query) return;
+    
+    // Gunakan Nominatim untuk geocoding (GRATIS)
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=id`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const result = data[0];
+                const location = [parseFloat(result.lat), parseFloat(result.lon)];
+                map.setView(location, 15);
+                placeMarker(location);
+            } else {
+                alert('Lokasi tidak ditemukan. Coba dengan kata kunci yang lebih spesifik.');
+            }
+        })
+        .catch(error => {
+            console.error('Error searching location:', error);
+            alert('Terjadi kesalahan saat mencari lokasi. Silakan coba lagi.');
+        });
+}
+
+// Enter key untuk search
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('mapSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchLocation();
+            }
+        });
+    }
+});
+
+// Konfirmasi lokasi yang dipilih
+function confirmLocation() {
+    if (!selectedLocation) {
+        alert('Silakan pilih lokasi di peta terlebih dahulu.');
+        return;
+    }
+    
+    // Generate Google Maps link
+    const mapsLink = `https://www.google.com/maps?q=${selectedLocation.lat},${selectedLocation.lng}`;
+    
+    // Update input field berdasarkan mode
+    const inputId = currentMapPickerMode === 'edit' ? 'editMerchantLinkGmap' : 'linkGmapInput';
+    const inputElement = document.getElementById(inputId);
+    if (inputElement) {
+        inputElement.value = mapsLink;
+    }
+    
+    // Tutup modal
+    closeMapPicker();
+}
+
+// Extract location dari link Google Maps yang sudah ada
+function extractLocationFromLink(link) {
+    if (!link || !map) return;
+    
+    // Pattern untuk berbagai format Google Maps link
+    const patterns = [
+        /@(-?\d+\.\d+),(-?\d+\.\d+)/,  // @lat,lng
+        /q=(-?\d+\.\d+),(-?\d+\.\d+)/,  // q=lat,lng
+        /place\/.*@(-?\d+\.\d+),(-?\d+\.\d+)/,  // place/...@lat,lng
+    ];
+    
+    for (const pattern of patterns) {
+        const match = link.match(pattern);
+        if (match) {
+            const lat = parseFloat(match[1]);
+            const lng = parseFloat(match[2]);
+            const location = [lat, lng];
+            
+            map.setView(location, 15);
+            placeMarker(location);
+            return;
+        }
+    }
+}
+
+// Validasi link Google Maps yang di-paste
+function validateGmapLink(link) {
+    if (!link || typeof link !== 'string') return;
+    
+    // Cek jika link adalah Google Maps link
+    if (link.includes('google.com/maps') || link.includes('maps.google.com')) {
+        // Jika modal peta terbuka, extract dan tampilkan lokasi
+        const modal = document.getElementById('mapPickerModal');
+        if (modal && !modal.classList.contains('hidden') && map) {
+            extractLocationFromLink(link);
+        }
+    }
+}
+
+// Event listener untuk resize window (update tinggi peta saat resize)
+window.addEventListener('resize', function() {
+    const modal = document.getElementById('mapPickerModal');
+    if (modal && !modal.classList.contains('hidden') && map) {
+        updateMapHeight();
     }
 });
 
