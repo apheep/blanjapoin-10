@@ -33,9 +33,9 @@ class KeywordController extends Controller
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
                 'subsidy_enabled'   => 'nullable|in:0,1',
-                'subsidy_amount'    => 'nullable|numeric|min:0',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|nullable|numeric|min:0',
                 'diamond_enabled'   => 'nullable|in:0,1',
-                'diamond_amount'    => 'nullable|integer|min:0',
+                'diamond_amount'    => 'required_if:diamond_enabled,1|nullable|integer|min:0',
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
@@ -43,6 +43,9 @@ class KeywordController extends Controller
                 'stock'             => 'nullable|integer|min:0',
 
                 'status'            => 'nullable|in:approve,pending,reject',
+            ], [
+                'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
+                'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
@@ -165,15 +168,18 @@ class KeywordController extends Controller
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
                 'subsidy_enabled'   => 'nullable|in:0,1',
-                'subsidy_amount'    => 'nullable|numeric|min:0',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|nullable|numeric|min:0',
                 'diamond_enabled'   => 'nullable|in:0,1',
-                'diamond_amount'    => 'nullable|integer|min:0',
+                'diamond_amount'    => 'required_if:diamond_enabled,1|nullable|integer|min:0',
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
+            ], [
+                'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
+                'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi

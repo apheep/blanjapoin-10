@@ -31,7 +31,7 @@
                                 <select name="merchant_key" id="merchantSelect" class="hidden" required>
                                     <option value="">-- Pilih Merchant --</option>
                                     @foreach($allMerchants as $merchant)
-                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email ?? '' }}">{{ $merchant->nama_merchant }}</option>
+                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email_pic ?? '' }}">{{ $merchant->nama_merchant }}</option>
                                     @endforeach
                                 </select>
                                 
@@ -67,8 +67,8 @@
                                                     class="merchant-option w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0"
                                                     data-value="{{ $merchant->id }}"
                                                     data-name="{{ $merchant->nama_merchant }}"
-                                                    data-email="{{ $merchant->email ?? '' }}"
-                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}', '{{ $merchant->email ?? '' }}')">
+                                                    data-email="{{ $merchant->email_pic ?? '' }}"
+                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}', '{{ $merchant->email_pic ?? '' }}')">
                                                 {{ $merchant->nama_merchant }}
                                             </button>
                                         @endforeach
