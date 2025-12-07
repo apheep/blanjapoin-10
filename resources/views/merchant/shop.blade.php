@@ -41,7 +41,7 @@
           @if(!is_null($keyword->diskon))
           <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
            <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
-           <span class="text-xl font-bold text-red-500">{{ $keyword->diskon }}</span>
+           <span class="text-xl font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
           </div>
           @endif
           @if($keyword->skb)
@@ -101,7 +101,7 @@
          <div class="text-right flex-shrink-0 ml-2">
           <div class="inline-flex items-center gap-2">
            <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-10 h-10 object-contain">
-           <span class="text-base md:text-2xl font-black text-red-600">{{ $keyword->diskon }}</span>
+           <span class="text-base md:text-2xl font-black text-red-600">{{ formatDiskon($keyword->diskon) }}</span>
           </div>
          </div>
          @endif
@@ -204,7 +204,7 @@
            @if(!is_null($keyword->diskon))
            <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
             <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
-            <span class="text-xl font-bold text-red-500">{{ $keyword->diskon }}</span>
+            <span class="text-xl font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
            </div>
            @endif
            @if($keyword->skb)
@@ -264,7 +264,7 @@
           <div class="text-right flex-shrink-0 ml-2">
            <div class="inline-flex items-center gap-2">
             <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-10 h-10 object-contain">
-            <span class="text-base md:text-2xl font-black text-red-600">{{ $keyword->diskon }}</span>
+            <span class="text-base md:text-2xl font-black text-red-600">{{ formatDiskon($keyword->diskon) }}</span>
            </div>
           </div>
           @endif
