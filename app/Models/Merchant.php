@@ -29,7 +29,8 @@ class Merchant extends Model
         'email_pic',
         'ktp_pic',
         'detail_daerah',
-        'link_gmap'
+        'link_gmap',
+        'is_active',
     ];
 
     // Jangan cast lat dan long, biarkan sebagai string/decimal dari database

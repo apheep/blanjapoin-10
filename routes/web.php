@@ -20,11 +20,15 @@ use App\Models\Iklan;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
-    $keywords = Keyword::with('merchant')->get();
+    $keywords = Keyword::with('merchant')
+        ->where('is_active', 1)
+        ->where('status', 'approve')
+        ->get();
     $iklans = Iklan::orderBy('order', 'asc')->get();
     
-    // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+    // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
     $allDaerah = Merchant::query()
+        ->where('is_active', 1)
         ->whereNotNull('daerah')
         ->where('daerah', '!=', '')
         ->distinct()
@@ -129,11 +133,15 @@ Route::get('/storage/{path}', [MerchantController::class, 'downloadFile'])->name
 Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
-        $keywords = Keyword::with('merchant')->get();
+        $keywords = Keyword::with('merchant')
+            ->where('is_active', 1)
+            ->where('status', 'approve')
+            ->get();
         $iklans = Iklan::orderBy('order', 'asc')->get();
         
-        // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+        // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
         $allDaerah = Merchant::query()
+            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->distinct()
@@ -189,6 +197,7 @@ Route::middleware(['auth'])->group(function () {
     // Resource CRUD merchant (index sudah dipakai di atas)
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
     Route::get('/merchants/{merchant}', [MerchantController::class, 'show'])->name('merchants.show');
+    Route::patch('/api/merchants/{id}/toggle-status', [MerchantController::class, 'toggleStatus'])->name('merchants.toggle-status');
 
     // Keywords routes
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
@@ -197,6 +206,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
+    Route::patch('/api/keywords/{id}/toggle-status', [KeywordController::class, 'toggleStatus'])->name('keywords.toggle-status');
     Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
     Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
 

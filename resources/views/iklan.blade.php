@@ -141,7 +141,7 @@
                             </tr>
                         @empty
                             <tr>
-                            <td colspan="6" class="py-6 text-center text-neutral-500 font-medium">
+                            <td colspan="5" class="py-6 text-center text-neutral-500 font-medium">
                                     Belum ada data iklan. Tambahkan gambar melalui form di atas.
                                 </td>
                             </tr>

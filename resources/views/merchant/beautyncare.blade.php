@@ -7,7 +7,9 @@
         $beautyCategory = 'kecantikan';
         $beautyKeywords = $keywords->filter(function ($keyword) use ($beautyCategory) {
             return $keyword->merchant && $keyword->merchant->kategori === $beautyCategory
-                && $keyword->status === 'approve';
+                && $keyword->status === 'approve'
+                && $keyword->is_active == 1
+                && $keyword->merchant->is_active == 1;
         })->values();
         $visibleKeywords = $beautyKeywords->take(3);
         $extraKeywords = $beautyKeywords->slice(3);
