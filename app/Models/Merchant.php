@@ -27,6 +27,7 @@ class Merchant extends Model
         'nama_pic',
         'wa_pic',
         'email_pic',
+        'ktp_pic',
         'detail_daerah',
         'link_gmap'
     ];
