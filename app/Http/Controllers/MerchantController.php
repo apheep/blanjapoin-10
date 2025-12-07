@@ -521,6 +521,21 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Hitung total diamond dari history transaksi
+        // Logic: Setiap transaksi (trx) pada keyword dengan subsidy_amount menghasilkan diamond
+        // Total diamond = sum(trx * subsidy_amount) untuk semua keywords
+        // 1 rupiah = 1 diamond
+        $totalDiamond = 0;
+        foreach ($keywords as $keyword) {
+            if ($keyword->subsidy_amount && $keyword->trx) {
+                // Parse trx menjadi integer (jika string, ambil nilai numeriknya)
+                $trxCount = is_numeric($keyword->trx) ? (int)$keyword->trx : 0;
+                // Hitung diamond = jumlah transaksi * nilai subsidi (rupiah)
+                $diamondFromKeyword = $trxCount * (float)$keyword->subsidy_amount;
+                $totalDiamond += $diamondFromKeyword;
+            }
+        }
+
         // Generate link history (trx-history)
         $linkHistory = route('link.trx-history', $decodedCode);
         $linkHistoryFull = url($linkHistory);
@@ -531,6 +546,7 @@ class MerchantController extends Controller
             'linkHistory' => $linkHistoryFull,
             'keywords' => $keywords,
             'showDiamond' => $showDiamond,
+            'totalDiamond' => $totalDiamond,
         ]);
     }
 
@@ -790,6 +806,22 @@ class MerchantController extends Controller
         }
 
         try {
+            // Ambil merchant untuk mendapatkan nama
+            $merchant = Merchant::findOrFail($request->merchant_id);
+            
+            // Tentukan nama: prioritaskan PortalUser name, kemudian nama_pic, terakhir nama_merchant
+            $nama = $merchant->nama_merchant; // Default fallback
+            if ($merchant->nama_pic) {
+                $nama = $merchant->nama_pic;
+            }
+            // Jika ada user yang login via portal, gunakan nama dari PortalUser
+            if (Auth::guard('portal')->check()) {
+                $portalUser = Auth::guard('portal')->user();
+                if ($portalUser && $portalUser->name) {
+                    $nama = $portalUser->name;
+                }
+            }
+            
             // Format account number untuk e-wallet (hapus +62 dan leading 0)
             $accountNumber = $request->account_number;
             $isEWallet = in_array($request->payment_method, ['linkaja', 'dana']);
@@ -807,7 +839,7 @@ class MerchantController extends Controller
             // Prepare data untuk insert
             $withdrawData = [
                 'merchant_id' => $request->merchant_id,
-                'nama' => 'Alexander', // Hardcoded untuk sekarang
+                'nama' => $nama,
                 'metode_penarikan' => $request->payment_method,
                 'jumlah' => $request->amount,
                 'transaction_id' => $transactionId,

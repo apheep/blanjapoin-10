@@ -35,7 +35,7 @@
                             if (count($parts) >= 3 && $parts[1] === 'dash') {
                                 $codeDashboard = end($parts);
                                 $codePelanggan = $codeDashboard;
-                                $historyUrl = route('link.history', $codePelanggan);
+                                $historyUrl = route('link.history.all', $codePelanggan);
                             }
                         }
                     @endphp
@@ -314,7 +314,7 @@
                 if(count($parts) >= 3 && $parts[1] === 'dash') {
                     $codeDashboardMobile = end($parts);
                     $codePelanggan = $codeDashboardMobile;
-                    $linkHistory = route('link.history', $codeDashboardMobile);
+                    $linkHistory = route('link.history.all', $codeDashboardMobile);
                 }
             }
         @endphp
