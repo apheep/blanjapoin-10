@@ -806,6 +806,22 @@ class MerchantController extends Controller
         }
 
         try {
+            // Ambil merchant untuk mendapatkan nama
+            $merchant = Merchant::findOrFail($request->merchant_id);
+            
+            // Tentukan nama: prioritaskan PortalUser name, kemudian nama_pic, terakhir nama_merchant
+            $nama = $merchant->nama_merchant; // Default fallback
+            if ($merchant->nama_pic) {
+                $nama = $merchant->nama_pic;
+            }
+            // Jika ada user yang login via portal, gunakan nama dari PortalUser
+            if (Auth::guard('portal')->check()) {
+                $portalUser = Auth::guard('portal')->user();
+                if ($portalUser && $portalUser->name) {
+                    $nama = $portalUser->name;
+                }
+            }
+            
             // Format account number untuk e-wallet (hapus +62 dan leading 0)
             $accountNumber = $request->account_number;
             $isEWallet = in_array($request->payment_method, ['linkaja', 'dana']);
@@ -823,7 +839,7 @@ class MerchantController extends Controller
             // Prepare data untuk insert
             $withdrawData = [
                 'merchant_id' => $request->merchant_id,
-                'nama' => 'Alexander', // Hardcoded untuk sekarang
+                'nama' => $nama,
                 'metode_penarikan' => $request->payment_method,
                 'jumlah' => $request->amount,
                 'transaction_id' => $transactionId,
