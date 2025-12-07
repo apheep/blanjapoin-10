@@ -373,6 +373,21 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Hitung total diamond dari history transaksi
+        // Logic: Setiap transaksi (trx) pada keyword dengan subsidy_amount menghasilkan diamond
+        // Total diamond = sum(trx * subsidy_amount) untuk semua keywords
+        // 1 rupiah = 1 diamond
+        $totalDiamond = 0;
+        foreach ($keywords as $keyword) {
+            if ($keyword->subsidy_amount && $keyword->trx) {
+                // Parse trx menjadi integer (jika string, ambil nilai numeriknya)
+                $trxCount = is_numeric($keyword->trx) ? (int)$keyword->trx : 0;
+                // Hitung diamond = jumlah transaksi * nilai subsidi (rupiah)
+                $diamondFromKeyword = $trxCount * (float)$keyword->subsidy_amount;
+                $totalDiamond += $diamondFromKeyword;
+            }
+        }
+
         // Generate link history (trx-history)
         $linkHistory = route('link.trx-history', $decodedCode);
         $linkHistoryFull = url($linkHistory);
@@ -383,6 +398,7 @@ class MerchantController extends Controller
             'linkHistory' => $linkHistoryFull,
             'keywords' => $keywords,
             'showDiamond' => $showDiamond,
+            'totalDiamond' => $totalDiamond,
         ]);
     }
 

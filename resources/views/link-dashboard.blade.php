@@ -91,11 +91,16 @@
                 </div>
             </div>
 
-            <!-- Diamond Logo Section -->
+            <!-- Diamond Section -->
             @if(isset($showDiamond) && $showDiamond)
-            <div class="mt-1 mb-1 flex justify-left animate-fade-in-up" style="animation-delay: 0.1s;">
-                <div class="text-2xl sm:text-2xl md:text-2xl drop-shadow-lg filter">
+            <div class="mt-1 mb-1 flex items-center gap-1 animate-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="text-2xl sm:text-2xl md:text-3xl drop-shadow-lg filter">
                     💎
+                </div>
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
+                        {{ number_format(isset($totalDiamond) ? $totalDiamond : 0, 0, ',', '.') }}
+                    </h2>
                 </div>
             </div>
             @endif
