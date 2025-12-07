@@ -306,6 +306,8 @@ class KeywordController extends Controller
         $searchTerm = trim($request->get('q', ''));
         $status = $request->get('status');
         $merchantId = $request->get('merchant_id');
+        $keywordPage = $request->get('keyword_page', 1);
+        $merchantPage = $request->get('merchant_page', 1);
 
         $keywordsQuery = Keyword::with('merchant')
             ->when($merchantId, function ($query) use ($merchantId) {
@@ -330,16 +332,47 @@ class KeywordController extends Controller
             })
             ->orderBy('id');
 
-        // Paginate standar 10 data per halaman (baik dengan atau tanpa filter status)
-        $keywords = $keywordsQuery->paginate(10)->appends($request->query());
+        // Paginate dengan parameter keyword_page yang terpisah
+        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        $keywordQueryParams = $request->query();
+        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
+        if ($request->has('merchant_page')) {
+            $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
+        }
+        
+        $keywords = $keywordsQuery
+            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
+            ->setPageName('keyword_page')
+            ->appends($keywordQueryParams);
 
         if ($request->ajax()) {
-            return response()->json([
-                'html' => view('partials.table-keyword', ['keywords' => $keywords])->render(),
-            ]);
+            try {
+                $html = view('partials.table-keyword', ['keywords' => $keywords])->render();
+                return response()->json([
+                    'html' => $html,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Error rendering keyword table: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'html' => '<div class="p-4 text-center text-red-600">Error loading keywords: ' . $e->getMessage() . '</div>',
+                    'error' => true
+                ], 500);
+            }
         }
 
-        $merchants = Merchant::orderBy('id')->paginate(10);
+        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        $merchantQueryParams = $request->query();
+        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
+        if ($request->has('keyword_page')) {
+            $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
+        }
+        
+        $merchants = Merchant::orderBy('id')
+            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
+            ->setPageName('merchant_page')
+            ->appends($merchantQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
 
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));

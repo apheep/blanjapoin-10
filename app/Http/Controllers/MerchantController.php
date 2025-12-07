@@ -20,10 +20,37 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class MerchantController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $merchants = Merchant::orderBy('id')->paginate(10);
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        // Gunakan parameter berbeda untuk pagination merchant dan keyword
+        $merchantPage = $request->get('merchant_page', 1);
+        $keywordPage = $request->get('keyword_page', 1);
+        
+        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        $merchantQueryParams = $request->query();
+        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
+        if ($request->has('keyword_page')) {
+            $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
+        }
+        
+        $merchants = Merchant::orderBy('id')
+            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
+            ->setPageName('merchant_page')
+            ->appends($merchantQueryParams);
+            
+        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        $keywordQueryParams = $request->query();
+        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
+        if ($request->has('merchant_page')) {
+            $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
+        }
+            
+        $keywords = Keyword::with('merchant')
+            ->orderBy('id')
+            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
+            ->setPageName('keyword_page')
+            ->appends($keywordQueryParams);
+            
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('merchants', 'keywords', 'allMerchants'));
     }
@@ -387,7 +414,8 @@ class MerchantController extends Controller
     public function search(Request $request)
     {
         $searchTerm = trim($request->input('q', ''));
-        $page = $request->input('page', 1);
+        $merchantPage = $request->input('merchant_page', 1);
+        $keywordPage = $request->input('keyword_page', 1);
         $category = $request->input('category');
         
         $merchantsQuery = Merchant::query();
@@ -406,10 +434,18 @@ class MerchantController extends Controller
             $merchantsQuery->where('kategori', $category);
         }
         
+        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        $merchantQueryParams = $request->query();
+        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
+        if ($request->has('keyword_page')) {
+            $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
+        }
+        
         $merchants = $merchantsQuery
             ->orderBy('id')
-            ->paginate(10, ['*'], 'page', $page)
-            ->appends($request->query());
+            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
+            ->setPageName('merchant_page')
+            ->appends($merchantQueryParams);
         
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -420,7 +456,18 @@ class MerchantController extends Controller
         }
         
         // Untuk non-AJAX request (seperti pagination link), perlu semua variable yang diperlukan view admin
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        $keywordQueryParams = $request->query();
+        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
+        if ($request->has('merchant_page')) {
+            $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
+        }
+        
+        $keywords = Keyword::with('merchant')
+            ->orderBy('id')
+            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
+            ->setPageName('keyword_page')
+            ->appends($keywordQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         
         return view('admin', compact('merchants', 'keywords', 'allMerchants'));

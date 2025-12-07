@@ -1,6 +1,21 @@
 @php
+    // Pastikan $keywords terdefinisi
+    if (!isset($keywords) || !$keywords) {
+        $keywords = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+    }
+    
     // gabungkan query yg sudah ada (misal search/filter) + paksa tab=keyword
-    $keywordPaginator = $keywords->appends(array_merge(request()->query(), ['tab' => 'keyword']));
+    // PENTING: Pertahankan merchant_page untuk mempertahankan pagination merchant saat pindah tab
+    $queryParams = request()->query();
+    // Pastikan tab=keyword dan pertahankan merchant_page jika ada
+    $queryParams['tab'] = 'keyword';
+    // Hapus parameter page generik jika ada, karena kita sudah menggunakan keyword_page
+    unset($queryParams['page']);
+    // Pastikan merchant_page tetap ada jika sebelumnya ada di URL
+    if (request()->has('merchant_page')) {
+        $queryParams['merchant_page'] = request()->get('merchant_page');
+    }
+    $keywordPaginator = $keywords->appends($queryParams);
 @endphp
 
 <div class="bg-white rounded-xl shadow overflow-hidden mt-4">

@@ -101,8 +101,16 @@ Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name(
 // Route untuk history page versi lengkap tanpa login
 Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
 
+// PENTING: Route admin keywords/search harus didefinisikan SEBELUM route /keywords/{code}
+// untuk menghindari konflik pattern matching
+// Route ini dipindahkan dari dalam group middleware auth ke sini, tapi tetap menggunakan middleware auth
+Route::middleware(['auth'])->get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
+
 // Route untuk link keywords (wajib login portal)
-Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::class, 'linkKeywords'])->name('link.keywords');
+// Constraint: code tidak boleh "search", "export", atau path admin lainnya
+Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::class, 'linkKeywords'])
+    ->where('code', '^(?!search|export|excel).*$')
+    ->name('link.keywords');
 
 // Route untuk link reedem (wajib login portal)
 Route::middleware('portal.auth')->get('/reedem/{code}', [MerchantController::class, 'linkReedem'])->name('link.reedem');
@@ -207,7 +215,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::patch('/api/keywords/{id}/toggle-status', [KeywordController::class, 'toggleStatus'])->name('keywords.toggle-status');
-    Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
+    // Route /keywords/search sudah dipindahkan ke atas (sebelum route /keywords/{code}) untuk menghindari konflik
     Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
 
     // Iklan management
