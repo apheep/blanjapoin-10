@@ -44,37 +44,23 @@ class MerchantController extends Controller
 
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'nama_merchant'  => 'required|string|max:255',
-                'kategori'       => 'nullable|string|max:100',
-                'link_blanjapoin' => 'nullable|string|max:500',
-                'link_blanjapoin_code' => 'nullable|string|max:255',
-                'nama_pic'       => 'nullable|string|max:255',
-                'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
-                'email_pic'      => 'nullable|email|max:255',
-                'daerah'         => 'nullable|string|max:255',
-                'detail_alamat'  => 'nullable|string',
-                'link_gmap'      => 'nullable|string|max:500',
-                'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            ], [
-                'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
-                'email_pic.email' => 'Email PIC harus dalam format email yang valid',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Jika request dari AJAX, return JSON error
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $e->errors()
-                ], 422);
-            }
-            
-            // Jika bukan AJAX, throw exception untuk redirect normal
-            throw $e;
-        }
+        $validated = $request->validate([
+            'nama_merchant'  => 'required|string|max:255',
+            'kategori'       => 'nullable|string|max:100',
+            'link_blanjapoin' => 'nullable|string|max:500',
+            'link_blanjapoin_code' => 'nullable|string|max:255',
+            'nama_pic'       => 'nullable|string|max:255',
+            'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
+            'email_pic'      => 'nullable|email|max:255',
+            'daerah'         => 'nullable|string|max:255',
+            'detail_alamat'  => 'nullable|string',
+            'link_gmap'      => 'nullable|string|max:500',
+            'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
+            'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+        ]);
     
         // =====================
         //  HANDLE LINK BLANJAPOIN
@@ -498,6 +484,10 @@ class MerchantController extends Controller
         
         if (!$merchant) {
             // Fallback: jika merchant tidak ada di request, cari manual
+            // Pastikan $decodedCode terdefinisi sebelum digunakan
+            if (!isset($decodedCode)) {
+                $decodedCode = urldecode($code);
+            }
             $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
             $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
             
@@ -1089,5 +1079,74 @@ class MerchantController extends Controller
                 'error' => 'Gagal memperbarui status: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Show merchants by territorial (kota/kabupaten)
+     * Route: GET /territorial/{location}
+     */
+    public function showByTerritorial($location)
+    {
+        // Convert slug back to readable name
+        $locationName = territorialName($location);
+        
+        // Get all active merchants
+        $allMerchants = Merchant::where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->get();
+        
+        // Filter merchants by territorial (compare slug with slug)
+        $merchants = $allMerchants->filter(function($merchant) use ($location) {
+            $merchantTerritorial = extractKabupatenKota($merchant->daerah);
+            $merchantSlug = territorialSlug($merchantTerritorial);
+            // Compare slug with slug (case-insensitive)
+            return strtolower($merchantSlug) === strtolower($location);
+        })->values();
+        
+        // Get keywords for these merchants
+        $merchantIds = $merchants->pluck('id');
+        $keywords = Keyword::with('merchant')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('is_active', 1)
+            ->where('status', 'approve')
+            ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
+            })
+            ->get();
+        
+        // Get iklans
+        $iklans = Iklan::orderBy('order', 'asc')->get();
+        
+        // Get all available territories for filter
+        $allDaerah = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->distinct()
+            ->pluck('daerah');
+        
+        $territories = $allDaerah->map(function($daerah) {
+            $territorial = extractKabupatenKota($daerah);
+            return [
+                'name' => $territorial,
+                'slug' => territorialSlug($territorial)
+            ];
+        })
+        ->filter(function($item) {
+            return !empty($item['name']) && !empty($item['slug']);
+        })
+        ->unique('slug')
+        ->sortBy('name')
+        ->values();
+        
+        return view('territorial', [
+            'location' => $location,
+            'locationName' => $locationName,
+            'merchants' => $merchants,
+            'keywords' => $keywords,
+            'iklans' => $iklans,
+            'territories' => $territories,
+        ]);
     }
 }

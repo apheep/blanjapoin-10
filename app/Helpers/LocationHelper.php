@@ -102,3 +102,68 @@ if (!function_exists('formatDiskon')) {
     }
 }
 
+if (!function_exists('territorialSlug')) {
+    /**
+     * Generate slug untuk URL teritorial
+     * Mengubah nama kota/kabupaten menjadi format URL-friendly
+     * 
+     * Contoh:
+     * - "Kota Surabaya" -> "surabaya"
+     * - "Kota Depok" -> "depok"
+     * - "Kabupaten Bandung" -> "bandung"
+     * - "Surabaya" -> "surabaya"
+     * 
+     * @param string|null $location
+     * @return string
+     */
+    function territorialSlug($location) {
+        if (empty($location)) return '';
+        
+        $location = trim($location);
+        
+        // Hapus prefix "Kota" atau "Kabupaten"
+        $location = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $location);
+        
+        // Convert ke lowercase
+        $location = strtolower($location);
+        
+        // Replace spasi dengan dash
+        $location = str_replace(' ', '-', $location);
+        
+        // Remove special characters, keep only alphanumeric and dash
+        $location = preg_replace('/[^a-z0-9\-]/', '', $location);
+        
+        // Remove multiple dashes
+        $location = preg_replace('/-+/', '-', $location);
+        
+        // Trim dashes from start and end
+        $location = trim($location, '-');
+        
+        return $location;
+    }
+}
+
+if (!function_exists('territorialName')) {
+    /**
+     * Convert slug kembali ke nama teritorial yang readable
+     * 
+     * Contoh:
+     * - "surabaya" -> "Surabaya"
+     * - "kota-depok" -> "Kota Depok"
+     * 
+     * @param string|null $slug
+     * @return string
+     */
+    function territorialName($slug) {
+        if (empty($slug)) return '';
+        
+        // Replace dash dengan spasi
+        $name = str_replace('-', ' ', $slug);
+        
+        // Capitalize first letter of each word
+        $name = ucwords($name);
+        
+        return $name;
+    }
+}
+

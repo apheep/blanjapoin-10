@@ -109,6 +109,12 @@ Route::get('/', function () {
 
 Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchant.search');
 
+// ======================= CITY (PUBLIC) =======================
+// Route untuk menampilkan merchant berdasarkan kota/kabupaten
+// Format: /city/{location} (contoh: /city/surabaya)
+// Route ini PUBLIC, tidak perlu login
+Route::get('/city/{location}', [MerchantController::class, 'showByTerritorial'])->name('city.show');
+
 // Route untuk link pelanggan (public, tidak perlu login)
 Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
 
