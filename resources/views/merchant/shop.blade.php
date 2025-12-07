@@ -20,7 +20,7 @@
       @php
        $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
        $productName = $keyword->nama_produk ?? '';
-       $locationName = optional($keyword->merchant)->daerah ?? '';
+       $locationName = extractKabupatenKota(optional($keyword->merchant)->daerah ?? '');
        $searchName = strtolower(trim($merchantName . ' ' . $productName));
        $searchLocation = strtolower($locationName);
        $uniqueId = 'shop-card-' . $keyword->id;

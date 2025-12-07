@@ -57,7 +57,7 @@
                     $merchant = $result->merchant;
                     $merchantName = optional($merchant)->nama_merchant ?? '';
                     $productName = $result->nama_produk ?? '';
-                    $locationName = optional($merchant)->daerah ?? '';
+                    $locationName = extractKabupatenKota(optional($merchant)->daerah ?? '');
                     $searchName = strtolower(trim($merchantName . ' ' . $productName));
                     $searchLocation = strtolower($locationName);
                     $uniqueId = 'search-card-' . $result->id;

@@ -44,23 +44,37 @@ class MerchantController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'nama_merchant'  => 'required|string|max:255',
-            'kategori'       => 'nullable|string|max:100',
-            'link_blanjapoin' => 'nullable|string|max:500',
-            'link_blanjapoin_code' => 'nullable|string|max:255',
-            'nama_pic'       => 'nullable|string|max:255',
-            'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
-            'email_pic'      => 'nullable|email|max:255',
-            'daerah'         => 'nullable|string|max:255',
-            'detail_alamat'  => 'nullable|string',
-            'link_gmap'      => 'nullable|string|max:500',
-            'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ], [
-            'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
-            'email_pic.email' => 'Email PIC harus dalam format email yang valid',
-        ]);
+        try {
+            $validated = $request->validate([
+                'nama_merchant'  => 'required|string|max:255',
+                'kategori'       => 'nullable|string|max:100',
+                'link_blanjapoin' => 'nullable|string|max:500',
+                'link_blanjapoin_code' => 'nullable|string|max:255',
+                'nama_pic'       => 'nullable|string|max:255',
+                'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
+                'email_pic'      => 'nullable|email|max:255',
+                'daerah'         => 'nullable|string|max:255',
+                'detail_alamat'  => 'nullable|string',
+                'link_gmap'      => 'nullable|string|max:500',
+                'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            ], [
+                'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
+                'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Jika request dari AJAX, return JSON error
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
+            // Jika bukan AJAX, throw exception untuk redirect normal
+            throw $e;
+        }
     
         // =====================
         //  HANDLE LINK BLANJAPOIN

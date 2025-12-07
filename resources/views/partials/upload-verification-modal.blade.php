@@ -184,15 +184,36 @@ function confirmUpload() {
         if (uploadDataType === 'Merchant') {
             setTimeout(() => {
                 const form = document.getElementById('formUploadMerchant');
-                if (form) {
-                    // Update link blanjapoin dan daerah sebelum membuat FormData baru
-                    if (typeof updateLinkBlanjapoin === 'function') {
-                        updateLinkBlanjapoin();
-                    }
-                    if (typeof updateDaerahCombined === 'function') {
-                        updateDaerahCombined();
-                    }
-                    
+                if (!form) {
+                    alert('Form tidak ditemukan');
+                    return;
+                }
+                
+                // Pastikan kategori terisi
+                const kategoriInput = document.getElementById('merchantKategoriValue');
+                if (!kategoriInput || !kategoriInput.value) {
+                    alert('Mohon pilih Kategori');
+                    return;
+                }
+                
+                // Update semua field sebelum membuat FormData baru
+                // Update link blanjapoin
+                if (typeof updateLinkBlanjapoin === 'function') {
+                    updateLinkBlanjapoin();
+                }
+                
+                // Update WA PIC
+                if (typeof updateWaPic === 'function') {
+                    updateWaPic();
+                }
+                
+                // Update daerah
+                if (typeof updateDaerahCombined === 'function') {
+                    updateDaerahCombined();
+                }
+                
+                // Tunggu sebentar untuk memastikan semua update selesai
+                setTimeout(() => {
                     // Buat FormData baru dari form untuk memastikan semua nilai terbaru terkirim
                     const freshFormData = new FormData(form);
                     
@@ -200,20 +221,61 @@ function confirmUpload() {
                     const csrfInput = form.querySelector('input[name="_token"]');
                     const csrfToken = csrfInput ? csrfInput.value : null;
                     
+                    if (!csrfToken) {
+                        alert('CSRF token tidak ditemukan. Silakan refresh halaman dan coba lagi.');
+                        return;
+                    }
+                    
                     // Ensure CSRF token is in the FormData
-                    if (csrfToken && !freshFormData.has('_token')) {
+                    if (!freshFormData.has('_token')) {
                         freshFormData.append('_token', csrfToken);
                     }
                     
-                    // Debug: Log form data yang akan dikirim
-                    console.log('Sending form data:');
-                    for (let [key, value] of freshFormData.entries()) {
-                        if (key !== 'logo_merchant') {
-                            console.log(key + ':', value);
-                        } else {
-                            console.log(key + ':', value instanceof File ? value.name : 'File');
+                    // Pastikan kategori ada di FormData (force update)
+                    if (kategoriInput.value) {
+                        freshFormData.set('kategori', kategoriInput.value);
+                    }
+                    
+                    // Pastikan link_blanjapoin terisi jika ada code
+                    const linkCode = document.getElementById('linkBlanjapoinCode');
+                    const linkFull = document.getElementById('linkBlanjapoinFull');
+                    if (linkCode && linkCode.value && linkFull) {
+                        if (typeof updateLinkBlanjapoin === 'function') {
+                            updateLinkBlanjapoin();
+                        }
+                        if (linkFull.value) {
+                            freshFormData.set('link_blanjapoin', linkFull.value);
                         }
                     }
+                    
+                    // Pastikan wa_pic terisi jika ada code
+                    const waCode = document.getElementById('waPicCode');
+                    const waFull = document.getElementById('waPicFull');
+                    if (waCode && waCode.value && waFull) {
+                        if (typeof updateWaPic === 'function') {
+                            updateWaPic();
+                        }
+                        if (waFull.value) {
+                            freshFormData.set('wa_pic', waFull.value);
+                        }
+                    }
+                    
+                    // Pastikan daerah terisi
+                    const daerahCombined = document.getElementById('daerahCombined');
+                    if (daerahCombined && daerahCombined.value) {
+                        freshFormData.set('daerah', daerahCombined.value);
+                    }
+                    
+                    // Debug: Log form data yang akan dikirim
+                    console.log('=== SENDING FORM DATA ===');
+                    for (let [key, value] of freshFormData.entries()) {
+                        if (key !== 'logo_merchant' && key !== 'ktp_pic') {
+                            console.log(key + ':', value);
+                        } else {
+                            console.log(key + ':', value instanceof File ? `File: ${value.name} (${value.size} bytes)` : 'File');
+                        }
+                    }
+                    console.log('========================');
                     
                     fetch(form.action, {
                         method: 'POST',
@@ -225,12 +287,30 @@ function confirmUpload() {
                         }
                     })
                     .then(response => {
+                        // Cek status code terlebih dahulu
                         if (!response.ok) {
-                            return response.text().then(text => {
-                                throw new Error(`HTTP ${response.status}: ${text}`);
+                            // Coba parse sebagai JSON dulu
+                            return response.json().then(data => {
+                                // Jika berhasil parse JSON, throw dengan data
+                                throw { response: response, data: data };
+                            }).catch(() => {
+                                // Jika bukan JSON, return text
+                                return response.text().then(text => {
+                                    throw { response: response, text: text };
+                                });
                             });
                         }
-                        return response.json();
+                        
+                        // Cek content type
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            return response.json();
+                        } else {
+                            return response.text().then(text => {
+                                console.error('Non-JSON response:', text);
+                                throw new Error(`Server returned non-JSON response: ${text.substring(0, 200)}`);
+                            });
+                        }
                     })
                     .then(data => {
                         if (data.success) {
@@ -247,14 +327,44 @@ function confirmUpload() {
                                 location.reload();
                             }, 300);
                         } else {
-                            alert('Gagal menyimpan data: ' + (data.message || 'Unknown error'));
+                            // Handle validation errors
+                            let errorMessage = 'Gagal menyimpan data';
+                            if (data.message) {
+                                errorMessage += ': ' + data.message;
+                            }
+                            if (data.errors) {
+                                const errorList = Object.values(data.errors).flat().join('\n');
+                                errorMessage += '\n\n' + errorList;
+                            }
+                            alert(errorMessage);
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Terjadi kesalahan saat menyimpan data.\n\n' + error.message);
+                        
+                        // Handle different error types
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
+                        
+                        if (error.data) {
+                            // Error dari server dengan data JSON
+                            if (error.data.message) {
+                                errorMessage = error.data.message;
+                            }
+                            if (error.data.errors) {
+                                const errorList = Object.values(error.data.errors).flat().join('\n');
+                                errorMessage += '\n\n' + errorList;
+                            }
+                        } else if (error.text) {
+                            // Error dengan text response
+                            errorMessage += '\n\n' + error.text.substring(0, 500);
+                        } else if (error.message) {
+                            // Standard error
+                            errorMessage += '\n\n' + error.message;
+                        }
+                        
+                        alert(errorMessage);
                     });
-                }
+                }, 100); // Delay 100ms untuk memastikan semua update selesai
             }, 300);
         } else if (uploadDataType === 'Keyword') {
             // Handle Keyword upload - submit form via AJAX

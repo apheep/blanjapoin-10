@@ -34,25 +34,59 @@ Route::get('/', function () {
         ->distinct()
         ->pluck('daerah');
     
-    // Ekstrak hanya kabupaten/kota dari daerah
-    // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+    // Ekstrak hanya kabupaten/kota dari daerah (bukan kecamatan)
+    // Format bisa: "Kecamatan, Kabupaten, Provinsi" atau "Beji, Kota Depok, Jawa Barat" atau "Kabupaten, Provinsi" atau "Kota/Kabupaten"
     $locations = $allDaerah->map(function($daerah) {
         $daerah = trim($daerah);
         
-        // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+        // Jika ada koma, parse bagian-bagiannya
         if (strpos($daerah, ',') !== false) {
-            $parts = explode(',', $daerah);
-            $kabupatenKota = trim($parts[0]);
+            $parts = array_map('trim', explode(',', $daerah));
+            $partsCount = count($parts);
+            
+            // Jika ada 3 bagian atau lebih: format biasanya "Kecamatan, Kabupaten/Kota, Provinsi"
+            // Ambil bagian kedua (index 1) yang biasanya adalah kabupaten/kota
+            if ($partsCount >= 3) {
+                $kabupatenKota = $parts[1]; // Ambil bagian kedua
+            }
+            // Jika ada 2 bagian
+            else if ($partsCount == 2) {
+                $firstPart = $parts[0];
+                $secondPart = $parts[1];
+                
+                // Cek apakah bagian pertama adalah kecamatan (dengan atau tanpa kata "Kecamatan")
+                // Jika bagian pertama tidak mengandung kata "Kota" atau "Kabupaten", kemungkinan besar itu kecamatan
+                $isFirstPartKecamatan = preg_match('/^Kecamatan\s+/i', $firstPart) || 
+                                       (!preg_match('/^(Kota|Kabupaten)\s+/i', $firstPart) && 
+                                        !preg_match('/^(Kota|Kabupaten)\s+/i', $secondPart));
+                
+                if ($isFirstPartKecamatan) {
+                    // Jika bagian pertama adalah kecamatan, ambil bagian kedua (kabupaten/kota)
+                    $kabupatenKota = $secondPart;
+                } else {
+                    // Jika bagian pertama bukan kecamatan, ambil bagian pertama (kabupaten/kota)
+                    $kabupatenKota = $firstPart;
+                }
+            }
+            // Jika hanya 1 bagian (tidak mungkin, tapi untuk safety)
+            else {
+                $kabupatenKota = trim($parts[0]);
+            }
             
             // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
-            $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+            $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', trim($kabupatenKota));
             
-            return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+            return $kabupatenKota ?: null;
         }
         
         // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
         if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
             return trim($matches[1]);
+        }
+        
+        // Cek apakah dimulai dengan "Kecamatan", jika ya skip (karena kita tidak mau kecamatan)
+        if (preg_match('/^Kecamatan\s+/i', $daerah)) {
+            return null; // Skip kecamatan
         }
         
         // Jika tidak ada format khusus, gunakan seluruhnya
@@ -147,25 +181,65 @@ Route::middleware(['auth'])->group(function () {
             ->distinct()
             ->pluck('daerah');
         
-        // Ekstrak hanya kabupaten/kota dari daerah
-        // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+        // Ekstrak hanya kabupaten/kota dari daerah (bukan kecamatan)
+        // Format bisa: "Kecamatan, Kabupaten, Provinsi" atau "Beji, Kota Depok, Jawa Barat" atau "Kabupaten, Provinsi" atau "Kota/Kabupaten"
         $locations = $allDaerah->map(function($daerah) {
             $daerah = trim($daerah);
             
-            // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+            // Jika ada koma, parse bagian-bagiannya
             if (strpos($daerah, ',') !== false) {
-                $parts = explode(',', $daerah);
-                $kabupatenKota = trim($parts[0]);
+                $parts = array_map('trim', explode(',', $daerah));
+                $partsCount = count($parts);
+                
+                // Jika ada 3 bagian atau lebih: format biasanya "Kecamatan, Kabupaten/Kota, Provinsi"
+                // Ambil bagian kedua (index 1) yang biasanya adalah kabupaten/kota
+                if ($partsCount >= 3) {
+                    $kabupatenKota = $parts[1]; // Ambil bagian kedua
+                }
+                // Jika ada 2 bagian
+                else if ($partsCount == 2) {
+                    $firstPart = $parts[0];
+                    $secondPart = $parts[1];
+                    
+                    // Cek apakah bagian pertama atau kedua mengandung "Kota" atau "Kabupaten"
+                    $firstHasKotaKabupaten = preg_match('/^(Kota|Kabupaten)\s+/i', $firstPart);
+                    $secondHasKotaKabupaten = preg_match('/^(Kota|Kabupaten)\s+/i', $secondPart);
+                    
+                    if ($firstHasKotaKabupaten) {
+                        // Jika bagian pertama mengandung "Kota" atau "Kabupaten", ambil bagian pertama
+                        $kabupatenKota = $firstPart;
+                    } else if ($secondHasKotaKabupaten) {
+                        // Jika bagian kedua mengandung "Kota" atau "Kabupaten", ambil bagian kedua
+                        // (bagian pertama kemungkinan besar adalah kecamatan)
+                        $kabupatenKota = $secondPart;
+                    } else if (preg_match('/^Kecamatan\s+/i', $firstPart)) {
+                        // Jika bagian pertama dimulai dengan "Kecamatan", ambil bagian kedua
+                        $kabupatenKota = $secondPart;
+                    } else {
+                        // Jika tidak ada yang jelas, asumsikan bagian pertama adalah kecamatan
+                        // Ambil bagian kedua sebagai kabupaten/kota
+                        $kabupatenKota = $secondPart;
+                    }
+                }
+                // Jika hanya 1 bagian (tidak mungkin, tapi untuk safety)
+                else {
+                    $kabupatenKota = trim($parts[0]);
+                }
                 
                 // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
-                $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+                $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', trim($kabupatenKota));
                 
-                return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+                return $kabupatenKota ?: null;
             }
             
             // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
             if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
                 return trim($matches[1]);
+            }
+            
+            // Cek apakah dimulai dengan "Kecamatan", jika ya skip (karena kita tidak mau kecamatan)
+            if (preg_match('/^Kecamatan\s+/i', $daerah)) {
+                return null; // Skip kecamatan
             }
             
             // Jika tidak ada format khusus, gunakan seluruhnya
