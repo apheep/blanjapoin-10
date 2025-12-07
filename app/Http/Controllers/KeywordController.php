@@ -8,6 +8,7 @@ use App\Exports\KeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -32,6 +33,10 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'subsidy_enabled'   => 'nullable|in:0,1',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'diamond_enabled'   => 'nullable|in:0,1',
+                'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
@@ -39,6 +44,9 @@ class KeywordController extends Controller
                 'stock'             => 'nullable|integer|min:0',
 
                 'status'            => 'nullable|in:approve,pending,reject',
+            ], [
+                'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
+                'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
@@ -73,6 +81,20 @@ class KeywordController extends Controller
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
             }
 
+            // Handle subsidy amount
+            $subsidyAmount = null;
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
+                // Hapus format rupiah (titik sebagai pemisah ribuan)
+                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
+                $subsidyAmount = (float) $subsidyAmount;
+            }
+
+            // Handle diamond amount
+            $diamondAmount = null;
+            if ($request->diamond_enabled == '1' && $request->diamond_amount) {
+                $diamondAmount = (int) $request->diamond_amount;
+            }
+
             // Date input sudah dalam format YYYY-MM-DD dari date picker
             $startDate = $request->start_date;
             $endDate = $request->end_date;
@@ -91,6 +113,8 @@ class KeywordController extends Controller
                 'cta_link'      => $request->cta_link,
                 'redeem'        => $request->redeem,
                 'diskon'        => $diskon,
+                'subsidy_amount'=> $subsidyAmount,
+                'diamond_amount'=> $diamondAmount,
                 'skb'           => $request->skb,
                 'start_date'    => $startDate,
                 'end_date'      => $endDate,
@@ -144,12 +168,19 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'subsidy_enabled'   => 'nullable|in:0,1',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'diamond_enabled'   => 'nullable|in:0,1',
+                'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
+            ], [
+                'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
+                'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
@@ -172,6 +203,20 @@ class KeywordController extends Controller
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
             }
 
+            // Handle subsidy amount
+            $subsidyAmount = null;
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
+                // Hapus format rupiah (titik sebagai pemisah ribuan)
+                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
+                $subsidyAmount = (float) $subsidyAmount;
+            }
+
+            // Handle diamond amount
+            $diamondAmount = null;
+            if ($request->diamond_enabled == '1' && $request->diamond_amount) {
+                $diamondAmount = (int) $request->diamond_amount;
+            }
+
             // Handle image upload
             if ($request->hasFile('image')) {
                 // Delete old image if exists
@@ -191,6 +236,8 @@ class KeywordController extends Controller
                 'cta_link'      => $request->cta_link,
                 'redeem'        => $request->redeem,
                 'diskon'        => $diskon,
+                'subsidy_amount'=> $subsidyAmount,
+                'diamond_amount'=> $diamondAmount,
                 'skb'           => $request->skb,
                 'start_date'    => $request->start_date,
                 'end_date'      => $request->end_date,
@@ -304,6 +351,10 @@ class KeywordController extends Controller
 
         $searchResults = Keyword::with('merchant')
             ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
                 $query->where(function ($subQuery) use ($searchTerm) {
                     $subQuery->where('nama_produk', 'like', "%{$searchTerm}%")
@@ -372,5 +423,37 @@ class KeywordController extends Controller
     {
         $fileName = 'keywords_' . date('Y-m-d_His') . '.xlsx';
         return Excel::download(new KeywordsExport, $fileName);
+    }
+
+    /**
+     * Toggle keyword status (is_active)
+     */
+    public function toggleStatus(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $keyword = Keyword::findOrFail($id);
+            $keyword->is_active = $keyword->is_active ? 0 : 1;
+            $keyword->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status keyword berhasil diperbarui',
+                'is_active' => $keyword->is_active,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling keyword status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

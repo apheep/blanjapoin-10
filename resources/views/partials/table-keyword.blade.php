@@ -16,6 +16,7 @@
                     @if(Auth::check() && Auth::user()->can_approve == 0)
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     @endif
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Keyword ID</th>
@@ -93,6 +94,16 @@
                         </td>
                         @endif
 
+                        {{-- Status Toggle --}}
+                        <td class="px-4 py-4">
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Status">
+                                <input type="checkbox" 
+                                       data-keyword-id="{{ $keyword->id }}" 
+                                       class="sr-only peer toggle-keyword-status" 
+                                       {{ $keyword->is_active ? 'checked' : '' }} />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                            </label>
+                        </td>
 
                         <td class="px-4 py-4 text-sm text-gray-900">
                             <div class="font-medium">{{ $keyword->merchant->nama_merchant ?? '-' }}</div>
@@ -143,14 +154,14 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="15" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="16" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data keyword.
                         </td>
                     </tr>
                 @endforelse
 
                 <tr id="keyword-filter-empty-row" class="hidden">
-                    <td colspan="15" class="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colspan="16" class="px-4 py-6 text-center text-sm text-gray-500">
                         Tidak ada keyword pada rentang tanggal yang dipilih.
                     </td>
                 </tr>
@@ -203,3 +214,63 @@
         </div>
     @endif
 </div>
+
+<script>
+    // Toggle Keyword Status
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach toggle listeners for server-rendered checkboxes
+        document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const keywordId = e.target.dataset.keywordId;
+                if (!keywordId) return;
+                toggleKeywordStatus(keywordId);
+            });
+        });
+    });
+
+    // Function to toggle keyword status
+    async function toggleKeywordStatus(keywordId) {
+        try {
+            const response = await fetch(`/api/keywords/${keywordId}/toggle-status`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Gagal memperbarui status');
+            }
+
+            // Success - checkbox already toggled by user, no need to update UI
+            console.log('Status keyword berhasil diperbarui');
+        } catch (error) {
+            console.error('Error toggling keyword status:', error);
+            // Revert checkbox on error
+            const checkbox = document.querySelector(`.toggle-keyword-status[data-keyword-id="${keywordId}"]`);
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+            }
+            alert('Gagal memperbarui status: ' + error.message);
+        }
+    }
+
+    // Re-attach listeners after AJAX table reload
+    if (typeof attachKeywordPaginationHandlers !== 'undefined') {
+        const originalAttach = attachKeywordPaginationHandlers;
+        attachKeywordPaginationHandlers = function() {
+            originalAttach();
+            document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
+                toggle.addEventListener('change', (e) => {
+                    const keywordId = e.target.dataset.keywordId;
+                    if (!keywordId) return;
+                    toggleKeywordStatus(keywordId);
+                });
+            });
+        };
+    }
+</script>
