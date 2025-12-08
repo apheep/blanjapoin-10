@@ -828,10 +828,71 @@ class MerchantController extends Controller
             $query->whereDate('created_at', $date);
         }
         
+        // Sorting
+        $sortBy = $request->get('sort_by');
+        $sortOrder = $request->get('sort_order', 'asc');
+        
+        if ($sortBy === 'no') {
+            // Sort by ID: asc = smallest first (1, 2, 3...), desc = largest first (...3, 2, 1)
+            // Clear any default ordering first
+            $query->reorder();
+            $query->orderBy('withdraw_requests.id', $sortOrder);
+        } elseif ($sortBy === 'status') {
+            // Custom sorting dengan 3 state: approved first, pending first, rejected first (sama dengan withdraw approval)
+            if ($sortOrder === 'asc') {
+                // Klik 1: Approve di atas
+                $query->orderByRaw("CASE 
+                    WHEN status = 'approved' THEN 1 
+                    WHEN status = 'rejected' THEN 2 
+                    WHEN status = 'pending' THEN 3 
+                    ELSE 4 
+                END");
+            } elseif ($sortOrder === 'desc') {
+                // Klik 2: Waiting di atas
+                $query->orderByRaw("CASE 
+                    WHEN status = 'pending' THEN 1 
+                    WHEN status = 'approved' THEN 2 
+                    WHEN status = 'rejected' THEN 3 
+                    ELSE 4 
+                END");
+            } else {
+                // Klik 3: Reject di atas (sort_order = 'reject')
+                $query->orderByRaw("CASE 
+                    WHEN status = 'rejected' THEN 1 
+                    WHEN status = 'approved' THEN 2 
+                    WHEN status = 'pending' THEN 3 
+                    ELSE 4 
+                END");
+            }
+        } elseif ($sortBy === 'nama') {
+            $query->orderBy('nama', $sortOrder);
+        } elseif ($sortBy === 'metode') {
+            // Custom sorting: Bank first (bca, bni, bri, mandiri) then E-Wallet (linkaja, dana)
+            if ($sortOrder === 'asc') {
+                $query->orderByRaw("CASE 
+                    WHEN metode_penarikan IN ('bca', 'bni', 'bri', 'mandiri') THEN 1 
+                    WHEN metode_penarikan IN ('linkaja', 'dana') THEN 2 
+                    ELSE 3 
+                END")
+                ->orderBy('metode_penarikan', 'asc');
+            } else {
+                // E-Wallet first
+                $query->orderByRaw("CASE 
+                    WHEN metode_penarikan IN ('linkaja', 'dana') THEN 1 
+                    WHEN metode_penarikan IN ('bca', 'bni', 'bri', 'mandiri') THEN 2 
+                    ELSE 3 
+                END")
+                ->orderBy('metode_penarikan', 'asc');
+            }
+        } elseif ($sortBy === 'tanggal') {
+            $query->orderBy('created_at', $sortOrder);
+        } else {
+            // Default: order by created_at desc
+            $query->orderBy('created_at', 'desc');
+        }
+        
         // Get actual withdraw history from database
-        $withdrawHistory = $query->orderBy('created_at', 'desc')
-            ->paginate(10)
-            ->withQueryString();
+        $withdrawHistory = $query->paginate(10)->withQueryString();
 
         return view('partials_dash.historywithdraw', [
             'merchant' => $merchant,
@@ -1027,8 +1088,77 @@ class MerchantController extends Controller
             $query->whereDate('created_at', $date);
         }
         
-        // Order by created_at desc and paginate
-        $withdraws = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+        // Sorting
+        $sortBy = $request->get('sort_by');
+        $sortOrder = $request->get('sort_order', 'asc');
+        
+        if ($sortBy === 'no') {
+            // Sort by ID: asc = smallest first (1, 2, 3...), desc = largest first (...3, 2, 1)
+            // Clear any default ordering first
+            $query->reorder();
+            $query->orderBy('withdraw_requests.id', $sortOrder);
+        } elseif ($sortBy === 'status') {
+            // Custom sorting dengan 3 state: approved first, pending first, rejected first
+            if ($sortOrder === 'asc') {
+                // Klik 1: Approve di atas
+                $query->orderByRaw("CASE 
+                    WHEN status = 'approved' THEN 1 
+                    WHEN status = 'rejected' THEN 2 
+                    WHEN status = 'pending' THEN 3 
+                    ELSE 4 
+                END");
+            } elseif ($sortOrder === 'desc') {
+                // Klik 2: Waiting di atas
+                $query->orderByRaw("CASE 
+                    WHEN status = 'pending' THEN 1 
+                    WHEN status = 'approved' THEN 2 
+                    WHEN status = 'rejected' THEN 3 
+                    ELSE 4 
+                END");
+            } else {
+                // Klik 3: Reject di atas (sort_order = 'reject')
+                $query->orderByRaw("CASE 
+                    WHEN status = 'rejected' THEN 1 
+                    WHEN status = 'approved' THEN 2 
+                    WHEN status = 'pending' THEN 3 
+                    ELSE 4 
+                END");
+            }
+        } elseif ($sortBy === 'nama') {
+            $query->orderBy('nama', $sortOrder);
+        } elseif ($sortBy === 'merchant') {
+            $query->leftJoin('merchants', 'withdraw_requests.merchant_id', '=', 'merchants.id')
+                  ->orderBy('merchants.nama_merchant', $sortOrder)
+                  ->select('withdraw_requests.*')
+                  ->groupBy('withdraw_requests.id');
+        } elseif ($sortBy === 'jumlah') {
+            $query->orderBy('jumlah', $sortOrder);
+        } elseif ($sortBy === 'tanggal') {
+            $query->orderBy('created_at', $sortOrder);
+        } elseif ($sortBy === 'metode') {
+            // Custom sorting: Bank first (bca, bni, bri, mandiri) then E-Wallet (linkaja, dana)
+            if ($sortOrder === 'asc') {
+                $query->orderByRaw("CASE 
+                    WHEN metode_penarikan IN ('bca', 'bni', 'bri', 'mandiri') THEN 1 
+                    WHEN metode_penarikan IN ('linkaja', 'dana') THEN 2 
+                    ELSE 3 
+                END")
+                ->orderBy('metode_penarikan', 'asc');
+            } else {
+                // E-Wallet first
+                $query->orderByRaw("CASE 
+                    WHEN metode_penarikan IN ('linkaja', 'dana') THEN 1 
+                    WHEN metode_penarikan IN ('bca', 'bni', 'bri', 'mandiri') THEN 2 
+                    ELSE 3 
+                END")
+                ->orderBy('metode_penarikan', 'asc');
+            }
+        } else {
+            // Default: order by created_at asc (terbaru di bawah/terakhir)
+            $query->orderBy('created_at', 'asc');
+        }
+        
+        $withdraws = $query->paginate(10)->withQueryString();
 
         return view('withdraw-approval', [
             'withdraws' => $withdraws,

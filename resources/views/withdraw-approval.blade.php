@@ -15,15 +15,31 @@
     
     @include('partials.head')
     <style>
+        /* Prevent layout shift during font loading */
+        @font-face {
+            font-family: 'Poppins';
+            font-display: swap;
+        }
+        
+        /* Reserve space for content to prevent layout shift */
+        .dashboard-entrance::before {
+            content: '';
+            display: block;
+            height: 0;
+            visibility: hidden;
+        }
+        
         /* Font optimization for Poppins */
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;    
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             font-feature-settings: 'kern' 1;
             letter-spacing: -0.01em;
             animation: fadeIn 0.3s ease-in-out;
+            /* Prevent layout shift */
+            min-height: 100vh;
         }
         /* Prevent horizontal scroll on mobile */
         html, body {
@@ -32,6 +48,27 @@
         }
         * {
             box-sizing: border-box;
+        }
+        
+        /* Prevent layout shift for main content */
+        main {
+            min-height: calc(100vh - 200px);
+            contain: layout style;
+        }
+        
+        /* Prevent layout shift for table */
+        table {
+            table-layout: auto;
+            width: 100%;
+        }
+        
+        thead {
+            position: relative;
+        }
+        
+        /* Prevent layout shift during loading */
+        .dashboard-entrance {
+            will-change: opacity, transform;
         }
         /* Animasi fade-in untuk halaman */
         @keyframes fadeIn {
@@ -46,9 +83,144 @@
             opacity: 0;
             transform: translateY(12px);
             transition: opacity 360ms ease-out, transform 360ms ease-out;
+            /* Prevent layout shift */
+            min-height: 400px;
+            /* Use will-change for better performance */
+            will-change: opacity, transform;
         }
         .dashboard-entrance.is-visible {
             opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Prevent FOUC (Flash of Unstyled Content) */
+        html {
+            visibility: visible;
+        }
+        
+        /* Ensure stable rendering */
+        body {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        
+        /* Ensure table container has stable height (only during sorting) */
+        #tableContainer {
+            contain: layout;
+        }
+        
+        /* Prevent layout shift for table rows */
+        tbody tr {
+            contain: layout;
+        }
+        
+        /* Dropdown animations */
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dropdown-menu {
+            animation: dropdownFadeIn 0.15s ease-out;
+        }
+        
+        .chevron-rotate {
+            transform: rotate(180deg);
+        }
+        
+        /* Dropdown positioning for bottom rows */
+        .dropdown-up {
+            transform-origin: bottom center;
+        }
+        
+        .dropdown-menu {
+            transform-origin: top center;
+        }
+        
+        /* Ensure dropdown is above table and doesn't get clipped */
+        [id^="statusDropdown"] {
+            position: relative;
+            z-index: 1;
+        }
+        
+        [id^="dropdownMenu"] {
+            position: absolute !important;
+            z-index: 10000 !important;
+            margin-top: 0.5rem !important;
+        }
+        
+        /* Ensure table containers don't clip dropdown */
+        table, tbody, tr {
+            overflow: visible !important;
+        }
+        
+        /* Table cells should allow overflow but maintain structure */
+        td {
+            overflow: visible !important;
+            position: relative;
+        }
+        
+        /* Fix for table overflow */
+        .overflow-x-auto {
+            overflow-y: visible !important;
+        }
+        
+        /* Ensure table container allows dropdowns to show */
+        #tableContainer {
+            overflow: visible !important;
+        }
+        
+        /* Prevent dropdown overlap - ensure proper stacking */
+        [id^="statusDropdown"]:has([id^="dropdownMenu"]:not(.hidden)) {
+            z-index: 10001 !important;
+        }
+        
+        /* Modal animations */
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .modal-backdrop {
+            animation: modalFadeIn 0.2s ease-out;
+        }
+        
+        .modal-content {
+            animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* Button hover animations */
+        .btn-detail {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-detail:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.15);
+        }
+        
+        .btn-detail:active {
             transform: translateY(0);
         }
     </style>
@@ -101,22 +273,63 @@
 
         <!-- Withdraws Table -->
         @if($withdraws->count() > 0)
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+        <div class="bg-white rounded-xl shadow" style="overflow: visible; position: relative; isolation: isolate;" id="tableContainer">
+            <div id="sortLoadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+                <div class="flex flex-col items-center gap-2">
+                    <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+                    <span class="text-xs text-gray-600">Mengurutkan...</span>
+                </div>
+            </div>
+                <div class="overflow-x-auto" style="overflow-y: visible; position: relative;">
+                    <table class="min-w-full divide-y divide-gray-200" style="position: relative;">
                         <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Metode</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <button onclick="handleSort('no')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                        <span>No</span>
+                                        <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconNo"></i>
+                                    </button>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <button onclick="handleSort('status')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                        <span>Status</span>
+                                        <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconStatus"></i>
+                                    </button>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <button onclick="handleSort('nama')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                        <span>Nama</span>
+                                        <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconNama"></i>
+                                    </button>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <button onclick="handleSort('merchant')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                        <span>Merchant</span>
+                                        <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconMerchant"></i>
+                                    </button>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <button onclick="handleSort('metode')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                        <span>Metode</span>
+                                        <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconMetode"></i>
+                                    </button>
+                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No. Rek/E-Wallet</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Jumlah</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <button onclick="handleSort('jumlah')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                        <span>Jumlah</span>
+                                        <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconJumlah"></i>
+                                    </button>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <button onclick="handleSort('tanggal')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                        <span>Tanggal</span>
+                                        <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconTanggal"></i>
+                                    </button>
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="withdrawTableBody" class="bg-white divide-y divide-gray-200">
+                        <tbody id="withdrawTableBody" class="bg-white divide-y divide-gray-200" style="position: relative; overflow: visible;">
                             @foreach($withdraws as $withdraw)
                                 @php
                                     $isEWallet = in_array($withdraw->metode_penarikan, ['linkaja', 'dana']);
@@ -128,69 +341,80 @@
                                         default => 'bg-gray-100 text-gray-800'
                                     };
                                     $statusText = match($withdraw->status) {
-                                        'approved' => 'Disetujui',
+                                        'approved' => 'Approve',
                                         'completed' => 'Berhasil',
                                         'pending' => 'Pending',
-                                        'rejected' => 'Ditolak',
+                                        'rejected' => 'Reject',
                                         default => $withdraw->status
                                     };
                                 @endphp
                                 <tr class="hover:bg-gray-50 transition-colors withdraw-row" data-date="{{ $withdraw->created_at->format('Y-m-d') }}">
-                                    <td class="px-4 py-4 text-sm font-medium text-gray-900">{{ $withdraws->firstItem() + $loop->index }}</td>
-                                    <td class="px-4 py-4 text-sm text-gray-900">
-                                        <div class="font-medium">{{ $withdraw->nama }}</div>
+                                    <td class="px-4 py-4 text-sm font-medium text-gray-900">
+                                        @if(request()->get('sort_by') === 'no' && request()->get('sort_order') === 'desc')
+                                            {{ $withdraws->total() - ($withdraws->firstItem() + $loop->index) + 1 }}
+                                        @else
+                                            {{ $withdraws->firstItem() + $loop->index }}
+                                        @endif
                                     </td>
-                                    <td class="px-4 py-4">
+                                    <td class="px-4 py-4" style="position: relative;">
                                         @if($withdraw->status === 'pending')
                                             @php
                                                 $isEWallet = in_array($withdraw->metode_penarikan, ['linkaja', 'dana']);
                                                 $displayAccount = $isEWallet ? '+62' . ($withdraw->no_ewallet ?? '') : ($withdraw->no_rekening ?? '');
                                             @endphp
-                                            <div class="flex items-center gap-2">
-                                                <button type="button" onclick="openApproveWithdrawModal({{ $withdraw->id }}, {
-                                                    nama: '{{ addslashes($withdraw->nama) }}',
-                                                    merchant: '{{ addslashes($withdraw->merchant->nama_merchant ?? '-') }}',
-                                                    method: '{{ addslashes($withdraw->metode_penarikan_name) }}',
-                                                    account: '{{ addslashes($displayAccount) }}',
-                                                    amount: 'Rp {{ number_format($withdraw->jumlah, 0, ',', '.') }}',
-                                                    date: '{{ $withdraw->created_at->format('d M Y') }}'
-                                                })" 
-                                                        class="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors">
-                                                    <i class="fas fa-check mr-1"></i>Approve
+                                            <div class="relative" id="statusDropdown{{ $withdraw->id }}" style="position: relative; z-index: 1; isolation: isolate;">
+                                                <button type="button" 
+                                                        onclick="toggleStatusDropdown({{ $withdraw->id }})" 
+                                                        class="px-3 py-1.5 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full hover:bg-yellow-200 transition-all duration-200 hover:scale-105 flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-yellow-300 relative z-10">
+                                                    <span>Waiting</span>
+                                                    <i class="fas fa-chevron-down text-[10px] transition-transform duration-200" id="chevronIcon{{ $withdraw->id }}"></i>
                                                 </button>
-                                                <button type="button" onclick="openRejectWithdrawModal({{ $withdraw->id }}, {
-                                                    nama: '{{ addslashes($withdraw->nama) }}',
-                                                    merchant: '{{ addslashes($withdraw->merchant->nama_merchant ?? '-') }}',
-                                                    method: '{{ addslashes($withdraw->metode_penarikan_name) }}',
-                                                    account: '{{ addslashes($displayAccount) }}',
-                                                    amount: 'Rp {{ number_format($withdraw->jumlah, 0, ',', '.') }}',
-                                                    date: '{{ $withdraw->created_at->format('d M Y') }}'
-                                                })" 
-                                                        class="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors">
-                                                    <i class="fas fa-times mr-1"></i>Reject
-                                                </button>
+                                                <div id="dropdownMenu{{ $withdraw->id }}"
+                                                     class="hidden absolute left-0 top-full bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden w-[120px] dropdown-menu" 
+                                                     style="position: absolute !important; z-index: 10000 !important; margin-top: 0.5rem !important; transition: all 0.2s ease-out;">
+                                                    <button type="button" 
+                                                            onclick="openApproveWithdrawModal({{ $withdraw->id }}, {
+                                                                nama: '{{ addslashes($withdraw->nama) }}',
+                                                                merchant: '{{ addslashes($withdraw->merchant->nama_merchant ?? '-') }}',
+                                                                method: '{{ addslashes($withdraw->metode_penarikan_name) }}',
+                                                                account: '{{ addslashes($displayAccount) }}',
+                                                                amount: 'Rp {{ number_format($withdraw->jumlah, 0, ',', '.') }}',
+                                                                date: '{{ $withdraw->created_at->format('d M Y') }}'
+                                                            }); closeStatusDropdown({{ $withdraw->id }});" 
+                                                            class="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors duration-100 flex items-center gap-2 focus:outline-none">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                                        <span>Approve</span>
+                                                    </button>
+                                                    <button type="button" 
+                                                            onclick="openRejectWithdrawModal({{ $withdraw->id }}, {
+                                                                nama: '{{ addslashes($withdraw->nama) }}',
+                                                                merchant: '{{ addslashes($withdraw->merchant->nama_merchant ?? '-') }}',
+                                                                method: '{{ addslashes($withdraw->metode_penarikan_name) }}',
+                                                                account: '{{ addslashes($displayAccount) }}',
+                                                                amount: 'Rp {{ number_format($withdraw->jumlah, 0, ',', '.') }}',
+                                                                date: '{{ $withdraw->created_at->format('d M Y') }}'
+                                                            }); closeStatusDropdown({{ $withdraw->id }});" 
+                                                            class="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors duration-100 flex items-center gap-2 focus:outline-none border-t border-gray-100">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                        <span>Reject</span>
+                                                    </button>
+                                                </div>
                                             </div>
                                         @else
-                                            <div class="flex flex-col gap-1.5">
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }} inline-block w-fit">{{ $statusText }}</span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }} inline-block w-fit transition-all duration-200 hover:scale-105">{{ $statusText }}</span>
                                                 @if($withdraw->status === 'rejected' && $withdraw->dec_reject)
-                                                    <div class="relative group">
-                                                        <div class="flex items-start gap-1.5">
-                                                            <i class="fas fa-info-circle text-red-500 text-xs mt-0.5 flex-shrink-0"></i>
-                                                            <span class="text-xs text-red-600 italic max-w-xs line-clamp-2 break-words" title="{{ $withdraw->dec_reject }}">
-                                                                {{ strlen($withdraw->dec_reject) > 60 ? substr($withdraw->dec_reject, 0, 60) . '...' : $withdraw->dec_reject }}
-                                                            </span>
-                                                        </div>
-                                                        @if(strlen($withdraw->dec_reject) > 60)
-                                                            <div class="absolute left-0 top-full mt-2 z-20 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 max-w-sm shadow-xl">
-                                                                <div class="whitespace-normal break-words">{{ $withdraw->dec_reject }}</div>
-                                                                <div class="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
-                                                            </div>
-                                                        @endif
-                                                    </div>
+                                                    <button onclick="showRejectReasonModal('{{ addslashes($withdraw->dec_reject) }}', '{{ addslashes($withdraw->nama) }}')" 
+                                                            class="btn-detail px-2 py-1 text-xs font-normal text-red-500 hover:text-red-600 transition-colors duration-150 flex items-center gap-1">
+                                                        <i class="fas fa-info-circle text-[10px]"></i>
+                                                        <span>Detail</span>
+                                                    </button>
                                                 @endif
                                             </div>
                                         @endif
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-900">
+                                        <div class="font-medium">{{ $withdraw->nama }}</div>
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-700">{{ $withdraw->merchant->nama_merchant ?? '-' }}</td>
                                     <td class="px-4 py-4 text-sm text-gray-700">{{ $withdraw->metode_penarikan_name }}</td>
@@ -283,16 +507,49 @@
         @endif
     </main>
 
+    <!-- Modal for Reject Reason -->
+    <div id="rejectReasonModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto modal-content">
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-110">
+                        <i class="fas fa-times-circle text-red-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Alasan Penolakan</h3>
+                        <p class="text-xs text-gray-500" id="rejectReasonModalName"></p>
+                    </div>
+                </div>
+                <button onclick="closeRejectReasonModal()" class="text-gray-400 hover:text-gray-600 transition-all duration-200 hover:rotate-90 hover:scale-110">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="px-6 py-6">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 transition-all duration-300 hover:bg-red-100 hover:shadow-sm">
+                    <p class="text-sm text-gray-700 leading-relaxed" id="rejectReasonModalText"></p>
+                </div>
+            </div>
+            <div class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
+                <button onclick="closeRejectReasonModal()" class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium hover:scale-105 active:scale-95">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     @include('partials.validation-withdraw')
 
     <script>
-        // Dashboard entrance animation
+        // Dashboard entrance animation - prevent layout shift
         document.addEventListener('DOMContentLoaded', function() {
             const main = document.querySelector('.dashboard-entrance');
             if (main) {
-                setTimeout(() => {
-                    main.classList.add('is-visible');
-                }, 50);
+                // Ensure layout is stable before animation
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        main.classList.add('is-visible');
+                    }, 50);
+                });
             }
 
             // Flash message handling
@@ -410,6 +667,364 @@
         function clearSearch() {
             window.location.href = '{{ route("withdraw.approval") }}';
         }
+        
+        // Status dropdown functions
+        function toggleStatusDropdown(withdrawId) {
+            const dropdown = document.getElementById('dropdownMenu' + withdrawId);
+            const dropdownContainer = document.getElementById('statusDropdown' + withdrawId);
+            const chevron = document.getElementById('chevronIcon' + withdrawId);
+            
+            // Close all other dropdowns FIRST to prevent overlap
+            document.querySelectorAll('[id^="dropdownMenu"]').forEach(menu => {
+                if (menu.id !== 'dropdownMenu' + withdrawId) {
+                    menu.classList.add('hidden');
+                    menu.classList.remove('dropdown-menu');
+                    menu.style.zIndex = '';
+                }
+            });
+            
+            // Reset all chevrons
+            document.querySelectorAll('[id^="chevronIcon"]').forEach(icon => {
+                if (icon.id !== 'chevronIcon' + withdrawId) {
+                    icon.classList.remove('chevron-rotate');
+                }
+            });
+            
+            // Reset z-index of all containers
+            document.querySelectorAll('[id^="statusDropdown"]').forEach(container => {
+                if (container.id !== 'statusDropdown' + withdrawId) {
+                    container.style.zIndex = '';
+                }
+            });
+            
+            // Toggle current dropdown
+            if (dropdown && dropdownContainer) {
+                const isHidden = dropdown.classList.contains('hidden');
+                
+                if (isHidden) {
+                    // Set high z-index for active container
+                    dropdownContainer.style.zIndex = '10001';
+                    dropdown.style.zIndex = '10002';
+                    
+                    // Reset all positioning first
+                    dropdown.style.top = '';
+                    dropdown.style.bottom = '';
+                    dropdown.style.left = '';
+                    dropdown.style.right = '';
+                    dropdown.style.marginTop = '';
+                    dropdown.style.marginBottom = '';
+                    
+                    // Calculate positions
+                    const rect = dropdownContainer.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    // All dropdowns appear below button
+                    dropdown.style.top = '100%';
+                    dropdown.style.bottom = 'auto';
+                    dropdown.style.marginTop = '0.5rem';
+                    dropdown.style.marginBottom = '';
+                    dropdown.classList.remove('dropdown-up');
+                    
+                    // Ensure dropdown doesn't go beyond right edge
+                    if (rect.left + 120 > viewportWidth - 20) {
+                        dropdown.style.left = 'auto';
+                        dropdown.style.right = '0';
+                    } else {
+                        dropdown.style.left = '0';
+                        dropdown.style.right = 'auto';
+                    }
+                    
+                    // Check if dropdown would go below viewport
+                    const dropdownHeight = dropdown.offsetHeight || 80; // Approximate height
+                    if (rect.bottom + dropdownHeight + 8 > viewportHeight) {
+                        // Show above if there's not enough space below
+                        dropdown.style.top = 'auto';
+                        dropdown.style.bottom = '100%';
+                        dropdown.style.marginTop = '';
+                        dropdown.style.marginBottom = '0.5rem';
+                        dropdown.classList.add('dropdown-up');
+                    }
+                    
+                    // Now show dropdown
+                    dropdown.classList.remove('hidden');
+                    dropdown.classList.add('dropdown-menu');
+                } else {
+                    // Hide dropdown
+                    dropdown.classList.add('hidden');
+                    dropdown.classList.remove('dropdown-menu');
+                    dropdownContainer.style.zIndex = '';
+                    dropdown.style.zIndex = '';
+                }
+            }
+            
+            // Rotate chevron
+            if (chevron) {
+                chevron.classList.toggle('chevron-rotate');
+            }
+        }
+        
+        function closeStatusDropdown(withdrawId) {
+            const dropdown = document.getElementById('dropdownMenu' + withdrawId);
+            const dropdownContainer = document.getElementById('statusDropdown' + withdrawId);
+            const chevron = document.getElementById('chevronIcon' + withdrawId);
+            
+            if (dropdown) {
+                dropdown.classList.add('hidden');
+                dropdown.classList.remove('dropdown-menu');
+                dropdown.style.zIndex = '';
+            }
+            
+            if (dropdownContainer) {
+                dropdownContainer.style.zIndex = '';
+            }
+            
+            if (chevron) {
+                chevron.classList.remove('chevron-rotate');
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const clickedElement = event.target;
+            const isInsideDropdown = clickedElement.closest('[id^="statusDropdown"]') || 
+                                     clickedElement.closest('[id^="dropdownMenu"]');
+            
+            if (!isInsideDropdown) {
+                // Close all dropdowns
+                document.querySelectorAll('[id^="dropdownMenu"]').forEach(menu => {
+                    menu.classList.add('hidden');
+                    menu.classList.remove('dropdown-menu');
+                    menu.style.zIndex = '';
+                });
+                // Reset all containers z-index
+                document.querySelectorAll('[id^="statusDropdown"]').forEach(container => {
+                    container.style.zIndex = '';
+                });
+                // Reset all chevrons
+                document.querySelectorAll('[id^="chevronIcon"]').forEach(icon => {
+                    icon.classList.remove('chevron-rotate');
+                });
+            }
+        });
+        
+        // Sorting function with AJAX
+        function handleSort(column) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSort = urlParams.get('sort_by');
+            const currentOrder = urlParams.get('sort_order');
+            
+            let newSort = column;
+            let newOrder = 'asc';
+            
+            if (currentSort === column) {
+                if (column === 'status') {
+                    // Status: 3 states (asc -> desc -> reject -> reset)
+                    if (currentOrder === 'asc') {
+                        // Klik 2: desc (waiting first)
+                        newOrder = 'desc';
+                    } else if (currentOrder === 'desc') {
+                        // Klik 3: reject (reject first)
+                        newOrder = 'reject';
+                    } else {
+                        // Klik 4: reset
+                        newSort = null;
+                        newOrder = null;
+                    }
+                } else {
+                    // Other columns: 2 states (asc -> desc -> asc)
+                    if (currentOrder === 'asc') {
+                        newOrder = 'desc';
+                    } else {
+                        newOrder = 'asc';
+                    }
+                }
+            }
+            
+            // Update URL params
+            if (newSort) {
+                urlParams.set('sort_by', newSort);
+                urlParams.set('sort_order', newOrder);
+            } else {
+                urlParams.delete('sort_by');
+                urlParams.delete('sort_order');
+            }
+            
+            // Update icons immediately
+            updateSortIcons(column, newOrder);
+            
+            // Update URL without reload
+            window.history.pushState({}, '', '?' + urlParams.toString());
+            
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('sortLoadingOverlay');
+            const tableBody = document.getElementById('withdrawTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            if (loadingOverlay && tableBody && tableContainer) {
+                // Store current height to prevent layout shift
+                const currentHeight = tableContainer.offsetHeight;
+                tableContainer.style.minHeight = currentHeight + 'px';
+                
+                loadingOverlay.classList.remove('hidden');
+                
+                // Make AJAX request
+                fetch('{{ route("withdraw.approval") }}?' + urlParams.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html',
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse HTML response
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTableBody = doc.getElementById('withdrawTableBody');
+                    const newPaginationContainer = doc.querySelector('.bg-white.px-4.py-4.border-t.flex');
+                    
+                    if (newTableBody) {
+                        // Smooth transition
+                        tableBody.style.opacity = '0';
+                        tableBody.style.transition = 'opacity 0.2s';
+                        
+                        setTimeout(() => {
+                            // Replace table body content
+                            tableBody.innerHTML = newTableBody.innerHTML;
+                            
+                            // Replace pagination container if exists
+                            const currentPaginationContainer = document.querySelector('.bg-white.px-4.py-4.border-t.flex');
+                            if (currentPaginationContainer && newPaginationContainer) {
+                                currentPaginationContainer.outerHTML = newPaginationContainer.outerHTML;
+                            }
+                            
+                            // Re-initialize any event listeners if needed
+                            // (dropdowns will work because they use onclick attributes)
+                            
+                            // Restore opacity
+                            tableBody.style.opacity = '1';
+                            
+                            // Remove min-height after transition
+                            setTimeout(() => {
+                                tableContainer.style.minHeight = '';
+                            }, 300);
+                            
+                            // Hide loading
+                            loadingOverlay.classList.add('hidden');
+                        }, 200);
+                    } else {
+                        // Fallback: reload if parsing fails
+                        loadingOverlay.classList.add('hidden');
+                        tableContainer.style.minHeight = '';
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingOverlay.classList.add('hidden');
+                    tableContainer.style.minHeight = '';
+                    // Fallback: reload on error
+                    window.location.reload();
+                });
+            }
+        }
+        
+        // Update sort icons based on current state
+        function updateSortIcons(activeColumn, order) {
+            const columns = ['no', 'status', 'nama', 'merchant', 'metode', 'jumlah', 'tanggal'];
+            columns.forEach(col => {
+                const icon = document.getElementById('sortIcon' + col.charAt(0).toUpperCase() + col.slice(1));
+                if (icon) {
+                    if (col === activeColumn && order) {
+                        if (order === 'asc') {
+                            icon.className = 'fas fa-sort-up text-[10px] text-gray-700';
+                        } else if (order === 'desc') {
+                            icon.className = 'fas fa-sort-down text-[10px] text-gray-700';
+                        } else if (order === 'reject') {
+                            // Special icon for reject state (status only)
+                            icon.className = 'fas fa-sort-down text-[10px] text-red-600';
+                        } else {
+                            icon.className = 'fas fa-sort text-[10px] text-gray-400';
+                        }
+                    } else {
+                        // Reset to default
+                        icon.className = 'fas fa-sort text-[10px] text-gray-400';
+                    }
+                }
+            });
+        }
+        
+        // Initialize sort icons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSort = urlParams.get('sort_by');
+            const currentOrder = urlParams.get('sort_order');
+            
+            if (currentSort) {
+                updateSortIcons(currentSort, currentOrder);
+            }
+            
+            // Ensure min-height is reset on page load
+            const tableContainer = document.getElementById('tableContainer');
+            if (tableContainer) {
+                tableContainer.style.minHeight = '';
+            }
+        });
+        
+        // Modal functions for reject reason
+        function showRejectReasonModal(reason, name) {
+            const modal = document.getElementById('rejectReasonModal');
+            const reasonText = document.getElementById('rejectReasonModalText');
+            const nameText = document.getElementById('rejectReasonModalName');
+            
+            if (modal && reasonText && nameText) {
+                reasonText.textContent = reason;
+                nameText.textContent = name;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                // Trigger animation
+                setTimeout(() => {
+                    modal.querySelector('.modal-content')?.classList.add('modal-content');
+                }, 10);
+            }
+        }
+
+        function closeRejectReasonModal() {
+            const modal = document.getElementById('rejectReasonModal');
+            if (modal) {
+                const content = modal.querySelector('.modal-content');
+                if (content) {
+                    content.style.opacity = '0';
+                    content.style.transform = 'translateY(20px) scale(0.95)';
+                    content.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out';
+                }
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    if (content) {
+                        content.style.opacity = '';
+                        content.style.transform = '';
+                        content.style.transition = '';
+                    }
+                }, 200);
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('rejectReasonModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRejectReasonModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRejectReasonModal();
+            }
+        });
 
     </script>
 </body>

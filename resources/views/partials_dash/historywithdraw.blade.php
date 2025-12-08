@@ -51,6 +51,89 @@
             opacity: 1;
             transform: translateY(0);
         }
+        
+        /* Modal animations */
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .modal-backdrop {
+            animation: modalFadeIn 0.2s ease-out;
+        }
+        
+        .modal-content {
+            animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* Table row animations */
+        @keyframes rowFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .table-row-animate {
+            animation: rowFadeIn 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        
+        /* Button hover animations */
+        .btn-detail {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-detail:hover {
+            opacity: 0.8;
+        }
+        
+        .btn-detail:active {
+            opacity: 0.6;
+        }
+        
+        /* Card animations for mobile */
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-animate {
+            animation: cardFadeIn 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        
+        /* Smooth transitions for interactive elements */
+        button, a, .hover\:scale-110, .hover\:bg-gray-50 {
+            transition-property: color, background-color, border-color, transform, opacity, box-shadow;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 200ms;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-white font-poppins">
@@ -82,18 +165,53 @@
             </div>
         </form>
 
-        <!-- Desktop Table -->
-        <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
+        <!-- Table (Desktop & Mobile) -->
+        <div class="bg-white rounded-xl shadow overflow-hidden" style="overflow: visible; position: relative; isolation: isolate;" id="historyTableContainer">
+            <div id="historySortLoadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+                <div class="flex flex-col items-center gap-2">
+                    <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+                    <span class="text-xs text-gray-600">Mengurutkan...</span>
+                </div>
+            </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Metode Penarikan</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No. Rek/E-Wallet</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleHistorySort('no')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>No</span>
+                                    <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconNo"></i>
+                                </button>
+                            </th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleHistorySort('status')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Status</span>
+                                    <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconStatus"></i>
+                                </button>
+                            </th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleHistorySort('nama')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Nama</span>
+                                    <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconNama"></i>
+                                </button>
+                            </th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleHistorySort('metode')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span class="hidden sm:inline">Metode Penarikan</span>
+                                    <span class="sm:hidden">Metode</span>
+                                    <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconMetode"></i>
+                                </button>
+                            </th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <span class="hidden sm:inline">No. Rek/E-Wallet</span>
+                                <span class="sm:hidden">No. Rek/E-W</span>
+                            </th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleHistorySort('tanggal')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Tanggal</span>
+                                    <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconTanggal"></i>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200" id="historyTableBody">
@@ -115,22 +233,32 @@
                                     default => $withdraw->status
                                 };
                             @endphp
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-4 py-4 text-sm font-medium text-gray-900">{{ $withdrawHistory->firstItem() + $index }}</td>
-                                <td class="px-4 py-4 text-sm text-gray-900">
-                                    <div class="font-medium">{{ $withdraw->nama }}</div>
-                                    @if($withdraw->status === 'rejected' && $withdraw->dec_reject)
-                                        <div class="mt-1 text-xs text-red-600 italic">
-                                            <i class="fas fa-info-circle mr-1"></i>{{ $withdraw->dec_reject }}
-                                        </div>
+                            <tr class="hover:bg-gray-50 transition-colors table-row-animate" style="animation-delay: {{ $index * 0.05 }}s;">
+                                <td class="px-2 sm:px-4 py-2 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
+                                    @if(request()->get('sort_by') === 'no' && request()->get('sort_order') === 'desc')
+                                        {{ $withdrawHistory->total() - ($withdrawHistory->firstItem() + $index) + 1 }}
+                                    @else
+                                        {{ $withdrawHistory->firstItem() + $index }}
                                     @endif
                                 </td>
-                                <td class="px-4 py-4 text-sm text-gray-700">{{ $withdraw->metode_penarikan_name }}</td>
-                                <td class="px-4 py-4 text-sm text-gray-700 font-mono">{{ $displayAccount }}</td>
-                                <td class="px-4 py-4 text-xs text-gray-500">{{ $withdraw->created_at->format('d M Y') }}</td>
-                                <td class="px-4 py-4">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
+                                <td class="px-2 sm:px-4 py-2 sm:py-4">
+                                    <div class="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+                                        <span class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold rounded-full {{ $statusClass }} transition-all duration-200 hover:scale-105 inline-block w-fit">{{ $statusText }}</span>
+                                        @if($withdraw->status === 'rejected' && $withdraw->dec_reject)
+                                            <button onclick="showRejectReasonModal('{{ addslashes($withdraw->dec_reject) }}', '{{ addslashes($withdraw->nama) }}')" 
+                                                    class="btn-detail px-2 py-1 text-[10px] sm:text-xs font-normal text-red-500 hover:text-red-600 transition-colors duration-150 flex items-center gap-1 w-fit">
+                                                <i class="fas fa-info-circle text-[9px] sm:text-[10px]"></i>
+                                                <span>Detail</span>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </td>
+                                    <td class="px-2 sm:px-4 py-2 sm:py-4 text-xs sm:text-sm text-gray-900">
+                                        <div class="font-medium">{{ $withdraw->nama }}</div>
+                                    </td>
+                                    <td class="px-2 sm:px-4 py-2 sm:py-4 text-xs sm:text-sm text-gray-700">{{ $withdraw->metode_penarikan_name }}</td>
+                                    <td class="px-2 sm:px-4 py-2 sm:py-4 text-[10px] sm:text-sm text-gray-700 font-mono break-all">{{ $displayAccount }}</td>
+                                    <td class="px-2 sm:px-4 py-2 sm:py-4 text-[10px] sm:text-xs text-gray-500">{{ $withdraw->created_at->format('d M Y') }}</td>
                             </tr>
                         @empty
                             <tr id="historyEmptyState">
@@ -178,76 +306,37 @@
             @endif
         </div>
 
-        <!-- Mobile Version -->
-        <div class="md:hidden space-y-4 mt-6" id="historyCardsContainer">
-            @forelse($withdrawHistory as $index => $withdraw)
-                @php
-                    $isEWallet = in_array($withdraw->metode_penarikan, ['linkaja', 'dana']);
-                    $displayAccount = $isEWallet ? '+62' . ($withdraw->no_ewallet ?? '') : ($withdraw->no_rekening ?? '');
-                    $statusClass = match($withdraw->status) {
-                        'approved', 'completed' => 'bg-green-100 text-green-800',
-                        'pending' => 'bg-yellow-100 text-yellow-800',
-                        'rejected' => 'bg-red-100 text-red-800',
-                        default => 'bg-gray-100 text-gray-800'
-                    };
-                    $statusText = match($withdraw->status) {
-                        'approved' => 'Disetujui',
-                        'completed' => 'Berhasil',
-                        'pending' => 'Pending',
-                        'rejected' => 'Ditolak',
-                        default => $withdraw->status
-                    };
-                    $borderColor = match($withdraw->status) {
-                        'approved', 'completed' => 'border-l-green-500',
-                        'pending' => 'border-l-yellow-500',
-                        'rejected' => 'border-l-red-500',
-                        default => 'border-l-gray-500'
-                    };
-                @endphp
-            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 border-l-4 {{ $borderColor }} p-4 pl-5">
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-sm font-bold text-gray-900">{{ $withdrawHistory->firstItem() + $index }}</span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div class="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
-                        <p class="text-[11px] text-gray-500 font-medium mb-1 uppercase tracking-wide">Nama</p>
-                        <p class="text-xs font-bold text-gray-900">{{ $withdraw->nama }}</p>
-                        @if($withdraw->status === 'rejected' && $withdraw->dec_reject)
-                            <p class="text-[10px] text-red-600 italic mt-1">
-                                <i class="fas fa-info-circle mr-1"></i>{{ $withdraw->dec_reject }}
-                            </p>
-                        @endif
-                    </div>
-                    <div class="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
-                        <p class="text-[11px] text-blue-600 font-medium mb-1 uppercase tracking-wide">Status</p>
-                        <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ $statusClass }}">{{ $statusText }}</span>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <p class="text-[11px] text-gray-500 font-medium mb-1.5 uppercase tracking-wide">Metode Penarikan</p>
-                    <p class="text-sm font-semibold text-gray-900">{{ $withdraw->metode_penarikan_name }}</p>
-                </div>
-                <div class="mb-4 bg-orange-50 rounded-lg p-2.5 border border-orange-100">
-                    <p class="text-[11px] text-orange-600 font-medium mb-1 uppercase tracking-wide">{{ $isEWallet ? 'No. E-Wallet' : 'No. Rekening' }}</p>
-                    <p class="text-xs font-bold text-orange-900 font-mono">{{ $displayAccount }}</p>
-                </div>
-                <div class="mb-4">
-                    <p class="text-[11px] text-gray-500 font-medium mb-1.5 uppercase tracking-wide">Tanggal</p>
-                    <p class="text-xs font-medium text-gray-700">{{ $withdraw->created_at->format('d M Y') }}</p>
-                </div>
-            </div>
-            @empty
-            <!-- Empty State -->
-            <div id="historyEmptyStateMobile" class="text-center py-12">
-                <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
-                <p class="text-sm font-medium text-gray-500">Belum ada riwayat penarikan</p>
-                <p class="text-xs text-gray-400 mt-1">Riwayat penarikan saldo akan muncul di sini</p>
-            </div>
-            @endforelse
-        </div>
     </main>
+
+    <!-- Modal for Reject Reason -->
+    <div id="rejectReasonModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto modal-content">
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-110">
+                        <i class="fas fa-times-circle text-red-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Alasan Penolakan</h3>
+                        <p class="text-xs text-gray-500" id="rejectReasonModalName"></p>
+                    </div>
+                </div>
+                <button onclick="closeRejectReasonModal()" class="text-gray-400 hover:text-gray-600 transition-all duration-200 hover:rotate-90 hover:scale-110">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="px-6 py-6">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 transition-all duration-300 hover:bg-red-100 hover:shadow-sm">
+                    <p class="text-sm text-gray-700 leading-relaxed" id="rejectReasonModalText"></p>
+                </div>
+            </div>
+            <div class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
+                <button onclick="closeRejectReasonModal()" class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-medium hover:scale-105 active:scale-95">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Dashboard entrance animation
@@ -276,6 +365,225 @@
                         dateInput.value = `${day}/${month}/${year}`;
                     }
                 }
+            }
+            
+            // Initialize sort icons
+            const currentSort = urlParams.get('sort_by');
+            const currentOrder = urlParams.get('sort_order');
+            
+            if (currentSort && currentOrder) {
+                updateHistorySortIcons(currentSort, currentOrder);
+            }
+            
+            // Ensure min-height is reset on page load
+            const historyTableContainer = document.getElementById('historyTableContainer');
+            if (historyTableContainer) {
+                historyTableContainer.style.minHeight = '';
+            }
+        });
+
+        // Modal functions for reject reason
+        function showRejectReasonModal(reason, name) {
+            const modal = document.getElementById('rejectReasonModal');
+            const reasonText = document.getElementById('rejectReasonModalText');
+            const nameText = document.getElementById('rejectReasonModalName');
+            
+            if (modal && reasonText && nameText) {
+                reasonText.textContent = reason;
+                nameText.textContent = name;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                // Trigger animation
+                setTimeout(() => {
+                    modal.querySelector('.modal-content')?.classList.add('modal-content');
+                }, 10);
+            }
+        }
+
+        function closeRejectReasonModal() {
+            const modal = document.getElementById('rejectReasonModal');
+            if (modal) {
+                const content = modal.querySelector('.modal-content');
+                if (content) {
+                    content.style.opacity = '0';
+                    content.style.transform = 'translateY(20px) scale(0.95)';
+                    content.style.transition = 'opacity 0.2s ease-out, transform 0.2s ease-out';
+                }
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    if (content) {
+                        content.style.opacity = '';
+                        content.style.transform = '';
+                        content.style.transition = '';
+                    }
+                }, 200);
+            }
+        }
+
+        // Sort function for history with AJAX (sama dengan withdraw approval)
+        function handleHistorySort(column) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSort = urlParams.get('sort_by');
+            const currentOrder = urlParams.get('sort_order');
+            
+            let newSort = column;
+            let newOrder = 'asc';
+            
+            if (currentSort === column) {
+                if (column === 'status') {
+                    // Status: 3 states (asc -> desc -> reject -> reset)
+                    if (currentOrder === 'asc') {
+                        // Klik 2: desc (waiting first)
+                        newOrder = 'desc';
+                    } else if (currentOrder === 'desc') {
+                        // Klik 3: reject (reject first)
+                        newOrder = 'reject';
+                    } else {
+                        // Klik 4: reset
+                        newSort = null;
+                        newOrder = null;
+                    }
+                } else {
+                    // Other columns: 2 states (asc -> desc -> asc)
+                    if (currentOrder === 'asc') {
+                        newOrder = 'desc';
+                    } else {
+                        newOrder = 'asc';
+                    }
+                }
+            }
+            
+            // Update URL params
+            if (newSort) {
+                urlParams.set('sort_by', newSort);
+                urlParams.set('sort_order', newOrder);
+            } else {
+                urlParams.delete('sort_by');
+                urlParams.delete('sort_order');
+            }
+            
+            // Update icons immediately
+            updateHistorySortIcons(column, newOrder);
+            
+            // Update URL without reload
+            window.history.pushState({}, '', '?' + urlParams.toString());
+            
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('historySortLoadingOverlay');
+            const tableBody = document.getElementById('historyTableBody');
+            const tableContainer = document.getElementById('historyTableContainer');
+            
+            if (loadingOverlay && tableBody && tableContainer) {
+                // Store current height to prevent layout shift
+                const currentHeight = tableContainer.offsetHeight;
+                tableContainer.style.minHeight = currentHeight + 'px';
+                
+                loadingOverlay.classList.remove('hidden');
+                
+                // Get current URL path with code
+                const currentPath = window.location.pathname;
+                const fullUrl = currentPath + '?' + urlParams.toString();
+                
+                // Make AJAX request
+                fetch(fullUrl, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html',
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse HTML response
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTableBody = doc.getElementById('historyTableBody');
+                    const newPaginationContainer = doc.querySelector('.bg-white.px-4.py-4.border-t.border-gray-200');
+                    
+                    if (newTableBody) {
+                        // Smooth transition
+                        tableBody.style.opacity = '0';
+                        tableBody.style.transition = 'opacity 0.2s';
+                        
+                        setTimeout(() => {
+                            // Replace table body content
+                            tableBody.innerHTML = newTableBody.innerHTML;
+                            
+                            // Replace pagination container if exists
+                            const currentPaginationContainer = document.querySelector('.bg-white.px-4.py-4.border-t.border-gray-200');
+                            if (currentPaginationContainer && newPaginationContainer) {
+                                currentPaginationContainer.outerHTML = newPaginationContainer.outerHTML;
+                            }
+                            
+                            // Re-initialize any event listeners if needed
+                            // (modals will work because they use onclick attributes)
+                            
+                            // Restore opacity
+                            tableBody.style.opacity = '1';
+                            
+                            // Remove min-height after transition
+                            setTimeout(() => {
+                                tableContainer.style.minHeight = '';
+                            }, 300);
+                            
+                            // Hide loading
+                            loadingOverlay.classList.add('hidden');
+                        }, 200);
+                    } else {
+                        // Fallback: reload if parsing fails
+                        loadingOverlay.classList.add('hidden');
+                        tableContainer.style.minHeight = '';
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingOverlay.classList.add('hidden');
+                    tableContainer.style.minHeight = '';
+                    // Fallback: reload on error
+                    window.location.reload();
+                });
+            }
+        }
+        
+        // Update sort icons for history (sama dengan withdraw approval)
+        function updateHistorySortIcons(activeColumn, order) {
+            const columns = ['no', 'status', 'nama', 'metode', 'tanggal'];
+            columns.forEach(col => {
+                const icon = document.getElementById('sortIcon' + col.charAt(0).toUpperCase() + col.slice(1));
+                if (icon) {
+                    if (col === activeColumn && order) {
+                        if (order === 'asc') {
+                            icon.className = 'fas fa-sort-up text-[10px] text-gray-700';
+                        } else if (order === 'desc') {
+                            icon.className = 'fas fa-sort-down text-[10px] text-gray-700';
+                        } else if (order === 'reject') {
+                            // Special icon for reject state (status only)
+                            icon.className = 'fas fa-sort-down text-[10px] text-red-600';
+                        } else {
+                            icon.className = 'fas fa-sort text-[10px] text-gray-400';
+                        }
+                    } else {
+                        // Reset to default
+                        icon.className = 'fas fa-sort text-[10px] text-gray-400';
+                    }
+                }
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('rejectReasonModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRejectReasonModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRejectReasonModal();
             }
         });
     </script>
