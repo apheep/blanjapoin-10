@@ -121,7 +121,6 @@
                 position: relative !important;
                 overflow: visible !important;
                 z-index: 20 !important;
-                contain: layout style paint !important;
             }
             
             /* Bank dropdown specific positioning - ensure it's inside its container */
@@ -135,7 +134,21 @@
                 margin-left: 0 !important;
                 margin-right: 0 !important;
                 margin-top: 0.5rem !important;
-                z-index: 9999 !important;
+                z-index: 99999 !important;
+            }
+            
+            /* Hide bank menu when it has hidden class */
+            #bankDropdownContainer #bankMenu.hidden {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+            }
+            
+            /* Show bank menu when not hidden */
+            #bankDropdownContainer #bankMenu:not(.hidden) {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
             }
             
             /* E-wallet dropdown specific positioning */
@@ -149,12 +162,37 @@
                 margin-left: 0 !important;
                 margin-right: 0 !important;
                 margin-top: 0.5rem !important;
-                z-index: 9999 !important;
+                z-index: 99999 !important;
+            }
+            
+            /* Hide e-wallet menu when it has hidden class */
+            #ewalletMenu.hidden {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+            }
+            
+            /* Show e-wallet menu when not hidden */
+            #ewalletMenu:not(.hidden) {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
             }
             
             /* Ensure grid items have proper positioning */
             .grid > div {
                 position: relative !important;
+                overflow: visible !important;
+            }
+            
+            /* Ensure parent containers don't clip dropdowns */
+            #withdrawFormContainer {
+                overflow: visible !important;
+            }
+            
+            /* Payment method section */
+            .mb-6[style*="overflow"] {
+                overflow: visible !important;
             }
         }
         
@@ -225,17 +263,17 @@
 
     <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8" style="overflow: visible;">
         <!-- Header -->
-        <div class="mb-6 flex items-center justify-between">
-                    <div>
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+            <div class="flex-1">
                 <h2 class="text-lg sm:text-xl font-bold text-gray-800">Withdraw Saldo</h2>
-                <p class="text-sm text-gray-600 mt-1">Ajukan penarikan saldo Anda ke rekening bank atau e-wallet</p>
-                        </div>
-            <a href="{{ route('link.history-withdraw', $code) }}" 
-               class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors shadow-sm">
-                <i class="fas fa-history text-gray-600"></i>
-                <span class="text-sm font-medium text-gray-700 hidden sm:inline">Riwayat</span>
-            </a>
+                <p class="text-xs sm:text-sm text-gray-600 mt-1">Ajukan penarikan saldo Anda ke rekening bank atau e-wallet</p>
             </div>
+            <a href="{{ route('link.history-withdraw', $code) }}" 
+               class="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg sm:rounded-full hover:bg-gray-50 transition-colors shadow-sm w-full sm:w-auto">
+                <i class="fas fa-history text-sm sm:text-base text-gray-600"></i>
+                <span class="text-xs sm:text-sm font-medium text-gray-700">Riwayat</span>
+            </a>
+        </div>
 
         <!-- Account Balance Card -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
@@ -308,7 +346,7 @@
                                 </div>
                                     </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="position: relative; z-index: 10; overflow: visible;">
+                <div class="grid grid-cols-2 gap-4" style="position: relative; z-index: 10; overflow: visible !important;">
                     <!-- Bank Dropdown -->
                     <div id="bankDropdownContainer" class="relative" style="z-index: 20; overflow: visible !important; position: relative !important; isolation: isolate;">
                         <label class="block text-xs font-semibold text-gray-500 uppercase mb-2">Bank</label>
@@ -493,9 +531,19 @@
         
         // Function to close all dropdowns
         function closeAllDropdowns() {
-            if (bankMenu) bankMenu.classList.add('hidden');
+            if (bankMenu) {
+                bankMenu.classList.add('hidden');
+                bankMenu.style.setProperty('display', 'none', 'important');
+                bankMenu.style.setProperty('visibility', 'hidden', 'important');
+                bankMenu.style.setProperty('opacity', '0', 'important');
+            }
             if (bankChevron) bankChevron.classList.remove('rotate-180');
-            if (ewalletMenu) ewalletMenu.classList.add('hidden');
+            if (ewalletMenu) {
+                ewalletMenu.classList.add('hidden');
+                ewalletMenu.style.setProperty('display', 'none', 'important');
+                ewalletMenu.style.setProperty('visibility', 'hidden', 'important');
+                ewalletMenu.style.setProperty('opacity', '0', 'important');
+            }
             if (ewalletChevron) ewalletChevron.classList.remove('rotate-180');
             // Update padding based on open dropdowns (will reset if none open)
             updateFormPadding();
@@ -625,6 +673,7 @@
                     // Close other dropdown first
                     if (ewalletMenu) {
                         ewalletMenu.classList.add('hidden');
+                        ewalletMenu.style.setProperty('display', 'none', 'important');
                         if (ewalletChevron) ewalletChevron.classList.remove('rotate-180');
                     }
                     
@@ -648,18 +697,24 @@
                         bankMenu.style.setProperty('width', '100%', 'important');
                         bankMenu.style.setProperty('margin-top', '0.5rem', 'important');
                         bankMenu.style.setProperty('margin-bottom', '0', 'important');
-                        bankMenu.style.setProperty('z-index', '9999', 'important');
+                        bankMenu.style.setProperty('z-index', '99999', 'important');
                         bankMenu.style.setProperty('transform', 'none', 'important');
                         bankMenu.style.setProperty('margin-left', '0', 'important');
                         bankMenu.style.setProperty('margin-right', '0', 'important');
+                        bankMenu.style.setProperty('display', 'block', 'important');
+                        bankMenu.style.setProperty('visibility', 'visible', 'important');
+                        bankMenu.style.setProperty('opacity', '1', 'important');
                         
                         // Ensure dropdown stays in container
                         ensureDropdownInContainer(bankMenu, bankDropdown);
                         // Adjust dropdown position
                         adjustDropdownPosition(bankMenu, bankDropdown);
                         
-                        // Show bank dropdown
+                        // Show bank dropdown - remove hidden class first, then set display
                         bankMenu.classList.remove('hidden');
+                        bankMenu.style.setProperty('display', 'block', 'important');
+                        bankMenu.style.setProperty('visibility', 'visible', 'important');
+                        bankMenu.style.setProperty('opacity', '1', 'important');
                         if (bankChevron) bankChevron.classList.add('rotate-180');
                         
                         // Update form padding after dropdown is shown (with delay to ensure DOM is updated)
@@ -699,21 +754,45 @@
                     // Close other dropdown first
                     if (bankMenu) {
                         bankMenu.classList.add('hidden');
+                        bankMenu.style.setProperty('display', 'none', 'important');
                         if (bankChevron) bankChevron.classList.remove('rotate-180');
                     }
                     
-                    // Ensure dropdown stays in container
-                    ensureDropdownInContainer(ewalletMenu, ewalletDropdown);
-                    // Adjust dropdown position
-                    adjustDropdownPosition(ewalletMenu, ewalletDropdown);
-                    // Show e-wallet dropdown
-                    ewalletMenu.classList.remove('hidden');
-                    if (ewalletChevron) ewalletChevron.classList.add('rotate-180');
-                    
-                    // Update form padding after dropdown is shown (with delay to ensure DOM is updated)
-                    setTimeout(() => {
-                        updateFormPadding();
-                    }, 50);
+                    // Use requestAnimationFrame to ensure DOM is ready
+                    requestAnimationFrame(() => {
+                        // Reset all positioning - ensure it's relative to parent
+                        ewalletMenu.style.setProperty('position', 'absolute', 'important');
+                        ewalletMenu.style.setProperty('top', '100%', 'important');
+                        ewalletMenu.style.setProperty('left', '0', 'important');
+                        ewalletMenu.style.setProperty('right', 'auto', 'important');
+                        ewalletMenu.style.setProperty('width', '100%', 'important');
+                        ewalletMenu.style.setProperty('margin-top', '0.5rem', 'important');
+                        ewalletMenu.style.setProperty('margin-bottom', '0', 'important');
+                        ewalletMenu.style.setProperty('z-index', '99999', 'important');
+                        ewalletMenu.style.setProperty('transform', 'none', 'important');
+                        ewalletMenu.style.setProperty('margin-left', '0', 'important');
+                        ewalletMenu.style.setProperty('margin-right', '0', 'important');
+                        ewalletMenu.style.setProperty('display', 'block', 'important');
+                        ewalletMenu.style.setProperty('visibility', 'visible', 'important');
+                        ewalletMenu.style.setProperty('opacity', '1', 'important');
+                        
+                        // Ensure dropdown stays in container
+                        ensureDropdownInContainer(ewalletMenu, ewalletDropdown);
+                        // Adjust dropdown position
+                        adjustDropdownPosition(ewalletMenu, ewalletDropdown);
+                        
+                        // Show e-wallet dropdown - remove hidden class first, then set display
+                        ewalletMenu.classList.remove('hidden');
+                        ewalletMenu.style.setProperty('display', 'block', 'important');
+                        ewalletMenu.style.setProperty('visibility', 'visible', 'important');
+                        ewalletMenu.style.setProperty('opacity', '1', 'important');
+                        if (ewalletChevron) ewalletChevron.classList.add('rotate-180');
+                        
+                        // Update form padding after dropdown is shown (with delay to ensure DOM is updated)
+                        setTimeout(() => {
+                            updateFormPadding();
+                        }, 50);
+                    });
                 }
             });
         }
@@ -1455,13 +1534,11 @@
             const amountEl = document.getElementById('receiptAmountSuccess');
             const methodEl = document.getElementById('receiptMethodSuccess');
             const timeEl = document.getElementById('receiptTimeSuccess');
-            const transactionIdEl = document.getElementById('receiptTransactionId');
             
             if (nameEl) nameEl.textContent = data.customerName || 'Alexander';
             if (amountEl) amountEl.textContent = 'Rp ' + formatReceiptNumber(data.amount || 0);
             if (methodEl) methodEl.textContent = data.methodName || '-';
             if (timeEl) timeEl.textContent = data.transferTime || '-';
-            if (transactionIdEl) transactionIdEl.textContent = data.transactionId || '-';
             
             if (data.accountNumber) {
                 const isEWallet = ['linkaja', 'dana'].includes(data.paymentMethod || '');

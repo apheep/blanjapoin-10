@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('poin_transaksions', function (Blueprint $table) {
+        Schema::create('poin_transaction', function (Blueprint $table) {
             $table->bigInteger('id')->primary();
             $table->string('package_id', 50)->nullable();
             $table->string('package_type', 150)->nullable();

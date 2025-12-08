@@ -842,9 +842,9 @@
     locationDropdown.addEventListener('click', (e) => {
      const item = e.target.closest('[data-value]');
      if (!item) return;
-     locationInput.value = item.getAttribute('data-value');
-     updateLocationFilter(locationInput.value);
-     goToLocationSearch(locationInput.value);
+     const selectedLocation = item.getAttribute('data-value');
+     locationInput.value = selectedLocation;
+     goToLocationSearch(selectedLocation);
      closeLocationDropdown(locationDropdown);
     });
     locationInput.addEventListener('keydown', (e) => {
@@ -1012,7 +1012,6 @@
     if (locationInput) {
      locationInput.value = selectedLocation;
     }
-    updateLocationFilter(selectedLocation);
     goToLocationSearch(selectedLocation);
     closeBottomSheet();
     content.removeEventListener('click', onClick);
@@ -1087,12 +1086,54 @@
     });
    }
 
+   // Function to convert location name to slug (similar to PHP territorialSlug)
+   function locationToSlug(location) {
+    if (!location) return '';
+    
+    let slug = location.trim();
+    
+    // Remove prefix "Kota" or "Kabupaten"
+    slug = slug.replace(/^(Kota|Kabupaten)\s+/i, '');
+    
+    // Convert to lowercase
+    slug = slug.toLowerCase();
+    
+    // Replace spaces with dash
+    slug = slug.replace(/\s+/g, '-');
+    
+    // Remove special characters, keep only alphanumeric and dash
+    slug = slug.replace(/[^a-z0-9\-]/g, '');
+    
+    // Remove multiple dashes
+    slug = slug.replace(/-+/g, '-');
+    
+    // Trim dashes from start and end
+    slug = slug.replace(/^-+|-+$/g, '');
+    
+    return slug;
+   }
+
    function goToLocationSearch(locationValue) {
     const normalizedLocation = (locationValue || '').trim();
-    if (normalizedLocation.length === 0) {
+    if (normalizedLocation.length === 0 || normalizedLocation.toLowerCase() === 'all') {
+     // If "All" is selected, just clear the filter and stay on the page
+     updateLocationFilter('');
+     if (locationInput) {
+      locationInput.value = '';
+     }
      return;
     }
-    goToSearchPage(normalizedLocation);
+    
+    // Convert location name to slug
+    const locationSlug = locationToSlug(normalizedLocation);
+    if (!locationSlug) {
+     return;
+    }
+    
+    // Redirect to city.show route (territorial page)
+    // Using url() helper to build the base URL
+    const baseUrl = "{{ url('/city') }}";
+    window.location.href = `${baseUrl}/${locationSlug}`;
    }
 
    // Initialize filters and sorting after DOM is ready

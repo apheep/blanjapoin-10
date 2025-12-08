@@ -18,8 +18,9 @@ class UserGoogle
         $this->client->setClientId(config('services.google.client_id'));
         $this->client->setClientSecret(config('services.google.client_secret'));
         
-        // Set redirect URI dari config
-        $redirectUri = url('/auth-google-callback');
+        // Set redirect URI dari config (menggunakan config yang sudah didefinisikan di services.php)
+        // Fallback ke url() helper jika config tidak tersedia
+        $redirectUri = config('services.google.redirect') ?: url('/auth-google-callback');
         $this->client->setRedirectUri($redirectUri);
         
         // Add scopes

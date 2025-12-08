@@ -2,61 +2,61 @@
 <div id="approveWithdrawModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="approveWithdrawContent">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-check-circle text-green-600 text-lg"></i>
+        <div class="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 flex-shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-green-600 text-sm sm:text-lg"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Konfirmasi Approve</h3>
-                    <p class="text-sm text-gray-500">Pastikan data sudah benar</p>
+                <div class="min-w-0 flex-1">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 truncate">Konfirmasi Approve</h3>
+                    <p class="text-xs sm:text-sm text-gray-500 truncate">Pastikan data sudah benar</p>
                 </div>
             </div>
-            <button onclick="closeApproveWithdrawModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <i class="fas fa-times text-xl"></i>
+            <button onclick="closeApproveWithdrawModal()" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ml-2">
+                <i class="fas fa-times text-lg sm:text-xl"></i>
             </button>
         </div>
         
         <!-- Modal Body -->
-        <div class="p-6">
-            <div class="text-center mb-4">
-                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 mb-4">
-                    <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+        <div class="px-4 py-3 sm:px-6 sm:py-4 overflow-y-auto max-h-[60vh]">
+            <div class="text-center mb-3 sm:mb-4">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 mb-3 sm:mb-4">
+                    <i class="fas fa-check-circle text-green-600 text-xl sm:text-2xl"></i>
                 </div>
-                <h4 class="text-lg font-medium text-gray-900 mb-2">Setujui Penarikan?</h4>
-                <p class="text-sm text-gray-600 mb-4" id="approveWithdrawMessage">
+                <h4 class="text-base sm:text-lg font-medium text-gray-900 mb-1 sm:mb-2">Setujui Penarikan?</h4>
+                <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4" id="approveWithdrawMessage">
                     Apakah Anda yakin ingin menyetujui penarikan ini?
                 </p>
             </div>
             
             <!-- Withdraw Details Table -->
-            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <div class="bg-gray-50 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
+                    <table class="w-full text-xs sm:text-sm">
                         <tbody class="divide-y divide-gray-200">
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium w-1/3">Nama</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="approveWithdrawName">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium w-1/3">Nama</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="approveWithdrawName">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Merchant</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="approveWithdrawMerchant">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Merchant</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="approveWithdrawMerchant">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Metode</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="approveWithdrawMethod">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Metode</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="approveWithdrawMethod">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">No. Rek/E-Wallet</td>
-                                <td class="py-2 px-3 text-gray-900 font-mono font-semibold" id="approveWithdrawAccount">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">No. Rek/E-Wallet</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-mono font-semibold text-xs break-all" id="approveWithdrawAccount">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Jumlah</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="approveWithdrawAmount">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Jumlah</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="approveWithdrawAmount">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Tanggal</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="approveWithdrawDate">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Tanggal</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="approveWithdrawDate">-</td>
                             </tr>
                         </tbody>
                     </table>
@@ -65,15 +65,16 @@
         </div>
         
         <!-- Modal Footer -->
-        <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl">
-            <button onclick="closeApproveWithdrawModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        <div class="flex items-center justify-end gap-2 sm:gap-3 px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 rounded-b-2xl border-t border-gray-200 flex-shrink-0">
+            <button onclick="closeApproveWithdrawModal()" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Batal
             </button>
             <form id="approveWithdrawForm" method="POST" action="" class="inline">
                 @csrf
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    Ya, Approve
+                <button type="submit" class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
+                    <i class="fas fa-check-circle mr-1 sm:mr-2"></i>
+                    <span class="hidden sm:inline">Ya, Approve</span>
+                    <span class="sm:hidden">Approve</span>
                 </button>
             </form>
         </div>
@@ -84,61 +85,61 @@
 <div id="rejectWithdrawModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full my-4 transform transition-all duration-300 scale-95 opacity-0 flex flex-col max-h-[90vh]" id="rejectWithdrawContent">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-red-100 to-rose-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-times text-red-600 text-lg"></i>
+        <div class="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 flex-shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-times text-red-600 text-sm sm:text-lg"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Tolak Withdraw Request</h3>
-                    <p class="text-sm text-gray-500">Masukkan alasan penolakan</p>
+                <div class="min-w-0 flex-1">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 truncate">Tolak Withdraw Request</h3>
+                    <p class="text-xs sm:text-sm text-gray-500 truncate">Masukkan alasan penolakan</p>
                 </div>
             </div>
-            <button onclick="closeRejectWithdrawModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <i class="fas fa-times text-xl"></i>
+            <button onclick="closeRejectWithdrawModal()" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ml-2">
+                <i class="fas fa-times text-lg sm:text-xl"></i>
             </button>
         </div>
         
         <!-- Modal Body -->
-        <div class="p-6 overflow-y-auto flex-1">
-            <div class="text-center mb-4">
-                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-red-100 to-rose-100 mb-4">
-                    <i class="fas fa-times text-red-600 text-2xl"></i>
+        <div class="px-4 py-3 sm:px-6 sm:py-4 overflow-y-auto flex-1 max-h-[60vh]">
+            <div class="text-center mb-3 sm:mb-4">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-red-100 to-rose-100 mb-3 sm:mb-4">
+                    <i class="fas fa-times text-red-600 text-xl sm:text-2xl"></i>
                 </div>
-                <h4 class="text-lg font-medium text-gray-900 mb-2">Tolak Penarikan?</h4>
-                <p class="text-sm text-gray-600 mb-4">
+                <h4 class="text-base sm:text-lg font-medium text-gray-900 mb-1 sm:mb-2">Tolak Penarikan?</h4>
+                <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                     Apakah Anda yakin ingin menolak penarikan ini?
                 </p>
             </div>
             
             <!-- Withdraw Details Table -->
-            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+            <div class="bg-gray-50 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
+                    <table class="w-full text-xs sm:text-sm">
                         <tbody class="divide-y divide-gray-200">
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium w-1/3">Nama</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="rejectWithdrawName">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium w-1/3">Nama</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="rejectWithdrawName">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Merchant</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="rejectWithdrawMerchant">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Merchant</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="rejectWithdrawMerchant">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Metode</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="rejectWithdrawMethod">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Metode</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="rejectWithdrawMethod">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">No. Rek/E-Wallet</td>
-                                <td class="py-2 px-3 text-gray-900 font-mono font-semibold" id="rejectWithdrawAccount">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">No. Rek/E-Wallet</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-mono font-semibold text-xs break-all" id="rejectWithdrawAccount">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Jumlah</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="rejectWithdrawAmount">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Jumlah</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="rejectWithdrawAmount">-</td>
                             </tr>
                             <tr>
-                                <td class="py-2 px-3 text-gray-600 font-medium">Tanggal</td>
-                                <td class="py-2 px-3 text-gray-900 font-semibold" id="rejectWithdrawDate">-</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-600 font-medium">Tanggal</td>
+                                <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-gray-900 font-semibold break-words" id="rejectWithdrawDate">-</td>
                             </tr>
                         </tbody>
                     </table>
@@ -149,11 +150,11 @@
             <form id="rejectWithdrawForm" method="POST" action="">
                 @csrf
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                         Alasan Penolakan <span class="text-red-500">*</span>
                     </label>
-                    <textarea name="dec_reject" id="rejectReason" rows="4" 
-                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm resize-none"
+                    <textarea name="dec_reject" id="rejectReason" rows="3" 
+                              class="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-xs sm:text-sm resize-none"
                               placeholder="Masukkan alasan penolakan..." required></textarea>
                     <p class="text-xs text-red-500 mt-1 hidden" id="rejectReasonError">Mohon masukkan alasan penolakan</p>
                 </div>
@@ -161,15 +162,16 @@
         </div>
         
         <!-- Modal Footer -->
-        <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl border-t border-gray-200 flex-shrink-0">
+        <div class="flex items-center justify-end gap-2 sm:gap-3 px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 rounded-b-2xl border-t border-gray-200 flex-shrink-0">
             <button type="button" onclick="closeRejectWithdrawModal()" 
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Batal
             </button>
             <button type="submit" form="rejectWithdrawForm"
-                    class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-lg hover:shadow-lg transition-all duration-300">
-                <i class="fas fa-times mr-2"></i>
-                Ya, Tolak
+                    class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-lg hover:shadow-lg transition-all duration-300">
+                <i class="fas fa-times mr-1 sm:mr-2"></i>
+                <span class="hidden sm:inline">Ya, Tolak</span>
+                <span class="sm:hidden">Tolak</span>
             </button>
         </div>
     </div>
@@ -318,38 +320,38 @@ document.getElementById('rejectWithdrawModal')?.addEventListener('click', functi
 <div id="withdrawSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="withdrawSuccessContent">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <div class="flex items-center">
-                <div id="successHeaderIcon" class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
-                    <i id="successHeaderIconI" class="fas fa-check text-green-600 text-lg"></i>
+        <div class="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 flex-shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div id="successHeaderIcon" class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+                    <i id="successHeaderIconI" class="fas fa-check text-green-600 text-sm sm:text-lg"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 id="successHeaderTitle" class="text-lg font-semibold text-gray-900">Berhasil!</h3>
-                    <p id="successHeaderDesc" class="text-sm text-gray-500">Operasi berhasil dilakukan</p>
+                <div class="min-w-0 flex-1">
+                    <h3 id="successHeaderTitle" class="text-base sm:text-lg font-semibold text-gray-900 truncate">Berhasil!</h3>
+                    <p id="successHeaderDesc" class="text-xs sm:text-sm text-gray-500 truncate">Operasi berhasil dilakukan</p>
                 </div>
             </div>
-            <button onclick="closeWithdrawSuccessModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <i class="fas fa-times text-xl"></i>
+            <button onclick="closeWithdrawSuccessModal()" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ml-2">
+                <i class="fas fa-times text-lg sm:text-xl"></i>
             </button>
         </div>
         
         <!-- Modal Body -->
-        <div class="p-6">
+        <div class="px-4 py-3 sm:px-6 sm:py-4">
             <div class="text-center">
-                <div id="successBodyIcon" class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 mb-4">
-                    <i id="successBodyIconI" class="fas fa-check-circle text-green-600 text-3xl"></i>
+                <div id="successBodyIcon" class="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 mb-3 sm:mb-4">
+                    <i id="successBodyIconI" class="fas fa-check-circle text-green-600 text-2xl sm:text-3xl"></i>
                 </div>
-                <h4 id="successBodyTitle" class="text-lg font-medium text-gray-900 mb-2">Berhasil!</h4>
-                <p class="text-sm text-gray-600 mb-6" id="withdrawSuccessMessage">
+                <h4 id="successBodyTitle" class="text-base sm:text-lg font-medium text-gray-900 mb-1 sm:mb-2">Berhasil!</h4>
+                <p class="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 break-words" id="withdrawSuccessMessage">
                     Operasi berhasil dilakukan.
                 </p>
             </div>
         </div>
         
         <!-- Modal Footer -->
-        <div class="flex items-center justify-center px-6 py-4 bg-gray-50 rounded-b-2xl">
-            <button id="successOkButton" onclick="closeWithdrawSuccessModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
-                <i id="successOkButtonI" class="fas fa-check mr-2"></i>
+        <div class="flex items-center justify-center px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 rounded-b-2xl border-t border-gray-200 flex-shrink-0">
+            <button id="successOkButton" onclick="closeWithdrawSuccessModal()" class="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg transition-all duration-300">
+                <i id="successOkButtonI" class="fas fa-check mr-1 sm:mr-2"></i>
                 OK
             </button>
         </div>
@@ -360,38 +362,38 @@ document.getElementById('rejectWithdrawModal')?.addEventListener('click', functi
 <div id="withdrawErrorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0" id="withdrawErrorContent">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <div class="flex items-center">
-                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-red-100 to-rose-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-exclamation-triangle text-red-600 text-lg"></i>
+        <div class="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 flex-shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-sm sm:text-lg"></i>
                 </div>
-                <div class="ml-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Error!</h3>
-                    <p class="text-sm text-gray-500">Terjadi kesalahan</p>
+                <div class="min-w-0 flex-1">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 truncate">Error!</h3>
+                    <p class="text-xs sm:text-sm text-gray-500 truncate">Terjadi kesalahan</p>
                 </div>
             </div>
-            <button onclick="closeWithdrawErrorModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <i class="fas fa-times text-xl"></i>
+            <button onclick="closeWithdrawErrorModal()" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors ml-2">
+                <i class="fas fa-times text-lg sm:text-xl"></i>
             </button>
         </div>
         
         <!-- Modal Body -->
-        <div class="p-6">
+        <div class="px-4 py-3 sm:px-6 sm:py-4">
             <div class="text-center">
-                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-red-100 to-rose-100 mb-4">
-                    <i class="fas fa-exclamation-circle text-red-600 text-3xl"></i>
+                <div class="mx-auto flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-r from-red-100 to-rose-100 mb-3 sm:mb-4">
+                    <i class="fas fa-exclamation-circle text-red-600 text-2xl sm:text-3xl"></i>
                 </div>
-                <h4 class="text-lg font-medium text-gray-900 mb-2">Terjadi Kesalahan</h4>
-                <p class="text-sm text-gray-600 mb-6" id="withdrawErrorMessage">
+                <h4 class="text-base sm:text-lg font-medium text-gray-900 mb-1 sm:mb-2">Terjadi Kesalahan</h4>
+                <p class="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 break-words" id="withdrawErrorMessage">
                     Terjadi kesalahan saat memproses permintaan.
                 </p>
             </div>
         </div>
         
         <!-- Modal Footer -->
-        <div class="flex items-center justify-center px-6 py-4 bg-gray-50 rounded-b-2xl">
-            <button onclick="closeWithdrawErrorModal()" class="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-lg hover:shadow-lg transition-all duration-300">
-                <i class="fas fa-times mr-2"></i>
+        <div class="flex items-center justify-center px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 rounded-b-2xl border-t border-gray-200 flex-shrink-0">
+            <button onclick="closeWithdrawErrorModal()" class="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-red-600 to-rose-600 rounded-lg hover:shadow-lg transition-all duration-300">
+                <i class="fas fa-times mr-1 sm:mr-2"></i>
                 OK
             </button>
         </div>

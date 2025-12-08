@@ -49,14 +49,9 @@
                     </span>
                 </div>
                 
-                <div class="flex justify-between items-start py-2 border-b border-gray-100">
+                <div class="flex justify-between items-start py-2">
                     <span class="text-sm font-medium text-gray-600">Waktu Pengajuan</span>
                     <span class="text-sm text-gray-700 text-right ml-4" id="receiptTimeSuccess">-</span>
-                </div>
-                
-                <div class="flex justify-between items-start py-2">
-                    <span class="text-sm font-medium text-gray-600">No. Transaksi</span>
-                    <span class="text-sm font-mono text-gray-700 text-right ml-4 break-all" id="receiptTransactionId">-</span>
                 </div>
             </div>
 
