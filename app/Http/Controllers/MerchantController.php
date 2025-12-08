@@ -22,10 +22,6 @@ class MerchantController extends Controller
 {
     public function index(Request $request)
     {
-        // Gunakan parameter berbeda untuk pagination merchant dan keyword
-        $merchantPage = $request->get('merchant_page', 1);
-        $keywordPage = $request->get('keyword_page', 1);
-        
         // Buat query params untuk appends, pastikan keyword_page tetap ada
         $merchantQueryParams = $request->query();
         // Pastikan keyword_page tetap ada jika sebelumnya ada di request
@@ -33,9 +29,9 @@ class MerchantController extends Controller
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $merchants = Merchant::orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
-            ->setPageName('merchant_page')
+            ->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
             
         // Buat query params untuk appends, pastikan merchant_page tetap ada
@@ -45,10 +41,10 @@ class MerchantController extends Controller
             $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
         }
             
+        // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
             ->orderBy('id')
-            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
-            ->setPageName('keyword_page')
+            ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
             
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
@@ -414,8 +410,6 @@ class MerchantController extends Controller
     public function search(Request $request)
     {
         $searchTerm = trim($request->input('q', ''));
-        $merchantPage = $request->input('merchant_page', 1);
-        $keywordPage = $request->input('keyword_page', 1);
         $category = $request->input('category');
         
         $merchantsQuery = Merchant::query();
@@ -441,10 +435,10 @@ class MerchantController extends Controller
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $merchants = $merchantsQuery
             ->orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
-            ->setPageName('merchant_page')
+            ->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         
         if ($request->wantsJson() || $request->ajax()) {
@@ -463,10 +457,10 @@ class MerchantController extends Controller
             $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
             ->orderBy('id')
-            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
-            ->setPageName('keyword_page')
+            ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         

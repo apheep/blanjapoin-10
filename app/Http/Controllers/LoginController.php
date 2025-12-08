@@ -485,7 +485,7 @@ class LoginController extends Controller
         ]);
 
         // Clear OTP session data
-        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_requested_at']);
+        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_phone_display', 'otp_requested_at']);
 
         // Redirect berdasarkan role user
         switch ($user->role) {
