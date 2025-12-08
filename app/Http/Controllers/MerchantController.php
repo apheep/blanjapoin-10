@@ -922,8 +922,66 @@ class MerchantController extends Controller
         }
 
         try {
-            // Ambil merchant untuk mendapatkan nama
+            // SECURITY: Verify authorization BEFORE fetching merchant data
+            // This prevents unauthorized access by checking permissions first
+            
+            $isPortalUser = Auth::guard('portal')->check();
+            $isAdmin = Auth::check() && Auth::user()->can_approve;
+            
+            // If neither portal user nor admin, reject immediately
+            if (!$isPortalUser && !$isAdmin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda harus login untuk mengajukan penarikan.',
+                ], 401);
+            }
+            
+            // Fetch merchant - this will throw 404 if merchant doesn't exist
             $merchant = Merchant::findOrFail($request->merchant_id);
+            
+            // SECURITY: Verify that the authenticated user is authorized to submit withdrawals for this merchant
+            if ($isPortalUser) {
+                $portalUser = Auth::guard('portal')->user();
+                
+                // Portal users can ONLY submit for merchants where email_pic matches their email
+                // This is the critical security check - portal users cannot submit for other merchants
+                if ($merchant->email_pic) {
+                    // Merchant has email_pic - must match portal user's email exactly
+                    if ($merchant->email_pic !== $portalUser->email) {
+                        Log::warning('Unauthorized withdraw attempt by portal user', [
+                            'portal_user_id' => $portalUser->id,
+                            'portal_user_email' => $portalUser->email,
+                            'merchant_id' => $merchant->id,
+                            'merchant_email_pic' => $merchant->email_pic,
+                        ]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Anda tidak memiliki izin untuk mengajukan penarikan untuk merchant ini.',
+                        ], 403);
+                    }
+                } else {
+                    // Merchant has no email_pic - portal users cannot submit for these merchants
+                    // Only admins can submit for merchants without email_pic
+                    Log::warning('Portal user attempted withdraw for merchant without email_pic', [
+                        'portal_user_id' => $portalUser->id,
+                        'portal_user_email' => $portalUser->email,
+                        'merchant_id' => $merchant->id,
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki izin untuk mengajukan penarikan untuk merchant ini.',
+                    ], 403);
+                }
+            } else {
+                // Admin users can submit for any merchant
+                // This is allowed as admins have can_approve = 1
+                if (!$isAdmin) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki izin untuk mengajukan penarikan.',
+                    ], 403);
+                }
+            }
             
             // Tentukan nama: prioritaskan PortalUser name, kemudian nama_pic, terakhir nama_merchant
             $nama = $merchant->nama_merchant; // Default fallback

@@ -325,9 +325,12 @@ class LoginController extends Controller
         $user = User::where('no_hp', $request->no_hp)->first();
 
         if (!$user) {
+            // Get otp_type from session, not from request
+            $otpType = $request->session()->get('otp_type');
+            
             return back()->withInput([
                 'no_hp' => $request->no_hp,
-                'otp_type' => $request->otp_type,
+                'otp_type' => $otpType,
             ])->withErrors([
                 'no_hp' => 'Nomor HP tidak terdaftar.',
             ]);
