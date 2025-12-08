@@ -61,7 +61,7 @@ class LoginSeeder extends Seeder
                 'role' => 'admin',
                 'can_approve' => '1',
                 'email' => 'Anggraheniyuniar@gmail.com',
-                'no_hp' => '628113641111'
+                'no_hp' => '628112500066'
             ],
             [
                 'username' => 'AFIF KAROMI',
