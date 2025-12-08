@@ -75,7 +75,7 @@
                                             Kecantikan
                                         </button>
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all" onclick="selectMerchantKategori('telkomsel')">
-                                            Telkomsel Packet
+                                            Telkomsel Paket
                                         </button>
                                     </div>
                                 </div>
@@ -138,7 +138,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Email PIC
+                                Email PIC (Opsional)
                             </label>
                             <input type="email"
                                    id="emailPicInput"

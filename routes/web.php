@@ -25,7 +25,10 @@ Route::get('/', function () {
         ->where('is_active', 1)
         ->where('status', 'approve')
         ->get();
-    $iklans = Iklan::orderBy('order', 'asc')->get();
+    // Get iklans - only show iklans without territorial (null) for home page
+    $iklans = Iklan::whereNull('territorial')
+        ->orderBy('order', 'asc')
+        ->get();
     
     // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
     $allDaerah = Merchant::query()
@@ -172,6 +175,7 @@ Route::middleware('portal.auth')->get('/trx-history/{code}', [MerchantController
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [LoginController::class, 'index'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.post');
+    Route::post('/login/send-otp', [LoginController::class, 'sendOtp'])->name('login.send-otp');
 
     Route::get('/forgot-password', function () {
         return response('Fitur lupa password belum tersedia.', 200);
@@ -189,7 +193,10 @@ Route::middleware(['auth'])->group(function () {
             ->where('is_active', 1)
             ->where('status', 'approve')
             ->get();
-        $iklans = Iklan::orderBy('order', 'asc')->get();
+        // Get iklans - only show iklans without territorial (null) for home page
+    $iklans = Iklan::whereNull('territorial')
+        ->orderBy('order', 'asc')
+        ->get();
         
         // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
         $allDaerah = Merchant::query()
