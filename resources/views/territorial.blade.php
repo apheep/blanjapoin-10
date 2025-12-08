@@ -33,12 +33,12 @@
             <div class="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-10 py-4 md:py-5 lg:py-6">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <a href="{{ route('welcome') }}">
+                        <a href="{{ route('home') }}">
                             <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
                         </a>
                     </div>
                     <div class="flex items-center gap-3">
-                        <a href="{{ route('welcome') }}" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">
+                        <a href="{{ route('home') }}" class="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">
                             <i class="fas fa-home mr-2"></i>Beranda
                         </a>
                     </div>
@@ -54,7 +54,7 @@
             <!-- Header Section -->
             <div class="mt-8 md:mt-12 mb-8">
                 <div class="flex items-center gap-2 mb-4">
-                    <a href="{{ route('welcome') }}" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                    <a href="{{ route('home') }}" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
                         <i class="fas fa-home"></i> Beranda
                     </a>
                     <span class="text-gray-400">/</span>
@@ -217,7 +217,7 @@
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">Belum ada merchant di {{ $locationName }}</h3>
                 <p class="text-gray-600 mb-6">Coba pilih teritorial lain atau kembali ke beranda</p>
-                <a href="{{ route('welcome') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
+                <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
                     <i class="fas fa-home"></i>
                     Kembali ke Beranda
                 </a>
