@@ -85,20 +85,48 @@
                                     </div>
 
                                     <div class="flex flex-col px-3 pb-3 sm:px-4 sm:pb-4 flex-1 min-h-0" style="min-height: 140px;">
-                                        @if(!is_null($keyword->diskon))
-                                        <div class="flex items-center gap-1.5 mb-1">
-                                            <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-4 h-4 sm:w-5 sm:h-5 object-contain">
-                                            <p class="text-[11px] sm:text-xs font-semibold text-red-500 uppercase">
-                                                {{ formatDiskon($keyword->diskon) }}
-                                            </p>
+                                        <!-- Mobile Layout -->
+                                        <div class="sm:hidden flex flex-col space-y-2">
+                                            <h3 class="text-xl font-bold text-neutral-900 leading-tight">
+                                                {{ $merchantName }}
+                                            </h3>
+                                            <div class="text-[10px] text-neutral-600 -mt-1 -mb-1">
+                                                <span class="font-bold">Promo</span>
+                                            </div>
+                                            <div class="text-[11px] text-neutral-600 leading-relaxed">
+                                                @if(!is_null($keyword->diskon))
+                                                <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
+                                                    <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-7 h-7 object-contain">
+                                                    <span class="text-xl font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
+                                                </div>
+                                                @endif
+                                                @if($productName && $productName !== $merchantName)
+                                                <div class="mb-1 font-semibold text-neutral-700">
+                                                    {{ $productName }}
+                                                </div>
+                                                @endif
+                                            </div>
                                         </div>
-                                        @endif
-                                        <h3 class="text-sm sm:text-base font-black text-neutral-900 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
-                                            {{ $productName }}
-                                        </h3>
-                                        <p class="text-[11px] sm:text-xs text-neutral-600 my-2 leading-relaxed line-clamp-2">
-                                            {{ $subtitle }}
-                                        </p>
+                                        
+                                        <!-- Desktop Layout -->
+                                        <div class="hidden sm:flex flex-col">
+                                            <h4 class="text-base md:text-lg font-black text-neutral-900 mb-2 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                                {{ $merchantName }}
+                                            </h4>
+                                            @if($productName && $productName !== $merchantName)
+                                            <p class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed font-semibold">
+                                                {{ $productName }}
+                                            </p>
+                                            @endif
+                                            @if(!is_null($keyword->diskon))
+                                            <div class="flex items-center gap-1.5 mb-2.5">
+                                                <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-4 h-4 sm:w-5 sm:h-5 object-contain">
+                                                <p class="text-[11px] sm:text-xs font-semibold text-red-500 uppercase">
+                                                    {{ formatDiskon($keyword->diskon) }}
+                                                </p>
+                                            </div>
+                                            @endif
+                                        </div>
 
                                         <div class="mt-auto pt-2 border-t border-neutral-100">
                                             <div class="flex items-center justify-between gap-2">

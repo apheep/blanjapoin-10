@@ -325,9 +325,12 @@ class LoginController extends Controller
         $user = User::where('no_hp', $request->no_hp)->first();
 
         if (!$user) {
+            // Get otp_type from session, not from request
+            $otpType = $request->session()->get('otp_type');
+            
             return back()->withInput([
                 'no_hp' => $request->no_hp,
-                'otp_type' => $request->otp_type,
+                'otp_type' => $otpType,
             ])->withErrors([
                 'no_hp' => 'Nomor HP tidak terdaftar.',
             ]);
@@ -482,7 +485,7 @@ class LoginController extends Controller
         ]);
 
         // Clear OTP session data
-        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_requested_at']);
+        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_phone_display', 'otp_requested_at']);
 
         // Redirect berdasarkan role user
         switch ($user->role) {

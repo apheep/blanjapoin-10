@@ -60,7 +60,7 @@ class LoginSeeder extends Seeder
                 'password' => bcrypt('namiku'),
                 'role' => 'admin',
                 'can_approve' => '1',
-                'email' => 'Anggraheniyuniar@gmail.com',
+                'email' => 'anggraheniyuniar@gmail.com',
                 'no_hp' => '628112500066'
             ],
             [
