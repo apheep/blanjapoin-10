@@ -225,17 +225,17 @@
 
     <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8" style="overflow: visible;">
         <!-- Header -->
-        <div class="mb-6 flex items-center justify-between">
-                    <div>
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+            <div class="flex-1">
                 <h2 class="text-lg sm:text-xl font-bold text-gray-800">Withdraw Saldo</h2>
-                <p class="text-sm text-gray-600 mt-1">Ajukan penarikan saldo Anda ke rekening bank atau e-wallet</p>
-                        </div>
-            <a href="{{ route('link.history-withdraw', $code) }}" 
-               class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors shadow-sm">
-                <i class="fas fa-history text-gray-600"></i>
-                <span class="text-sm font-medium text-gray-700 hidden sm:inline">Riwayat</span>
-            </a>
+                <p class="text-xs sm:text-sm text-gray-600 mt-1">Ajukan penarikan saldo Anda ke rekening bank atau e-wallet</p>
             </div>
+            <a href="{{ route('link.history-withdraw', $code) }}" 
+               class="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg sm:rounded-full hover:bg-gray-50 transition-colors shadow-sm w-full sm:w-auto">
+                <i class="fas fa-history text-sm sm:text-base text-gray-600"></i>
+                <span class="text-xs sm:text-sm font-medium text-gray-700">Riwayat</span>
+            </a>
+        </div>
 
         <!-- Account Balance Card -->
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
@@ -1455,13 +1455,11 @@
             const amountEl = document.getElementById('receiptAmountSuccess');
             const methodEl = document.getElementById('receiptMethodSuccess');
             const timeEl = document.getElementById('receiptTimeSuccess');
-            const transactionIdEl = document.getElementById('receiptTransactionId');
             
             if (nameEl) nameEl.textContent = data.customerName || 'Alexander';
             if (amountEl) amountEl.textContent = 'Rp ' + formatReceiptNumber(data.amount || 0);
             if (methodEl) methodEl.textContent = data.methodName || '-';
             if (timeEl) timeEl.textContent = data.transferTime || '-';
-            if (transactionIdEl) transactionIdEl.textContent = data.transactionId || '-';
             
             if (data.accountNumber) {
                 const isEWallet = ['linkaja', 'dana'].includes(data.paymentMethod || '');
