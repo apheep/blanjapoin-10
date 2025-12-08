@@ -138,7 +138,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Email PIC
+                                Email PIC (Opsional)
                             </label>
                             <input type="email"
                                    id="emailPicInput"
