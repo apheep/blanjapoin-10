@@ -91,6 +91,20 @@
                 </div>
             </div>
 
+            <!-- Diamond Section -->
+            @if(isset($showDiamond) && $showDiamond)
+            <div class="mt-1 mb-1 flex items-center gap-1 animate-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="text-2xl sm:text-2xl md:text-3xl drop-shadow-lg filter">
+                    💎
+                </div>
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
+                        {{ number_format(isset($totalDiamond) ? $totalDiamond : 0, 0, ',', '.') }}
+                    </h2>
+                </div>
+            </div>
+            @endif
+
             <!-- Dashboard Cards Section -->
             <section class="mt-8 space-y-6 animate-fade-in-up" style="animation-delay: 0.2s;">
                 
@@ -134,8 +148,12 @@
                 </div>
 
                 <!-- Links Grid -->
+                @php
+                    $code = request()->route('code');
+                    $decodedCode = $code ? urldecode($code) : '';
+                @endphp
                 <div class="flex flex-col xl:flex-row gap-4 items-stretch">
-                    <div class="grid grid-cols-3 gap-4 flex-1">
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-4 flex-1">
                         <!-- Link Pelanggan Button -->
                         <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
                             <a href="{{ $linkPelanggan }}"
@@ -147,6 +165,17 @@
                             <div class="text-sm font-semibold text-gray-700 text-center">Link Pelanggan</div>
                         </div>
 
+                        <!-- List Keywords Button -->
+                        <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
+                            <a href="{{ route('link.keywords', $decodedCode) }}"
+                               class="w-12 h-12 rounded-2xl bg-green-600 hover:bg-green-700 text-white flex items-center justify-center shadow-lg transition-all duration-200"
+                               title="Lihat daftar keywords">
+                                <i class="fas fa-list text-lg"></i>
+                                <span class="sr-only">List Keywords</span>
+                            </a>
+                            <div class="text-sm font-semibold text-gray-700 text-center">List Keywords</div>
+                        </div>
+
                         <!-- History Button -->
                         <div class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
                             <a href="{{ $linkHistory }}"
@@ -156,6 +185,17 @@
                                 <span class="sr-only">History Transaksi</span>
                             </a>
                             <div class="text-sm font-semibold text-gray-700 text-center">History Transaksi</div>
+                        </div>
+
+                        <!-- Reedem Button -->
+                        <div class="stat-card bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
+                            <a href="{{ route('link.reedem', $decodedCode) }}"
+                               class="w-12 h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-lg transition-all duration-200"
+                               title="Lihat halaman reedem">
+                                <i class="fas fa-gift text-lg"></i>
+                                <span class="sr-only">Reedem</span>
+                            </a>
+                            <div class="text-sm font-semibold text-gray-700 text-center">Reedem</div>
                         </div>
 
                         <!-- Logout Button -->
@@ -189,7 +229,7 @@
                     text: linkPelanggan,
                     width: 100,
                     height: 100,
-                    colorDark: '#5b21b6',
+                    colorDark: '#000000',
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
                 });

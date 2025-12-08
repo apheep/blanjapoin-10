@@ -8,6 +8,7 @@ use App\Exports\KeywordsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -32,6 +33,10 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'subsidy_enabled'   => 'nullable|in:0,1',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'diamond_enabled'   => 'nullable|in:0,1',
+                'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
@@ -39,6 +44,9 @@ class KeywordController extends Controller
                 'stock'             => 'nullable|integer|min:0',
 
                 'status'            => 'nullable|in:approve,pending,reject',
+            ], [
+                'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
+                'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
@@ -68,9 +76,28 @@ class KeywordController extends Controller
             // Format diskon
             $diskon = '';
             if ($request->diskon_percent) {
-                $diskon = $request->diskon_percent . '%';
+                // Jika diskon 100%, tampilkan sebagai "FREE"
+                if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
+                    $diskon = 'FREE';
+                } else {
+                    $diskon = $request->diskon_percent . '%';
+                }
             } elseif ($request->diskon_rupiah) {
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
+            }
+
+            // Handle subsidy amount
+            $subsidyAmount = null;
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
+                // Hapus format rupiah (titik sebagai pemisah ribuan)
+                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
+                $subsidyAmount = (float) $subsidyAmount;
+            }
+
+            // Handle diamond amount
+            $diamondAmount = null;
+            if ($request->diamond_enabled == '1' && $request->diamond_amount) {
+                $diamondAmount = (int) $request->diamond_amount;
             }
 
             // Date input sudah dalam format YYYY-MM-DD dari date picker
@@ -91,6 +118,8 @@ class KeywordController extends Controller
                 'cta_link'      => $request->cta_link,
                 'redeem'        => $request->redeem,
                 'diskon'        => $diskon,
+                'subsidy_amount'=> $subsidyAmount,
+                'diamond_amount'=> $diamondAmount,
                 'skb'           => $request->skb,
                 'start_date'    => $startDate,
                 'end_date'      => $endDate,
@@ -144,12 +173,19 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'subsidy_enabled'   => 'nullable|in:0,1',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'diamond_enabled'   => 'nullable|in:0,1',
+                'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'stock'             => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
+            ], [
+                'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
+                'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
@@ -167,9 +203,28 @@ class KeywordController extends Controller
             // Format diskon
             $diskon = '';
             if ($request->diskon_percent) {
-                $diskon = $request->diskon_percent . '%';
+                // Jika diskon 100%, tampilkan sebagai "FREE"
+                if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
+                    $diskon = 'FREE';
+                } else {
+                    $diskon = $request->diskon_percent . '%';
+                }
             } elseif ($request->diskon_rupiah) {
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
+            }
+
+            // Handle subsidy amount
+            $subsidyAmount = null;
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
+                // Hapus format rupiah (titik sebagai pemisah ribuan)
+                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
+                $subsidyAmount = (float) $subsidyAmount;
+            }
+
+            // Handle diamond amount
+            $diamondAmount = null;
+            if ($request->diamond_enabled == '1' && $request->diamond_amount) {
+                $diamondAmount = (int) $request->diamond_amount;
             }
 
             // Handle image upload
@@ -191,6 +246,8 @@ class KeywordController extends Controller
                 'cta_link'      => $request->cta_link,
                 'redeem'        => $request->redeem,
                 'diskon'        => $diskon,
+                'subsidy_amount'=> $subsidyAmount,
+                'diamond_amount'=> $diamondAmount,
                 'skb'           => $request->skb,
                 'start_date'    => $request->start_date,
                 'end_date'      => $request->end_date,
@@ -259,6 +316,8 @@ class KeywordController extends Controller
         $searchTerm = trim($request->get('q', ''));
         $status = $request->get('status');
         $merchantId = $request->get('merchant_id');
+        $keywordPage = $request->get('keyword_page', 1);
+        $merchantPage = $request->get('merchant_page', 1);
 
         $keywordsQuery = Keyword::with('merchant')
             ->when($merchantId, function ($query) use ($merchantId) {
@@ -283,16 +342,47 @@ class KeywordController extends Controller
             })
             ->orderBy('id');
 
-        // Paginate standar 10 data per halaman (baik dengan atau tanpa filter status)
-        $keywords = $keywordsQuery->paginate(10)->appends($request->query());
+        // Paginate dengan parameter keyword_page yang terpisah
+        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        $keywordQueryParams = $request->query();
+        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
+        if ($request->has('merchant_page')) {
+            $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
+        }
+        
+        $keywords = $keywordsQuery
+            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
+            ->setPageName('keyword_page')
+            ->appends($keywordQueryParams);
 
         if ($request->ajax()) {
-            return response()->json([
-                'html' => view('partials.table-keyword', ['keywords' => $keywords])->render(),
-            ]);
+            try {
+                $html = view('partials.table-keyword', ['keywords' => $keywords])->render();
+                return response()->json([
+                    'html' => $html,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Error rendering keyword table: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'html' => '<div class="p-4 text-center text-red-600">Error loading keywords: ' . $e->getMessage() . '</div>',
+                    'error' => true
+                ], 500);
+            }
         }
 
-        $merchants = Merchant::orderBy('id')->paginate(10);
+        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        $merchantQueryParams = $request->query();
+        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
+        if ($request->has('keyword_page')) {
+            $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
+        }
+        
+        $merchants = Merchant::orderBy('id')
+            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
+            ->setPageName('merchant_page')
+            ->appends($merchantQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
 
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
@@ -304,6 +394,10 @@ class KeywordController extends Controller
 
         $searchResults = Keyword::with('merchant')
             ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
                 $query->where(function ($subQuery) use ($searchTerm) {
                     $subQuery->where('nama_produk', 'like', "%{$searchTerm}%")
@@ -372,5 +466,174 @@ class KeywordController extends Controller
     {
         $fileName = 'keywords_' . date('Y-m-d_His') . '.xlsx';
         return Excel::download(new KeywordsExport, $fileName);
+    }
+
+    public function spesialPromoForm(Request $request)
+    {
+        $query = Keyword::with('merchant')
+            ->where('status', 'approve');
+        
+        // Search filter (sama seperti di keyword search)
+        $searchTerm = trim($request->get('q', ''));
+        if ($searchTerm !== '') {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('nama_produk', 'like', "%{$searchTerm}%")
+                  ->orWhere('keyword_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('cta_link', 'like', "%{$searchTerm}%")
+                  ->orWhere('redeem', 'like', "%{$searchTerm}%")
+                  ->orWhere('diskon', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
+                      $merchantQuery->where('nama_merchant', 'like', "%{$searchTerm}%")
+                          ->orWhere('kategori', 'like', "%{$searchTerm}%")
+                          ->orWhere('daerah', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+        
+        // Date filter (filter by start_date dan end_date keyword, sama seperti di keyword)
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        
+        if ($startDate && $endDate) {
+            // Filter keyword yang periodenya berada dalam range yang dipilih
+            $query->where(function ($q) use ($startDate, $endDate) {
+                $q->where(function ($subQuery) use ($startDate, $endDate) {
+                    // Keyword yang start_date dan end_date berada dalam range
+                    $subQuery->whereNotNull('start_date')
+                             ->whereNotNull('end_date')
+                             ->where('start_date', '>=', $startDate)
+                             ->where('end_date', '<=', $endDate);
+                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
+                    // Keyword yang hanya punya start_date
+                    $subQuery->whereNotNull('start_date')
+                             ->whereNull('end_date')
+                             ->where('start_date', '>=', $startDate)
+                             ->where('start_date', '<=', $endDate);
+                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
+                    // Keyword yang hanya punya end_date
+                    $subQuery->whereNull('start_date')
+                             ->whereNotNull('end_date')
+                             ->where('end_date', '>=', $startDate)
+                             ->where('end_date', '<=', $endDate);
+                });
+            });
+        } elseif ($startDate) {
+            // Hanya start date filter
+            $query->where(function ($q) use ($startDate) {
+                $q->where(function ($subQuery) use ($startDate) {
+                    $subQuery->whereNotNull('start_date')
+                             ->where('start_date', '>=', $startDate);
+                })->orWhere(function ($subQuery) use ($startDate) {
+                    $subQuery->whereNotNull('end_date')
+                             ->where('end_date', '>=', $startDate);
+                });
+            });
+        } elseif ($endDate) {
+            // Hanya end date filter
+            $query->where(function ($q) use ($endDate) {
+                $q->where(function ($subQuery) use ($endDate) {
+                    $subQuery->whereNotNull('start_date')
+                             ->where('start_date', '<=', $endDate);
+                })->orWhere(function ($subQuery) use ($endDate) {
+                    $subQuery->whereNotNull('end_date')
+                             ->where('end_date', '<=', $endDate);
+                });
+            });
+        }
+        
+        $keywords = $query->orderBy('id', 'desc')->paginate(10);
+        
+        // Hitung jumlah keyword yang sudah aktif sebagai spesial promo
+        $activeSpecialPromoCount = Keyword::where('is_special_promo', 1)
+            ->where('status', 'approve')
+            ->count();
+        
+        return view('spesial-promo-form', compact('keywords', 'activeSpecialPromoCount'));
+    }
+
+    /**
+     * Toggle special promo status (is_special_promo)
+     */
+    public function toggleSpecialPromo(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $keyword = Keyword::findOrFail($id);
+            
+            // Jika akan mengaktifkan, cek apakah sudah ada 4 yang aktif
+            if (!$keyword->is_special_promo) {
+                $activeCount = Keyword::where('is_special_promo', 1)
+                    ->where('status', 'approve')
+                    ->count();
+                
+                if ($activeCount >= 4) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Maksimal 4 keyword yang bisa diaktifkan sebagai spesial promo. Silakan nonaktifkan salah satu terlebih dahulu.',
+                        'active_count' => $activeCount
+                    ], 400);
+                }
+            }
+            
+            $keyword->is_special_promo = $keyword->is_special_promo ? 0 : 1;
+            $keyword->save();
+            
+            // Hitung ulang jumlah aktif setelah update
+            $activeCount = Keyword::where('is_special_promo', 1)
+                ->where('status', 'approve')
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status spesial promo berhasil diperbarui',
+                'is_special_promo' => $keyword->is_special_promo,
+                'active_count' => $activeCount
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling special promo status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui status spesial promo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle keyword status (is_active)
+     */
+    public function toggleStatus(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $keyword = Keyword::findOrFail($id);
+            $keyword->is_active = $keyword->is_active ? 0 : 1;
+            $keyword->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status keyword berhasil diperbarui',
+                'is_active' => $keyword->is_active,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling keyword status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

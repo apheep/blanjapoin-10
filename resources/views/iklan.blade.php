@@ -6,16 +6,15 @@
 
 @section('content')
 @include('partials.navbar-admin')
-<div id="iklanPage" class="min-h-screen bg-white pt-28 md:pt-32 pb-12 opacity-0 transition-opacity duration-500">
+<div id="iklanPage" class="min-h-screen bg-white pt-20 md:pt-32 pb-12 opacity-0 transition-opacity duration-500">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex flex-row items-center justify-between gap-3 pl-2">
             <div>
-                <p class="text-sm text-neutral-500 font-semibold tracking-wide uppercase mb-1">Landing Page</p>
-                <h1 class="text-2xl md:text-3xl font-bold text-neutral-800">Manajemen Iklan</h1>
+                <h1 class="text-2xl md:text-3xl font-bold text-neutral-800">Landing Page</h1>
                 <p class="text-sm text-neutral-500">Atur banner yang tampil pada halaman utama pengguna.</p>
             </div>
-            <a href="{{ route('home') }}" target="_blank" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-semibold shadow-md hover:shadow-lg transition">
-                Lihat Landing Page
+            <a href="{{ route('home') }}" target="_blank" class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md hover:shadow-lg transition flex-shrink-0" title="Lihat Landing Page">
+                <i class="fas fa-external-link-alt"></i>
             </a>
         </div>
 
@@ -36,7 +35,7 @@
         @endif
 
         <div class="grid md:grid-cols-2 gap-6">
-            <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-neutral-100">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Tambah Iklan Baru</h2>
                 <p class="text-sm text-neutral-500 mb-5">Unggah file gambar dengan format 5:1 aspect ratio (JPG, PNG, maksimal 2 MB). </p>
                 <form id="uploadForm" action="{{ route('iklan.store') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
@@ -53,15 +52,27 @@
                                placeholder="https://contoh.com/promo"
                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
                     </label>
+                    <label class="block">
+                        <span class="text-sm font-semibold text-neutral-700">Teritorial <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
+                        <select id="territorialInput" name="territorial" 
+                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                            <option value="">Semua Teritorial (Tampil di semua halaman)</option>
+                            @foreach($territories as $territory)
+                                <option value="{{ $territory['slug'] }}" {{ old('territorial') === $territory['slug'] ? 'selected' : '' }}>
+                                    {{ $territory['name'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-neutral-500 mt-1">Jika dipilih, iklan hanya akan tampil di halaman teritorial yang dipilih.</p>
+                    </label>
                     <button type="button" id="openConfirmModal" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition">
                         Simpan Iklan
                     </button>
                 </form>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-neutral-100">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Preview Banner</h2>
-                <p class="text-sm text-neutral-500 mb-4">Gambar pertama pada daftar akan menjadi banner utama.</p>
                 @php
                     $primaryBanner = $iklans->first();
                 @endphp
@@ -84,17 +95,33 @@
                         @endif
                     </p>
                 @endif
-                <p class="text-xs text-neutral-400 mt-3 leading-relaxed">
-                    Rekomendasi ukuran 5:1 aspect ratio (1200x240 piksel) dengan format landscape.
-                </p>
             </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-lg p-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                 <div>
                     <h2 class="text-xl font-semibold text-neutral-800">Daftar Iklan</h2>
-                    <p class="text-sm text-neutral-500">Total {{ $iklans->count() }} banner.</p>
+                    <p class="text-sm text-neutral-500">
+                        Total <span id="totalCount">{{ $iklans->count() }}</span> banner.
+                        <span id="filteredCount" class="hidden">Menampilkan <span id="filteredNumber">0</span> banner.</span>
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <label class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-neutral-700 whitespace-nowrap">Filter Teritorial:</span>
+                        <select id="territorialFilter" 
+                                class="block w-full md:w-48 rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                            <option value="">Semua Teritorial</option>
+                            <option value="null">Tanpa Teritorial</option>
+                            @foreach($territories as $territory)
+                                <option value="{{ $territory['slug'] }}">{{ $territory['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="button" id="resetFilter" class="hidden px-3 py-2 text-sm font-semibold text-neutral-600 bg-neutral-100 border border-neutral-200 rounded-xl hover:bg-neutral-200 transition">
+                        <i class="fas fa-times mr-1"></i>Reset
+                    </button>
                 </div>
             </div>
 
@@ -102,16 +129,25 @@
                 <table class="min-w-full divide-y divide-neutral-100 text-sm">
                     <thead class="text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
                         <tr>
-                        <th class="py-3 text-center">No</th>
+                        <th class="py-3 text-center w-12 md:w-12 pr-3 md:pr-0"></th>
+                        <th class="py-3 text-left pl-3 md:pl-0">No</th>
                         <th class="py-3 text-center">Preview</th>
-                         <th class="py-3 text-center">Link</th>
+                        <th class="py-3 text-center">Link</th>
+                        <th class="py-3 text-center">Teritorial</th>
                         <th class="py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-neutral-100">
+                    <tbody id="iklanTableBody" class="divide-y divide-neutral-100">
                         @forelse ($iklans as $iklan)
-                            <tr>
-                                <td class="py-3 text-center">
+                            <tr data-iklan-id="{{ $iklan->id }}" 
+                                data-territorial="{{ $iklan->territorial ?? 'null' }}"
+                                class="cursor-move hover:bg-neutral-50 transition-colors draggable-row iklan-row">
+                                <td class="py-3 text-center pr-3 md:pr-0">
+                                    <div class="flex items-center justify-center cursor-grab active:cursor-grabbing">
+                                        <i class="fas fa-grip-vertical text-neutral-400 hover:text-neutral-600 transition-colors"></i>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-left  pl-3 md:pl-0">
                                     {{ $loop->iteration }}
                                 </td>
                                 <td class="py-3 text-center flex items-center justify-center">
@@ -128,19 +164,29 @@
                                         <span class="text-neutral-400 font-medium">-</span>
                                     @endif
                                 </td>
+                                <td class="py-3 text-center text-xs">
+                                    @if ($iklan->territorial)
+                                        <a href="{{ route('city.show', $iklan->territorial) }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition font-medium">
+                                            {{ territorialName($iklan->territorial) }}
+                                            <i class="fas fa-external-link-alt text-[10px]"></i>
+                                        </a>
+                                    @else
+                                        <span class="text-neutral-400 font-medium">Semua Teritorial</span>
+                                    @endif
+                                </td>
                                 <td class="py-3 text-center">
                                     <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center px-3 py-2 rounded-lg border border-rose-200 text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger">
-                                            Hapus
+                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                            <td colspan="5" class="py-6 text-center text-neutral-500 font-medium">
+                            <td colspan="6" class="py-6 text-center text-neutral-500 font-medium">
                                     Belum ada data iklan. Tambahkan gambar melalui form di atas.
                                 </td>
                             </tr>
@@ -317,6 +363,181 @@ document.addEventListener('DOMContentLoaded', function () {
         deleteModal.addEventListener('click', (event) => {
             if (event.target === deleteModal) {
                 closeModal(deleteModal, deleteModalContent);
+            }
+        });
+    }
+
+    // Drag and Drop functionality untuk reorder iklan
+    const tableBody = document.getElementById('iklanTableBody');
+    if (tableBody) {
+        let draggedRow = null;
+        let draggedOverRow = null;
+
+        const rows = tableBody.querySelectorAll('.draggable-row');
+        
+        rows.forEach(row => {
+            // Make row draggable
+            row.setAttribute('draggable', 'true');
+            
+            row.addEventListener('dragstart', function(e) {
+                draggedRow = this;
+                this.style.opacity = '0.5';
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+            });
+
+            row.addEventListener('dragend', function(e) {
+                this.style.opacity = '';
+                rows.forEach(r => {
+                    r.classList.remove('border-t-2', 'border-orange-500');
+                });
+            });
+
+            row.addEventListener('dragover', function(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (draggedRow && this !== draggedRow) {
+                    rows.forEach(r => {
+                        r.classList.remove('border-t-2', 'border-orange-500');
+                    });
+                    this.classList.add('border-t-2', 'border-orange-500');
+                    draggedOverRow = this;
+                }
+                return false;
+            });
+
+            row.addEventListener('dragleave', function(e) {
+                this.classList.remove('border-t-2', 'border-orange-500');
+            });
+
+            row.addEventListener('drop', function(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+
+                if (draggedRow && this !== draggedRow) {
+                    const allRows = Array.from(tableBody.querySelectorAll('.draggable-row'));
+                    const draggedIndex = allRows.indexOf(draggedRow);
+                    const targetIndex = allRows.indexOf(this);
+
+                    if (draggedIndex < targetIndex) {
+                        tableBody.insertBefore(draggedRow, this.nextSibling);
+                    } else {
+                        tableBody.insertBefore(draggedRow, this);
+                    }
+
+                    // Update nomor urut
+                    updateRowNumbers();
+                    
+                    // Save order to server
+                    saveOrder();
+                }
+
+                rows.forEach(r => {
+                    r.classList.remove('border-t-2', 'border-orange-500');
+                });
+
+                return false;
+            });
+        });
+
+        function updateRowNumbers() {
+            const rows = Array.from(tableBody.querySelectorAll('.draggable-row')).filter(row => {
+                return row.style.display !== 'none';
+            });
+            rows.forEach((row, index) => {
+                const noCell = row.querySelector('td:nth-child(2)');
+                if (noCell) {
+                    noCell.textContent = index + 1;
+                }
+            });
+        }
+
+        function saveOrder() {
+            // Get all rows in current DOM order (including hidden ones)
+            // This ensures order is saved globally, not just for visible rows
+            const rows = tableBody.querySelectorAll('.draggable-row');
+            const orders = Array.from(rows).map(row => {
+                return parseInt(row.getAttribute('data-iklan-id'));
+            });
+
+            fetch('{{ route("iklan.reorder") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ orders: orders })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Optional: Show success message
+                    console.log('Urutan berhasil diperbarui');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert on error
+                location.reload();
+            });
+        }
+    }
+
+    // Filter functionality untuk teritorial
+    const territorialFilter = document.getElementById('territorialFilter');
+    const resetFilterBtn = document.getElementById('resetFilter');
+    const totalCount = document.getElementById('totalCount');
+    const filteredCount = document.getElementById('filteredCount');
+    const filteredNumber = document.getElementById('filteredNumber');
+    const iklanRows = document.querySelectorAll('.iklan-row');
+
+    function filterByTerritorial(territorialValue) {
+        let visibleCount = 0;
+        
+        iklanRows.forEach(row => {
+            const rowTerritorial = row.getAttribute('data-territorial');
+            const shouldShow = territorialValue === '' || rowTerritorial === territorialValue;
+            
+            if (shouldShow) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Update counter
+        if (territorialValue === '') {
+            totalCount.textContent = iklanRows.length;
+            filteredCount.classList.add('hidden');
+            resetFilterBtn.classList.add('hidden');
+        } else {
+            filteredNumber.textContent = visibleCount;
+            filteredCount.classList.remove('hidden');
+            resetFilterBtn.classList.remove('hidden');
+        }
+
+        // Update row numbers after filtering
+        if (tableBody) {
+            updateRowNumbers();
+        }
+    }
+
+    if (territorialFilter) {
+        territorialFilter.addEventListener('change', function() {
+            filterByTerritorial(this.value);
+        });
+    }
+
+    if (resetFilterBtn) {
+        resetFilterBtn.addEventListener('click', function() {
+            if (territorialFilter) {
+                territorialFilter.value = '';
+                filterByTerritorial('');
             }
         });
     }

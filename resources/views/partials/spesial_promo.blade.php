@@ -1,4 +1,16 @@
 <section class="relative z-20 mt-6 sm:mt-24 mb-8 sm:mb-10">
+    <style>
+        .special-promo-card {
+            width: calc(50% - 6px);
+            min-width: calc(50% - 6px);
+        }
+        @media (min-width: 768px) {
+            .special-promo-card {
+                width: calc(25% - 12px);
+                min-width: calc(25% - 12px);
+            }
+        }
+    </style>
     <div class="mx-auto w-full max-w-[1200px]">
         <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-orange-100/70 px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-7">
             <div class="flex items-center justify-between gap-3 mb-4 sm:mb-5">
@@ -13,7 +25,12 @@
 
             @php
                 $specialPromos = collect($keywords ?? [])
-                    ->filter(fn ($keyword) => $keyword->merchant && $keyword->status === 'approve')
+                    ->filter(fn ($keyword) => 
+                        $keyword->merchant && 
+                        $keyword->status === 'approve' && 
+                        $keyword->is_active == 1 &&
+                        ($keyword->is_special_promo ?? 0) == 1
+                    )
                     ->take(4);
             @endphp
 
@@ -22,36 +39,41 @@
                     Belum ada voucher spesial yang bisa ditampilkan.
                 </div>
             @else
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 pb-1 card-container" data-voucher-container="true" data-voucher-section="special" data-container-type="primary">
-                    @foreach($specialPromos as $keyword)
-                        @php
-                            $merchantName = optional($keyword->merchant)->nama_merchant ?? '-';
-                            $productName = $keyword->nama_produk ?: $merchantName;
-                            $subtitle = $keyword->skb ?: 'Voucher pilihan spesial untuk kamu.';
-                            $image = $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg');
-                            $point = (int) $keyword->redeem;
-                        @endphp
+                <div class="relative">
+                    <!-- Carousel Container -->
+                    <div class="relative overflow-hidden">
+                        <div id="specialPromoCarousel" class="flex transition-transform duration-500 ease-in-out gap-3 sm:gap-4 md:gap-5" style="transform: translateX(0);">
+                            @foreach($specialPromos as $keyword)
+                                @php
+                                    $merchantName = optional($keyword->merchant)->nama_merchant ?? '-';
+                                    $productName = $keyword->nama_produk ?: $merchantName;
+                                    $subtitle = $keyword->skb ?: 'Voucher pilihan spesial untuk kamu.';
+                                    $image = $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg');
+                                    $point = (int) $keyword->redeem;
+                                @endphp
 
-                        <a
-                            href="{{ $keyword->cta_link ?? '#' }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            data-voucher-card="true"
-                            data-point="{{ $point }}"
-                            class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-2xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 flex flex-col h-full @if($loop->iteration > 2) hidden md:flex @endif"
-                        >
+                                <a
+                                    href="{{ $keyword->cta_link ?? '#' }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-voucher-card="true"
+                                    data-point="{{ $point }}"
+                                    class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-2xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 flex flex-col h-full flex-shrink-0 special-promo-card"
+                                    style="min-height: 280px;"
+                                    data-carousel-item
+                                >
                             <div class="relative px-3 pt-3 pb-2 sm:px-4 sm:pt-4 sm:pb-3 flex-shrink-0">
                                 <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
                                     <img src="{{ $image }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                                 </div>
                             </div>
 
-                            <div class="flex flex-col px-3 pb-3 sm:px-4 sm:pb-4 flex-1 min-h-0">
+                            <div class="flex flex-col px-3 pb-3 sm:px-4 sm:pb-4 flex-1 min-h-0" style="min-height: 140px;">
                                 @if(!is_null($keyword->diskon))
                                 <div class="flex items-center gap-1.5 mb-1">
                                     <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-4 h-4 sm:w-5 sm:h-5 object-contain">
                                     <p class="text-[11px] sm:text-xs font-semibold text-red-500 uppercase">
-                                        {{ $keyword->diskon }}
+                                        {{ formatDiskon($keyword->diskon) }}
                                     </p>
                                 </div>
                                 @endif
@@ -78,12 +100,154 @@
                                     </div>
                                 </div>
                             </div>
-                        </a>
-                    @endforeach
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>
     </div>
 </section>
+
+<script>
+    (function() {
+        const carousel = document.getElementById('specialPromoCarousel');
+        const items = document.querySelectorAll('[data-carousel-item]');
+        
+        if (!carousel || items.length <= 2) return;
+        
+        let currentIndex = 0;
+        const itemsPerView = window.innerWidth >= 768 ? 4 : 2;
+        const totalSlides = Math.ceil(items.length / itemsPerView);
+        let autoSlideInterval;
+        
+        // Touch/swipe variables
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let isDragging = false;
+        let startPos = 0;
+        let currentTranslate = 0;
+        let prevTranslate = 0;
+        let animationID = 0;
+        
+        // Update carousel position
+        function updateCarousel() {
+            if (items.length === 0) return;
+            const gap = window.innerWidth >= 768 ? 16 : 12; // md:gap-4 = 16px, gap-3 = 12px
+            const itemWidth = items[0].offsetWidth + gap;
+            const translateX = -currentIndex * itemWidth * itemsPerView;
+            carousel.style.transform = `translateX(${translateX}px)`;
+        }
+        
+        // Next slide
+        function nextSlide() {
+            if (currentIndex < totalSlides - 1) {
+                currentIndex++;
+            } else {
+                currentIndex = 0; // Loop back to start
+            }
+            updateCarousel();
+            resetAutoSlide();
+        }
+        
+        // Previous slide
+        function prevSlide() {
+            if (currentIndex > 0) {
+                currentIndex--;
+            } else {
+                currentIndex = totalSlides - 1; // Loop to end
+            }
+            updateCarousel();
+            resetAutoSlide();
+        }
+        
+        // Auto slide with longer timeout
+        function startAutoSlide() {
+            autoSlideInterval = setInterval(nextSlide, 5000); // 5 seconds
+        }
+        
+        function stopAutoSlide() {
+            if (autoSlideInterval) {
+                clearInterval(autoSlideInterval);
+            }
+        }
+        
+        function resetAutoSlide() {
+            stopAutoSlide();
+            startAutoSlide();
+        }
+        
+        // Touch/Swipe handlers
+        function getPositionX(event) {
+            return event.type.includes('mouse') ? event.clientX : event.touches[0].clientX;
+        }
+        
+        function touchStart(event) {
+            startPos = getPositionX(event);
+            isDragging = true;
+            stopAutoSlide();
+            carousel.style.transition = 'none';
+        }
+        
+        function touchMove(event) {
+            if (!isDragging) return;
+            const currentPosition = getPositionX(event);
+            currentTranslate = prevTranslate + currentPosition - startPos;
+        }
+        
+        function touchEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            carousel.style.transition = 'transform 0.5s ease-in-out';
+            
+            const movedBy = currentTranslate - prevTranslate;
+            const threshold = 50; // Minimum swipe distance
+            
+            if (movedBy < -threshold && currentIndex < totalSlides - 1) {
+                nextSlide();
+            } else if (movedBy > threshold && currentIndex > 0) {
+                prevSlide();
+            } else {
+                updateCarousel();
+            }
+            
+            prevTranslate = currentTranslate;
+            startAutoSlide();
+        }
+        
+        // Add touch event listeners
+        carousel.addEventListener('touchstart', touchStart, { passive: true });
+        carousel.addEventListener('touchmove', touchMove, { passive: true });
+        carousel.addEventListener('touchend', touchEnd);
+        
+        // Mouse drag support (for desktop testing)
+        carousel.addEventListener('mousedown', touchStart);
+        carousel.addEventListener('mousemove', touchMove);
+        carousel.addEventListener('mouseup', touchEnd);
+        carousel.addEventListener('mouseleave', touchEnd);
+        
+        // Pause on hover (desktop only)
+        const carouselContainer = carousel.closest('.relative');
+        if (carouselContainer) {
+            carouselContainer.addEventListener('mouseenter', stopAutoSlide);
+            carouselContainer.addEventListener('mouseleave', startAutoSlide);
+        }
+        
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                currentIndex = 0;
+                updateCarousel();
+            }, 250);
+        });
+        
+        // Initialize
+        updateCarousel();
+        startAutoSlide();
+    })();
+</script>
 
 

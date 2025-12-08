@@ -18,14 +18,18 @@ class Keyword extends Model
         'cta_link',
         'redeem',
         'diskon',
+        'subsidy_amount',
+        'diamond_amount',
         'skb',
         'start_date',
         'end_date',
         'image',
         'stock',
-        'rtx',
+        'trx',
         'sisa_stock',
         'status',
+        'is_active',
+        'is_special_promo',
     ];
 
     public function merchant()

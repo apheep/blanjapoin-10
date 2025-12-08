@@ -202,6 +202,8 @@
                     const button = document.getElementById('statusBtnKeyword');
                     if (!button) return;
 
+                    const previousStatus = selectedKeywordStatus;
+                    
                     if (selectedKeywordStatus === status) {
                         status = 'all';
                     }
@@ -255,8 +257,33 @@
 
                     // Reload seluruh tabel keyword dari server dengan filter status ini
                     if (typeof fetchKeywordTable === 'function' && typeof buildKeywordSearchRequestUrl === 'function') {
-                        const requestUrl = buildKeywordSearchRequestUrl();
-                        fetchKeywordTable(requestUrl);
+                        // Reset pagination ke page 1 saat filter status berubah
+                        // Buat URL baru dengan keyword_page=1
+                        const url = new URL('/keywords/search', window.location.origin);
+                        url.searchParams.set('tab', 'keyword');
+                        url.searchParams.set('keyword_page', '1');
+                        
+                        // Pertahankan merchant_page
+                        const currentUrl = new URL(window.location.href);
+                        const merchantPage = currentUrl.searchParams.get('merchant_page');
+                        if (merchantPage) {
+                            url.searchParams.set('merchant_page', merchantPage);
+                        }
+                        
+                        // Set status filter (hapus jika 'all')
+                        if (status && status !== 'all') {
+                            url.searchParams.set('status', status);
+                        } else {
+                            url.searchParams.delete('status');
+                        }
+                        
+                        // Set search query jika ada
+                        if (currentKeywordQuery) {
+                            url.searchParams.set('q', currentKeywordQuery);
+                        }
+                        
+                        // Langsung fetch dengan URL yang sudah dibuat
+                        fetchKeywordTable(url.toString());
                     }
 
                     toggleKeywordStatusDropdown();
@@ -388,6 +415,11 @@
                 function switchTab(tab) {
                     const url = new URL(window.location.href);
                     url.searchParams.set('tab', tab);
+                    
+                    // PENTING: Pertahankan parameter pagination saat pindah tab
+                    // merchant_page dan keyword_page tetap dipertahankan di URL
+                    // Tidak perlu dihapus atau diubah, biarkan tetap ada
+                    
                     window.history.replaceState({}, '', url);
 
                     currentActiveTab = tab;
@@ -902,7 +934,12 @@
                 searchUrl.searchParams.set('q', currentMerchantQuery);
             }
             searchUrl.searchParams.set('tab', 'merchant');
-            searchUrl.searchParams.set('page', '1');
+            // Pertahankan keyword_page dari URL saat ini jika ada
+            const currentUrl = new URL(window.location.href);
+            const keywordPage = currentUrl.searchParams.get('keyword_page');
+            if (keywordPage) {
+                searchUrl.searchParams.set('keyword_page', keywordPage);
+            }
             // Sertakan kategori bila dipilih selain "Semua"
             const activeCategory = (selectedCategory?.merchant || 'Semua');
             if (activeCategory && activeCategory !== 'Semua') {
@@ -971,16 +1008,27 @@
             if (!container) return;
 
             container.querySelectorAll('.merchant-pagination-link').forEach(link => {
-                const linkUrl = new URL(link.href, window.location.origin);
-                const isMerchantSearchPath = linkUrl.pathname === '/merchants/search';
-
                 link.addEventListener('click', function(event) {
-                    if (!isMerchantSearchPath) {
-                        return;
-                    }
-
                     event.preventDefault();
-                    fetchMerchantTable(this.href);
+                    const linkUrl = new URL(this.href, window.location.origin);
+                    
+                    // Pastikan tab=merchant selalu ada
+                    linkUrl.searchParams.set('tab', 'merchant');
+                    
+                    // Pertahankan keyword_page dari URL saat ini jika ada
+                    const currentUrl = new URL(window.location.href);
+                    const keywordPage = currentUrl.searchParams.get('keyword_page');
+                    if (keywordPage) {
+                        linkUrl.searchParams.set('keyword_page', keywordPage);
+                    }
+                    
+                    // Jika link adalah dari /merchants/search, gunakan AJAX
+                    if (linkUrl.pathname === '/merchants/search') {
+                        fetchMerchantTable(linkUrl.toString());
+                    } else {
+                        // Jika bukan, redirect langsung ke URL yang sudah di-update
+                        window.location.href = linkUrl.toString();
+                    }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
@@ -1001,6 +1049,8 @@
             } else {
                 url.searchParams.delete('category');
             }
+            // PENTING: Jangan hapus keyword_page, biarkan tetap ada untuk mempertahankan pagination keyword
+            // Parameter keyword_page akan tetap dipertahankan di URL
             window.history.replaceState({}, '', url);
         }
 
@@ -1078,7 +1128,7 @@
 
             base.searchParams.forEach((value, key) => {
                 // abaikan parameter yang akan kita kelola sendiri
-                if (key === 'tab' || key === 'keyword_search' || key === 'status') {
+                if (key === 'tab' || key === 'keyword_search' || key === 'status' || key === 'keyword_page') {
                     return;
                 }
                 searchUrl.searchParams.set(key, value);
@@ -1095,6 +1145,23 @@
                 searchUrl.searchParams.set('status', selectedKeywordStatus);
             } else {
                 searchUrl.searchParams.delete('status');
+            }
+
+            // Jika sourceHref diberikan (dari pagination link), gunakan keyword_page dari URL tersebut
+            if (sourceHref) {
+                const sourceUrl = new URL(sourceHref, window.location.origin);
+                const keywordPage = sourceUrl.searchParams.get('keyword_page');
+                if (keywordPage) {
+                    searchUrl.searchParams.set('keyword_page', keywordPage);
+                }
+            }
+            // Jika tidak ada sourceHref, biarkan keyword_page tetap dari URL saat ini atau default ke 1
+
+            // Pertahankan merchant_page dari URL saat ini jika ada
+            const currentUrl = new URL(window.location.href);
+            const merchantPage = currentUrl.searchParams.get('merchant_page');
+            if (merchantPage) {
+                searchUrl.searchParams.set('merchant_page', merchantPage);
             }
 
             searchUrl.searchParams.set('tab', 'keyword');
@@ -1117,46 +1184,105 @@
             fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
+            .then(response => {
+                // Handle redirect (302) - biasanya karena session expired
+                if (response.redirected || response.status === 302) {
+                    throw new Error('Session expired. Please refresh the page and login again.');
+                }
+                
+                if (!response.ok) {
+                    // Cek jika response adalah HTML (redirect ke login)
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('text/html')) {
+                        throw new Error('Authentication required. Please refresh the page and login again.');
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.json();
+            })
             .then(data => {
-                if (data.html) {
+                if (data && data.html) {
                     // Ganti konten setelah animasi keluar selesai
-                        setTimeout(() => {
-                            container.innerHTML = data.html;
-                            attachKeywordPaginationHandlers();
-                            updateKeywordUrlState();
-                            // Re-apply date filter if user set one before the table reload
-                            if (window.dateFilterState?.dateFilterKeyword && (window.dateFilterState.dateFilterKeyword.start || window.dateFilterState.dateFilterKeyword.end)) {
-                                applyDateFilterCompact('dateFilterKeyword');
-                            }
+                    setTimeout(() => {
+                        container.innerHTML = data.html;
+                        attachKeywordPaginationHandlers();
+                        updateKeywordUrlState();
+                        // Re-apply date filter if user set one before the table reload
+                        if (window.dateFilterState?.dateFilterKeyword && (window.dateFilterState.dateFilterKeyword.start || window.dateFilterState.dateFilterKeyword.end)) {
+                            applyDateFilterCompact('dateFilterKeyword');
+                        }
 
-                            // Trigger reflow sebelum animasi masuk
-                            void container.offsetWidth;
+                        // Trigger reflow sebelum animasi masuk
+                        void container.offsetWidth;
 
                         // Animasi masuk (fade + slide up)
                         container.style.opacity = '1';
                         container.style.transform = 'translateY(0)';
                     }, 200);
+                } else {
+                    console.error('Keyword search: No HTML in response', data);
+                    // Restore visibility jika tidak ada data
+                    container.style.opacity = '1';
+                    container.style.transform = 'translateY(0)';
                 }
             })
-            .catch(error => console.error('Keyword search error:', error));
+            .catch(error => {
+                console.error('Keyword search error:', error);
+                // Tampilkan pesan error
+                container.innerHTML = '<div class="p-4 text-center text-red-600 bg-red-50 rounded-lg"><i class="fas fa-exclamation-triangle mr-2"></i>Error loading keywords. Please refresh the page.</div>';
+                // Restore visibility on error
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            });
         }
 
-        function attachKeywordPaginationHandlers() {
-            const container = document.getElementById('keyword-table-container');
-            if (!container) return;
-
-            container.querySelectorAll('.keyword-pagination-link').forEach(link => {
-                link.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    const requestUrl = buildKeywordSearchRequestUrl(this.href);
-                    fetchKeywordTable(requestUrl);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                });
+        // Gunakan event delegation di level document untuk pagination keyword agar lebih robust
+        // Event delegation di level document akan tetap bekerja meskipun container di-replace
+        // Hanya attach sekali dengan menggunakan flag
+        if (!window.keywordPaginationHandlerAttached) {
+            document.addEventListener('click', function(event) {
+                const link = event.target.closest('.keyword-pagination-link');
+                if (!link) return;
+                
+                // Pastikan link berada di dalam keyword-table-container
+                const container = document.getElementById('keyword-table-container');
+                if (!container || !container.contains(link)) return;
+                
+                event.preventDefault();
+                const linkUrl = new URL(link.href, window.location.origin);
+                
+                // Pastikan tab=keyword selalu ada
+                linkUrl.searchParams.set('tab', 'keyword');
+                
+                // Pertahankan merchant_page dari URL saat ini jika ada
+                const currentUrl = new URL(window.location.href);
+                const merchantPage = currentUrl.searchParams.get('merchant_page');
+                if (merchantPage) {
+                    linkUrl.searchParams.set('merchant_page', merchantPage);
+                }
+                
+                // Pertahankan status filter jika ada
+                if (selectedKeywordStatus && selectedKeywordStatus !== 'all') {
+                    linkUrl.searchParams.set('status', selectedKeywordStatus);
+                }
+                
+                // Gunakan AJAX untuk semua pagination link keyword
+                const requestUrl = buildKeywordSearchRequestUrl(linkUrl.toString());
+                fetchKeywordTable(requestUrl);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             });
+            window.keywordPaginationHandlerAttached = true;
+        }
+        
+        function attachKeywordPaginationHandlers() {
+            // Function ini tidak perlu melakukan apa-apa karena event delegation sudah di level document
+            // Tapi tetap dipanggil untuk kompatibilitas dengan kode yang sudah ada
         }
 
         function updateKeywordUrlState() {
@@ -1167,6 +1293,14 @@
             } else {
                 url.searchParams.delete('keyword_search');
             }
+            // Update parameter status berdasarkan selectedKeywordStatus
+            if (selectedKeywordStatus && selectedKeywordStatus !== 'all') {
+                url.searchParams.set('status', selectedKeywordStatus);
+            } else {
+                url.searchParams.delete('status');
+            }
+            // PENTING: Jangan hapus merchant_page, biarkan tetap ada untuk mempertahankan pagination merchant
+            // Parameter merchant_page akan tetap dipertahankan di URL
             window.history.replaceState({}, '', url);
         }
 

@@ -10,6 +10,8 @@
         <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
         <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>      
         <a href="{{ route('iklan.index') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Iklan</a>      
+        <a href="{{ route('withdraw.approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Withdraw Approval</a>      
+        <a href="{{ route('spesial-promo.form') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Spesial Promo</a>      
          @endif
       </div>
 
@@ -84,6 +86,14 @@
         <a href="{{ route('iklan.index') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="fa-solid fa-image w-5 text-gray-500"></i>
           <span class="font-medium">Iklan</span>
+        </a>
+        <a href="{{ route('withdraw.approval') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-money-bill-transfer w-5 text-gray-500"></i>
+          <span class="font-medium">Withdraw Approval</span>
+        </a>
+        <a href="{{ route('spesial-promo.form') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-tags w-5 text-gray-500"></i>
+          <span class="font-medium">Spesial Promo</span>
         </a>
       @endif
     </div>

@@ -17,5 +17,7 @@ class Iklan extends Model
     protected $fillable = [
         'image_path',
         'link_iklan',
+        'territorial',
+        'order',
     ];
 }
