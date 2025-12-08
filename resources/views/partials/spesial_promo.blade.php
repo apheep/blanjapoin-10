@@ -51,7 +51,7 @@
                                 <div class="flex items-center gap-1.5 mb-1">
                                     <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-4 h-4 sm:w-5 sm:h-5 object-contain">
                                     <p class="text-[11px] sm:text-xs font-semibold text-red-500 uppercase">
-                                        {{ $keyword->diskon }}
+                                        {{ formatDiskon($keyword->diskon) }}
                                     </p>
                                 </div>
                                 @endif

@@ -1123,4 +1123,73 @@ class MerchantController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Show merchants by territorial (kota/kabupaten)
+     * Route: GET /territorial/{location}
+     */
+    public function showByTerritorial($location)
+    {
+        // Convert slug back to readable name
+        $locationName = territorialName($location);
+        
+        // Get all active merchants
+        $allMerchants = Merchant::where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->get();
+        
+        // Filter merchants by territorial (compare slug with slug)
+        $merchants = $allMerchants->filter(function($merchant) use ($location) {
+            $merchantTerritorial = extractKabupatenKota($merchant->daerah);
+            $merchantSlug = territorialSlug($merchantTerritorial);
+            // Compare slug with slug (case-insensitive)
+            return strtolower($merchantSlug) === strtolower($location);
+        })->values();
+        
+        // Get keywords for these merchants
+        $merchantIds = $merchants->pluck('id');
+        $keywords = Keyword::with('merchant')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('is_active', 1)
+            ->where('status', 'approve')
+            ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
+            })
+            ->get();
+        
+        // Get iklans
+        $iklans = Iklan::orderBy('order', 'asc')->get();
+        
+        // Get all available territories for filter
+        $allDaerah = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->distinct()
+            ->pluck('daerah');
+        
+        $territories = $allDaerah->map(function($daerah) {
+            $territorial = extractKabupatenKota($daerah);
+            return [
+                'name' => $territorial,
+                'slug' => territorialSlug($territorial)
+            ];
+        })
+        ->filter(function($item) {
+            return !empty($item['name']) && !empty($item['slug']);
+        })
+        ->unique('slug')
+        ->sortBy('name')
+        ->values();
+        
+        return view('territorial', [
+            'location' => $location,
+            'locationName' => $locationName,
+            'merchants' => $merchants,
+            'keywords' => $keywords,
+            'iklans' => $iklans,
+            'territories' => $territories,
+        ]);
+    }
 }
