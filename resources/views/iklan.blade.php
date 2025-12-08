@@ -52,6 +52,19 @@
                                placeholder="https://contoh.com/promo"
                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
                     </label>
+                    <label class="block">
+                        <span class="text-sm font-semibold text-neutral-700">Teritorial <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
+                        <select id="territorialInput" name="territorial" 
+                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                            <option value="">Semua Teritorial (Tampil di semua halaman)</option>
+                            @foreach($territories as $territory)
+                                <option value="{{ $territory['slug'] }}" {{ old('territorial') === $territory['slug'] ? 'selected' : '' }}>
+                                    {{ $territory['name'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-neutral-500 mt-1">Jika dipilih, iklan hanya akan tampil di halaman teritorial yang dipilih.</p>
+                    </label>
                     <button type="button" id="openConfirmModal" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition">
                         Simpan Iklan
                     </button>
@@ -86,10 +99,29 @@
         </div>
 
         <div class="bg-white rounded-2xl shadow-lg p-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                 <div>
                     <h2 class="text-xl font-semibold text-neutral-800">Daftar Iklan</h2>
-                    <p class="text-sm text-neutral-500">Total {{ $iklans->count() }} banner.</p>
+                    <p class="text-sm text-neutral-500">
+                        Total <span id="totalCount">{{ $iklans->count() }}</span> banner.
+                        <span id="filteredCount" class="hidden">Menampilkan <span id="filteredNumber">0</span> banner.</span>
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <label class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-neutral-700 whitespace-nowrap">Filter Teritorial:</span>
+                        <select id="territorialFilter" 
+                                class="block w-full md:w-48 rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                            <option value="">Semua Teritorial</option>
+                            <option value="null">Tanpa Teritorial</option>
+                            @foreach($territories as $territory)
+                                <option value="{{ $territory['slug'] }}">{{ $territory['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="button" id="resetFilter" class="hidden px-3 py-2 text-sm font-semibold text-neutral-600 bg-neutral-100 border border-neutral-200 rounded-xl hover:bg-neutral-200 transition">
+                        <i class="fas fa-times mr-1"></i>Reset
+                    </button>
                 </div>
             </div>
 
@@ -100,13 +132,16 @@
                         <th class="py-3 text-center w-12 md:w-12 pr-3 md:pr-0"></th>
                         <th class="py-3 text-left pl-3 md:pl-0">No</th>
                         <th class="py-3 text-center">Preview</th>
-                         <th class="py-3 text-center">Link</th>
+                        <th class="py-3 text-center">Link</th>
+                        <th class="py-3 text-center">Teritorial</th>
                         <th class="py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="iklanTableBody" class="divide-y divide-neutral-100">
                         @forelse ($iklans as $iklan)
-                            <tr data-iklan-id="{{ $iklan->id }}" class="cursor-move hover:bg-neutral-50 transition-colors draggable-row">
+                            <tr data-iklan-id="{{ $iklan->id }}" 
+                                data-territorial="{{ $iklan->territorial ?? 'null' }}"
+                                class="cursor-move hover:bg-neutral-50 transition-colors draggable-row iklan-row">
                                 <td class="py-3 text-center pr-3 md:pr-0">
                                     <div class="flex items-center justify-center cursor-grab active:cursor-grabbing">
                                         <i class="fas fa-grip-vertical text-neutral-400 hover:text-neutral-600 transition-colors"></i>
@@ -129,6 +164,16 @@
                                         <span class="text-neutral-400 font-medium">-</span>
                                     @endif
                                 </td>
+                                <td class="py-3 text-center text-xs">
+                                    @if ($iklan->territorial)
+                                        <a href="{{ route('city.show', $iklan->territorial) }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition font-medium">
+                                            {{ territorialName($iklan->territorial) }}
+                                            <i class="fas fa-external-link-alt text-[10px]"></i>
+                                        </a>
+                                    @else
+                                        <span class="text-neutral-400 font-medium">Semua Teritorial</span>
+                                    @endif
+                                </td>
                                 <td class="py-3 text-center">
                                     <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
                                         @csrf
@@ -141,7 +186,7 @@
                             </tr>
                         @empty
                             <tr>
-                            <td colspan="5" class="py-6 text-center text-neutral-500 font-medium">
+                            <td colspan="6" class="py-6 text-center text-neutral-500 font-medium">
                                     Belum ada data iklan. Tambahkan gambar melalui form di atas.
                                 </td>
                             </tr>
@@ -400,7 +445,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         function updateRowNumbers() {
-            const rows = tableBody.querySelectorAll('.draggable-row');
+            const rows = Array.from(tableBody.querySelectorAll('.draggable-row')).filter(row => {
+                return row.style.display !== 'none';
+            });
             rows.forEach((row, index) => {
                 const noCell = row.querySelector('td:nth-child(2)');
                 if (noCell) {
@@ -410,6 +457,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function saveOrder() {
+            // Get all rows in current DOM order (including hidden ones)
+            // This ensures order is saved globally, not just for visible rows
             const rows = tableBody.querySelectorAll('.draggable-row');
             const orders = Array.from(rows).map(row => {
                 return parseInt(row.getAttribute('data-iklan-id'));
@@ -436,6 +485,61 @@ document.addEventListener('DOMContentLoaded', function () {
                 location.reload();
             });
         }
+    }
+
+    // Filter functionality untuk teritorial
+    const territorialFilter = document.getElementById('territorialFilter');
+    const resetFilterBtn = document.getElementById('resetFilter');
+    const totalCount = document.getElementById('totalCount');
+    const filteredCount = document.getElementById('filteredCount');
+    const filteredNumber = document.getElementById('filteredNumber');
+    const iklanRows = document.querySelectorAll('.iklan-row');
+
+    function filterByTerritorial(territorialValue) {
+        let visibleCount = 0;
+        
+        iklanRows.forEach(row => {
+            const rowTerritorial = row.getAttribute('data-territorial');
+            const shouldShow = territorialValue === '' || rowTerritorial === territorialValue;
+            
+            if (shouldShow) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Update counter
+        if (territorialValue === '') {
+            totalCount.textContent = iklanRows.length;
+            filteredCount.classList.add('hidden');
+            resetFilterBtn.classList.add('hidden');
+        } else {
+            filteredNumber.textContent = visibleCount;
+            filteredCount.classList.remove('hidden');
+            resetFilterBtn.classList.remove('hidden');
+        }
+
+        // Update row numbers after filtering
+        if (tableBody) {
+            updateRowNumbers();
+        }
+    }
+
+    if (territorialFilter) {
+        territorialFilter.addEventListener('change', function() {
+            filterByTerritorial(this.value);
+        });
+    }
+
+    if (resetFilterBtn) {
+        resetFilterBtn.addEventListener('click', function() {
+            if (territorialFilter) {
+                territorialFilter.value = '';
+                filterByTerritorial('');
+            }
+        });
     }
 });
 

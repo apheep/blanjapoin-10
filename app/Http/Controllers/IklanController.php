@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Iklan;
+use App\Models\Merchant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,29 @@ class IklanController extends Controller
     {
         $iklans = Iklan::orderBy('order', 'asc')->get();
 
-        return view('iklan', compact('iklans'));
+        // Get all available territories
+        $allDaerah = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->distinct()
+            ->pluck('daerah');
+
+        $territories = $allDaerah->map(function($daerah) {
+            $territorial = extractKabupatenKota($daerah);
+            return [
+                'name' => $territorial,
+                'slug' => territorialSlug($territorial)
+            ];
+        })
+        ->filter(function($item) {
+            return !empty($item['name']) && !empty($item['slug']);
+        })
+        ->unique('slug')
+        ->sortBy('name')
+        ->values();
+
+        return view('iklan', compact('iklans', 'territories'));
     }
 
     /**
@@ -29,6 +52,7 @@ class IklanController extends Controller
         $request->validate([
             'image' => ['required', 'image', 'max:2048'],
             'link_iklan' => ['nullable', 'url'],
+            'territorial' => ['nullable', 'string'],
         ]);
 
         $path = $request->file('image')->store('iklan', 'public');
@@ -39,12 +63,19 @@ class IklanController extends Controller
             $link = null;
         }
 
+        $territorial = $request->input('territorial');
+        $territorial = is_string($territorial) ? trim($territorial) : null;
+        if ($territorial === '') {
+            $territorial = null;
+        }
+
         // Get the highest order value and add 1
         $maxOrder = Iklan::max('order') ?? 0;
         
         Iklan::create([
             'image_path' => $path,
             'link_iklan' => $link,
+            'territorial' => $territorial,
             'order' => $maxOrder + 1,
         ]);
 

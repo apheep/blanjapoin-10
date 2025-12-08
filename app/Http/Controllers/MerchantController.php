@@ -1288,8 +1288,14 @@ class MerchantController extends Controller
             })
             ->get();
         
-        // Get iklans
-        $iklans = Iklan::orderBy('order', 'asc')->get();
+        // Get iklans - filter by territorial
+        // Show iklans that have no territorial (null) or match current location
+        $iklans = Iklan::where(function($query) use ($location) {
+            $query->whereNull('territorial')
+                  ->orWhere('territorial', $location);
+        })
+        ->orderBy('order', 'asc')
+        ->get();
         
         // Get all available territories for filter
         $allDaerah = Merchant::query()
