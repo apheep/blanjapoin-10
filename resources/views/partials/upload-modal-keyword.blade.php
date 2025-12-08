@@ -845,11 +845,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     const modal = document.getElementById('uploadModalKeyword');
-    if (modal) {
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal || event.target.id === 'uploadModalKeywordOverlay') {
+    const panel = document.getElementById('uploadModalKeywordPanel');
+    const overlay = document.getElementById('uploadModalKeywordOverlay');
+    
+    // Event listener untuk overlay - hanya tutup ketika klik di background hitam
+    if (overlay) {
+        overlay.addEventListener('click', function(event) {
+            // Hanya tutup jika klik langsung di overlay, bukan di child element
+            if (event.target === overlay) {
                 closeUploadKeyword();
             }
+        });
+    }
+    
+    // Prevent event bubbling dari panel ke modal
+    if (panel) {
+        panel.addEventListener('click', function(event) {
+            // Stop propagation untuk mencegah event bubble ke modal/overlay
+            event.stopPropagation();
         });
     }
 });
