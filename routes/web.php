@@ -20,35 +20,73 @@ use App\Models\Iklan;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
-    $keywords = Keyword::with('merchant')->get();
+    $keywords = Keyword::with('merchant')
+        ->where('is_active', 1)
+        ->where('status', 'approve')
+        ->get();
     $iklans = Iklan::orderBy('order', 'asc')->get();
     
-    // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+    // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
     $allDaerah = Merchant::query()
+        ->where('is_active', 1)
         ->whereNotNull('daerah')
         ->where('daerah', '!=', '')
         ->distinct()
         ->pluck('daerah');
     
-    // Ekstrak hanya kabupaten/kota dari daerah
-    // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+    // Ekstrak hanya kabupaten/kota dari daerah (bukan kecamatan)
+    // Format bisa: "Kecamatan, Kabupaten, Provinsi" atau "Beji, Kota Depok, Jawa Barat" atau "Kabupaten, Provinsi" atau "Kota/Kabupaten"
     $locations = $allDaerah->map(function($daerah) {
         $daerah = trim($daerah);
         
-        // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+        // Jika ada koma, parse bagian-bagiannya
         if (strpos($daerah, ',') !== false) {
-            $parts = explode(',', $daerah);
-            $kabupatenKota = trim($parts[0]);
+            $parts = array_map('trim', explode(',', $daerah));
+            $partsCount = count($parts);
+            
+            // Jika ada 3 bagian atau lebih: format biasanya "Kecamatan, Kabupaten/Kota, Provinsi"
+            // Ambil bagian kedua (index 1) yang biasanya adalah kabupaten/kota
+            if ($partsCount >= 3) {
+                $kabupatenKota = $parts[1]; // Ambil bagian kedua
+            }
+            // Jika ada 2 bagian
+            else if ($partsCount == 2) {
+                $firstPart = $parts[0];
+                $secondPart = $parts[1];
+                
+                // Cek apakah bagian pertama adalah kecamatan (dengan atau tanpa kata "Kecamatan")
+                // Jika bagian pertama tidak mengandung kata "Kota" atau "Kabupaten", kemungkinan besar itu kecamatan
+                $isFirstPartKecamatan = preg_match('/^Kecamatan\s+/i', $firstPart) || 
+                                       (!preg_match('/^(Kota|Kabupaten)\s+/i', $firstPart) && 
+                                        !preg_match('/^(Kota|Kabupaten)\s+/i', $secondPart));
+                
+                if ($isFirstPartKecamatan) {
+                    // Jika bagian pertama adalah kecamatan, ambil bagian kedua (kabupaten/kota)
+                    $kabupatenKota = $secondPart;
+                } else {
+                    // Jika bagian pertama bukan kecamatan, ambil bagian pertama (kabupaten/kota)
+                    $kabupatenKota = $firstPart;
+                }
+            }
+            // Jika hanya 1 bagian (tidak mungkin, tapi untuk safety)
+            else {
+                $kabupatenKota = trim($parts[0]);
+            }
             
             // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
-            $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+            $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', trim($kabupatenKota));
             
-            return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+            return $kabupatenKota ?: null;
         }
         
         // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
         if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
             return trim($matches[1]);
+        }
+        
+        // Cek apakah dimulai dengan "Kecamatan", jika ya skip (karena kita tidak mau kecamatan)
+        if (preg_match('/^Kecamatan\s+/i', $daerah)) {
+            return null; // Skip kecamatan
         }
         
         // Jika tidak ada format khusus, gunakan seluruhnya
@@ -71,6 +109,12 @@ Route::get('/', function () {
 
 Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchant.search');
 
+// ======================= CITY (PUBLIC) =======================
+// Route untuk menampilkan merchant berdasarkan kota/kabupaten
+// Format: /city/{location} (contoh: /city/surabaya)
+// Route ini PUBLIC, tidak perlu login
+Route::get('/city/{location}', [MerchantController::class, 'showByTerritorial'])->name('city.show');
+
 // Route untuk link pelanggan (public, tidak perlu login)
 Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
 
@@ -78,13 +122,18 @@ Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('lin
 Route::middleware('guest:portal')->group(function () {
     Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
     Route::post('/merchant-login', [PortalAuthController::class, 'login'])->name('portal.login.post');
-    Route::get('/merchant-login/google', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
-    Route::get('/merchant-login/google/callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+    
+    // Google OAuth routes (sesuai dokumentasi Socialite)
+    Route::get('/auth/redirect', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
+    Route::get('/auth-google-callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
+    
+    // Debug route untuk melihat data Google OAuth (hapus di production)
+    Route::get('/debug/google-callback', [PortalAuthController::class, 'debugGoogleCallback'])->name('portal.google.debug');
 });
 Route::post('/merchant-logout', [PortalAuthController::class, 'logout'])->name('portal.logout');
 
-// Route untuk link dashboard (wajib login portal)
-Route::middleware('portal.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
+// Route untuk link dashboard (conditional auth berdasarkan email merchant)
+Route::middleware('merchant.email.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
 
 // Route untuk link history (public, tidak perlu login)
 Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name('link.history');
@@ -92,8 +141,16 @@ Route::get('/history/{code}', [MerchantController::class, 'linkHistory'])->name(
 // Route untuk history page versi lengkap tanpa login
 Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
 
+// PENTING: Route admin keywords/search harus didefinisikan SEBELUM route /keywords/{code}
+// untuk menghindari konflik pattern matching
+// Route ini dipindahkan dari dalam group middleware auth ke sini, tapi tetap menggunakan middleware auth
+Route::middleware(['auth'])->get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
+
 // Route untuk link keywords (wajib login portal)
-Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::class, 'linkKeywords'])->name('link.keywords');
+// Constraint: code tidak boleh "search", "export", atau path admin lainnya
+Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::class, 'linkKeywords'])
+    ->where('code', '^(?!search|export|excel).*$')
+    ->name('link.keywords');
 
 // Route untuk link reedem (wajib login portal)
 Route::middleware('portal.auth')->get('/reedem/{code}', [MerchantController::class, 'linkReedem'])->name('link.reedem');
@@ -124,35 +181,79 @@ Route::get('/storage/{path}', [MerchantController::class, 'downloadFile'])->name
 Route::middleware(['auth'])->group(function () {
     // Halaman utama setelah login user biasa
     Route::get('/welcome', function () {
-        $keywords = Keyword::with('merchant')->get();
+        $keywords = Keyword::with('merchant')
+            ->where('is_active', 1)
+            ->where('status', 'approve')
+            ->get();
         $iklans = Iklan::orderBy('order', 'asc')->get();
         
-        // Ambil semua daerah dan ekstrak hanya kabupaten/kota
+        // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
         $allDaerah = Merchant::query()
+            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->distinct()
             ->pluck('daerah');
         
-        // Ekstrak hanya kabupaten/kota dari daerah
-        // Format biasanya: "Kota/Kabupaten, Provinsi" atau "Kota/Kabupaten" atau "Nama Kabupaten/Kota"
+        // Ekstrak hanya kabupaten/kota dari daerah (bukan kecamatan)
+        // Format bisa: "Kecamatan, Kabupaten, Provinsi" atau "Beji, Kota Depok, Jawa Barat" atau "Kabupaten, Provinsi" atau "Kota/Kabupaten"
         $locations = $allDaerah->map(function($daerah) {
             $daerah = trim($daerah);
             
-            // Jika ada koma, ambil bagian sebelum koma pertama (kabupaten/kota)
+            // Jika ada koma, parse bagian-bagiannya
             if (strpos($daerah, ',') !== false) {
-                $parts = explode(',', $daerah);
-                $kabupatenKota = trim($parts[0]);
+                $parts = array_map('trim', explode(',', $daerah));
+                $partsCount = count($parts);
+                
+                // Jika ada 3 bagian atau lebih: format biasanya "Kecamatan, Kabupaten/Kota, Provinsi"
+                // Ambil bagian kedua (index 1) yang biasanya adalah kabupaten/kota
+                if ($partsCount >= 3) {
+                    $kabupatenKota = $parts[1]; // Ambil bagian kedua
+                }
+                // Jika ada 2 bagian
+                else if ($partsCount == 2) {
+                    $firstPart = $parts[0];
+                    $secondPart = $parts[1];
+                    
+                    // Cek apakah bagian pertama atau kedua mengandung "Kota" atau "Kabupaten"
+                    $firstHasKotaKabupaten = preg_match('/^(Kota|Kabupaten)\s+/i', $firstPart);
+                    $secondHasKotaKabupaten = preg_match('/^(Kota|Kabupaten)\s+/i', $secondPart);
+                    
+                    if ($firstHasKotaKabupaten) {
+                        // Jika bagian pertama mengandung "Kota" atau "Kabupaten", ambil bagian pertama
+                        $kabupatenKota = $firstPart;
+                    } else if ($secondHasKotaKabupaten) {
+                        // Jika bagian kedua mengandung "Kota" atau "Kabupaten", ambil bagian kedua
+                        // (bagian pertama kemungkinan besar adalah kecamatan)
+                        $kabupatenKota = $secondPart;
+                    } else if (preg_match('/^Kecamatan\s+/i', $firstPart)) {
+                        // Jika bagian pertama dimulai dengan "Kecamatan", ambil bagian kedua
+                        $kabupatenKota = $secondPart;
+                    } else {
+                        // Jika tidak ada yang jelas, asumsikan bagian pertama adalah kecamatan
+                        // Ambil bagian kedua sebagai kabupaten/kota
+                        $kabupatenKota = $secondPart;
+                    }
+                }
+                // Jika hanya 1 bagian (tidak mungkin, tapi untuk safety)
+                else {
+                    $kabupatenKota = trim($parts[0]);
+                }
                 
                 // Hapus kata "Kota" atau "Kabupaten" jika ada di awal
-                $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $kabupatenKota);
+                $kabupatenKota = preg_replace('/^(Kota|Kabupaten)\s+/i', '', trim($kabupatenKota));
                 
-                return $kabupatenKota ?: trim($parts[0]); // Fallback jika setelah hapus jadi kosong
+                return $kabupatenKota ?: null;
             }
             
             // Jika tidak ada koma, cek apakah ada kata "Kota" atau "Kabupaten"
             if (preg_match('/^(?:Kota|Kabupaten)\s+(.+)$/i', $daerah, $matches)) {
                 return trim($matches[1]);
+            }
+            
+            // Cek apakah dimulai dengan "Kecamatan", jika ya skip (karena kita tidak mau kecamatan)
+            if (preg_match('/^Kecamatan\s+/i', $daerah)) {
+                return null; // Skip kecamatan
             }
             
             // Jika tidak ada format khusus, gunakan seluruhnya
@@ -184,6 +285,7 @@ Route::middleware(['auth'])->group(function () {
     // Resource CRUD merchant (index sudah dipakai di atas)
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
     Route::get('/merchants/{merchant}', [MerchantController::class, 'show'])->name('merchants.show');
+    Route::patch('/api/merchants/{id}/toggle-status', [MerchantController::class, 'toggleStatus'])->name('merchants.toggle-status');
 
     // Keywords routes
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
@@ -192,7 +294,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/keywords/{id}', [KeywordController::class, 'destroy'])->name('keywords.destroy');
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
-    Route::get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
+    Route::patch('/api/keywords/{id}/toggle-status', [KeywordController::class, 'toggleStatus'])->name('keywords.toggle-status');
+    // Route /keywords/search sudah dipindahkan ke atas (sebelum route /keywords/{code}) untuk menghindari konflik
     Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
 
     // Iklan management

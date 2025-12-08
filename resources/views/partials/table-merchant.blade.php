@@ -1,3 +1,20 @@
+@php
+    // Pastikan $merchants terdefinisi
+    if (!isset($merchants) || !$merchants) {
+        $merchants = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+    }
+    
+    // Pastikan pagination merchant mempertahankan tab=merchant dan keyword_page
+    $merchantQueryParams = request()->query();
+    $merchantQueryParams['tab'] = 'merchant';
+    // Hapus parameter page generik jika ada, karena kita sudah menggunakan merchant_page
+    unset($merchantQueryParams['page']);
+    // Pastikan keyword_page tetap ada jika sebelumnya ada di URL
+    if (request()->has('keyword_page')) {
+        $merchantQueryParams['keyword_page'] = request()->get('keyword_page');
+    }
+    $merchantPaginator = $merchants->appends($merchantQueryParams);
+@endphp
 <div class="bg-white rounded-xl shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -7,9 +24,11 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Quick Access</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Email PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
@@ -22,7 +41,7 @@
             </thead>
 
             <tbody class="bg-white divide-y divide-gray-200" id="merchant-table-body">
-                @forelse($merchants as $merchant)
+                @forelse($merchantPaginator as $merchant)
                     @php
                         $codeDashboard = null;
                         $codePelanggan = null;
@@ -34,7 +53,7 @@
                             if (count($parts) >= 3 && $parts[1] === 'dash') {
                                 $codeDashboard = end($parts);
                                 $codePelanggan = $codeDashboard;
-                                $historyUrl = route('link.history', $codePelanggan);
+                                $historyUrl = route('link.history.all', $codePelanggan);
                             }
                         }
                     @endphp
@@ -43,12 +62,20 @@
 
                         {{-- No --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">
-                            {{ ($merchants->currentPage() - 1) * $merchants->perPage() + $loop->iteration }}
+                            {{ ($merchantPaginator->currentPage() - 1) * $merchantPaginator->perPage() + $loop->iteration }}
                         </td>
 
-                        {{-- Actions (ikon delete center) --}}
+                        {{-- Actions (ikon edit & delete center) --}}
                         <td class="px-4 py-4 w-20 text-center">
-                            <div class="flex items-center justify-center h-full">
+                            <div class="flex items-center justify-center gap-2 h-full">
+                                <button type="button"
+                                        id="merchant-edit-btn-{{ $merchant->id }}"
+                                        data-merchant-edit-id="{{ $merchant->id }}"
+                                        onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, {{ json_encode($merchant) }})"
+                                        class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
+                                        title="Edit">
+                                    <i class="fas fa-edit text-blue-600 text-lg leading-none"></i>
+                                </button>
                                 <button type="button"
                                         onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
                                         class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
@@ -98,6 +125,17 @@
                         {{-- Merchant --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">{{ $merchant->nama_merchant }}</td>
 
+                        {{-- Status Toggle --}}
+                        <td class="px-4 py-4 text-center">
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Status">
+                                <input type="checkbox" 
+                                       data-merchant-id="{{ $merchant->id }}" 
+                                       class="sr-only peer toggle-merchant-status" 
+                                       {{ $merchant->is_active ? 'checked' : '' }} />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                            </label>
+                        </td>
+
                         {{-- Kategori --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">{{ $merchant->kategori ?? '-' }}</td>
 
@@ -117,7 +155,20 @@
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
+
+                        {{-- Email PIC --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->email_pic)
+                                <a href="mailto:{{ $merchant->email_pic }}" 
+                                   onclick="event.stopPropagation();"
+                                   class="text-blue-600 hover:text-blue-800 hover:underline">
+                                    {{ $merchant->email_pic }}
+                                </a>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
                         </td>
+                        
 
                         {{-- Daerah --}}
                         <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->daerah }}</td>
@@ -225,7 +276,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="14" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="15" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data merchant.
                         </td>
                     </tr>
@@ -235,27 +286,27 @@
     </div>
     
     <!-- Pagination -->
-    @if($merchants->hasPages())
+    @if($merchantPaginator->hasPages())
     <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
         <div class="text-sm text-gray-600">
-            Menampilkan <span class="font-semibold">{{ $merchants->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchants->lastItem() }}</span> dari <span class="font-semibold">{{ $merchants->total() }}</span> data
+            Menampilkan <span class="font-semibold">{{ $merchantPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchantPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $merchantPaginator->total() }}</span> data
         </div>
         
         <div class="flex items-center space-x-2">
             {{-- Previous Page Link --}}
-            @if ($merchants->onFirstPage())
+            @if ($merchantPaginator->onFirstPage())
                 <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             @else
-                <a href="{{ $merchants->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <a href="{{ $merchantPaginator->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             @endif
 
             {{-- Pagination Elements --}}
-            @foreach ($merchants->getUrlRange(1, $merchants->lastPage()) as $page => $url)
-                @if ($page == $merchants->currentPage())
+            @foreach ($merchantPaginator->getUrlRange(1, $merchantPaginator->lastPage()) as $page => $url)
+                @if ($page == $merchantPaginator->currentPage())
                     <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                         {{ $page }}
                     </button>
@@ -267,8 +318,8 @@
             @endforeach
 
             {{-- Next Page Link --}}
-            @if ($merchants->hasMorePages())
-                <a href="{{ $merchants->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            @if ($merchantPaginator->hasMorePages())
+                <a href="{{ $merchantPaginator->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             @else
@@ -292,7 +343,7 @@
                 if(count($parts) >= 3 && $parts[1] === 'dash') {
                     $codeDashboardMobile = end($parts);
                     $codePelanggan = $codeDashboardMobile;
-                    $linkHistory = route('link.history', $codeDashboardMobile);
+                    $linkHistory = route('link.history.all', $codeDashboardMobile);
                 }
             }
         @endphp
@@ -302,14 +353,24 @@
             <div class="px-4 py-3 bg-gradient-to-br from-[#FDF7F1] to-white border-b border-gray-100 flex items-center justify-between gap-3">
                 <div>
                     <p class="text-[10px] text-orange-700 uppercase tracking-wide">No</p>
-                    <p class="text-base font-semibold text-gray-900">{{ ($merchants->currentPage() - 1) * $merchants->perPage() + $loop->iteration }}</p>
+                    <p class="text-base font-semibold text-gray-900">{{ ($merchantPaginator->currentPage() - 1) * $merchantPaginator->perPage() + $loop->iteration }}</p>
                 </div>
-                <button type="button"
-                        onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
-                        class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 transition-colors"
-                        title="Hapus">
-                    <i class="fas fa-trash text-base"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            id="merchant-edit-btn-mobile-{{ $merchant->id }}"
+                            data-merchant-edit-id="{{ $merchant->id }}"
+                            onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, {{ json_encode($merchant) }})"
+                            class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-blue-100 text-blue-600 shadow-sm hover:bg-blue-50 transition-colors"
+                            title="Edit">
+                        <i class="fas fa-edit text-base"></i>
+                    </button>
+                    <button type="button"
+                            onclick="event.stopPropagation(); showDeleteConfirmation('Merchant', {{ json_encode($merchant->nama_merchant) }}, {{ $merchant->id }})"
+                            class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 transition-colors"
+                            title="Hapus">
+                        <i class="fas fa-trash text-base"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="px-4 py-4 space-y-3">
@@ -317,6 +378,16 @@
                     <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Merchant</p>
                         <p class="text-base font-semibold text-gray-900">{{ $merchant->nama_merchant }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Status</p>
+                        <label class="relative inline-flex items-center cursor-pointer mt-1" title="Toggle Status">
+                            <input type="checkbox" 
+                                   data-merchant-id="{{ $merchant->id }}" 
+                                   class="sr-only peer toggle-merchant-status-mobile" 
+                                   {{ $merchant->is_active ? 'checked' : '' }} />
+                            <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                        </label>
                     </div>
                     <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Kategori</p>
@@ -500,27 +571,27 @@
     @endforelse
     
     <!-- Mobile Pagination -->
-    @if($merchants->hasPages())
+    @if($merchantPaginator->hasPages())
     <div class="bg-white px-4 py-4 border-t border-gray-200 flex flex-col items-center justify-center space-y-3 rounded-xl">
         <div class="text-sm text-gray-600 text-center">
-            Menampilkan <span class="font-semibold">{{ $merchants->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchants->lastItem() }}</span> dari <span class="font-semibold">{{ $merchants->total() }}</span> data
+            Menampilkan <span class="font-semibold">{{ $merchantPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchantPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $merchantPaginator->total() }}</span> data
         </div>
         
         <div class="flex items-center space-x-2">
             {{-- Previous Page Link --}}
-            @if ($merchants->onFirstPage())
+            @if ($merchantPaginator->onFirstPage())
                 <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             @else
-                <a href="{{ $merchants->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <a href="{{ $merchantPaginator->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             @endif
 
             {{-- Pagination Elements (simplified for mobile) --}}
-            @foreach ($merchants->getUrlRange(1, $merchants->lastPage()) as $page => $url)
-                @if ($page == $merchants->currentPage())
+            @foreach ($merchantPaginator->getUrlRange(1, $merchantPaginator->lastPage()) as $page => $url)
+                @if ($page == $merchantPaginator->currentPage())
                     <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                         {{ $page }}
                     </button>
@@ -532,8 +603,8 @@
             @endforeach
 
             {{-- Next Page Link --}}
-            @if ($merchants->hasMorePages())
-                <a href="{{ $merchants->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            @if ($merchantPaginator->hasMorePages())
+                <a href="{{ $merchantPaginator->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             @else
@@ -603,4 +674,70 @@
             closeAllQuickMenus();
         }
     });
+
+    // Toggle Merchant Status
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach toggle listeners for server-rendered checkboxes (desktop)
+        document.querySelectorAll('.toggle-merchant-status').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleMerchantStatus(merchantId);
+            });
+        });
+
+        // Attach toggle listeners for mobile checkboxes
+        document.querySelectorAll('.toggle-merchant-status-mobile').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleMerchantStatus(merchantId);
+            });
+        });
+    });
+
+    // Function to toggle merchant status
+    async function toggleMerchantStatus(merchantId) {
+        try {
+            const response = await fetch(`/api/merchants/${merchantId}/toggle-status`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Gagal memperbarui status');
+            }
+
+            // Update both desktop and mobile checkboxes
+            const desktopCheckbox = document.querySelector(`.toggle-merchant-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-merchant-status-mobile[data-merchant-id="${merchantId}"]`);
+            
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = data.is_active;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = data.is_active;
+            }
+
+            console.log('Status merchant berhasil diperbarui');
+        } catch (error) {
+            console.error('Error toggling merchant status:', error);
+            // Revert checkboxes on error
+            const desktopCheckbox = document.querySelector(`.toggle-merchant-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-merchant-status-mobile[data-merchant-id="${merchantId}"]`);
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = !desktopCheckbox.checked;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = !mobileCheckbox.checked;
+            }
+            alert('Gagal memperbarui status: ' + error.message);
+        }
+    }
 </script>

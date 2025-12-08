@@ -29,7 +29,7 @@
                         {{-- Nama Merchant --}}
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama Merchant <span class="text-red-500">*</span>
+                                Nama Merchant / Produk<span class="text-red-500">*</span>
                             </label>
                             <input type="text"
                                    name="nama_merchant"
@@ -108,7 +108,7 @@
                         {{-- Nama PIC --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama PIC Merchant
+                                Nama PIC Merchant / Produk
                             </label>
                             <input type="text"
                                    name="nama_pic"
@@ -121,10 +121,56 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 WhatsApp PIC
                             </label>
-                            <input type="number"
-                                   name="wa_pic"
+                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent" id="waPicContainer">
+                                <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">+62</span>
+                                <input type="text"
+                                       name="wa_pic_code"
+                                       id="waPicCode"
+                                       oninput="validateWaPic(); updateWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
+                                       class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
+                                       placeholder="81234567890">
+                                <input type="hidden" name="wa_pic" id="waPicFull">
+                            </div>
+                            <!-- <div id="waPicError" class="hidden mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Nomor WhatsApp harus menggunakan operator Indonesia yang valid (contoh: 812, 813, 821, 822, 823, 851, 852, 853, 814, 815, 816, 855, 856, 857, 858, 817, 818, 819, 859, 877, 878, 831, 832, 833, 838, 895, 896, 897, 898, 899, 881, 882, 883, 884, 885, 886, 887, 888, 889)</span>
+                            </div> -->
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Email PIC
+                            </label>
+                            <input type="email"
+                                   id="emailPicInput"
+                                   name="email_pic"
+                                   oninput="toggleKtpUpload()"
                                    class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                   placeholder="+6281234567890">
+                                   placeholder="Masukkan email PIC">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Upload KTP (Opsional)
+                            </label>
+                            <div class="relative">
+                                <input type="file"
+                                    id="uploadMerchantKtpInput"
+                                    name="ktp_pic"
+                                    accept="image/*"
+                                    class="hidden"
+                                    disabled
+                                    onchange="previewUploadMerchantKtp(this)">
+                                <button type="button"
+                                        id="uploadMerchantKtpBtn"
+                                        onclick="handleKtpUploadClick()"
+                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg focus:outline-none flex flex-col items-center justify-center text-gray-400 transition-all cursor-not-allowed opacity-60">
+                                <i class="fas fa-upload text-3xl mb-2"></i>
+                                <span id="uploadMerchantKtpText" class="text-sm">
+                                        Isi email PIC terlebih dahulu
+                                    </span>
+                                <span class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG maks 2MB</span>
+                                </button>
+                                <div id="uploadMerchantKtpPreview" class="mt-3 hidden"></div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -222,39 +268,30 @@
                         <input type="hidden" name="daerah" id="daerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Latitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Latitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       name="lat"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="-8.6705">
-                            </div>
-
-                            {{-- Longitude --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Longitude
-                                </label>
-                                <input type="number"
-                                       step="any"
-                                       name="long"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="115.2126">
-                            </div>
-
                             {{-- Link Google Maps --}}
-                            <div>
+                            <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                     Link Google Maps
                                 </label>
-                                <input type="url"
-                                       name="link_gmap"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                       placeholder="https://maps.google.com/...">
+                                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                                    <input type="url"
+                                           id="merchantLinkGmap"
+                                           name="link_gmap"
+                                           class="w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                           placeholder="Paste link Google Maps atau pilih lokasi"
+                                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                                    <button type="button"
+                                            onclick="openMapPicker('upload')"
+                                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span>Pilih Lokasi</span>
+                                    </button>
+                                </div>
+                                <p class="mt-1.5 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung</span>
+                                    <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps</span>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -304,6 +341,112 @@
         </form>
     </div>
 </div>
+
+{{-- Modal Peta Leaflet (OpenStreetMap) untuk Memilih Lokasi --}}
+{{-- Leaflet CSS --}}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+{{-- Leaflet JS --}}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<style>
+    @media (min-width: 768px) {
+        #mapContainer {
+            min-height: 400px !important;
+            height: 400px !important;
+        }
+        #map {
+            height: 400px !important;
+        }
+    }
+    @media (max-width: 767px) {
+        #mapContainer {
+            min-height: 300px !important;
+            height: 300px !important;
+        }
+        #map {
+            height: 300px !important;
+        }
+    }
+    /* Leaflet map styling */
+    .leaflet-container {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+<div id="mapPickerModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-2 md:p-4">
+    <div id="mapPickerOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeMapPicker()"></div>
+    
+    <div id="mapPickerPanel" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] md:max-h-[80vh] flex flex-col overflow-hidden z-10 transform transition-all duration-300 scale-95 opacity-0 m-2 md:m-4">
+        {{-- Header Modal --}}
+        <div class="flex justify-between items-center px-5 py-3 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+            <h3 class="text-base font-bold text-gray-800">
+                <i class="fas fa-map-marker-alt text-orange-500 mr-2"></i>
+                Pilih Lokasi di Peta
+            </h3>
+            <button type="button"
+                    onclick="closeMapPicker()"
+                    class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/50 rounded-lg">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        {{-- Body Modal dengan Peta --}}
+        <div class="flex-1 flex flex-col overflow-y-auto" style="min-height: 400px;">
+            {{-- Search Box --}}
+            <div class="p-3 border-b">
+                <div class="flex gap-2">
+                    <input type="text"
+                           id="mapSearchInput"
+                           placeholder="Cari lokasi (contoh: Jalan Sudirman, Jakarta)..."
+                           class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           onkeypress="if(event.key === 'Enter') { event.preventDefault(); searchLocation(); }">
+                    <button type="button"
+                            onclick="searchLocation()"
+                            class="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            {{-- Peta Container --}}
+            <div id="mapContainer" class="flex-1 relative w-full" style="min-height: 300px; height: 300px;">
+                <div id="map" class="w-full h-full" style="z-index: 1; height: 300px; width: 100%; position: relative;"></div>
+                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 z-20 pointer-events-none">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-info-circle text-orange-500 mr-1"></i>
+                        Klik di peta untuk memilih lokasi
+                    </p>
+                </div>
+            </div>
+            
+            {{-- Info Lokasi yang Dipilih --}}
+            <div id="selectedLocationInfo" class="hidden p-3 border-t bg-gray-50 sticky bottom-0 z-30">
+                <div class="flex flex-col md:flex-row md:items-start gap-3">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-700 mb-1">Lokasi yang Dipilih:</p>
+                        <p id="selectedAddress" class="text-sm text-gray-600 break-words"></p>
+                        <p id="selectedCoordinates" class="text-xs text-gray-500 mt-1 break-words"></p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <button type="button"
+                                onclick="closeMapPicker()"
+                                class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
+                            Batal
+                        </button>
+                        <button type="button"
+                                onclick="confirmLocation()"
+                                class="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors whitespace-nowrap">
+                            <i class="fas fa-check mr-1"></i>Gunakan Lokasi Ini
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {{-- Include upload verification modal --}}
 @include('partials.upload-verification-modal')
@@ -355,6 +498,113 @@ function removeMerchantImage() {
 }
 
 // ======================
+// Toggle KTP Upload based on Email PIC
+// ======================
+function toggleKtpUpload() {
+    const emailInput = document.getElementById('emailPicInput');
+    const ktpInput = document.getElementById('uploadMerchantKtpInput');
+    const ktpBtn = document.getElementById('uploadMerchantKtpBtn');
+    const ktpText = document.getElementById('uploadMerchantKtpText');
+    
+    if (!emailInput || !ktpInput || !ktpBtn) return;
+    
+    const emailValue = emailInput.value.trim();
+    // Basic email validation: must contain @ and . with at least one character before @ and after .
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailValue && emailRegex.test(emailValue);
+    
+    if (isValidEmail) {
+        // Enable KTP upload
+        ktpInput.disabled = false;
+        ktpBtn.disabled = false;
+        ktpBtn.classList.remove('cursor-not-allowed', 'opacity-60');
+        ktpBtn.classList.add('hover:border-orange-400', 'focus:border-orange-500', 'hover:text-orange-600', 'text-gray-600', 'border-gray-300');
+        if (ktpText) {
+            ktpText.textContent = 'Click to upload KTP';
+        }
+    } else {
+        // Disable KTP upload
+        ktpInput.disabled = true;
+        ktpBtn.disabled = true;
+        ktpBtn.classList.add('cursor-not-allowed', 'opacity-60');
+        ktpBtn.classList.remove('hover:border-orange-400', 'focus:border-orange-500', 'hover:text-orange-600', 'text-gray-600');
+        if (ktpText) {
+            ktpText.textContent = 'Isi email PIC terlebih dahulu';
+        }
+        
+        // Clear KTP preview and input if email is cleared or invalid
+        const ktpPreview = document.getElementById('uploadMerchantKtpPreview');
+        if (ktpPreview && !ktpPreview.classList.contains('hidden')) {
+            removeUploadMerchantKtp();
+        }
+    }
+}
+
+function handleKtpUploadClick() {
+    const emailInput = document.getElementById('emailPicInput');
+    const ktpInput = document.getElementById('uploadMerchantKtpInput');
+    
+    if (!emailInput || !ktpInput) return;
+    
+    const emailValue = emailInput.value.trim();
+    // Basic email validation: must contain @ and . with at least one character before @ and after .
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailValue && emailRegex.test(emailValue);
+    
+    if (isValidEmail && !ktpInput.disabled) {
+        ktpInput.click();
+    } else {
+        alert('Mohon isi email PIC yang valid terlebih dahulu sebelum mengupload KTP');
+        emailInput.focus();
+    }
+}
+
+// ======================
+// Preview & remove KTP
+// ======================
+function previewUploadMerchantKtp(input) {
+    const preview = document.getElementById('uploadMerchantKtpPreview');
+    const text = document.getElementById('uploadMerchantKtpText');
+    if (!preview) return;
+
+    preview.innerHTML = '';
+
+    if (input.files && input.files.length > 0) {
+        const file = input.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB');
+            input.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.classList.remove('hidden');
+            if (text) text.textContent = file.name;
+            const div = document.createElement('div');
+            div.className = 'relative';
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                <button type="button" onclick="removeUploadMerchantKtp()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 transition-colors">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            `;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.classList.add('hidden');
+        if (text) text.textContent = 'Click to upload KTP';
+    }
+}
+
+function removeUploadMerchantKtp() {
+    const input = document.getElementById('uploadMerchantKtpInput');
+    if (!input) return;
+    input.value = '';
+    previewUploadMerchantKtp(input);
+}
+
+// ======================
 // Open / Close modal
 // ======================
 function openUploadMerchant() {
@@ -377,6 +627,9 @@ function openUploadMerchant() {
         overlay?.classList.add('opacity-100');
         panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
         panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+        
+        // Ensure KTP upload is disabled on modal open
+        toggleKtpUpload();
     });
 }
 
@@ -430,6 +683,17 @@ function closeUploadMerchant() {
             document.getElementById('linkBlanjapoinCode').value = '';
             document.getElementById('linkBlanjapoinFull').value = '';
             
+            // Reset WA PIC
+            document.getElementById('waPicCode').value = '';
+            document.getElementById('waPicFull').value = '';
+            
+            // Reset Email PIC and disable KTP upload
+            const emailPicInput = document.getElementById('emailPicInput');
+            if (emailPicInput) {
+                emailPicInput.value = '';
+                toggleKtpUpload(); // Disable KTP upload after reset
+            }
+            
             // Reset preview image
         const preview = document.getElementById('merchantImagePreview');
         const text = document.getElementById('merchantImageText');
@@ -438,6 +702,15 @@ function closeUploadMerchant() {
             preview.classList.add('hidden');
         }
         if (text) text.textContent = 'Click to upload Logo Merchant';
+        
+        // Reset preview KTP
+        const ktpPreview = document.getElementById('uploadMerchantKtpPreview');
+        const ktpText = document.getElementById('uploadMerchantKtpText');
+        if (ktpPreview) {
+            ktpPreview.innerHTML = '';
+            ktpPreview.classList.add('hidden');
+        }
+        if (ktpText) ktpText.textContent = 'Click to upload KTP';
         }
     }, 300);
 }
@@ -532,6 +805,416 @@ function updateLinkBlanjapoin() {
     // Format sesuai dengan yang diharapkan controller: blanjapoin.id/dash/{code}
     const fullLink = code ? `blanjapoin.id/dash/${code}` : '';
     document.getElementById('linkBlanjapoinFull').value = fullLink;
+}
+
+// ======================
+// Validate WA PIC (Indonesian Mobile Prefixes)
+// ======================
+function validateWaPic() {
+    const code = document.getElementById('waPicCode').value.trim();
+    const errorDiv = document.getElementById('waPicError');
+    const container = document.getElementById('waPicContainer');
+    
+    // Valid Indonesian mobile prefixes (without leading 0, since +62 is already there)
+    const validPrefixes = [
+        '811', '812', '813',
+        '821', '822', '823',
+        '851', '852', '853',
+        '814', '815', '816',
+        '855', '856', '857', '858',
+        '817', '818', '819',
+        '859',
+        '877', '878',
+        '831', '832', '833', '838',
+        '895', '896', '897', '898', '899',
+        '881', '882', '883', '884', '885', '886', '887', '888', '889'
+    ];
+    
+    // If empty, hide error
+    if (!code) {
+        if (errorDiv) errorDiv.classList.add('hidden');
+        if (container) {
+            container.classList.remove('border-red-500');
+            container.classList.add('border-gray-300');
+        }
+        return true;
+    }
+    
+    // Check if number starts with valid prefix (minimum 3 digits for prefix)
+    if (code.length >= 3) {
+        const prefix = code.substring(0, 3);
+        if (validPrefixes.includes(prefix)) {
+            if (errorDiv) errorDiv.classList.add('hidden');
+            if (container) {
+                container.classList.remove('border-red-500');
+                container.classList.add('border-gray-300');
+            }
+            return true;
+        }
+    }
+    
+    // Show error if prefix is invalid
+    if (code.length >= 3) {
+        if (errorDiv) errorDiv.classList.remove('hidden');
+        if (container) {
+            container.classList.add('border-red-500');
+            container.classList.remove('border-gray-300');
+        }
+        return false;
+    }
+    
+    // Hide error while typing (less than 3 digits)
+    if (errorDiv) errorDiv.classList.add('hidden');
+    if (container) {
+        container.classList.remove('border-red-500');
+        container.classList.add('border-gray-300');
+    }
+    return true;
+}
+
+// ======================
+// Update WA PIC
+// ======================
+function updateWaPic() {
+    const code = document.getElementById('waPicCode').value.trim();
+    // Format: +62{code} (tanpa spasi)
+    const fullWa = code ? `+62${code}` : '';
+    document.getElementById('waPicFull').value = fullWa;
+}
+
+// ======================
+// Leaflet Map Functions (OpenStreetMap)
+// ======================
+let mapPickerMap = null;
+let mapPickerMarker = null;
+let selectedLocationData = null;
+let mapPickerMode = 'upload'; // 'upload' or 'edit'
+
+// Validate URL (accepts any URL now, not just Google Maps)
+function validateGmapLink(url) {
+    if (!url || url.trim() === '') {
+        return true;
+    }
+    
+    // Basic URL validation
+    try {
+        new URL(url);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Open map picker modal
+function openMapPicker(mode) {
+    mapPickerMode = mode || 'upload';
+    const modal = document.getElementById('mapPickerModal');
+    const overlay = document.getElementById('mapPickerOverlay');
+    const panel = document.getElementById('mapPickerPanel');
+    
+    if (!modal) return;
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    requestAnimationFrame(() => {
+        overlay?.classList.remove('opacity-0');
+        overlay?.classList.add('opacity-100');
+        panel?.classList.remove('opacity-0', 'scale-95');
+        panel?.classList.add('opacity-100', 'scale-100');
+    });
+    
+    // Initialize map after modal is shown
+    setTimeout(() => {
+        initMapPicker();
+    }, 300);
+}
+
+// Close map picker modal
+function closeMapPicker() {
+    const modal = document.getElementById('mapPickerModal');
+    const overlay = document.getElementById('mapPickerOverlay');
+    const panel = document.getElementById('mapPickerPanel');
+    
+    overlay?.classList.remove('opacity-100');
+    overlay?.classList.add('opacity-0');
+    panel?.classList.remove('opacity-100', 'scale-100');
+    panel?.classList.add('opacity-0', 'scale-95');
+    
+    setTimeout(() => {
+        modal?.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        // Clean up map
+        if (mapPickerMap) {
+            mapPickerMap.remove();
+            mapPickerMap = null;
+            mapPickerMarker = null;
+            selectedLocationData = null;
+        }
+        
+        // Reset UI
+        const selectedInfo = document.getElementById('selectedLocationInfo');
+        if (selectedInfo) selectedInfo.classList.add('hidden');
+        const searchInput = document.getElementById('mapSearchInput');
+        if (searchInput) searchInput.value = '';
+    }, 300);
+}
+
+// Initialize Leaflet map
+function initMapPicker() {
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) return;
+    
+    // Remove existing map if any
+    if (mapPickerMap) {
+        mapPickerMap.remove();
+    }
+    
+    // Default center: Jakarta, Indonesia
+    const defaultCenter = [-6.2088, 106.8456];
+    const defaultZoom = 13;
+    
+    // Initialize map
+    mapPickerMap = L.map('map').setView(defaultCenter, defaultZoom);
+    
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(mapPickerMap);
+    
+    // Add click handler to map
+    mapPickerMap.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Immediately update link field for instant feedback
+        updateLinkGmapField(lat, lng);
+        
+        // Reverse geocode to get address (will also update link again as backup)
+        reverseGeocode(lat, lng);
+        
+        // Add/update marker
+        if (mapPickerMarker) {
+            mapPickerMarker.setLatLng([lat, lng]);
+        } else {
+            mapPickerMarker = L.marker([lat, lng], {
+                draggable: true,
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(mapPickerMap);
+            
+            // Handle marker drag
+            mapPickerMarker.on('dragend', function() {
+                const position = mapPickerMarker.getLatLng();
+                // Immediately update link field
+                updateLinkGmapField(position.lat, position.lng);
+                // Then reverse geocode for address
+                reverseGeocode(position.lat, position.lng);
+            });
+        }
+        
+        // Show selected location info
+        showSelectedLocationInfo(lat, lng);
+    });
+    
+    // Try to use geolocation if available
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            mapPickerMap.setView([lat, lng], 15);
+        }, function(error) {
+            console.log('Geolocation error:', error);
+        });
+    }
+}
+
+// Reverse geocode coordinates to address
+async function reverseGeocode(lat, lng) {
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=id`,
+            {
+                headers: {
+                    'User-Agent': 'BlanjaPoin-LocationPicker/1.0'
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error('Reverse geocoding failed');
+        }
+        
+        const data = await response.json();
+        const address = data.display_name || `${lat}, ${lng}`;
+        
+        selectedLocationData = {
+            lat: lat,
+            lng: lng,
+            address: address,
+            fullData: data
+        };
+        
+        updateSelectedLocationDisplay(lat, lng, address);
+        // Auto-update link to input field
+        updateLinkGmapField(lat, lng);
+    } catch (error) {
+        console.error('Reverse geocoding error:', error);
+        const address = `${lat}, ${lng}`;
+        selectedLocationData = {
+            lat: lat,
+            lng: lng,
+            address: address
+        };
+        updateSelectedLocationDisplay(lat, lng, address);
+        // Auto-update link to input field even if geocoding fails
+        updateLinkGmapField(lat, lng);
+    }
+}
+
+// Search location using Nominatim geocoding
+async function searchLocation() {
+    const searchInput = document.getElementById('mapSearchInput');
+    if (!searchInput) return;
+    
+    const query = searchInput.value.trim();
+    if (!query) {
+        alert('Masukkan lokasi yang ingin dicari');
+        return;
+    }
+    
+    try {
+        // Show loading state
+        searchInput.disabled = true;
+        
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=1&accept-language=id`,
+            {
+                headers: {
+                    'User-Agent': 'BlanjaPoin-LocationPicker/1.0'
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error('Geocoding failed');
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            const result = data[0];
+            const lat = parseFloat(result.lat);
+            const lng = parseFloat(result.lon);
+            const address = result.display_name || query;
+            
+            // Move map to location
+            mapPickerMap.setView([lat, lng], 15);
+            
+            // Add/update marker
+            if (mapPickerMarker) {
+                mapPickerMarker.setLatLng([lat, lng]);
+            } else {
+                mapPickerMarker = L.marker([lat, lng], {
+                    draggable: true,
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(mapPickerMap);
+                
+                // Handle marker drag
+                mapPickerMarker.on('dragend', function() {
+                    const position = mapPickerMarker.getLatLng();
+                    // Immediately update link field
+                    updateLinkGmapField(position.lat, position.lng);
+                    // Then reverse geocode for address
+                    reverseGeocode(position.lat, position.lng);
+                });
+            }
+            
+            selectedLocationData = {
+                lat: lat,
+                lng: lng,
+                address: address,
+                fullData: result
+            };
+            
+            updateSelectedLocationDisplay(lat, lng, address);
+            // Auto-update link to input field
+            updateLinkGmapField(lat, lng);
+        } else {
+            alert('Lokasi tidak ditemukan. Silakan coba dengan kata kunci lain.');
+        }
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        alert('Terjadi kesalahan saat mencari lokasi. Silakan coba lagi.');
+    } finally {
+        searchInput.disabled = false;
+    }
+}
+
+// Update selected location display
+function updateSelectedLocationDisplay(lat, lng, address) {
+    const addressEl = document.getElementById('selectedAddress');
+    const coordsEl = document.getElementById('selectedCoordinates');
+    const infoEl = document.getElementById('selectedLocationInfo');
+    
+    if (addressEl) addressEl.textContent = address;
+    if (coordsEl) coordsEl.textContent = `Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    if (infoEl) infoEl.classList.remove('hidden');
+}
+
+// Show selected location info
+function showSelectedLocationInfo(lat, lng) {
+    const coordsEl = document.getElementById('selectedCoordinates');
+    if (coordsEl) {
+        coordsEl.textContent = `Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+    const infoEl = document.getElementById('selectedLocationInfo');
+    if (infoEl) {
+        infoEl.classList.remove('hidden');
+    }
+}
+
+// Auto-update link_gmap field when location is selected
+function updateLinkGmapField(lat, lng) {
+    // Generate Google Maps link
+    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+    
+    // Update input field based on mode
+    const inputId = mapPickerMode === 'edit' ? 'editMerchantLinkGmap' : 'merchantLinkGmap';
+    const inputField = document.getElementById(inputId);
+    
+    if (inputField) {
+        inputField.value = googleMapsLink;
+        // Trigger input event to notify any listeners
+        inputField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+}
+
+// Confirm location and close modal (link already auto-updated)
+function confirmLocation() {
+    if (!selectedLocationData) {
+        alert('Silakan pilih lokasi di peta terlebih dahulu');
+        return;
+    }
+    
+    // Link sudah otomatis ter-update via updateLinkGmapField()
+    // Tinggal tutup modal
+    closeMapPicker();
 }
 
 // ======================
@@ -839,6 +1522,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Preload provinsi data
     fetchProvinces();
     
+    // Initialize KTP upload state (disabled by default)
+    toggleKtpUpload();
+    
     // Close dropdowns saat klik di luar (dengan delay untuk menghindari konflik dengan open event)
     let clickTimeout;
     document.addEventListener('click', function(event) {
@@ -1145,6 +1831,17 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update link blanjapoin sebelum submit
             updateLinkBlanjapoin();
+            
+            // Validate WA PIC
+            const waPicCode = document.getElementById('waPicCode').value.trim();
+            if (waPicCode && !validateWaPic()) {
+                alert('Nomor WhatsApp harus menggunakan operator Indonesia yang valid');
+                document.getElementById('waPicCode').focus();
+                return false;
+            }
+            
+            // Update WA PIC sebelum submit
+            updateWaPic();
             
             // Update daerah sebelum submit
             updateDaerahCombined();

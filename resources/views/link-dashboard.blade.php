@@ -91,6 +91,20 @@
                 </div>
             </div>
 
+            <!-- Diamond Section -->
+            @if(isset($showDiamond) && $showDiamond)
+            <div class="mt-1 mb-1 flex items-center gap-1 animate-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="text-2xl sm:text-2xl md:text-3xl drop-shadow-lg filter">
+                    💎
+                </div>
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
+                        {{ number_format(isset($totalDiamond) ? $totalDiamond : 0, 0, ',', '.') }}
+                    </h2>
+                </div>
+            </div>
+            @endif
+
             <!-- Dashboard Cards Section -->
             <section class="mt-8 space-y-6 animate-fade-in-up" style="animation-delay: 0.2s;">
                 
@@ -215,7 +229,7 @@
                     text: linkPelanggan,
                     width: 100,
                     height: 100,
-                    colorDark: '#5b21b6',
+                    colorDark: '#000000',
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
                 });

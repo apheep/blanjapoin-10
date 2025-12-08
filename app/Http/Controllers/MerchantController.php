@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Merchant;
 use App\Models\Keyword;
 use App\Models\Iklan;
+use App\Models\PortalUser;
 use App\Models\WithdrawRequest;
 use App\Exports\MerchantsExport;
 use App\Exports\MerchantKeywordsExport;
@@ -19,10 +20,37 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class MerchantController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $merchants = Merchant::orderBy('id')->paginate(10);
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        // Gunakan parameter berbeda untuk pagination merchant dan keyword
+        $merchantPage = $request->get('merchant_page', 1);
+        $keywordPage = $request->get('keyword_page', 1);
+        
+        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        $merchantQueryParams = $request->query();
+        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
+        if ($request->has('keyword_page')) {
+            $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
+        }
+        
+        $merchants = Merchant::orderBy('id')
+            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
+            ->setPageName('merchant_page')
+            ->appends($merchantQueryParams);
+            
+        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        $keywordQueryParams = $request->query();
+        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
+        if ($request->has('merchant_page')) {
+            $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
+        }
+            
+        $keywords = Keyword::with('merchant')
+            ->orderBy('id')
+            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
+            ->setPageName('keyword_page')
+            ->appends($keywordQueryParams);
+            
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('merchants', 'keywords', 'allMerchants'));
     }
@@ -49,13 +77,16 @@ class MerchantController extends Controller
             'link_blanjapoin' => 'nullable|string|max:500',
             'link_blanjapoin_code' => 'nullable|string|max:255',
             'nama_pic'       => 'nullable|string|max:255',
-            'wa_pic'         => 'nullable|string|max:20',
+            'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
+            'email_pic'      => 'nullable|email|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
-            'lat'            => 'nullable|string|max:50',
-            'long'           => 'nullable|string|max:50',
             'link_gmap'      => 'nullable|string|max:500',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
+            'email_pic.email' => 'Email PIC harus dalam format email yang valid',
         ]);
     
         // =====================
@@ -82,6 +113,16 @@ class MerchantController extends Controller
             // Simpan ke storage/app/public/merchants/
             $logoPath = $request->file('logo_merchant')->store('merchants', 'public');
         }
+        
+        // =====================
+        //  HANDLE UPLOAD KTP
+        // =====================
+        $ktpPath = null;
+    
+        if ($request->hasFile('ktp_pic')) {
+            // Simpan ke storage/app/public/merchants/
+            $ktpPath = $request->file('ktp_pic')->store('merchants', 'public');
+        }
     
         // Helper function untuk convert empty string ke null
         $getValue = function($value) {
@@ -101,17 +142,19 @@ class MerchantController extends Controller
             'link_blanjapoin' => $getValue($linkBlanjapoin),
             'nama_pic'       => $getValue($request->input('nama_pic', null)),
             'wa_pic'         => $getValue($request->input('wa_pic', null)),
+            'email_pic'      => $getValue($request->input('email_pic', null)),
             'daerah'         => $getValue($request->input('daerah', null)),
             'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
             // Ambil lat dan long sebagai string untuk mempertahankan nilai asli input
-            'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
-                                ? (string)$request->input('lat')
-                                : null,
-            'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
-                                ? (string)$request->input('long')
-                                : null,
+            // 'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
+            //                     ? (string)$request->input('lat')
+            //                     : null,
+            // 'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
+            //                     ? (string)$request->input('long')
+            //                     : null,
             'link_gmap'      => $getValue($request->input('link_gmap', null)),
             'logo_merchant'  => $logoPath,
+            'ktp_pic'        => $ktpPath,
         ];
         
         // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
@@ -205,6 +248,11 @@ class MerchantController extends Controller
                 Storage::disk('public')->delete($merchant->logo_merchant);
             }
             
+            // Delete KTP file if exists
+            if ($merchant->ktp_pic && Storage::disk('public')->exists($merchant->ktp_pic)) {
+                Storage::disk('public')->delete($merchant->ktp_pic);
+            }
+            
             // Delete merchant record
             $merchant->delete();
             
@@ -214,7 +262,139 @@ class MerchantController extends Controller
         }
     }
 
-    // edit, update menyusul
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'nama_merchant'  => 'required|string|max:255',
+            'kategori'       => 'nullable|string|max:100',
+            'link_blanjapoin' => 'nullable|string|max:500',
+            'link_blanjapoin_code' => 'nullable|string|max:255',
+            'nama_pic'       => 'nullable|string|max:255',
+            'wa_pic'         => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{9,12}$/'],
+            'email_pic'      => 'nullable|email|max:255',
+            'daerah'         => 'nullable|string|max:255',
+            'detail_alamat'  => 'nullable|string',
+            'link_gmap'      => 'nullable|string|max:500',
+            'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
+            'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+        ]);
+    
+        try {
+            $merchant = Merchant::findOrFail($id);
+            
+            // =====================
+            //  HANDLE LINK BLANJAPOIN
+            // =====================
+            $linkBlanjapoin = null;
+            
+            // Prioritas: link_blanjapoin (full) > link_blanjapoin_code
+            if ($request->filled('link_blanjapoin') && trim($request->link_blanjapoin) !== '') {
+                $linkBlanjapoin = trim($request->link_blanjapoin);
+            } elseif ($request->filled('link_blanjapoin_code') && trim($request->link_blanjapoin_code) !== '') {
+                $code = trim($request->link_blanjapoin_code);
+                $linkBlanjapoin = 'blanjapoin.id/dash/' . $code;
+            } else {
+                $linkBlanjapoin = $merchant->link_blanjapoin; // Keep existing if not provided
+            }
+        
+            // =====================
+            //  HANDLE UPLOAD LOGO
+            // =====================
+            $logoPath = $merchant->logo_merchant; // Keep existing logo by default
+        
+            if ($request->hasFile('logo_merchant')) {
+                // Delete old logo if exists
+                if ($merchant->logo_merchant && Storage::disk('public')->exists($merchant->logo_merchant)) {
+                    Storage::disk('public')->delete($merchant->logo_merchant);
+                }
+                // Simpan ke storage/app/public/merchants/
+                $logoPath = $request->file('logo_merchant')->store('merchants', 'public');
+            }
+            
+            // =====================
+            //  HANDLE UPLOAD KTP
+            // =====================
+            $ktpPath = $merchant->ktp_pic; // Keep existing KTP by default
+        
+            if ($request->hasFile('ktp_pic')) {
+                // Delete old KTP if exists
+                if ($merchant->ktp_pic && Storage::disk('public')->exists($merchant->ktp_pic)) {
+                    Storage::disk('public')->delete($merchant->ktp_pic);
+                }
+                // Simpan ke storage/app/public/merchants/
+                $ktpPath = $request->file('ktp_pic')->store('merchants', 'public');
+            }
+        
+            // Helper function untuk convert empty string ke null
+            $getValue = function($value) {
+                if ($value === null) return null;
+                if (is_string($value)) {
+                    $trimmed = trim($value);
+                    return $trimmed === '' ? null : $trimmed;
+                }
+                return $value;
+            };
+            
+            // UPDATE DATA KE DATABASE
+            $merchantData = [
+                'nama_merchant'  => trim($request->input('nama_merchant', '')),
+                'kategori'       => $getValue($request->input('kategori', null)),
+                'link_blanjapoin' => $getValue($linkBlanjapoin),
+                'nama_pic'       => $getValue($request->input('nama_pic', null)),
+                'wa_pic'         => $getValue($request->input('wa_pic', null)),
+                'email_pic'      => $getValue($request->input('email_pic', null)),
+                'daerah'         => $getValue($request->input('daerah', null)),
+                'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
+                'link_gmap'      => $getValue($request->input('link_gmap', null)),
+                'logo_merchant'  => $logoPath,
+                'ktp_pic'        => $ktpPath,
+            ];
+            
+            // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
+            foreach ($merchantData as $key => $value) {
+                if ($value !== null && is_string($value) && trim($value) === '') {
+                    $merchantData[$key] = null;
+                }
+            }
+            
+            // Update merchant
+            $merchant->update($merchantData);
+            Log::info('Merchant updated successfully', ['id' => $merchant->id]);
+            
+            // Jika request dari AJAX, return JSON
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Merchant berhasil diupdate!',
+                    'merchant' => $merchant
+                ], 200);
+            }
+        
+            return redirect()->route('admin')->with('success', 'Merchant berhasil diupdate!');
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating merchant:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'merchant_id' => $id
+            ]);
+            
+            // Jika request dari AJAX, return JSON error
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengupdate merchant: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Gagal mengupdate merchant: ' . $e->getMessage()]);
+        }
+    }
 
     public function downloadFile($path)
     {
@@ -234,7 +414,8 @@ class MerchantController extends Controller
     public function search(Request $request)
     {
         $searchTerm = trim($request->input('q', ''));
-        $page = $request->input('page', 1);
+        $merchantPage = $request->input('merchant_page', 1);
+        $keywordPage = $request->input('keyword_page', 1);
         $category = $request->input('category');
         
         $merchantsQuery = Merchant::query();
@@ -253,10 +434,18 @@ class MerchantController extends Controller
             $merchantsQuery->where('kategori', $category);
         }
         
+        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        $merchantQueryParams = $request->query();
+        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
+        if ($request->has('keyword_page')) {
+            $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
+        }
+        
         $merchants = $merchantsQuery
             ->orderBy('id')
-            ->paginate(10, ['*'], 'page', $page)
-            ->appends($request->query());
+            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
+            ->setPageName('merchant_page')
+            ->appends($merchantQueryParams);
         
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -267,7 +456,18 @@ class MerchantController extends Controller
         }
         
         // Untuk non-AJAX request (seperti pagination link), perlu semua variable yang diperlukan view admin
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        $keywordQueryParams = $request->query();
+        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
+        if ($request->has('merchant_page')) {
+            $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
+        }
+        
+        $keywords = Keyword::with('merchant')
+            ->orderBy('id')
+            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
+            ->setPageName('keyword_page')
+            ->appends($keywordQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         
         return view('admin', compact('merchants', 'keywords', 'allMerchants'));
@@ -304,6 +504,7 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             ->where('status', 'approve')
+            ->where('is_active', 1)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -320,46 +521,49 @@ class MerchantController extends Controller
      * Menampilkan halaman link dashboard dengan table link pelanggan, QR code, dan history
      * Route: /dash/{code}
      */
-    public function linkDashboard($code)
+    public function linkDashboard($code, Request $request)
     {
         // Decode URL encoded characters (e.g., h%26m -> h&m)
         $decodedCode = urldecode($code);
         
-        // Escape special characters untuk LIKE query
-        $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
-        $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+        // Ambil merchant dari request (sudah di-set oleh middleware EnsureMerchantEmailAuth)
+        $merchant = $request->attributes->get('merchant');
         
-        // Cari merchant berdasarkan code dari link_blanjapoin
-        // Format link_blanjapoin: "blanjapoin.id/dash/{code}" atau bisa juga "https://blanjapoin.id/dash/{code}"
-        $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                // Cari dengan berbagai format yang mungkin
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      // Juga coba dengan code yang masih encoded
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
-            })
-            ->whereNotNull('link_blanjapoin')
-            ->first();
+        if (!$merchant) {
+            // Fallback: jika merchant tidak ada di request, cari manual
+            $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
+            $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
+            
+            $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
+                    $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
+                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                })
+                ->whereNotNull('link_blanjapoin')
+                ->first();
+        }
 
         if (!$merchant) {
-            // Log untuk debugging
             Log::warning('Merchant not found for code', [
                 'code' => $code,
                 'decoded_code' => $decodedCode,
-                'search_patterns' => [
-                    '%/dash/' . $escapedDecodedCode,
-                    '%dash/' . $escapedDecodedCode,
-                    '%/dash/' . $escapedCode,
-                    '%dash/' . $escapedCode,
-                ],
-                'sample_merchants' => Merchant::whereNotNull('link_blanjapoin')->take(5)->pluck('link_blanjapoin', 'id')->toArray()
             ]);
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
+        }
+
+        // Cek apakah merchant punya email_pic dan email terdaftar di PortalUser
+        $hasEmail = !empty($merchant->email_pic) && trim($merchant->email_pic) !== '';
+        $showDiamond = false;
+        
+        if ($hasEmail) {
+            // Cek apakah email terdaftar di PortalUser
+            $portalUser = PortalUser::where('email', $merchant->email_pic)->first();
+            $showDiamond = $portalUser !== null;
         }
 
         // Generate link pelanggan
@@ -372,6 +576,21 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Hitung total diamond dari history transaksi
+        // Logic: Setiap transaksi (trx) pada keyword dengan subsidy_amount menghasilkan diamond
+        // Total diamond = sum(trx * subsidy_amount) untuk semua keywords
+        // 1 rupiah = 1 diamond
+        $totalDiamond = 0;
+        foreach ($keywords as $keyword) {
+            if ($keyword->subsidy_amount && $keyword->trx) {
+                // Parse trx menjadi integer (jika string, ambil nilai numeriknya)
+                $trxCount = is_numeric($keyword->trx) ? (int)$keyword->trx : 0;
+                // Hitung diamond = jumlah transaksi * nilai subsidi (rupiah)
+                $diamondFromKeyword = $trxCount * (float)$keyword->subsidy_amount;
+                $totalDiamond += $diamondFromKeyword;
+            }
+        }
+
         // Generate link history (trx-history)
         $linkHistory = route('link.trx-history', $decodedCode);
         $linkHistoryFull = url($linkHistory);
@@ -381,6 +600,8 @@ class MerchantController extends Controller
             'linkPelanggan' => $linkPelangganFull,
             'linkHistory' => $linkHistoryFull,
             'keywords' => $keywords,
+            'showDiamond' => $showDiamond,
+            'totalDiamond' => $totalDiamond,
         ]);
     }
 
@@ -701,6 +922,22 @@ class MerchantController extends Controller
         }
 
         try {
+            // Ambil merchant untuk mendapatkan nama
+            $merchant = Merchant::findOrFail($request->merchant_id);
+            
+            // Tentukan nama: prioritaskan PortalUser name, kemudian nama_pic, terakhir nama_merchant
+            $nama = $merchant->nama_merchant; // Default fallback
+            if ($merchant->nama_pic) {
+                $nama = $merchant->nama_pic;
+            }
+            // Jika ada user yang login via portal, gunakan nama dari PortalUser
+            if (Auth::guard('portal')->check()) {
+                $portalUser = Auth::guard('portal')->user();
+                if ($portalUser && $portalUser->name) {
+                    $nama = $portalUser->name;
+                }
+            }
+            
             // Format account number untuk e-wallet (hapus +62 dan leading 0)
             $accountNumber = $request->account_number;
             $isEWallet = in_array($request->payment_method, ['linkaja', 'dana']);
@@ -708,8 +945,8 @@ class MerchantController extends Controller
             if ($isEWallet) {
                 // Hapus +62 jika ada
                 $accountNumber = preg_replace('/^\+62/', '', $accountNumber);
-                // Hapus leading 0
-                $accountNumber = ltrim($accountNumber, '0');
+                // Hapus hanya leading 0 pertama (bukan semua leading zeros)
+                $accountNumber = preg_replace('/^0/', '', $accountNumber);
             }
 
             // Generate transaction ID
@@ -718,7 +955,7 @@ class MerchantController extends Controller
             // Prepare data untuk insert
             $withdrawData = [
                 'merchant_id' => $request->merchant_id,
-                'nama' => 'Alexander', // Hardcoded untuk sekarang
+                'nama' => $nama,
                 'metode_penarikan' => $request->payment_method,
                 'jumlah' => $request->amount,
                 'transaction_id' => $transactionId,
@@ -823,6 +1060,11 @@ class MerchantController extends Controller
      */
     public function withdrawApproval(Request $request)
     {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return redirect()->route('home')->with('error', 'Unauthorized access');
+        }
+
         $query = WithdrawRequest::with(['merchant', 'approver']);
         
         // Search filter (case-insensitive)
@@ -929,6 +1171,11 @@ class MerchantController extends Controller
      */
     public function approveWithdraw(WithdrawRequest $withdrawRequest)
     {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return redirect()->route('home')->with('error', 'Unauthorized access');
+        }
+
         if ($withdrawRequest->status !== 'pending') {
             return redirect()->route('withdraw.approval')
                 ->with('error', 'Withdraw request sudah diproses sebelumnya.');
@@ -950,6 +1197,11 @@ class MerchantController extends Controller
      */
     public function rejectWithdraw(Request $request, WithdrawRequest $withdrawRequest)
     {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return redirect()->route('home')->with('error', 'Unauthorized access');
+        }
+
         if ($withdrawRequest->status !== 'pending') {
             return redirect()->route('withdraw.approval')
                 ->with('error', 'Withdraw request sudah diproses sebelumnya.');
@@ -968,5 +1220,106 @@ class MerchantController extends Controller
 
         return redirect()->route('withdraw.approval')
             ->with('success', 'Withdraw request berhasil ditolak.');
+    }
+
+    /**
+     * Toggle merchant status (is_active)
+     */
+    public function toggleStatus(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $merchant = Merchant::findOrFail($id);
+            $merchant->is_active = $merchant->is_active ? 0 : 1;
+            $merchant->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status merchant berhasil diperbarui',
+                'is_active' => $merchant->is_active,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling merchant status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Show merchants by territorial (kota/kabupaten)
+     * Route: GET /territorial/{location}
+     */
+    public function showByTerritorial($location)
+    {
+        // Convert slug back to readable name
+        $locationName = territorialName($location);
+        
+        // Get all active merchants
+        $allMerchants = Merchant::where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->get();
+        
+        // Filter merchants by territorial (compare slug with slug)
+        $merchants = $allMerchants->filter(function($merchant) use ($location) {
+            $merchantTerritorial = extractKabupatenKota($merchant->daerah);
+            $merchantSlug = territorialSlug($merchantTerritorial);
+            // Compare slug with slug (case-insensitive)
+            return strtolower($merchantSlug) === strtolower($location);
+        })->values();
+        
+        // Get keywords for these merchants
+        $merchantIds = $merchants->pluck('id');
+        $keywords = Keyword::with('merchant')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('is_active', 1)
+            ->where('status', 'approve')
+            ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
+            })
+            ->get();
+        
+        // Get iklans
+        $iklans = Iklan::orderBy('order', 'asc')->get();
+        
+        // Get all available territories for filter
+        $allDaerah = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->distinct()
+            ->pluck('daerah');
+        
+        $territories = $allDaerah->map(function($daerah) {
+            $territorial = extractKabupatenKota($daerah);
+            return [
+                'name' => $territorial,
+                'slug' => territorialSlug($territorial)
+            ];
+        })
+        ->filter(function($item) {
+            return !empty($item['name']) && !empty($item['slug']);
+        })
+        ->unique('slug')
+        ->sortBy('name')
+        ->values();
+        
+        return view('territorial', [
+            'location' => $location,
+            'locationName' => $locationName,
+            'merchants' => $merchants,
+            'keywords' => $keywords,
+            'iklans' => $iklans,
+            'territories' => $territories,
+        ]);
     }
 }
