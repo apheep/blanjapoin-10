@@ -1,3 +1,20 @@
+@php
+    // Pastikan $merchants terdefinisi
+    if (!isset($merchants) || !$merchants) {
+        $merchants = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+    }
+    
+    // Pastikan pagination merchant mempertahankan tab=merchant dan keyword_page
+    $merchantQueryParams = request()->query();
+    $merchantQueryParams['tab'] = 'merchant';
+    // Hapus parameter page generik jika ada, karena kita sudah menggunakan merchant_page
+    unset($merchantQueryParams['page']);
+    // Pastikan keyword_page tetap ada jika sebelumnya ada di URL
+    if (request()->has('keyword_page')) {
+        $merchantQueryParams['keyword_page'] = request()->get('keyword_page');
+    }
+    $merchantPaginator = $merchants->appends($merchantQueryParams);
+@endphp
 <div class="bg-white rounded-xl shadow overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -24,7 +41,7 @@
             </thead>
 
             <tbody class="bg-white divide-y divide-gray-200" id="merchant-table-body">
-                @forelse($merchants as $merchant)
+                @forelse($merchantPaginator as $merchant)
                     @php
                         $codeDashboard = null;
                         $codePelanggan = null;
@@ -45,7 +62,7 @@
 
                         {{-- No --}}
                         <td class="px-4 py-4 w-20 text-center text-sm font-medium text-gray-900">
-                            {{ ($merchants->currentPage() - 1) * $merchants->perPage() + $loop->iteration }}
+                            {{ ($merchantPaginator->currentPage() - 1) * $merchantPaginator->perPage() + $loop->iteration }}
                         </td>
 
                         {{-- Actions (ikon edit & delete center) --}}
@@ -269,27 +286,27 @@
     </div>
     
     <!-- Pagination -->
-    @if($merchants->hasPages())
+    @if($merchantPaginator->hasPages())
     <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
         <div class="text-sm text-gray-600">
-            Menampilkan <span class="font-semibold">{{ $merchants->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchants->lastItem() }}</span> dari <span class="font-semibold">{{ $merchants->total() }}</span> data
+            Menampilkan <span class="font-semibold">{{ $merchantPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchantPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $merchantPaginator->total() }}</span> data
         </div>
         
         <div class="flex items-center space-x-2">
             {{-- Previous Page Link --}}
-            @if ($merchants->onFirstPage())
+            @if ($merchantPaginator->onFirstPage())
                 <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             @else
-                <a href="{{ $merchants->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <a href="{{ $merchantPaginator->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             @endif
 
             {{-- Pagination Elements --}}
-            @foreach ($merchants->getUrlRange(1, $merchants->lastPage()) as $page => $url)
-                @if ($page == $merchants->currentPage())
+            @foreach ($merchantPaginator->getUrlRange(1, $merchantPaginator->lastPage()) as $page => $url)
+                @if ($page == $merchantPaginator->currentPage())
                     <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                         {{ $page }}
                     </button>
@@ -301,8 +318,8 @@
             @endforeach
 
             {{-- Next Page Link --}}
-            @if ($merchants->hasMorePages())
-                <a href="{{ $merchants->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            @if ($merchantPaginator->hasMorePages())
+                <a href="{{ $merchantPaginator->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             @else
@@ -336,7 +353,7 @@
             <div class="px-4 py-3 bg-gradient-to-br from-[#FDF7F1] to-white border-b border-gray-100 flex items-center justify-between gap-3">
                 <div>
                     <p class="text-[10px] text-orange-700 uppercase tracking-wide">No</p>
-                    <p class="text-base font-semibold text-gray-900">{{ ($merchants->currentPage() - 1) * $merchants->perPage() + $loop->iteration }}</p>
+                    <p class="text-base font-semibold text-gray-900">{{ ($merchantPaginator->currentPage() - 1) * $merchantPaginator->perPage() + $loop->iteration }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button"
@@ -554,27 +571,27 @@
     @endforelse
     
     <!-- Mobile Pagination -->
-    @if($merchants->hasPages())
+    @if($merchantPaginator->hasPages())
     <div class="bg-white px-4 py-4 border-t border-gray-200 flex flex-col items-center justify-center space-y-3 rounded-xl">
         <div class="text-sm text-gray-600 text-center">
-            Menampilkan <span class="font-semibold">{{ $merchants->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchants->lastItem() }}</span> dari <span class="font-semibold">{{ $merchants->total() }}</span> data
+            Menampilkan <span class="font-semibold">{{ $merchantPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $merchantPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $merchantPaginator->total() }}</span> data
         </div>
         
         <div class="flex items-center space-x-2">
             {{-- Previous Page Link --}}
-            @if ($merchants->onFirstPage())
+            @if ($merchantPaginator->onFirstPage())
                 <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             @else
-                <a href="{{ $merchants->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <a href="{{ $merchantPaginator->previousPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             @endif
 
             {{-- Pagination Elements (simplified for mobile) --}}
-            @foreach ($merchants->getUrlRange(1, $merchants->lastPage()) as $page => $url)
-                @if ($page == $merchants->currentPage())
+            @foreach ($merchantPaginator->getUrlRange(1, $merchantPaginator->lastPage()) as $page => $url)
+                @if ($page == $merchantPaginator->currentPage())
                     <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                         {{ $page }}
                     </button>
@@ -586,8 +603,8 @@
             @endforeach
 
             {{-- Next Page Link --}}
-            @if ($merchants->hasMorePages())
-                <a href="{{ $merchants->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            @if ($merchantPaginator->hasMorePages())
+                <a href="{{ $merchantPaginator->nextPageUrl() }}" class="merchant-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             @else
