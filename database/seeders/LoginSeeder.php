@@ -63,6 +63,14 @@ class LoginSeeder extends Seeder
                 'email' => 'Anggraheniyuniar@gmail.com',
                 'no_hp' => '628113641111'
             ],
+            [
+                'username' => 'AFIF KAROMI',
+                'password' => bcrypt('namiku'),
+                'role' => 'admin',
+                'can_approve' => '1',
+                'email' => 'afifkaromi264@gmail.com',
+                'no_hp' => '6281234826786'
+            ],
         ];
 
         foreach ($userData as $key => $val) {
