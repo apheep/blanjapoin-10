@@ -71,21 +71,6 @@
                 </p>
             </div>
 
-            <!-- Filter Teritorial -->
-            {{-- @if($territories->count() > 0)
-            <div class="mb-8">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-sm font-semibold text-gray-700">Pilih Teritorial:</span>
-                    @foreach($territories as $territory)
-                        <a href="{{ route('city.show', $territory['slug']) }}" 
-                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all {{ $territory['slug'] === $location ? 'bg-orange-500 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-300 hover:border-orange-400 hover:text-orange-600' }}">
-                            {{ $territory['name'] }}
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-            @endif --}}
-
             <!-- Keywords Grid -->
             @if($keywords->count() > 0)
             <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
