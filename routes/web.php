@@ -13,6 +13,7 @@ use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PortalAuthController;
 use App\Http\Controllers\KeywordController;
+use App\Http\Controllers\SpesialPromoController;
 use App\Models\Keyword;
 use App\Models\Merchant;
 use App\Models\Iklan;
@@ -111,6 +112,9 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchant.search');
+
+// Spesial Promo Public Page
+Route::get('/spesial-promo', [SpesialPromoController::class, 'index'])->name('spesial-promo.index');
 
 // ======================= CITY (PUBLIC) =======================
 // Route untuk menampilkan merchant berdasarkan kota/kabupaten
@@ -302,6 +306,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/keywords/{id}/approve', [KeywordController::class, 'approve'])->name('keywords.approve');
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::patch('/api/keywords/{id}/toggle-status', [KeywordController::class, 'toggleStatus'])->name('keywords.toggle-status');
+    Route::patch('/api/keywords/{id}/toggle-special-promo', [KeywordController::class, 'toggleSpecialPromo'])->name('keywords.toggle-special-promo');
     // Route /keywords/search sudah dipindahkan ke atas (sebelum route /keywords/{code}) untuk menghindari konflik
     Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
 
@@ -315,6 +320,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/withdraw-approval', [MerchantController::class, 'withdrawApproval'])->name('withdraw.approval');
     Route::post('/withdraw-approval/{withdrawRequest}/approve', [MerchantController::class, 'approveWithdraw'])->name('withdraw.approve');
     Route::post('/withdraw-approval/{withdrawRequest}/reject', [MerchantController::class, 'rejectWithdraw'])->name('withdraw.reject');
+
+    // Spesial Promo Form
+    Route::get('/spesial-promo-form', [KeywordController::class, 'spesialPromoForm'])->name('spesial-promo.form');
 
     // History All (requires login)
     Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
