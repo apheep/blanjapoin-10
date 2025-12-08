@@ -48,20 +48,6 @@ class EnsureMerchantEmailAuth
             // Simpan merchant ke request untuk digunakan di controller
             $request->attributes->set('merchant', $merchant);
 
-            // Cek apakah user yang login adalah admin (superadmin/admin yang bisa approve)
-            // Admin bisa mengakses tanpa perlu login portal
-            if (Auth::check()) {
-                $adminUser = Auth::user();
-                if ($adminUser->role === 'admin' && $adminUser->can_approve == 1) {
-                    Log::info('Admin user accessing link-dashboard, skipping portal auth', [
-                        'admin_username' => $adminUser->username,
-                        'merchant_id' => $merchant->id,
-                        'merchant_name' => $merchant->nama_merchant,
-                    ]);
-                    return $next($request);
-                }
-            }
-
             // Cek apakah merchant punya email_pic
             $hasEmail = !empty($merchant->email_pic) && trim($merchant->email_pic) !== '';
             
