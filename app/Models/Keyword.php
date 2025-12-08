@@ -29,6 +29,7 @@ class Keyword extends Model
         'sisa_stock',
         'status',
         'is_active',
+        'is_special_promo',
     ];
 
     public function merchant()

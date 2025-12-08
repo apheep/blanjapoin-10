@@ -468,6 +468,143 @@ class KeywordController extends Controller
         return Excel::download(new KeywordsExport, $fileName);
     }
 
+    public function spesialPromoForm(Request $request)
+    {
+        $query = Keyword::with('merchant')
+            ->where('status', 'approve');
+        
+        // Search filter (sama seperti di keyword search)
+        $searchTerm = trim($request->get('q', ''));
+        if ($searchTerm !== '') {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('nama_produk', 'like', "%{$searchTerm}%")
+                  ->orWhere('keyword_id', 'like', "%{$searchTerm}%")
+                  ->orWhere('cta_link', 'like', "%{$searchTerm}%")
+                  ->orWhere('redeem', 'like', "%{$searchTerm}%")
+                  ->orWhere('diskon', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
+                      $merchantQuery->where('nama_merchant', 'like', "%{$searchTerm}%")
+                          ->orWhere('kategori', 'like', "%{$searchTerm}%")
+                          ->orWhere('daerah', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+        
+        // Date filter (filter by start_date dan end_date keyword, sama seperti di keyword)
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        
+        if ($startDate && $endDate) {
+            // Filter keyword yang periodenya berada dalam range yang dipilih
+            $query->where(function ($q) use ($startDate, $endDate) {
+                $q->where(function ($subQuery) use ($startDate, $endDate) {
+                    // Keyword yang start_date dan end_date berada dalam range
+                    $subQuery->whereNotNull('start_date')
+                             ->whereNotNull('end_date')
+                             ->where('start_date', '>=', $startDate)
+                             ->where('end_date', '<=', $endDate);
+                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
+                    // Keyword yang hanya punya start_date
+                    $subQuery->whereNotNull('start_date')
+                             ->whereNull('end_date')
+                             ->where('start_date', '>=', $startDate)
+                             ->where('start_date', '<=', $endDate);
+                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
+                    // Keyword yang hanya punya end_date
+                    $subQuery->whereNull('start_date')
+                             ->whereNotNull('end_date')
+                             ->where('end_date', '>=', $startDate)
+                             ->where('end_date', '<=', $endDate);
+                });
+            });
+        } elseif ($startDate) {
+            // Hanya start date filter
+            $query->where(function ($q) use ($startDate) {
+                $q->where(function ($subQuery) use ($startDate) {
+                    $subQuery->whereNotNull('start_date')
+                             ->where('start_date', '>=', $startDate);
+                })->orWhere(function ($subQuery) use ($startDate) {
+                    $subQuery->whereNotNull('end_date')
+                             ->where('end_date', '>=', $startDate);
+                });
+            });
+        } elseif ($endDate) {
+            // Hanya end date filter
+            $query->where(function ($q) use ($endDate) {
+                $q->where(function ($subQuery) use ($endDate) {
+                    $subQuery->whereNotNull('start_date')
+                             ->where('start_date', '<=', $endDate);
+                })->orWhere(function ($subQuery) use ($endDate) {
+                    $subQuery->whereNotNull('end_date')
+                             ->where('end_date', '<=', $endDate);
+                });
+            });
+        }
+        
+        $keywords = $query->orderBy('id', 'desc')->paginate(10);
+        
+        // Hitung jumlah keyword yang sudah aktif sebagai spesial promo
+        $activeSpecialPromoCount = Keyword::where('is_special_promo', 1)
+            ->where('status', 'approve')
+            ->count();
+        
+        return view('spesial-promo-form', compact('keywords', 'activeSpecialPromoCount'));
+    }
+
+    /**
+     * Toggle special promo status (is_special_promo)
+     */
+    public function toggleSpecialPromo(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $keyword = Keyword::findOrFail($id);
+            
+            // Jika akan mengaktifkan, cek apakah sudah ada 4 yang aktif
+            if (!$keyword->is_special_promo) {
+                $activeCount = Keyword::where('is_special_promo', 1)
+                    ->where('status', 'approve')
+                    ->count();
+                
+                if ($activeCount >= 4) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Maksimal 4 keyword yang bisa diaktifkan sebagai spesial promo. Silakan nonaktifkan salah satu terlebih dahulu.',
+                        'active_count' => $activeCount
+                    ], 400);
+                }
+            }
+            
+            $keyword->is_special_promo = $keyword->is_special_promo ? 0 : 1;
+            $keyword->save();
+            
+            // Hitung ulang jumlah aktif setelah update
+            $activeCount = Keyword::where('is_special_promo', 1)
+                ->where('status', 'approve')
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status spesial promo berhasil diperbarui',
+                'is_special_promo' => $keyword->is_special_promo,
+                'active_count' => $activeCount
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling special promo status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui status spesial promo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Toggle keyword status (is_active)
      */
