@@ -76,7 +76,12 @@ class KeywordController extends Controller
             // Format diskon
             $diskon = '';
             if ($request->diskon_percent) {
-                $diskon = $request->diskon_percent . '%';
+                // Jika diskon 100%, tampilkan sebagai "FREE"
+                if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
+                    $diskon = 'FREE';
+                } else {
+                    $diskon = $request->diskon_percent . '%';
+                }
             } elseif ($request->diskon_rupiah) {
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
             }
@@ -198,7 +203,12 @@ class KeywordController extends Controller
             // Format diskon
             $diskon = '';
             if ($request->diskon_percent) {
-                $diskon = $request->diskon_percent . '%';
+                // Jika diskon 100%, tampilkan sebagai "FREE"
+                if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
+                    $diskon = 'FREE';
+                } else {
+                    $diskon = $request->diskon_percent . '%';
+                }
             } elseif ($request->diskon_rupiah) {
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
             }

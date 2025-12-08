@@ -184,15 +184,36 @@ function confirmUpload() {
         if (uploadDataType === 'Merchant') {
             setTimeout(() => {
                 const form = document.getElementById('formUploadMerchant');
-                if (form) {
-                    // Update link blanjapoin dan daerah sebelum membuat FormData baru
-                    if (typeof updateLinkBlanjapoin === 'function') {
-                        updateLinkBlanjapoin();
-                    }
-                    if (typeof updateDaerahCombined === 'function') {
-                        updateDaerahCombined();
-                    }
-                    
+                if (!form) {
+                    alert('Form tidak ditemukan');
+                    return;
+                }
+                
+                // Pastikan kategori terisi
+                const kategoriInput = document.getElementById('merchantKategoriValue');
+                if (!kategoriInput || !kategoriInput.value) {
+                    alert('Mohon pilih Kategori');
+                    return;
+                }
+                
+                // Update semua field sebelum membuat FormData baru
+                // Update link blanjapoin
+                if (typeof updateLinkBlanjapoin === 'function') {
+                    updateLinkBlanjapoin();
+                }
+                
+                // Update WA PIC
+                if (typeof updateWaPic === 'function') {
+                    updateWaPic();
+                }
+                
+                // Update daerah
+                if (typeof updateDaerahCombined === 'function') {
+                    updateDaerahCombined();
+                }
+                
+                // Tunggu sebentar untuk memastikan semua update selesai
+                setTimeout(() => {
                     // Buat FormData baru dari form untuk memastikan semua nilai terbaru terkirim
                     const freshFormData = new FormData(form);
                     
@@ -200,20 +221,61 @@ function confirmUpload() {
                     const csrfInput = form.querySelector('input[name="_token"]');
                     const csrfToken = csrfInput ? csrfInput.value : null;
                     
+                    if (!csrfToken) {
+                        alert('CSRF token tidak ditemukan. Silakan refresh halaman dan coba lagi.');
+                        return;
+                    }
+                    
                     // Ensure CSRF token is in the FormData
-                    if (csrfToken && !freshFormData.has('_token')) {
+                    if (!freshFormData.has('_token')) {
                         freshFormData.append('_token', csrfToken);
                     }
                     
-                    // Debug: Log form data yang akan dikirim
-                    console.log('Sending form data:');
-                    for (let [key, value] of freshFormData.entries()) {
-                        if (key !== 'logo_merchant') {
-                            console.log(key + ':', value);
-                        } else {
-                            console.log(key + ':', value instanceof File ? value.name : 'File');
+                    // Pastikan kategori ada di FormData (force update)
+                    if (kategoriInput.value) {
+                        freshFormData.set('kategori', kategoriInput.value);
+                    }
+                    
+                    // Pastikan link_blanjapoin terisi jika ada code
+                    const linkCode = document.getElementById('linkBlanjapoinCode');
+                    const linkFull = document.getElementById('linkBlanjapoinFull');
+                    if (linkCode && linkCode.value && linkFull) {
+                        if (typeof updateLinkBlanjapoin === 'function') {
+                            updateLinkBlanjapoin();
+                        }
+                        if (linkFull.value) {
+                            freshFormData.set('link_blanjapoin', linkFull.value);
                         }
                     }
+                    
+                    // Pastikan wa_pic terisi jika ada code
+                    const waCode = document.getElementById('waPicCode');
+                    const waFull = document.getElementById('waPicFull');
+                    if (waCode && waCode.value && waFull) {
+                        if (typeof updateWaPic === 'function') {
+                            updateWaPic();
+                        }
+                        if (waFull.value) {
+                            freshFormData.set('wa_pic', waFull.value);
+                        }
+                    }
+                    
+                    // Pastikan daerah terisi
+                    const daerahCombined = document.getElementById('daerahCombined');
+                    if (daerahCombined && daerahCombined.value) {
+                        freshFormData.set('daerah', daerahCombined.value);
+                    }
+                    
+                    // Debug: Log form data yang akan dikirim
+                    console.log('=== SENDING FORM DATA ===');
+                    for (let [key, value] of freshFormData.entries()) {
+                        if (key !== 'logo_merchant' && key !== 'ktp_pic') {
+                            console.log(key + ':', value);
+                        } else {
+                            console.log(key + ':', value instanceof File ? `File: ${value.name} (${value.size} bytes)` : 'File');
+                        }
+                    }
+                    console.log('========================');
                     
                     fetch(form.action, {
                         method: 'POST',
@@ -225,12 +287,38 @@ function confirmUpload() {
                         }
                     })
                     .then(response => {
+                        // Cek status code terlebih dahulu
                         if (!response.ok) {
+                            // Cek content type terlebih dahulu sebelum membaca body
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                return response.json().then(data => {
+                                    // Jika berhasil parse JSON, throw dengan data
+                                    throw { response: response, data: data };
+                                });
+                            } else {
+                                // Jika bukan JSON, baca sebagai text
+                                return response.text().then(text => {
+                                    throw { response: response, text: text };
+                                });
+                            }
+                        }
+                        
+                        // Response OK - cek content type
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            return response.json();
+                        } else {
+                            // Jika bukan JSON, baca sebagai text dan coba parse
                             return response.text().then(text => {
-                                throw new Error(`HTTP ${response.status}: ${text}`);
+                                try {
+                                    return JSON.parse(text);
+                                } catch (e) {
+                                    console.error('Non-JSON response:', text);
+                                    throw new Error(`Server returned non-JSON response: ${text.substring(0, 200)}`);
+                                }
                             });
                         }
-                        return response.json();
                     })
                     .then(data => {
                         if (data.success) {
@@ -247,14 +335,44 @@ function confirmUpload() {
                                 location.reload();
                             }, 300);
                         } else {
-                            alert('Gagal menyimpan data: ' + (data.message || 'Unknown error'));
+                            // Handle validation errors
+                            let errorMessage = 'Gagal menyimpan data';
+                            if (data.message) {
+                                errorMessage += ': ' + data.message;
+                            }
+                            if (data.errors) {
+                                const errorList = Object.values(data.errors).flat().join('\n');
+                                errorMessage += '\n\n' + errorList;
+                            }
+                            alert(errorMessage);
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Terjadi kesalahan saat menyimpan data.\n\n' + error.message);
+                        
+                        // Handle different error types
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
+                        
+                        if (error.data) {
+                            // Error dari server dengan data JSON
+                            if (error.data.message) {
+                                errorMessage = error.data.message;
+                            }
+                            if (error.data.errors) {
+                                const errorList = Object.values(error.data.errors).flat().join('\n');
+                                errorMessage += '\n\n' + errorList;
+                            }
+                        } else if (error.text) {
+                            // Error dengan text response
+                            errorMessage += '\n\n' + error.text.substring(0, 500);
+                        } else if (error.message) {
+                            // Standard error
+                            errorMessage += '\n\n' + error.message;
+                        }
+                        
+                        alert(errorMessage);
                     });
-                }
+                }, 100); // Delay 100ms untuk memastikan semua update selesai
             }, 300);
         } else if (uploadDataType === 'Keyword') {
             // Handle Keyword upload - submit form via AJAX
@@ -265,14 +383,143 @@ function confirmUpload() {
                     const csrfInput = form.querySelector('input[name="_token"]');
                     const csrfToken = csrfInput ? csrfInput.value : null;
                     
+                    // Buat FormData baru dari form untuk memastikan semua nilai terbaru terkirim
+                    const freshFormData = new FormData(form);
+                    
                     // Ensure CSRF token is in the FormData
-                    if (csrfToken && !uploadVerificationData.has('_token')) {
-                        uploadVerificationData.append('_token', csrfToken);
+                    if (csrfToken) {
+                        freshFormData.set('_token', csrfToken);
                     }
+                    
+                    // Pastikan diskon type dan nilai terbaru terkirim
+                    const diskonType = form.querySelector('input[name="diskon_type"]:checked');
+                    if (diskonType) {
+                        if (diskonType.value === 'free') {
+                            // Set diskon_percent = 100 untuk free
+                            freshFormData.set('diskon_percent', '100');
+                            freshFormData.delete('diskon_rupiah'); // Hapus rupiah jika ada
+                        } else if (diskonType.value === 'percent') {
+                            // Pastikan diskon_percent ada
+                            const diskonPercent = form.querySelector('input[name="diskon_percent"]');
+                            if (diskonPercent && diskonPercent.value) {
+                                // Konversi ke angka (hapus format jika ada)
+                                const percentValue = diskonPercent.value.toString().replace(/[^\d.]/g, '');
+                                freshFormData.set('diskon_percent', percentValue);
+                            }
+                            freshFormData.delete('diskon_rupiah'); // Hapus rupiah
+                        } else if (diskonType.value === 'rupiah') {
+                            // Pastikan diskon_rupiah ada
+                            const diskonRupiah = form.querySelector('input[name="diskon_rupiah"]');
+                            if (diskonRupiah && diskonRupiah.value) {
+                                // Konversi ke angka (hapus format jika ada)
+                                const rupiahValue = diskonRupiah.value.toString().replace(/[^\d.]/g, '');
+                                freshFormData.set('diskon_rupiah', rupiahValue);
+                            }
+                            freshFormData.delete('diskon_percent'); // Hapus percent
+                        }
+                    }
+                    
+                    // Pastikan subsidy_enabled dikirim dengan benar
+                    const subsidyEnabledRadio = form.querySelector('input[name="subsidy_enabled"]:checked');
+                    if (subsidyEnabledRadio) {
+                        freshFormData.set('subsidy_enabled', subsidyEnabledRadio.value);
+                    } else {
+                        // Default ke '0' jika tidak ada yang dipilih
+                        freshFormData.set('subsidy_enabled', '0');
+                    }
+                    
+                    // Pastikan subsidy_amount dikonversi ke angka (hapus format titik sebagai pemisah ribuan)
+                    const subsidyEnabled = form.querySelector('input[name="subsidy_enabled"]:checked');
+                    if (subsidyEnabled && subsidyEnabled.value === '1') {
+                        const subsidyAmountInput = form.querySelector('input[name="subsidy_amount"]');
+                        if (subsidyAmountInput && subsidyAmountInput.value) {
+                            // Hapus semua karakter non-numerik (titik sebagai pemisah ribuan, bukan desimal)
+                            // Format Indonesia: 1.000.000 (titik = pemisah ribuan, koma = desimal)
+                            // Kita hapus semua titik dan koma, lalu konversi ke angka
+                            let subsidyValue = subsidyAmountInput.value.toString().replace(/\./g, ''); // Hapus titik (pemisah ribuan)
+                            subsidyValue = subsidyValue.replace(/,/g, '.'); // Ganti koma dengan titik untuk desimal
+                            subsidyValue = subsidyValue.replace(/[^\d.]/g, ''); // Hapus karakter lain
+                            
+                            // Pastikan hanya ada satu titik desimal
+                            const parts = subsidyValue.split('.');
+                            if (parts.length > 2) {
+                                subsidyValue = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            
+                            if (subsidyValue && !isNaN(parseFloat(subsidyValue))) {
+                                freshFormData.set('subsidy_amount', subsidyValue);
+                            } else {
+                                freshFormData.delete('subsidy_amount');
+                            }
+                        } else {
+                            freshFormData.delete('subsidy_amount');
+                        }
+                    } else {
+                        // Jika subsidy disabled, hapus dari FormData
+                        freshFormData.delete('subsidy_amount');
+                    }
+                    
+                    // Pastikan diamond_enabled dikirim dengan benar
+                    const diamondEnabledRadio = form.querySelector('input[name="diamond_enabled"]:checked');
+                    if (diamondEnabledRadio) {
+                        freshFormData.set('diamond_enabled', diamondEnabledRadio.value);
+                    } else {
+                        // Default ke '0' jika tidak ada yang dipilih
+                        freshFormData.set('diamond_enabled', '0');
+                    }
+                    
+                    // Pastikan diamond_amount dikonversi ke angka
+                    const diamondEnabled = form.querySelector('input[name="diamond_enabled"]:checked');
+                    if (diamondEnabled && diamondEnabled.value === '1') {
+                        const diamondAmountInput = form.querySelector('input[name="diamond_amount"]');
+                        if (diamondAmountInput && diamondAmountInput.value) {
+                            // Konversi ke angka (hapus format jika ada)
+                            const diamondValue = diamondAmountInput.value.toString().replace(/[^\d]/g, '');
+                            if (diamondValue) {
+                                freshFormData.set('diamond_amount', diamondValue);
+                            } else {
+                                freshFormData.delete('diamond_amount');
+                            }
+                        } else {
+                            freshFormData.delete('diamond_amount');
+                        }
+                    } else {
+                        // Jika diamond disabled, hapus dari FormData
+                        freshFormData.delete('diamond_amount');
+                    }
+                    
+                    // Pastikan redeem point dikonversi ke angka jika ada
+                    const redeemInput = form.querySelector('input[name="redeem"]');
+                    if (redeemInput && redeemInput.value) {
+                        const redeemValue = redeemInput.value.toString().replace(/[^\d]/g, '');
+                        if (redeemValue) {
+                            freshFormData.set('redeem', redeemValue);
+                        }
+                    }
+                    
+                    // Pastikan stock dikonversi ke angka jika ada
+                    const stockInput = form.querySelector('input[name="stock"]');
+                    if (stockInput && stockInput.value) {
+                        const stockValue = stockInput.value.toString().replace(/[^\d]/g, '');
+                        if (stockValue) {
+                            freshFormData.set('stock', stockValue);
+                        }
+                    }
+                    
+                    // Debug: Log form data yang akan dikirim
+                    console.log('=== SENDING KEYWORD FORM DATA ===');
+                    for (let [key, value] of freshFormData.entries()) {
+                        if (key !== 'image') {
+                            console.log(key + ':', value);
+                        } else {
+                            console.log(key + ':', value instanceof File ? `File: ${value.name} (${value.size} bytes)` : 'File');
+                        }
+                    }
+                    console.log('==================================');
                     
                     fetch(form.action, {
                         method: 'POST',
-                        body: uploadVerificationData,
+                        body: freshFormData,
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
@@ -280,16 +527,39 @@ function confirmUpload() {
                         }
                     })
                     .then(response => {
+                        // Clone response untuk bisa dibaca beberapa kali jika perlu
+                        const responseClone = response.clone();
+                        
                         if (!response.ok) {
-                            return response.json().then(data => {
-                                throw new Error(data.message || `HTTP ${response.status}`);
-                            }).catch(() => {
-                                return response.text().then(text => {
-                                    throw new Error(`HTTP ${response.status}: ${text}`);
+                            // Cek content type terlebih dahulu
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                return response.json().then(data => {
+                                    throw new Error(data.message || data.error || `HTTP ${response.status}`);
                                 });
+                            } else {
+                                // Jika bukan JSON, baca sebagai text
+                                return response.text().then(text => {
+                                    throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
+                                });
+                            }
+                        }
+                        
+                        // Response OK - parse sebagai JSON
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                            return response.json();
+                        } else {
+                            // Jika bukan JSON, baca sebagai text dan coba parse
+                            return response.text().then(text => {
+                                try {
+                                    return JSON.parse(text);
+                                } catch (e) {
+                                    console.error('Non-JSON response:', text);
+                                    throw new Error(`Server returned non-JSON response: ${text.substring(0, 200)}`);
+                                }
                             });
                         }
-                        return response.json();
                     })
                     .then(data => {
                         if (data.success) {

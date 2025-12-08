@@ -57,7 +57,7 @@
                     $merchant = $result->merchant;
                     $merchantName = optional($merchant)->nama_merchant ?? '';
                     $productName = $result->nama_produk ?? '';
-                    $locationName = optional($merchant)->daerah ?? '';
+                    $locationName = extractKabupatenKota(optional($merchant)->daerah ?? '');
                     $searchName = strtolower(trim($merchantName . ' ' . $productName));
                     $searchLocation = strtolower($locationName);
                     $uniqueId = 'search-card-' . $result->id;
@@ -89,10 +89,10 @@
                             </h3>
                             <div class="text-[11px] text-neutral-600 leading-relaxed">
                                 @if(!is_null($result->diskon))
-                                <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
-                                    <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
-                                    <span class="text-xl font-bold text-red-500">{{ $result->diskon }}</span>
-                                </div>
+                                    <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
+                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
+                                        <span class="text-xl font-bold text-red-500">{{ formatDiskon($result->diskon) }}</span>
+                                    </div>
                                 @endif
                                 @if($result->skb)
                                 <div class="relative">
@@ -151,7 +151,7 @@
                             <div class="text-right flex-shrink-0 ml-2">
                                 <div class="inline-flex items-center gap-2">
                                     <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-10 h-10 object-contain">
-                                    <span class="text-base md:text-2xl font-black text-red-600">{{ $result->diskon }}</span>
+                                    <span class="text-base md:text-2xl font-black text-red-600">{{ formatDiskon($result->diskon) }}</span>
                                 </div>
                             </div>
                             @endif

@@ -126,7 +126,7 @@
                             <a href="{{ $keyword->cta_link }}" target="_blank" class="text-blue-600 hover:underline">{{ $keyword->cta_link }}</a>
                         </td>   
                         <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->redeem ?? '-' }}</td>
-                        <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->diskon ?? '-' }}</td>
+                        <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->diskon ? formatDiskon($keyword->diskon) : '-' }}</td>
                         <td class="px-4 py-4 text-xs text-gray-500">{{ $keyword->skb ?? '-' }}</td>
                         <td class="px-4 py-4">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
@@ -270,7 +270,7 @@
                 </div>
                 <div class="bg-gray-50 rounded-lg p-2 border border-gray-100">
                     <p class="text-[11px] text-gray-500 font-medium mb-1">Diskon</p>
-                    <p class="text-xs font-bold text-gray-900">{{ $keyword->diskon ?? '-' }}</p>
+                    <p class="text-xs font-bold text-gray-900">{{ $keyword->diskon ? formatDiskon($keyword->diskon) : '-' }}</p>
                 </div>
             </div>
 

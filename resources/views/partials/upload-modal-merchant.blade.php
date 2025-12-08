@@ -141,7 +141,9 @@
                                 Email PIC
                             </label>
                             <input type="email"
+                                   id="emailPicInput"
                                    name="email_pic"
+                                   oninput="toggleKtpUpload()"
                                    class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                                    placeholder="Masukkan email PIC">
                         </div>
@@ -155,13 +157,15 @@
                                     name="ktp_pic"
                                     accept="image/*"
                                     class="hidden"
+                                    disabled
                                     onchange="previewUploadMerchantKtp(this)">
                                 <button type="button"
-                                        onclick="document.getElementById('uploadMerchantKtpInput').click()"
-                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 focus:outline-none focus:border-orange-500 flex flex-col items-center justify-center text-gray-600 hover:text-orange-600 transition-all">
+                                        id="uploadMerchantKtpBtn"
+                                        onclick="handleKtpUploadClick()"
+                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg focus:outline-none flex flex-col items-center justify-center text-gray-400 transition-all cursor-not-allowed opacity-60">
                                 <i class="fas fa-upload text-3xl mb-2"></i>
                                 <span id="uploadMerchantKtpText" class="text-sm">
-                                        Click to upload KTP
+                                        Isi email PIC terlebih dahulu
                                     </span>
                                 <span class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG maks 2MB</span>
                                 </button>
@@ -494,6 +498,68 @@ function removeMerchantImage() {
 }
 
 // ======================
+// Toggle KTP Upload based on Email PIC
+// ======================
+function toggleKtpUpload() {
+    const emailInput = document.getElementById('emailPicInput');
+    const ktpInput = document.getElementById('uploadMerchantKtpInput');
+    const ktpBtn = document.getElementById('uploadMerchantKtpBtn');
+    const ktpText = document.getElementById('uploadMerchantKtpText');
+    
+    if (!emailInput || !ktpInput || !ktpBtn) return;
+    
+    const emailValue = emailInput.value.trim();
+    // Basic email validation: must contain @ and . with at least one character before @ and after .
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailValue && emailRegex.test(emailValue);
+    
+    if (isValidEmail) {
+        // Enable KTP upload
+        ktpInput.disabled = false;
+        ktpBtn.disabled = false;
+        ktpBtn.classList.remove('cursor-not-allowed', 'opacity-60');
+        ktpBtn.classList.add('hover:border-orange-400', 'focus:border-orange-500', 'hover:text-orange-600', 'text-gray-600', 'border-gray-300');
+        if (ktpText) {
+            ktpText.textContent = 'Click to upload KTP';
+        }
+    } else {
+        // Disable KTP upload
+        ktpInput.disabled = true;
+        ktpBtn.disabled = true;
+        ktpBtn.classList.add('cursor-not-allowed', 'opacity-60');
+        ktpBtn.classList.remove('hover:border-orange-400', 'focus:border-orange-500', 'hover:text-orange-600', 'text-gray-600');
+        if (ktpText) {
+            ktpText.textContent = 'Isi email PIC terlebih dahulu';
+        }
+        
+        // Clear KTP preview and input if email is cleared or invalid
+        const ktpPreview = document.getElementById('uploadMerchantKtpPreview');
+        if (ktpPreview && !ktpPreview.classList.contains('hidden')) {
+            removeUploadMerchantKtp();
+        }
+    }
+}
+
+function handleKtpUploadClick() {
+    const emailInput = document.getElementById('emailPicInput');
+    const ktpInput = document.getElementById('uploadMerchantKtpInput');
+    
+    if (!emailInput || !ktpInput) return;
+    
+    const emailValue = emailInput.value.trim();
+    // Basic email validation: must contain @ and . with at least one character before @ and after .
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailValue && emailRegex.test(emailValue);
+    
+    if (isValidEmail && !ktpInput.disabled) {
+        ktpInput.click();
+    } else {
+        alert('Mohon isi email PIC yang valid terlebih dahulu sebelum mengupload KTP');
+        emailInput.focus();
+    }
+}
+
+// ======================
 // Preview & remove KTP
 // ======================
 function previewUploadMerchantKtp(input) {
@@ -561,6 +627,9 @@ function openUploadMerchant() {
         overlay?.classList.add('opacity-100');
         panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
         panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+        
+        // Ensure KTP upload is disabled on modal open
+        toggleKtpUpload();
     });
 }
 
@@ -617,6 +686,13 @@ function closeUploadMerchant() {
             // Reset WA PIC
             document.getElementById('waPicCode').value = '';
             document.getElementById('waPicFull').value = '';
+            
+            // Reset Email PIC and disable KTP upload
+            const emailPicInput = document.getElementById('emailPicInput');
+            if (emailPicInput) {
+                emailPicInput.value = '';
+                toggleKtpUpload(); // Disable KTP upload after reset
+            }
             
             // Reset preview image
         const preview = document.getElementById('merchantImagePreview');
@@ -1445,6 +1521,9 @@ async function fetchDistricts(regencyCode) {
 document.addEventListener('DOMContentLoaded', function() {
     // Preload provinsi data
     fetchProvinces();
+    
+    // Initialize KTP upload state (disabled by default)
+    toggleKtpUpload();
     
     // Close dropdowns saat klik di luar (dengan delay untuk menghindari konflik dengan open event)
     let clickTimeout;
