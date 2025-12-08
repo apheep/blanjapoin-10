@@ -342,6 +342,112 @@
     </div>
 </div>
 
+{{-- Modal Peta Leaflet (OpenStreetMap) untuk Memilih Lokasi --}}
+{{-- Leaflet CSS --}}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+{{-- Leaflet JS --}}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<style>
+    @media (min-width: 768px) {
+        #mapContainer {
+            min-height: 400px !important;
+            height: 400px !important;
+        }
+        #map {
+            height: 400px !important;
+        }
+    }
+    @media (max-width: 767px) {
+        #mapContainer {
+            min-height: 300px !important;
+            height: 300px !important;
+        }
+        #map {
+            height: 300px !important;
+        }
+    }
+    /* Leaflet map styling */
+    .leaflet-container {
+        font-family: 'Poppins', sans-serif;
+    }
+</style>
+<div id="mapPickerModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-2 md:p-4">
+    <div id="mapPickerOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0" onclick="closeMapPicker()"></div>
+    
+    <div id="mapPickerPanel" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] md:max-h-[80vh] flex flex-col overflow-hidden z-10 transform transition-all duration-300 scale-95 opacity-0 m-2 md:m-4">
+        {{-- Header Modal --}}
+        <div class="flex justify-between items-center px-5 py-3 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+            <h3 class="text-base font-bold text-gray-800">
+                <i class="fas fa-map-marker-alt text-orange-500 mr-2"></i>
+                Pilih Lokasi di Peta
+            </h3>
+            <button type="button"
+                    onclick="closeMapPicker()"
+                    class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/50 rounded-lg">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        {{-- Body Modal dengan Peta --}}
+        <div class="flex-1 flex flex-col overflow-y-auto" style="min-height: 400px;">
+            {{-- Search Box --}}
+            <div class="p-3 border-b">
+                <div class="flex gap-2">
+                    <input type="text"
+                           id="mapSearchInput"
+                           placeholder="Cari lokasi (contoh: Jalan Sudirman, Jakarta)..."
+                           class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           onkeypress="if(event.key === 'Enter') { event.preventDefault(); searchLocation(); }">
+                    <button type="button"
+                            onclick="searchLocation()"
+                            class="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            {{-- Peta Container --}}
+            <div id="mapContainer" class="flex-1 relative w-full" style="min-height: 300px; height: 300px;">
+                <div id="map" class="w-full h-full" style="z-index: 1; height: 300px; width: 100%; position: relative;"></div>
+                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 z-20 pointer-events-none">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-info-circle text-orange-500 mr-1"></i>
+                        Klik di peta untuk memilih lokasi
+                    </p>
+                </div>
+            </div>
+            
+            {{-- Info Lokasi yang Dipilih --}}
+            <div id="selectedLocationInfo" class="hidden p-3 border-t bg-gray-50 sticky bottom-0 z-30">
+                <div class="flex flex-col md:flex-row md:items-start gap-3">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-700 mb-1">Lokasi yang Dipilih:</p>
+                        <p id="selectedAddress" class="text-sm text-gray-600 break-words"></p>
+                        <p id="selectedCoordinates" class="text-xs text-gray-500 mt-1 break-words"></p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <button type="button"
+                                onclick="closeMapPicker()"
+                                class="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
+                            Batal
+                        </button>
+                        <button type="button"
+                                onclick="confirmLocation()"
+                                class="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors whitespace-nowrap">
+                            <i class="fas fa-check mr-1"></i>Gunakan Lokasi Ini
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 {{-- Include upload verification modal --}}
 @include('partials.upload-verification-modal')
 
@@ -777,45 +883,338 @@ function updateWaPic() {
 }
 
 // ======================
-// Google Maps Functions
+// Leaflet Map Functions (OpenStreetMap)
 // ======================
+let mapPickerMap = null;
+let mapPickerMarker = null;
+let selectedLocationData = null;
+let mapPickerMode = 'upload'; // 'upload' or 'edit'
+
+// Validate URL (accepts any URL now, not just Google Maps)
 function validateGmapLink(url) {
-    // Basic validation for Google Maps URL
     if (!url || url.trim() === '') {
         return true;
     }
     
-    // Check if it's a valid Google Maps URL
-    const gmapPatterns = [
-        /^https?:\/\/(www\.)?(maps\.)?google\.(com|co\.id)\/.+/i,
-        /^https?:\/\/goo\.gl\/maps\/.+/i,
-        /^https?:\/\/maps\.app\.goo\.gl\/.+/i
-    ];
-    
-    const isValid = gmapPatterns.some(pattern => pattern.test(url));
-    
-    if (!isValid && url.length > 10) {
-        // Show warning if URL doesn't match Google Maps pattern
-        console.warn('URL mungkin bukan link Google Maps yang valid');
+    // Basic URL validation
+    try {
+        new URL(url);
+        return true;
+    } catch (e) {
+        return false;
     }
-    
-    return isValid;
 }
 
+// Open map picker modal
 function openMapPicker(mode) {
-    // Placeholder function for map picker
-    // This should open a modal with Google Maps picker
-    // For now, we'll open Google Maps in a new window
-    const currentUrl = mode === 'edit' 
-        ? document.getElementById('editMerchantLinkGmap')?.value || ''
-        : document.getElementById('merchantLinkGmap')?.value || '';
+    mapPickerMode = mode || 'upload';
+    const modal = document.getElementById('mapPickerModal');
+    const overlay = document.getElementById('mapPickerOverlay');
+    const panel = document.getElementById('mapPickerPanel');
     
-    // Open Google Maps
-    const mapsUrl = 'https://www.google.com/maps';
-    window.open(mapsUrl, '_blank', 'width=800,height=600');
+    if (!modal) return;
     
-    // Show instruction to user
-    alert('Silakan pilih lokasi di Google Maps yang terbuka, lalu copy link dari browser dan paste ke field Link Google Maps.');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    requestAnimationFrame(() => {
+        overlay?.classList.remove('opacity-0');
+        overlay?.classList.add('opacity-100');
+        panel?.classList.remove('opacity-0', 'scale-95');
+        panel?.classList.add('opacity-100', 'scale-100');
+    });
+    
+    // Initialize map after modal is shown
+    setTimeout(() => {
+        initMapPicker();
+    }, 300);
+}
+
+// Close map picker modal
+function closeMapPicker() {
+    const modal = document.getElementById('mapPickerModal');
+    const overlay = document.getElementById('mapPickerOverlay');
+    const panel = document.getElementById('mapPickerPanel');
+    
+    overlay?.classList.remove('opacity-100');
+    overlay?.classList.add('opacity-0');
+    panel?.classList.remove('opacity-100', 'scale-100');
+    panel?.classList.add('opacity-0', 'scale-95');
+    
+    setTimeout(() => {
+        modal?.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        // Clean up map
+        if (mapPickerMap) {
+            mapPickerMap.remove();
+            mapPickerMap = null;
+            mapPickerMarker = null;
+            selectedLocationData = null;
+        }
+        
+        // Reset UI
+        const selectedInfo = document.getElementById('selectedLocationInfo');
+        if (selectedInfo) selectedInfo.classList.add('hidden');
+        const searchInput = document.getElementById('mapSearchInput');
+        if (searchInput) searchInput.value = '';
+    }, 300);
+}
+
+// Initialize Leaflet map
+function initMapPicker() {
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) return;
+    
+    // Remove existing map if any
+    if (mapPickerMap) {
+        mapPickerMap.remove();
+    }
+    
+    // Default center: Jakarta, Indonesia
+    const defaultCenter = [-6.2088, 106.8456];
+    const defaultZoom = 13;
+    
+    // Initialize map
+    mapPickerMap = L.map('map').setView(defaultCenter, defaultZoom);
+    
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(mapPickerMap);
+    
+    // Add click handler to map
+    mapPickerMap.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Immediately update link field for instant feedback
+        updateLinkGmapField(lat, lng);
+        
+        // Reverse geocode to get address (will also update link again as backup)
+        reverseGeocode(lat, lng);
+        
+        // Add/update marker
+        if (mapPickerMarker) {
+            mapPickerMarker.setLatLng([lat, lng]);
+        } else {
+            mapPickerMarker = L.marker([lat, lng], {
+                draggable: true,
+                icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(mapPickerMap);
+            
+            // Handle marker drag
+            mapPickerMarker.on('dragend', function() {
+                const position = mapPickerMarker.getLatLng();
+                // Immediately update link field
+                updateLinkGmapField(position.lat, position.lng);
+                // Then reverse geocode for address
+                reverseGeocode(position.lat, position.lng);
+            });
+        }
+        
+        // Show selected location info
+        showSelectedLocationInfo(lat, lng);
+    });
+    
+    // Try to use geolocation if available
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            mapPickerMap.setView([lat, lng], 15);
+        }, function(error) {
+            console.log('Geolocation error:', error);
+        });
+    }
+}
+
+// Reverse geocode coordinates to address
+async function reverseGeocode(lat, lng) {
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=id`,
+            {
+                headers: {
+                    'User-Agent': 'BlanjaPoin-LocationPicker/1.0'
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error('Reverse geocoding failed');
+        }
+        
+        const data = await response.json();
+        const address = data.display_name || `${lat}, ${lng}`;
+        
+        selectedLocationData = {
+            lat: lat,
+            lng: lng,
+            address: address,
+            fullData: data
+        };
+        
+        updateSelectedLocationDisplay(lat, lng, address);
+        // Auto-update link to input field
+        updateLinkGmapField(lat, lng);
+    } catch (error) {
+        console.error('Reverse geocoding error:', error);
+        const address = `${lat}, ${lng}`;
+        selectedLocationData = {
+            lat: lat,
+            lng: lng,
+            address: address
+        };
+        updateSelectedLocationDisplay(lat, lng, address);
+        // Auto-update link to input field even if geocoding fails
+        updateLinkGmapField(lat, lng);
+    }
+}
+
+// Search location using Nominatim geocoding
+async function searchLocation() {
+    const searchInput = document.getElementById('mapSearchInput');
+    if (!searchInput) return;
+    
+    const query = searchInput.value.trim();
+    if (!query) {
+        alert('Masukkan lokasi yang ingin dicari');
+        return;
+    }
+    
+    try {
+        // Show loading state
+        searchInput.disabled = true;
+        
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=1&accept-language=id`,
+            {
+                headers: {
+                    'User-Agent': 'BlanjaPoin-LocationPicker/1.0'
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            throw new Error('Geocoding failed');
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            const result = data[0];
+            const lat = parseFloat(result.lat);
+            const lng = parseFloat(result.lon);
+            const address = result.display_name || query;
+            
+            // Move map to location
+            mapPickerMap.setView([lat, lng], 15);
+            
+            // Add/update marker
+            if (mapPickerMarker) {
+                mapPickerMarker.setLatLng([lat, lng]);
+            } else {
+                mapPickerMarker = L.marker([lat, lng], {
+                    draggable: true,
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(mapPickerMap);
+                
+                // Handle marker drag
+                mapPickerMarker.on('dragend', function() {
+                    const position = mapPickerMarker.getLatLng();
+                    // Immediately update link field
+                    updateLinkGmapField(position.lat, position.lng);
+                    // Then reverse geocode for address
+                    reverseGeocode(position.lat, position.lng);
+                });
+            }
+            
+            selectedLocationData = {
+                lat: lat,
+                lng: lng,
+                address: address,
+                fullData: result
+            };
+            
+            updateSelectedLocationDisplay(lat, lng, address);
+            // Auto-update link to input field
+            updateLinkGmapField(lat, lng);
+        } else {
+            alert('Lokasi tidak ditemukan. Silakan coba dengan kata kunci lain.');
+        }
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        alert('Terjadi kesalahan saat mencari lokasi. Silakan coba lagi.');
+    } finally {
+        searchInput.disabled = false;
+    }
+}
+
+// Update selected location display
+function updateSelectedLocationDisplay(lat, lng, address) {
+    const addressEl = document.getElementById('selectedAddress');
+    const coordsEl = document.getElementById('selectedCoordinates');
+    const infoEl = document.getElementById('selectedLocationInfo');
+    
+    if (addressEl) addressEl.textContent = address;
+    if (coordsEl) coordsEl.textContent = `Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    if (infoEl) infoEl.classList.remove('hidden');
+}
+
+// Show selected location info
+function showSelectedLocationInfo(lat, lng) {
+    const coordsEl = document.getElementById('selectedCoordinates');
+    if (coordsEl) {
+        coordsEl.textContent = `Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+    const infoEl = document.getElementById('selectedLocationInfo');
+    if (infoEl) {
+        infoEl.classList.remove('hidden');
+    }
+}
+
+// Auto-update link_gmap field when location is selected
+function updateLinkGmapField(lat, lng) {
+    // Generate Google Maps link
+    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+    
+    // Update input field based on mode
+    const inputId = mapPickerMode === 'edit' ? 'editMerchantLinkGmap' : 'merchantLinkGmap';
+    const inputField = document.getElementById(inputId);
+    
+    if (inputField) {
+        inputField.value = googleMapsLink;
+        // Trigger input event to notify any listeners
+        inputField.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+}
+
+// Confirm location and close modal (link already auto-updated)
+function confirmLocation() {
+    if (!selectedLocationData) {
+        alert('Silakan pilih lokasi di peta terlebih dahulu');
+        return;
+    }
+    
+    // Link sudah otomatis ter-update via updateLinkGmapField()
+    // Tinggal tutup modal
+    closeMapPicker();
 }
 
 // ======================
