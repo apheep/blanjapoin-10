@@ -67,6 +67,7 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('poin_transaksions');
+        // Drop the table with the exact same name as created in up()
+        Schema::dropIfExists('poin_transaction');
     }
 };

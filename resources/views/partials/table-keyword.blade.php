@@ -58,8 +58,8 @@
                                 <button type="button"
                                         id="keyword-edit-btn-{{ $keyword->id }}"
                                         data-keyword-edit-id="{{ $keyword->id }}"
-                                        data-keyword-json="{{ htmlspecialchars(json_encode($keyword), ENT_QUOTES, 'UTF-8') }}"
-                                        onclick="openEditKeyword({{ $keyword->id }}, JSON.parse(this.getAttribute('data-keyword-json')))"
+                                        data-keyword-data="{{ json_encode($keyword, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                                        onclick="openEditKeyword({{ $keyword->id }}, JSON.parse(this.getAttribute('data-keyword-data')))"
                                         class="text-blue-600 hover:text-blue-900 transition-colors"
                                         title="Edit">
                                     <i class="fas fa-edit"></i>

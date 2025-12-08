@@ -316,8 +316,6 @@ class KeywordController extends Controller
         $searchTerm = trim($request->get('q', ''));
         $status = $request->get('status');
         $merchantId = $request->get('merchant_id');
-        $keywordPage = $request->get('keyword_page', 1);
-        $merchantPage = $request->get('merchant_page', 1);
 
         $keywordsQuery = Keyword::with('merchant')
             ->when($merchantId, function ($query) use ($merchantId) {
@@ -343,6 +341,7 @@ class KeywordController extends Controller
             ->orderBy('id');
 
         // Paginate dengan parameter keyword_page yang terpisah
+        // Let Laravel automatically read the page number from the request using the page name
         // Buat query params untuk appends, pastikan merchant_page tetap ada
         $keywordQueryParams = $request->query();
         // Pastikan merchant_page tetap ada jika sebelumnya ada di request
@@ -351,8 +350,7 @@ class KeywordController extends Controller
         }
         
         $keywords = $keywordsQuery
-            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
-            ->setPageName('keyword_page')
+            ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
 
         if ($request->ajax()) {
@@ -379,9 +377,9 @@ class KeywordController extends Controller
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $merchants = Merchant::orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
-            ->setPageName('merchant_page')
+            ->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
 
