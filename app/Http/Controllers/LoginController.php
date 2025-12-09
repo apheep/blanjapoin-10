@@ -123,7 +123,10 @@ class LoginController extends Controller
 
         // Format phone number (remove leading 0, add 62)
         $phone = $request->no_hp;
-        if (substr($phone, 0, 1) === '0') {
+        // Remove +62 prefix if present
+        if (substr($phone, 0, 3) === '+62') {
+            $phone = '62' . substr($phone, 3);
+        } elseif (substr($phone, 0, 1) === '0') {
             $phone = '62' . substr($phone, 1);
         } elseif (substr($phone, 0, 2) !== '62') {
             $phone = '62' . $phone;
@@ -338,7 +341,10 @@ class LoginController extends Controller
 
         // Format phone number (same as sendOtp)
         $phone = $request->no_hp;
-        if (substr($phone, 0, 1) === '0') {
+        // Remove +62 prefix if present
+        if (substr($phone, 0, 3) === '+62') {
+            $phone = '62' . substr($phone, 3);
+        } elseif (substr($phone, 0, 1) === '0') {
             $phone = '62' . substr($phone, 1);
         } elseif (substr($phone, 0, 2) !== '62') {
             $phone = '62' . $phone;

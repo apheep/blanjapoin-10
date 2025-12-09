@@ -103,7 +103,7 @@
                         <!-- Row 3: Redeem Point -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Redeem Point</label>
-                            <input type="text" name="redeem" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter redeem points">
+                            <input type="number" name="redeem" min="0" step="1" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter redeem points">
                         </div>
 
                         <!-- Row 4: Diskon (Persen + Rupiah + Free) -->
@@ -147,7 +147,7 @@
                         </div>
 
                         <!-- Row 4.5: Subsidi Diskon -->
-                        <div class="md:col-span-2">
+                        <div class="md:col-span-2 ">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Subsidi Diskon</label>
                             <div class="flex items-center gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer">
@@ -170,7 +170,7 @@
                         </div>
 
                         <!-- Row 4.6: Diamond -->
-                        <div class="md:col-span-2">
+                        <div class="md:col-span-2 hidden">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Diamond</label>
                             <div class="flex items-center gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer">

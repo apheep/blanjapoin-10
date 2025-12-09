@@ -78,6 +78,10 @@
         <h1 class="text-2xl md:text-3xl font-black tracking-tight text-neutral-900">User Management</h1>
       </div>
       <div class="flex items-center gap-2 pr-4">
+        <button id="btn-open-import" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 shadow-l hover:shadow-md active:scale-[0.98] transition-all">
+          <i class="fa-solid fa-file-excel text-[12px]"></i>
+          <span class="hidden sm:inline">Import Excel</span>
+        </button>
         <button id="btn-open-create" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] shadow-l hover:shadow-md active:scale-[0.98] transition-all">
           <i class="fa-solid fa-user-plus text-[12px]"></i>
         </button>
@@ -295,6 +299,78 @@
     </section>
   </main>
 
+  <!-- Modal: Import Excel -->
+  <div id="modal-import" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
+    <div id="modal-import-overlay" class="fixed inset-0 bg-black/50 opacity-0 transition-opacity duration-300"></div>
+    <div id="modal-import-panel" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden opacity-0 scale-95 translate-y-4 transition-all duration-300">
+      <div class="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+        <h3 class="text-lg font-semibold text-neutral-900">Import User dari Excel</h3>
+        <button id="btn-close-import" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-6 space-y-4 overflow-y-auto">
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+          <div class="flex items-start gap-3">
+            <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
+            <div class="flex-1">
+              <h4 class="text-sm font-semibold text-blue-900 mb-1">Format Excel yang Diperlukan (Data harus ada di mynami)</h4>
+              <p class="text-xs text-blue-700 mb-2">File Excel harus memiliki header pada baris pertama dengan kolom berikut (urutan bebas):</p>
+              <ul class="text-xs text-blue-700 list-disc list-inside space-y-1">
+                <li><strong>no_hp</strong> - Nomor HP </li>
+                <li><strong>username</strong> - Username </li>
+                <li><strong>email</strong> - Email</li>
+                <li><strong>role</strong> - Isi dengan 'admin' </li>
+                <li><strong>can_approve</strong> - Isi dengan '1' atau '0'</li>
+                <li><strong>password</strong> - Password </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel (.xlsx, .xls)</label>
+          <div class="relative">
+            <input type="file" id="import-file-input" accept=".xlsx,.xls" class="hidden" />
+            <button type="button" id="btn-select-file" class="w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-colors text-left">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-file-excel text-blue-600 text-xl"></i>
+                <div class="flex-1">
+                  <span id="file-name" class="text-sm text-gray-600">Klik untuk memilih file Excel</span>
+                  <p class="text-xs text-gray-500 mt-1">Format: .xlsx atau .xls</p>
+                </div>
+                <i class="fa-solid fa-upload text-gray-400"></i>
+              </div>
+            </button>
+          </div>
+          <span class="text-red-500 text-xs mt-1 hidden" id="import-file-error"></span>
+        </div>
+
+        <!-- Preview Table -->
+        <div id="import-preview" class="hidden mt-4">
+          <h4 class="text-sm font-semibold text-gray-700 mb-2">Preview Data (Baris pertama akan diabaikan sebagai header)</h4>
+          <div class="border rounded-xl overflow-hidden">
+            <div class="overflow-x-auto max-h-64">
+              <table class="min-w-full text-sm">
+                <thead class="bg-gray-100 sticky top-0">
+                  <tr id="preview-header"></tr>
+                </thead>
+                <tbody id="preview-body" class="bg-white divide-y divide-gray-200"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="mt-2 text-xs text-gray-600">
+            <span id="preview-count">0</span> baris data akan diimport
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t bg-white">
+        <button class="px-4 py-2 rounded-lg border border-neutral-300 hover:bg-neutral-50" id="btn-cancel-import">Batal</button>
+        <button class="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 ring-1 ring-white/30 shadow-lg hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed" id="btn-submit-import" disabled>
+          <i class="fa-solid fa-upload mr-2"></i>Import
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Create Admin -->
   <div id="modal-create" class="hidden fixed inset-0 z-50 items-center justify-center p-4">
     <div id="modal-create-overlay" class="fixed inset-0 bg-black/50 opacity-0 transition-opacity duration-300"></div>
@@ -306,19 +382,21 @@
       <div class="p-6 space-y-4 overflow-y-auto">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">No HP</label>
+            <input type="text" id="create-no-hp" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="No HP" />
+            <span class="text-red-500 text-xs mt-1 hidden" id="no-hp-error"></span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Username <span class="text-red-500">*</span></label>
             <input type="text" id="create-username" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Username" />
             <span class="text-red-500 text-xs mt-1 hidden" id="username-error"></span>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <select id="create-role" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" id="create-email" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Email" />
+            <span class="text-red-500 text-xs mt-1 hidden" id="email-error"></span>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div class="hidden">
             <input type="password" id="create-password" class="w-full px-3 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Password" />
             <span class="text-red-500 text-xs mt-1 hidden" id="password-error"></span>
           </div>
@@ -327,6 +405,8 @@
               <input type="checkbox" id="create-can-approve" class="w-4 h-4 rounded border-gray-300" />
               <span class="text-sm font-medium text-gray-700">Can Approve</span>
             </label>
+          </div>
+          <div class="md:col-span-2">
           </div>
         </div>
       </div>
@@ -510,6 +590,7 @@
 
   <script>
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+    const CURRENT_USER_ID = @json(Auth::id());
     let pendingAction = null;
 
     // Simple HTML-escape to prevent XSS when inserting user-controlled strings
@@ -573,6 +654,16 @@
       document.getElementById('btn-cancel-create')?.addEventListener('click', closeCreateModal);
       document.getElementById('btn-save-create')?.addEventListener('click', createUser);
 
+      // Import Excel listeners
+      document.getElementById('btn-open-import')?.addEventListener('click', openImportModal);
+      document.getElementById('btn-close-import')?.addEventListener('click', closeImportModal);
+      document.getElementById('btn-cancel-import')?.addEventListener('click', closeImportModal);
+      document.getElementById('btn-select-file')?.addEventListener('click', () => {
+        document.getElementById('import-file-input')?.click();
+      });
+      document.getElementById('import-file-input')?.addEventListener('change', handleFileSelect);
+      document.getElementById('btn-submit-import')?.addEventListener('click', submitImport);
+
       // Search: Enter atau klik tombol
       const searchInput = document.getElementById('search-input');
       const searchBtn = document.getElementById('search-btn');
@@ -619,6 +710,9 @@
         if (e.key === 'Escape') {
           if (!document.getElementById('modal-create').classList.contains('hidden')) {
             closeCreateModal();
+          }
+          if (!document.getElementById('modal-import').classList.contains('hidden')) {
+            closeImportModal();
           }
           if (!document.getElementById('modal-confirm').classList.contains('hidden')) {
             closeConfirmModal();
@@ -734,7 +828,7 @@
       const role = escapeHtml(user.role || 'user');
       const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString('id-ID') : '';
       const checked = user.can_approve ? 'checked' : '';
-      const isCurrentUser = (user.id === {{ Auth::id() ?? 'null' }});
+      const isCurrentUser = (CURRENT_USER_ID !== null && user.id === CURRENT_USER_ID);
 
       return `
 <tr class="hover:bg-gray-50" data-user-id="${user.id}">
@@ -790,9 +884,11 @@
 
     // createUser: show confirmation modal first
     function createUser() {
+      const noHp = document.getElementById('create-no-hp').value.trim();
       const username = document.getElementById('create-username').value.trim();
-      const password = document.getElementById('create-password').value.trim();
-      const role = document.getElementById('create-role').value;
+      const email = document.getElementById('create-email').value.trim();
+      const password = 'namiku'; // Password otomatis "namiku"
+      const role = 'admin'; // Otomatis admin
       const canApprove = document.getElementById('create-can-approve').checked;
 
       // Validation
@@ -804,24 +900,27 @@
         hideFieldError('username-error');
       }
 
-      if (!password || password.length < 6) {
-        showFieldError('password-error', 'Password minimal 6 karakter');
+      // Email validation (optional but if filled must be valid)
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showFieldError('email-error', 'Format email tidak valid');
         isValid = false;
       } else {
-        hideFieldError('password-error');
+        hideFieldError('email-error');
       }
 
       if (!isValid) return;
 
       // Show confirmation modal
-      showCreateUserConfirmation(username, role, canApprove);
+      showCreateUserConfirmation(username, role, canApprove, noHp, email);
     }
 
     // confirmCreateUser: actually create the user after confirmation
     async function confirmCreateUser() {
+      const noHp = document.getElementById('create-no-hp').value.trim();
       const username = document.getElementById('create-username').value.trim();
-      const password = document.getElementById('create-password').value.trim();
-      const role = document.getElementById('create-role').value;
+      const email = document.getElementById('create-email').value.trim();
+      const password = 'namiku'; // Password otomatis "namiku"
+      const role = 'admin'; // Otomatis admin
       const canApprove = document.getElementById('create-can-approve').checked;
 
       // Close confirmation modal
@@ -836,7 +935,9 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            no_hp: noHp || null,
             username: username,
+            email: email || null,
             password: password,
             role: role,
             can_approve: canApprove
@@ -875,13 +976,17 @@
     }
 
     // Show create user confirmation modal
-    function showCreateUserConfirmation(username, role, canApprove) {
-      const roleText = role === 'admin' ? 'Admin' : 'User';
+    function showCreateUserConfirmation(username, role, canApprove, noHp, email) {
+      const roleText = 'Admin';
       const approveText = canApprove ? ' (Dapat Approve)' : '';
+      let details = [];
+      if (noHp) details.push(`No HP: ${noHp}`);
+      if (email) details.push(`Email: ${email}`);
+      const detailsText = details.length > 0 ? `\n\nDetail:\n${details.join('\n')}` : '';
       
       document.getElementById('createUserItemName').textContent = username;
       document.getElementById('createUserItemDescription').textContent = 
-        `Apakah Anda yakin ingin membuat akun baru dengan username "${username}" sebagai ${roleText}${approveText}?`;
+        `Apakah Anda yakin ingin membuat akun baru dengan username "${username}" sebagai ${roleText}${approveText}?${detailsText}`;
       
       const modal = document.getElementById('createUserVerificationModal');
       const modalContent = document.getElementById('createUserVerificationContent');
@@ -970,9 +1075,9 @@
 
     // Clear create form
     function clearCreateForm() {
+      document.getElementById('create-no-hp').value = '';
       document.getElementById('create-username').value = '';
-      document.getElementById('create-password').value = '';
-      document.getElementById('create-role').value = 'user';
+      document.getElementById('create-email').value = '';
       document.getElementById('create-can-approve').checked = false;
       document.querySelectorAll('[id$="-error"]').forEach(el => hideFieldError(el.id));
     }
@@ -1145,6 +1250,246 @@
         dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
         dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
         if (arrow) arrow.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    // Import Excel Functions
+    let selectedFile = null;
+    let previewData = [];
+
+    function openImportModal() {
+      const modal = document.getElementById('modal-import');
+      const overlay = document.getElementById('modal-import-overlay');
+      const panel = document.getElementById('modal-import-panel');
+
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      resetImportForm();
+
+      requestAnimationFrame(() => {
+        overlay?.classList.remove('opacity-0');
+        overlay?.classList.add('opacity-100');
+        panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+        panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+      });
+    }
+
+    function closeImportModal() {
+      const modal = document.getElementById('modal-import');
+      const overlay = document.getElementById('modal-import-overlay');
+      const panel = document.getElementById('modal-import-panel');
+
+      overlay?.classList.add('opacity-0');
+      overlay?.classList.remove('opacity-100');
+      panel?.classList.add('opacity-0', 'scale-95', 'translate-y-4');
+      panel?.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+
+      setTimeout(() => {
+        modal?.classList.add('hidden');
+        modal?.classList.remove('flex');
+        document.body.style.overflow = '';
+        resetImportForm();
+      }, 300);
+    }
+
+    function resetImportForm() {
+      selectedFile = null;
+      previewData = [];
+      const fileInput = document.getElementById('import-file-input');
+      const fileName = document.getElementById('file-name');
+      const preview = document.getElementById('import-preview');
+      const submitBtn = document.getElementById('btn-submit-import');
+      const fileError = document.getElementById('import-file-error');
+
+      if (fileInput) fileInput.value = '';
+      if (fileName) fileName.textContent = 'Klik untuk memilih file Excel';
+      if (preview) preview.classList.add('hidden');
+      if (submitBtn) submitBtn.disabled = true;
+      if (fileError) {
+        fileError.classList.add('hidden');
+        fileError.textContent = '';
+      }
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const allowedTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel' // .xls
+      ];
+
+      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+        showFieldError('import-file-error', 'File harus berformat Excel (.xlsx atau .xls)');
+        return;
+      }
+
+      hideFieldError('import-file-error');
+      selectedFile = file;
+      document.getElementById('file-name').textContent = file.name;
+      document.getElementById('btn-submit-import').disabled = false;
+
+      // Preview file (read and display first few rows)
+      previewExcelFile(file);
+    }
+
+    function previewExcelFile(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('preview_only', '1');
+
+      // Show loading
+      const preview = document.getElementById('import-preview');
+      preview.classList.remove('hidden');
+      document.getElementById('preview-body').innerHTML = '<tr><td colspan="10" class="px-4 py-4 text-center text-gray-500">Memuat preview...</td></tr>';
+
+      fetch('/api/users/import-preview', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': CSRF_TOKEN,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          showFieldError('import-file-error', data.error);
+          preview.classList.add('hidden');
+          return;
+        }
+
+        previewData = data.data || [];
+        displayPreview(data.headers || [], previewData);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showFieldError('import-file-error', 'Gagal membaca file Excel');
+        preview.classList.add('hidden');
+      });
+    }
+
+    function displayPreview(headers, rows) {
+      const headerRow = document.getElementById('preview-header');
+      const body = document.getElementById('preview-body');
+      const countEl = document.getElementById('preview-count');
+
+      // Clear previous content
+      headerRow.innerHTML = '';
+      body.innerHTML = '';
+
+      // Display headers
+      headers.forEach(header => {
+        const th = document.createElement('th');
+        th.className = 'px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase';
+        th.textContent = header;
+        headerRow.appendChild(th);
+      });
+
+      // Display rows (max 10 rows for preview)
+      const displayRows = rows.slice(0, 10);
+      displayRows.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+        headers.forEach(header => {
+          const td = document.createElement('td');
+          td.className = 'px-3 py-2 text-xs text-gray-700';
+          td.textContent = row[header] || '';
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+
+      if (rows.length > 10) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = headers.length;
+        td.className = 'px-3 py-2 text-xs text-center text-gray-500 italic';
+        td.textContent = `... dan ${rows.length - 10} baris lainnya`;
+        tr.appendChild(td);
+        body.appendChild(tr);
+      }
+
+      countEl.textContent = rows.length;
+    }
+
+    async function submitImport() {
+      if (!selectedFile) {
+        showToast('Pilih file Excel terlebih dahulu', 'error');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btn-submit-import');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Mengimport...';
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const response = await fetch('/api/users/import', {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showToast(data.error || 'Gagal mengimport data', 'error');
+          if (data.errors) {
+            let errorMsg = 'Error: ';
+            Object.entries(data.errors).forEach(([key, messages]) => {
+              errorMsg += `${key}: ${Array.isArray(messages) ? messages.join(', ') : messages}. `;
+            });
+            showToast(errorMsg, 'error');
+          }
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+          return;
+        }
+
+        // Success
+        showToast(data.message || `Berhasil mengimport ${data.success_count || 0} user`, 'success');
+        
+        // Insert imported users to table
+        if (data.users && Array.isArray(data.users)) {
+          data.users.forEach(user => {
+            insertUserRow(user, true);
+          });
+        }
+
+        // Update counters
+        if (data.counts) {
+          updateKpiCounts(data.counts);
+        }
+
+        // Update showing total
+        const showingTotalEl = document.getElementById('showing-total');
+        if (showingTotalEl && data.success_count) {
+          const val = parseInt(showingTotalEl.textContent || '0', 10);
+          showingTotalEl.textContent = val + data.success_count;
+        }
+
+        closeImportModal();
+        
+        // Reload page after 2 seconds to show all imported users
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('Terjadi kesalahan saat mengimport', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
       }
     }
   </script>
