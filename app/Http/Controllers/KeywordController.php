@@ -558,55 +558,10 @@ class KeywordController extends Controller
             });
         }
         
-        // Date filter (filter by start_date dan end_date keyword, sama seperti di keyword)
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        
-        if ($startDate && $endDate) {
-            // Filter keyword yang periodenya berada dalam range yang dipilih
-            $query->where(function ($q) use ($startDate, $endDate) {
-                $q->where(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang start_date dan end_date berada dalam range
-                    $subQuery->whereNotNull('start_date')
-                             ->whereNotNull('end_date')
-                             ->where('start_date', '>=', $startDate)
-                             ->where('end_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang hanya punya start_date
-                    $subQuery->whereNotNull('start_date')
-                             ->whereNull('end_date')
-                             ->where('start_date', '>=', $startDate)
-                             ->where('start_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang hanya punya end_date
-                    $subQuery->whereNull('start_date')
-                             ->whereNotNull('end_date')
-                             ->where('end_date', '>=', $startDate)
-                             ->where('end_date', '<=', $endDate);
-                });
-            });
-        } elseif ($startDate) {
-            // Hanya start date filter
-            $query->where(function ($q) use ($startDate) {
-                $q->where(function ($subQuery) use ($startDate) {
-                    $subQuery->whereNotNull('start_date')
-                             ->where('start_date', '>=', $startDate);
-                })->orWhere(function ($subQuery) use ($startDate) {
-                    $subQuery->whereNotNull('end_date')
-                             ->where('end_date', '>=', $startDate);
-                });
-            });
-        } elseif ($endDate) {
-            // Hanya end date filter
-            $query->where(function ($q) use ($endDate) {
-                $q->where(function ($subQuery) use ($endDate) {
-                    $subQuery->whereNotNull('start_date')
-                             ->where('start_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($endDate) {
-                    $subQuery->whereNotNull('end_date')
-                             ->where('end_date', '<=', $endDate);
-                });
-            });
+        // Date filter (single date, sama seperti di withdraw-approval)
+        $date = $request->get('date');
+        if ($date) {
+            $query->whereDate('created_at', $date);
         }
         
         $keywords = $query->orderBy('id', 'desc')->paginate(10);

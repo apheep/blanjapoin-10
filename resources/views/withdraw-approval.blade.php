@@ -223,6 +223,58 @@
         .btn-detail:active {
             transform: translateY(0);
         }
+        
+        /* Custom Input Search Class */
+        .search-input {
+            width: 100%;
+            border-radius: 9999px;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+            padding: 0.5rem 2rem 0.5rem 2.25rem;
+            font-size: 0.875rem;
+        }
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+        .search-input:focus {
+            border-color: #fb923c;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.1);
+        }
+        
+        /* Custom Pagination Button */
+        .pagination-btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover {
+            background-color: #f9fafb;
+        }
+        
+        .pagination-btn-active {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(to right, #F81611, #F0B100);
+            border-radius: 0.5rem;
+        }
+        
+        .pagination-btn-disabled {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #9ca3af;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-white font-poppins">
@@ -248,13 +300,13 @@
 
         <!-- Search and Date Filter -->
         <form method="GET" action="{{ route('withdraw.approval') }}" id="withdrawSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 overflow-visible">
-            <div class="relative flex-1 w-full sm:max-w-[400px]">
+            <div class="relative w-full max-w-[280px] sm:max-w-[180px]">
                 <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <input name="q"
                        id="withdrawSearchInput"
                        value="{{ request()->query('q', '') }}"
-                       class="w-full rounded-full border border-gray-200 bg-white px-10 py-2 text-sm placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 focus:outline-none"
-                       placeholder="Search nama, merchant, metode..." />
+                       class="search-input"
+                       placeholder="Search" />
                 @if(request()->has('q'))
                     <button type="button" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times"></i>
@@ -438,15 +490,15 @@
                     @endif
                 </div>
                 
-                @if($withdraws->hasPages())
+                @if($withdraws->total() > 0)
                 <div class="flex items-center space-x-2">
                     {{-- Previous Page Link --}}
                     @if ($withdraws->onFirstPage())
-                        <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                        <button disabled class="pagination-btn-disabled">
                             <i class="fas fa-chevron-left"></i>
                         </button>
                     @else
-                        <a href="{{ $withdraws->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <a href="{{ $withdraws->previousPageUrl() }}" class="pagination-btn">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     @endif
@@ -459,39 +511,46 @@
                         $endPage = min($lastPage, $currentPage + 2);
                     @endphp
                     
-                    @if($startPage > 1)
-                        <a href="{{ $withdraws->url(1) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</a>
-                        @if($startPage > 2)
-                            <span class="px-2 text-gray-400">...</span>
+                    @if($lastPage > 1)
+                        @if($startPage > 1)
+                            <a href="{{ $withdraws->url(1) }}" class="pagination-btn">1</a>
+                            @if($startPage > 2)
+                                <span class="px-2 text-gray-400">...</span>
+                            @endif
                         @endif
-                    @endif
-                    
-                    @for($page = $startPage; $page <= $endPage; $page++)
-                        @if ($page == $withdraws->currentPage())
-                            <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                                {{ $page }}
-                            </button>
-                        @else
-                            <a href="{{ $withdraws->url($page) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                {{ $page }}
-                            </a>
+                        
+                        @for($page = $startPage; $page <= $endPage; $page++)
+                            @if ($page == $withdraws->currentPage())
+                                <button disabled class="pagination-btn-active">
+                                    {{ $page }}
+                                </button>
+                            @else
+                                <a href="{{ $withdraws->url($page) }}" class="pagination-btn">
+                                    {{ $page }}
+                                </a>
+                            @endif
+                        @endfor
+                        
+                        @if($endPage < $lastPage)
+                            @if($endPage < $lastPage - 1)
+                                <span class="px-2 text-gray-400">...</span>
+                            @endif
+                            <a href="{{ $withdraws->url($lastPage) }}" class="pagination-btn">{{ $lastPage }}</a>
                         @endif
-                    @endfor
-                    
-                    @if($endPage < $lastPage)
-                        @if($endPage < $lastPage - 1)
-                            <span class="px-2 text-gray-400">...</span>
-                        @endif
-                        <a href="{{ $withdraws->url($lastPage) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $lastPage }}</a>
+                    @else
+                        {{-- Show current page even if only 1 page --}}
+                        <button disabled class="pagination-btn-active">
+                            1
+                        </button>
                     @endif
 
                     {{-- Next Page Link --}}
                     @if ($withdraws->hasMorePages())
-                        <a href="{{ $withdraws->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <a href="{{ $withdraws->nextPageUrl() }}" class="pagination-btn">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     @else
-                        <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                        <button disabled class="pagination-btn-disabled">
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     @endif
@@ -1023,6 +1082,34 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeRejectReasonModal();
+            }
+        });
+        
+        // User dropdown toggle function
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            const arrow = document.getElementById('userDropdownArrow');
+            if (!dropdown) return;
+
+            if (dropdown.classList.contains('opacity-0')) {
+                dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            } else {
+                dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const btn = document.getElementById('userDropdownBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (!btn || !dropdown) return;
+
+            if (!btn.contains(event.target) && !dropdown.contains(event.target) && dropdown.classList.contains('opacity-100')) {
+                toggleUserDropdown();
             }
         });
 
