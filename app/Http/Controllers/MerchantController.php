@@ -502,7 +502,11 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $iklans = Iklan::latest()->get();
+        // Get iklans - only show iklans without territorial (null) for link pelanggan page
+        // Use orderBy('order', 'asc') to respect admin-configured order
+        $iklans = Iklan::whereNull('territorial')
+            ->orderBy('order', 'asc')
+            ->get();
 
         return view('link-pelanggan', [
             'merchant' => $merchant,
@@ -990,15 +994,19 @@ class MerchantController extends Controller
                 }
             }
             
-            // Format account number untuk e-wallet (hapus +62 dan leading 0)
+            // Format account number untuk e-wallet
+            // Standardize format: store with +62 prefix to match merchant wa_pic format
             $accountNumber = $request->account_number;
             $isEWallet = in_array($request->payment_method, ['linkaja', 'dana']);
             
             if ($isEWallet) {
-                // Hapus +62 jika ada
+                // Normalize: ensure +62 prefix for consistency with merchant wa_pic format
+                // Remove existing +62 if present, then add it back to ensure consistency
                 $accountNumber = preg_replace('/^\+62/', '', $accountNumber);
-                // Hapus hanya leading 0 pertama (bukan semua leading zeros)
+                // Remove leading 0 if present
                 $accountNumber = preg_replace('/^0/', '', $accountNumber);
+                // Add +62 prefix for consistent storage format (matches merchant wa_pic)
+                $accountNumber = '+62' . $accountNumber;
             }
 
             // Generate transaction ID
@@ -1342,12 +1350,25 @@ class MerchantController extends Controller
         
         // Get iklans - filter by territorial
         // Show iklans that have no territorial (null) or match current location
-        $iklans = Iklan::where(function($query) use ($location) {
-            $query->whereNull('territorial')
-                  ->orWhere('territorial', $location);
-        })
-        ->orderBy('order', 'asc')
-        ->get();
+        // Normalize comparison by converting both to slug format for consistency
+        $locationSlug = territorialSlug($location);
+        $iklans = Iklan::whereNull('territorial')
+            ->orWhere(function($query) use ($locationSlug) {
+                $query->whereNotNull('territorial');
+            })
+            ->orderBy('order', 'asc')
+            ->get()
+            ->filter(function($iklan) use ($locationSlug) {
+                // Show iklans without territorial
+                if ($iklan->territorial === null) {
+                    return true;
+                }
+                // Normalize both stored territorial and location to slug for comparison
+                // This handles cases where territorial might be stored as display name instead of slug
+                $storedSlug = territorialSlug($iklan->territorial);
+                return strtolower($storedSlug) === strtolower($locationSlug);
+            })
+            ->values();
         
         // Get all available territories for filter
         $allDaerah = Merchant::query()

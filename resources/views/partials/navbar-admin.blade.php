@@ -15,7 +15,7 @@
          @endif
       </div>
 
-       <div class="relative">
+       <div class="relative" style="overflow: visible;">
    <!-- Mobile Menu Button -->
    <button id="openSidebar" class="md:hidden w-10 h-10 flex items-center justify-center text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
      <i class="fa-solid fa-bars text-xl"></i>
@@ -29,7 +29,7 @@
      <path d="M7 10l5 5 5-5z"/>
     </svg>
    </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-50 backdrop-blur-sm">
+        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-[10050] backdrop-blur-sm">
          <div class="py-1">
           <form method="POST" action="{{ route('logout') }}">
            @csrf

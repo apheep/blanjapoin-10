@@ -86,16 +86,52 @@ class KeywordController extends Controller
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
             }
 
-            // Handle subsidy amount
+            // Initialize subsidy and diamond amounts to null to ensure they're always defined
             $subsidyAmount = null;
-            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
-                // Hapus format rupiah (titik sebagai pemisah ribuan)
-                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
-                $subsidyAmount = (float) $subsidyAmount;
+            $diamondAmount = null;
+
+            // Handle subsidy amount
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount !== null && $request->subsidy_amount !== '') {
+                // Handle format rupiah: hapus thousands separator (titik) tanpa merusak decimal separator
+                $amount = trim($request->subsidy_amount);
+                
+                // Jika menggunakan format Indonesia (koma sebagai decimal separator)
+                if (strpos($amount, ',') !== false) {
+                    // Ganti koma dengan titik untuk decimal separator
+                    $amount = str_replace(',', '.', $amount);
+                }
+                
+                // Hapus thousands separator (titik) tanpa merusak decimal separator
+                $dotCount = substr_count($amount, '.');
+                
+                if ($dotCount > 1) {
+                    // Multiple titik = ada thousands separator
+                    // Hapus semua titik kecuali yang terakhir (decimal separator)
+                    $parts = explode('.', $amount);
+                    $lastPart = array_pop($parts);
+                    $amount = implode('', $parts) . '.' . $lastPart;
+                } elseif ($dotCount == 1) {
+                    // Hanya 1 titik - cek apakah decimal atau thousands separator
+                    $parts = explode('.', $amount);
+                    if (count($parts) == 2) {
+                        $afterDot = $parts[1];
+                        // Jika bagian setelah titik adalah 3 digit, kemungkinan thousands separator
+                        // Jika 1-2 digit, kemungkinan decimal separator
+                        if (strlen($afterDot) == 3 && is_numeric($afterDot)) {
+                            // 3 digit = thousands separator, hapus titik
+                            $amount = implode('', $parts);
+                        }
+                        // Jika 1-2 digit, biarkan sebagai decimal separator
+                    }
+                } else {
+                    // Tidak ada titik, hapus semua titik (jika ada dari format lain)
+                    $amount = str_replace('.', '', $amount);
+                }
+                
+                $subsidyAmount = (float) $amount;
             }
 
             // Handle diamond amount
-            $diamondAmount = null;
             if ($request->diamond_enabled == '1' && $request->diamond_amount) {
                 $diamondAmount = (int) $request->diamond_amount;
             }
@@ -215,10 +251,44 @@ class KeywordController extends Controller
 
             // Handle subsidy amount
             $subsidyAmount = null;
-            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
-                // Hapus format rupiah (titik sebagai pemisah ribuan)
-                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
-                $subsidyAmount = (float) $subsidyAmount;
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount !== null && $request->subsidy_amount !== '') {
+                // Handle format rupiah: hapus thousands separator (titik) tanpa merusak decimal separator
+                $amount = trim($request->subsidy_amount);
+                
+                // Jika menggunakan format Indonesia (koma sebagai decimal separator)
+                if (strpos($amount, ',') !== false) {
+                    // Ganti koma dengan titik untuk decimal separator
+                    $amount = str_replace(',', '.', $amount);
+                }
+                
+                // Hapus thousands separator (titik) tanpa merusak decimal separator
+                $dotCount = substr_count($amount, '.');
+                
+                if ($dotCount > 1) {
+                    // Multiple titik = ada thousands separator
+                    // Hapus semua titik kecuali yang terakhir (decimal separator)
+                    $parts = explode('.', $amount);
+                    $lastPart = array_pop($parts);
+                    $amount = implode('', $parts) . '.' . $lastPart;
+                } elseif ($dotCount == 1) {
+                    // Hanya 1 titik - cek apakah decimal atau thousands separator
+                    $parts = explode('.', $amount);
+                    if (count($parts) == 2) {
+                        $afterDot = $parts[1];
+                        // Jika bagian setelah titik adalah 3 digit, kemungkinan thousands separator
+                        // Jika 1-2 digit, kemungkinan decimal separator
+                        if (strlen($afterDot) == 3 && is_numeric($afterDot)) {
+                            // 3 digit = thousands separator, hapus titik
+                            $amount = implode('', $parts);
+                        }
+                        // Jika 1-2 digit, biarkan sebagai decimal separator
+                    }
+                } else {
+                    // Tidak ada titik, hapus semua titik (jika ada dari format lain)
+                    $amount = str_replace('.', '', $amount);
+                }
+                
+                $subsidyAmount = (float) $amount;
             }
 
             // Handle diamond amount
@@ -488,55 +558,10 @@ class KeywordController extends Controller
             });
         }
         
-        // Date filter (filter by start_date dan end_date keyword, sama seperti di keyword)
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        
-        if ($startDate && $endDate) {
-            // Filter keyword yang periodenya berada dalam range yang dipilih
-            $query->where(function ($q) use ($startDate, $endDate) {
-                $q->where(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang start_date dan end_date berada dalam range
-                    $subQuery->whereNotNull('start_date')
-                             ->whereNotNull('end_date')
-                             ->where('start_date', '>=', $startDate)
-                             ->where('end_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang hanya punya start_date
-                    $subQuery->whereNotNull('start_date')
-                             ->whereNull('end_date')
-                             ->where('start_date', '>=', $startDate)
-                             ->where('start_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang hanya punya end_date
-                    $subQuery->whereNull('start_date')
-                             ->whereNotNull('end_date')
-                             ->where('end_date', '>=', $startDate)
-                             ->where('end_date', '<=', $endDate);
-                });
-            });
-        } elseif ($startDate) {
-            // Hanya start date filter
-            $query->where(function ($q) use ($startDate) {
-                $q->where(function ($subQuery) use ($startDate) {
-                    $subQuery->whereNotNull('start_date')
-                             ->where('start_date', '>=', $startDate);
-                })->orWhere(function ($subQuery) use ($startDate) {
-                    $subQuery->whereNotNull('end_date')
-                             ->where('end_date', '>=', $startDate);
-                });
-            });
-        } elseif ($endDate) {
-            // Hanya end date filter
-            $query->where(function ($q) use ($endDate) {
-                $q->where(function ($subQuery) use ($endDate) {
-                    $subQuery->whereNotNull('start_date')
-                             ->where('start_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($endDate) {
-                    $subQuery->whereNotNull('end_date')
-                             ->where('end_date', '<=', $endDate);
-                });
-            });
+        // Date filter (single date, sama seperti di withdraw-approval)
+        $date = $request->get('date');
+        if ($date) {
+            $query->whereDate('created_at', $date);
         }
         
         $keywords = $query->orderBy('id', 'desc')->paginate(10);

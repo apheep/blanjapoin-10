@@ -33,11 +33,11 @@
                         </div>
                     </div>
                     <div class="flex flex-col p-3 space-y-2 flex-1">
-                        <h3 class="text-xl font-bold text-neutral-900 leading-tight">
+                        <h3 class="text-lg font-bold text-neutral-900 leading-tight truncate">
                             {{ ($keyword->merchant)->nama_merchant}}
                         </h3>
-                        <div class="text-[10px] text-neutral-600 -mt-1 -mb-1">
-                            <span class="font-bold">Promo</span>
+                        <div class="text-[10px] text-gray-500 -mt-1 -mb-1">
+                            <span>Promo</span>
                         </div>
                         <div class="text-[11px] text-neutral-600 leading-relaxed">
                             @if(!is_null($keyword->diskon))
@@ -47,16 +47,13 @@
                                 </div>
                             @endif
                             @if($productName)
-                            <div class="mb-1 font-semibold text-neutral-700">
+                            <div class="mb-1 font-semibold text-neutral-700 text-base truncate">
                                 {{ $productName }}
                             </div>
                             @endif
                             @if($keyword->skb)
-                            <div id="skb-mobile-{{ $keyword->id }}" class="hidden text-[11px] text-neutral-600 leading-relaxed mt-2">
-                                {{ $keyword->skb }}
-                            </div>
-                            <button onclick="event.stopPropagation(); toggleSkb('{{ $keyword->id }}', 'mobile')" class="mt-1 text-[10px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
-                                See Details skb
+                            <button onclick="event.stopPropagation(); openBeautyDescriptionSheet({{ $keyword->id }}, {{ json_encode(($keyword->merchant)->nama_merchant) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-1 text-[10px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                                Lihat Deskripsi
                             </button>
                             @endif
                         </div>
@@ -78,8 +75,8 @@
                                 </div>
                             @endif
                         </div>
-                        <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="mt-2 w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs">
-                            Redeem Voucher
+                        <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="mt-2 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs">
+                            Redeem
                         </button>
                     </div>
                 </div>
@@ -127,16 +124,13 @@
                             {{ $merchantName }}
                         </h4>
                         @if($productName)
-                        <p class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed font-semibold">
+                        <p class="text-lg md:text-xl text-neutral-600 mb-2.5 leading-relaxed font-semibold truncate">
                             {{ $productName }}
                         </p>
                         @endif
                         @if($keyword->skb)
-                        <div id="skb-desktop-{{ $keyword->id }}" class="hidden text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed">
-                            {{ $keyword->skb }}
-                        </div>
-                        <button onclick="event.stopPropagation(); toggleSkb('{{ $keyword->id }}', 'desktop')" class="self-start text-left mb-2.5 text-xs md:text-sm font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
-                            See Details skb
+                        <button onclick="event.stopPropagation(); openBeautyDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-2.5 text-xs md:text-sm font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                            Lihat Deskripsi
                         </button>
                         @endif
                         @if($keyword->end_date)
@@ -156,8 +150,8 @@
                                     </span>
                                 </div>
                             </div>
-                            <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2.5 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base">
-                                Redeem Voucher
+                            <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2.5 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base">
+                                Redeem
                             </button>
                         </div>
                     </div>
@@ -172,17 +166,47 @@
 
 
     <script>
-function toggleSkb(keywordId, layout) {
-    const skbElement = document.getElementById(`skb-${layout}-${keywordId}`);
-    const button = event.target;
+// Beauty Description Bottom Sheet Function
+function openBeautyDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
+ const contentHTML = `
+  <div class="px-5 pb-6">
+   <div class="space-y-3">
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
+     <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
+    </div>
     
-    if (skbElement.classList.contains('hidden')) {
-        skbElement.classList.remove('hidden');
-        button.textContent = 'Hide Details';
-    } else {
-        skbElement.classList.add('hidden');
-        button.textContent = 'See Details';
-    }
+    ${productName ? `
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Produk :</span>
+     <span class="text-sm text-neutral-900 ml-2">${productName}</span>
+    </div>
+    ` : ''}
+    
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Promo :</span>
+     <span class="text-sm text-neutral-900 ml-2">${diskon || '-'}</span>
+    </div>
+    
+    ${skb ? `
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">SKB :</span>
+     <div class="mt-2">
+      <p class="text-sm text-neutral-600 leading-relaxed">
+       ${skb}
+      </p>
+     </div>
+    </div>
+    ` : ''}
+   </div>
+  </div>
+ `;
+ 
+ if (typeof openBottomSheet === 'function') {
+  openBottomSheet('Deskripsi', contentHTML);
+ } else {
+  console.error('openBottomSheet function not found');
+ }
 }
 </script>
 </section>
