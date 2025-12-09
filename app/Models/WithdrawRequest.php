@@ -77,7 +77,9 @@ class WithdrawRequest extends Model
         $isEWallet = in_array($this->metode_penarikan, ['linkaja', 'dana']);
         
         if ($isEWallet && $this->no_ewallet) {
-            return '+62' . $this->no_ewallet;
+            // no_ewallet is now stored with +62 prefix (consistent with merchant wa_pic)
+            // Return as-is since it already includes +62
+            return $this->no_ewallet;
         }
         
         return $this->no_rekening ?? '';

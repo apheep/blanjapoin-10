@@ -86,16 +86,52 @@ class KeywordController extends Controller
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
             }
 
-            // Handle subsidy amount
+            // Initialize subsidy and diamond amounts to null to ensure they're always defined
             $subsidyAmount = null;
-            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
-                // Hapus format rupiah (titik sebagai pemisah ribuan)
-                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
-                $subsidyAmount = (float) $subsidyAmount;
+            $diamondAmount = null;
+
+            // Handle subsidy amount
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount !== null && $request->subsidy_amount !== '') {
+                // Handle format rupiah: hapus thousands separator (titik) tanpa merusak decimal separator
+                $amount = trim($request->subsidy_amount);
+                
+                // Jika menggunakan format Indonesia (koma sebagai decimal separator)
+                if (strpos($amount, ',') !== false) {
+                    // Ganti koma dengan titik untuk decimal separator
+                    $amount = str_replace(',', '.', $amount);
+                }
+                
+                // Hapus thousands separator (titik) tanpa merusak decimal separator
+                $dotCount = substr_count($amount, '.');
+                
+                if ($dotCount > 1) {
+                    // Multiple titik = ada thousands separator
+                    // Hapus semua titik kecuali yang terakhir (decimal separator)
+                    $parts = explode('.', $amount);
+                    $lastPart = array_pop($parts);
+                    $amount = implode('', $parts) . '.' . $lastPart;
+                } elseif ($dotCount == 1) {
+                    // Hanya 1 titik - cek apakah decimal atau thousands separator
+                    $parts = explode('.', $amount);
+                    if (count($parts) == 2) {
+                        $afterDot = $parts[1];
+                        // Jika bagian setelah titik adalah 3 digit, kemungkinan thousands separator
+                        // Jika 1-2 digit, kemungkinan decimal separator
+                        if (strlen($afterDot) == 3 && is_numeric($afterDot)) {
+                            // 3 digit = thousands separator, hapus titik
+                            $amount = implode('', $parts);
+                        }
+                        // Jika 1-2 digit, biarkan sebagai decimal separator
+                    }
+                } else {
+                    // Tidak ada titik, hapus semua titik (jika ada dari format lain)
+                    $amount = str_replace('.', '', $amount);
+                }
+                
+                $subsidyAmount = (float) $amount;
             }
 
             // Handle diamond amount
-            $diamondAmount = null;
             if ($request->diamond_enabled == '1' && $request->diamond_amount) {
                 $diamondAmount = (int) $request->diamond_amount;
             }
@@ -215,14 +251,47 @@ class KeywordController extends Controller
 
             // Handle subsidy amount
             $subsidyAmount = null;
-            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
-                // Hapus format rupiah (titik sebagai pemisah ribuan)
-                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
-                $subsidyAmount = (float) $subsidyAmount;
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount !== null && $request->subsidy_amount !== '') {
+                // Handle format rupiah: hapus thousands separator (titik) tanpa merusak decimal separator
+                $amount = trim($request->subsidy_amount);
+                
+                // Jika menggunakan format Indonesia (koma sebagai decimal separator)
+                if (strpos($amount, ',') !== false) {
+                    // Ganti koma dengan titik untuk decimal separator
+                    $amount = str_replace(',', '.', $amount);
+                }
+                
+                // Hapus thousands separator (titik) tanpa merusak decimal separator
+                $dotCount = substr_count($amount, '.');
+                
+                if ($dotCount > 1) {
+                    // Multiple titik = ada thousands separator
+                    // Hapus semua titik kecuali yang terakhir (decimal separator)
+                    $parts = explode('.', $amount);
+                    $lastPart = array_pop($parts);
+                    $amount = implode('', $parts) . '.' . $lastPart;
+                } elseif ($dotCount == 1) {
+                    // Hanya 1 titik - cek apakah decimal atau thousands separator
+                    $parts = explode('.', $amount);
+                    if (count($parts) == 2) {
+                        $afterDot = $parts[1];
+                        // Jika bagian setelah titik adalah 3 digit, kemungkinan thousands separator
+                        // Jika 1-2 digit, kemungkinan decimal separator
+                        if (strlen($afterDot) == 3 && is_numeric($afterDot)) {
+                            // 3 digit = thousands separator, hapus titik
+                            $amount = implode('', $parts);
+                        }
+                        // Jika 1-2 digit, biarkan sebagai decimal separator
+                    }
+                } else {
+                    // Tidak ada titik, hapus semua titik (jika ada dari format lain)
+                    $amount = str_replace('.', '', $amount);
+                }
+                
+                $subsidyAmount = (float) $amount;
             }
 
             // Handle diamond amount
-            $diamondAmount = null;
             if ($request->diamond_enabled == '1' && $request->diamond_amount) {
                 $diamondAmount = (int) $request->diamond_amount;
             }
