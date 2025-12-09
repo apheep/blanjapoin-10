@@ -292,6 +292,7 @@ class KeywordController extends Controller
             }
 
             // Handle diamond amount
+            $diamondAmount = null;
             if ($request->diamond_enabled == '1' && $request->diamond_amount) {
                 $diamondAmount = (int) $request->diamond_amount;
             }

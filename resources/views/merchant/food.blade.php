@@ -33,7 +33,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col p-3 space-y-2 flex-1">
-                        <h3 class="text-2xl font-bold text-neutral-900 leading-tight">
+                        <h3 class="text-lg font-bold text-neutral-900 leading-tight truncate">
                             {{ ($keyword->merchant)->nama_merchant}}
                         </h3>
                         <div class="text-[10px] text-gray-500 -mt-1 -mb-1">
@@ -47,15 +47,12 @@
                                 </div>
                             @endif
                             @if($productName)
-                            <div class="mb-1 font-semibold text-neutral-700 text-base">
+                            <div class="mb-1 font-semibold text-neutral-700 text-base truncate">
                                 {{ $productName }}
                             </div>
                             @endif
                             @if($keyword->skb)
-                            <div id="skb-mobile-{{ $keyword->id }}" class="hidden text-[11px] text-neutral-600 leading-relaxed mt-2">
-                                {{ $keyword->skb }}
-                            </div>
-                            <button onclick="event.stopPropagation(); toggleSkb('{{ $keyword->id }}', 'mobile')" class="mt-1 text-[10px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                            <button onclick="event.stopPropagation(); openFoodDescriptionSheet({{ $keyword->id }}, {{ json_encode(($keyword->merchant)->nama_merchant) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-1 text-[10px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
                                 Lihat Deskripsi
                             </button>
                             @endif
@@ -123,19 +120,16 @@
 
                     <!-- Details -->
                     <div class="flex flex-col px-4 md:px-5 pb-4 md:pb-5 flex-1 min-h-0">
-                        <h4 class="text-xl md:text-3xl font-black text-neutral-900 mb-2 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
+                        <h4 class="text-base md:text-lg font-black text-neutral-900 mb-2 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
                             {{ $merchantName }}
                         </h4>
                         @if($productName)
-                        <p class="text-lg md:text-xl text-neutral-600 mb-2.5 leading-relaxed font-semibold">
+                        <p class="text-lg md:text-xl text-neutral-600 mb-2.5 leading-relaxed font-semibold truncate">
                             {{ $productName }}
                         </p>
                         @endif
                         @if($keyword->skb)
-                        <div id="skb-desktop-{{ $keyword->id }}" class="hidden text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed">
-                            {{ $keyword->skb }}
-                        </div>
-                        <button onclick="event.stopPropagation(); toggleSkb('{{ $keyword->id }}', 'desktop')" class="self-start text-left mb-2.5 text-xs md:text-sm font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                        <button onclick="event.stopPropagation(); openFoodDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-2.5 text-xs md:text-sm font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
                             Lihat Deskripsi
                         </button>
                         @endif
@@ -172,17 +166,47 @@
 
 
     <script>
-function toggleSkb(keywordId, layout) {
-    const skbElement = document.getElementById(`skb-${layout}-${keywordId}`);
-    const button = event.target;
+// Food Description Bottom Sheet Function
+function openFoodDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
+ const contentHTML = `
+  <div class="px-5 pb-6">
+   <div class="space-y-3">
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
+     <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
+    </div>
     
-    if (skbElement.classList.contains('hidden')) {
-        skbElement.classList.remove('hidden');
-        button.textContent = 'Sembunyikan Deskripsi';
-    } else {
-        skbElement.classList.add('hidden');
-        button.textContent = 'Lihat Deskripsi';
-    }
+    ${productName ? `
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Produk :</span>
+     <span class="text-sm text-neutral-900 ml-2">${productName}</span>
+    </div>
+    ` : ''}
+    
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Promo :</span>
+     <span class="text-sm text-neutral-900 ml-2">${diskon || '-'}</span>
+    </div>
+    
+    ${skb ? `
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">SKB :</span>
+     <div class="mt-2">
+      <p class="text-sm text-neutral-600 leading-relaxed">
+       ${skb}
+      </p>
+     </div>
+    </div>
+    ` : ''}
+   </div>
+  </div>
+ `;
+ 
+ if (typeof openBottomSheet === 'function') {
+  openBottomSheet('Deskripsi', contentHTML);
+ } else {
+  console.error('openBottomSheet function not found');
+ }
 }
 </script>
 </section>
