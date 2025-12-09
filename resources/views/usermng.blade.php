@@ -166,6 +166,7 @@
           <colgroup>
             <col style="width:48px" /> <!-- No -->
             <col /> <!-- Username auto -->
+            <col /> <!-- Email -->
             <col /> <!-- Role -->
             <col /> <!-- Can Approve -->
             <col style="width:100px" /> <!-- Aksi -->
@@ -174,6 +175,7 @@
             <tr class="text-left">
               <th class="px-2 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">No</th>
               <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">Username</th>
+              <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">Email</th>
               <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">Role</th>
               <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">Can Approve</th>
               <th class="px-3 py-2 text-xs font-semibold text-gray-700 uppercase tracking-wider border-b">Aksi</th>
@@ -198,6 +200,9 @@
                   <div class="font-medium text-gray-900">{{ $user->username }}</div>
                 </td>
                 <td class="px-3 py-2">
+                  <div class="text-sm text-gray-700">{{ $user->email ?? '-' }}</div>
+                </td>
+                <td class="px-3 py-2">
                   <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
                     {{ $user->role }}
                   </span>
@@ -219,7 +224,7 @@
                 </td>
               </tr>
             @empty
-              <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Tidak ada data user</td></tr>
+              <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Tidak ada data user</td></tr>
             @endforelse
           </tbody>
         </table>
@@ -830,12 +835,16 @@
       const checked = user.can_approve ? 'checked' : '';
       const isCurrentUser = (CURRENT_USER_ID !== null && user.id === CURRENT_USER_ID);
 
+      const email = escapeHtml(user.email || '-');
       return `
 <tr class="hover:bg-gray-50" data-user-id="${user.id}">
   <td class="px-2 py-2 text-left text-gray-800 font-semibold">-</td>
   <td class="px-3 py-2">
     <div class="font-medium text-gray-900">${username}</div>
     <div class="text-xs text-gray-500">Dibuat ${createdAt}</div>
+  </td>
+  <td class="px-3 py-2">
+    <div class="text-sm text-gray-700">${email}</div>
   </td>
   <td class="px-3 py-2">
     <span class="px-2 py-1 rounded-full text-xs font-semibold ${role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">
