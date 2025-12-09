@@ -50,14 +50,14 @@ class KeywordController extends Controller
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
-            if (empty($request->diskon_percent) && empty($request->diskon_rupiah)) {
+            if (empty($request->diskon_percent) && empty($request->diskon_rupiah) && empty($request->diskon_free)) {
                 if ($request->wantsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'
+                        'message' => 'Silakan isi salah satu dari diskon (persen, rupiah, atau free)'
                     ], 422);
                 }
-                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'])->withInput();
+                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen, rupiah, atau free)'])->withInput();
             }
 
             // Validasi start date tidak boleh melebihi end date
@@ -75,7 +75,9 @@ class KeywordController extends Controller
 
             // Format diskon
             $diskon = '';
-            if ($request->diskon_percent) {
+            if (!empty($request->diskon_free)) {
+                $diskon = 'FREE';
+            } elseif ($request->diskon_percent) {
                 // Jika diskon 100%, tampilkan sebagai "FREE"
                 if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
                     $diskon = 'FREE';
@@ -225,8 +227,8 @@ class KeywordController extends Controller
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
-            if (empty($request->diskon_percent) && empty($request->diskon_rupiah)) {
-                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'])->withInput();
+            if (empty($request->diskon_percent) && empty($request->diskon_rupiah) && empty($request->diskon_free)) {
+                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen, rupiah, atau free)'])->withInput();
             }
 
             // Validasi start date tidak boleh melebihi end date
@@ -238,7 +240,9 @@ class KeywordController extends Controller
 
             // Format diskon
             $diskon = '';
-            if ($request->diskon_percent) {
+            if (!empty($request->diskon_free)) {
+                $diskon = 'FREE';
+            } elseif ($request->diskon_percent) {
                 // Jika diskon 100%, tampilkan sebagai "FREE"
                 if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
                     $diskon = 'FREE';

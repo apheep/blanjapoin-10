@@ -218,7 +218,8 @@
                         @forelse($withdrawHistory as $index => $withdraw)
                             @php
                                 $isEWallet = in_array($withdraw->metode_penarikan, ['linkaja', 'dana']);
-                                $displayAccount = $isEWallet ? '+62' . ($withdraw->no_ewallet ?? '') : ($withdraw->no_rekening ?? '');
+                                // no_ewallet is already stored with +62 prefix in database, so use as-is
+                                $displayAccount = $isEWallet ? ($withdraw->no_ewallet ?? '') : ($withdraw->no_rekening ?? '');
                                 $statusClass = match($withdraw->status) {
                                     'approved', 'completed' => 'bg-green-100 text-green-800',
                                     'pending' => 'bg-yellow-100 text-yellow-800',
