@@ -22,10 +22,6 @@ class MerchantController extends Controller
 {
     public function index(Request $request)
     {
-        // Gunakan parameter berbeda untuk pagination merchant dan keyword
-        $merchantPage = $request->get('merchant_page', 1);
-        $keywordPage = $request->get('keyword_page', 1);
-        
         // Buat query params untuk appends, pastikan keyword_page tetap ada
         $merchantQueryParams = $request->query();
         // Pastikan keyword_page tetap ada jika sebelumnya ada di request
@@ -33,9 +29,9 @@ class MerchantController extends Controller
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $merchants = Merchant::orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
-            ->setPageName('merchant_page')
+            ->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
             
         // Buat query params untuk appends, pastikan merchant_page tetap ada
@@ -45,10 +41,10 @@ class MerchantController extends Controller
             $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
         }
             
+        // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
             ->orderBy('id')
-            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
-            ->setPageName('keyword_page')
+            ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
             
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
@@ -414,8 +410,6 @@ class MerchantController extends Controller
     public function search(Request $request)
     {
         $searchTerm = trim($request->input('q', ''));
-        $merchantPage = $request->input('merchant_page', 1);
-        $keywordPage = $request->input('keyword_page', 1);
         $category = $request->input('category');
         
         $merchantsQuery = Merchant::query();
@@ -441,10 +435,10 @@ class MerchantController extends Controller
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $merchants = $merchantsQuery
             ->orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
-            ->setPageName('merchant_page')
+            ->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         
         if ($request->wantsJson() || $request->ajax()) {
@@ -463,10 +457,10 @@ class MerchantController extends Controller
             $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
             ->orderBy('id')
-            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
-            ->setPageName('keyword_page')
+            ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         
@@ -508,7 +502,11 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $iklans = Iklan::latest()->get();
+        // Get iklans - only show iklans without territorial (null) for link pelanggan page
+        // Use orderBy('order', 'asc') to respect admin-configured order
+        $iklans = Iklan::whereNull('territorial')
+            ->orderBy('order', 'asc')
+            ->get();
 
         return view('link-pelanggan', [
             'merchant' => $merchant,
@@ -922,8 +920,66 @@ class MerchantController extends Controller
         }
 
         try {
-            // Ambil merchant untuk mendapatkan nama
+            // SECURITY: Verify authorization BEFORE fetching merchant data
+            // This prevents unauthorized access by checking permissions first
+            
+            $isPortalUser = Auth::guard('portal')->check();
+            $isAdmin = Auth::check() && Auth::user()->can_approve;
+            
+            // If neither portal user nor admin, reject immediately
+            if (!$isPortalUser && !$isAdmin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda harus login untuk mengajukan penarikan.',
+                ], 401);
+            }
+            
+            // Fetch merchant - this will throw 404 if merchant doesn't exist
             $merchant = Merchant::findOrFail($request->merchant_id);
+            
+            // SECURITY: Verify that the authenticated user is authorized to submit withdrawals for this merchant
+            if ($isPortalUser) {
+                $portalUser = Auth::guard('portal')->user();
+                
+                // Portal users can ONLY submit for merchants where email_pic matches their email
+                // This is the critical security check - portal users cannot submit for other merchants
+                if ($merchant->email_pic) {
+                    // Merchant has email_pic - must match portal user's email exactly
+                    if ($merchant->email_pic !== $portalUser->email) {
+                        Log::warning('Unauthorized withdraw attempt by portal user', [
+                            'portal_user_id' => $portalUser->id,
+                            'portal_user_email' => $portalUser->email,
+                            'merchant_id' => $merchant->id,
+                            'merchant_email_pic' => $merchant->email_pic,
+                        ]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Anda tidak memiliki izin untuk mengajukan penarikan untuk merchant ini.',
+                        ], 403);
+                    }
+                } else {
+                    // Merchant has no email_pic - portal users cannot submit for these merchants
+                    // Only admins can submit for merchants without email_pic
+                    Log::warning('Portal user attempted withdraw for merchant without email_pic', [
+                        'portal_user_id' => $portalUser->id,
+                        'portal_user_email' => $portalUser->email,
+                        'merchant_id' => $merchant->id,
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki izin untuk mengajukan penarikan untuk merchant ini.',
+                    ], 403);
+                }
+            } else {
+                // Admin users can submit for any merchant
+                // This is allowed as admins have can_approve = 1
+                if (!$isAdmin) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki izin untuk mengajukan penarikan.',
+                    ], 403);
+                }
+            }
             
             // Tentukan nama: prioritaskan PortalUser name, kemudian nama_pic, terakhir nama_merchant
             $nama = $merchant->nama_merchant; // Default fallback
@@ -938,15 +994,19 @@ class MerchantController extends Controller
                 }
             }
             
-            // Format account number untuk e-wallet (hapus +62 dan leading 0)
+            // Format account number untuk e-wallet
+            // Standardize format: store with +62 prefix to match merchant wa_pic format
             $accountNumber = $request->account_number;
             $isEWallet = in_array($request->payment_method, ['linkaja', 'dana']);
             
             if ($isEWallet) {
-                // Hapus +62 jika ada
+                // Normalize: ensure +62 prefix for consistency with merchant wa_pic format
+                // Remove existing +62 if present, then add it back to ensure consistency
                 $accountNumber = preg_replace('/^\+62/', '', $accountNumber);
-                // Hapus hanya leading 0 pertama (bukan semua leading zeros)
+                // Remove leading 0 if present
                 $accountNumber = preg_replace('/^0/', '', $accountNumber);
+                // Add +62 prefix for consistent storage format (matches merchant wa_pic)
+                $accountNumber = '+62' . $accountNumber;
             }
 
             // Generate transaction ID
@@ -1290,12 +1350,25 @@ class MerchantController extends Controller
         
         // Get iklans - filter by territorial
         // Show iklans that have no territorial (null) or match current location
-        $iklans = Iklan::where(function($query) use ($location) {
-            $query->whereNull('territorial')
-                  ->orWhere('territorial', $location);
-        })
-        ->orderBy('order', 'asc')
-        ->get();
+        // Normalize comparison by converting both to slug format for consistency
+        $locationSlug = territorialSlug($location);
+        $iklans = Iklan::whereNull('territorial')
+            ->orWhere(function($query) use ($locationSlug) {
+                $query->whereNotNull('territorial');
+            })
+            ->orderBy('order', 'asc')
+            ->get()
+            ->filter(function($iklan) use ($locationSlug) {
+                // Show iklans without territorial
+                if ($iklan->territorial === null) {
+                    return true;
+                }
+                // Normalize both stored territorial and location to slug for comparison
+                // This handles cases where territorial might be stored as display name instead of slug
+                $storedSlug = territorialSlug($iklan->territorial);
+                return strtolower($storedSlug) === strtolower($locationSlug);
+            })
+            ->values();
         
         // Get all available territories for filter
         $allDaerah = Merchant::query()

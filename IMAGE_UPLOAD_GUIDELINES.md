@@ -6,7 +6,7 @@ Dokumen ini menjelaskan ukuran gambar yang optimal untuk setiap jenis upload di 
 
 | Jenis Gambar | Ukuran Optimal | Format | Max File Size | Aspect Ratio |
 |-------------|----------------|--------|---------------|--------------|
-| **Banner Promo (Iklan)** | 1920x600px | JPG, PNG, WebP | 2 MB | 16:5 (Landscape Wide) |
+| **Banner Promo (Iklan)** | 1920x640px | JPG, PNG, WebP | 2 MB | 3:1 (Landscape Wide) |
 | **Logo Merchant** | 512x512px | PNG (transparan), JPG, WebP | 2 MB | 1:1 (Square) |
 | **Promo Keywords** | 1200x600px | JPG, PNG, WebP | 2 MB | 2:1 (Landscape) |
 
@@ -15,30 +15,32 @@ Dokumen ini menjelaskan ukuran gambar yang optimal untuk setiap jenis upload di 
 ## 1. 🎨 Banner Promo (Iklan)
 
 ### Detail Teknis
-- **Ukuran Optimal**: **1920x600px** (atau 1920x400px untuk lebih ringan)
+- **Ukuran Optimal**: **1920x640px** (atau 1440x480px untuk lebih ringan)
 - **Format**: JPG, PNG, WebP
 - **Max File Size**: 2 MB (2048 KB)
-- **Aspect Ratio**: **16:5** atau **16:6** (Landscape Wide)
+- **Aspect Ratio**: **3:1** (Landscape Wide) - **Rasio yang tepat untuk banner promo**
 - **Background**: Bisa transparan (PNG) atau solid color
 
 ### Dimensi Tampilan
-- Mobile: 224px tinggi (h-56)
-- Small: 256px tinggi (h-64)
-- Medium: 320px tinggi (h-80)
-- Large: 400px tinggi (h-100)
-- Width: Full width dengan object-cover
+- Mobile: 224px tinggi (h-56) - Width: ~672px (rasio 3:1)
+- Small: 256px tinggi (h-64) - Width: ~768px (rasio 3:1)
+- Medium: 320px tinggi (h-80) - Width: ~960px (rasio 3:1)
+- Large: 400px tinggi (h-100) - Width: ~1200px (rasio 3:1)
+- Max Width: 1152px (max-w-6xl) dengan object-cover
 
 ### Tips Desain
 - ✅ Gunakan resolusi tinggi untuk tampilan tajam di semua device
 - ✅ Pastikan teks dan elemen penting berada di tengah (akan di-crop)
-- ✅ Hindari elemen penting di pinggir kiri/kanan
+- ✅ Hindari elemen penting di pinggir kiri/kanan (akan terpotong di mobile)
 - ✅ Gunakan warna kontras tinggi untuk teks
 - ✅ Optimalkan file size dengan kompresi (target < 500KB untuk loading cepat)
+- ✅ **Rasio 3:1** adalah standar untuk banner promo web
 
 ### Contoh Ukuran Alternatif
-- **1920x600px** (Recommended) - Balance antara kualitas dan file size
-- **1920x400px** - Lebih ringan, cocok untuk banner sederhana
-- **1600x500px** - Alternatif untuk device lebih kecil
+- **1920x640px** (Recommended) - Balance antara kualitas dan file size, rasio 3:1
+- **1440x480px** - Lebih ringan, tetap rasio 3:1
+- **1200x400px** - Alternatif untuk device lebih kecil, rasio 3:1
+- **1600x533px** - Alternatif dengan rasio mendekati 3:1
 
 ---
 

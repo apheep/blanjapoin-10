@@ -325,9 +325,12 @@ class LoginController extends Controller
         $user = User::where('no_hp', $request->no_hp)->first();
 
         if (!$user) {
+            // Get otp_type from session, not from request
+            $otpType = $request->session()->get('otp_type');
+            
             return back()->withInput([
                 'no_hp' => $request->no_hp,
-                'otp_type' => $request->otp_type,
+                'otp_type' => $otpType,
             ])->withErrors([
                 'no_hp' => 'Nomor HP tidak terdaftar.',
             ]);
@@ -449,7 +452,43 @@ class LoginController extends Controller
             
             Log::info('OTP Verified Successfully', [
                 'user_data_keys' => array_keys($userData),
+                'user_data' => $userData,
             ]);
+            
+            // Update user record with data from API response if available
+            // Only update fields that are in the fillable array and exist in userData
+            $updateData = [];
+            $fillableFields = ['username', 'email', 'no_hp', 'role', 'can_approve'];
+            
+            foreach ($fillableFields as $field) {
+                // Check if field exists in userData (case-insensitive)
+                $fieldKey = null;
+                foreach (array_keys($userData) as $key) {
+                    if (strtolower($key) === strtolower($field)) {
+                        $fieldKey = $key;
+                        break;
+                    }
+                }
+                
+                if ($fieldKey !== null && isset($userData[$fieldKey]) && $userData[$fieldKey] !== null && $userData[$fieldKey] !== '') {
+                    // Only update if the value is different or if current value is null/empty
+                    if ($user->$field !== $userData[$fieldKey] || ($user->$field === null || $user->$field === '')) {
+                        $updateData[$field] = $userData[$fieldKey];
+                    }
+                }
+            }
+            
+            // Update user if there are any changes
+            if (!empty($updateData)) {
+                Log::info('Updating user with data from API', [
+                    'user_id' => $user->id,
+                    'update_data' => $updateData,
+                ]);
+                
+                $user->update($updateData);
+                // Refresh user object to get updated data
+                $user->refresh();
+            }
             
         } catch (\Exception $e) {
             Log::error('OTP Verification Exception', [
@@ -465,7 +504,7 @@ class LoginController extends Controller
             ]);
         }
 
-        // OTP is valid, login user
+        // OTP is valid, login user (using potentially updated user object)
         Auth::login($user);
         $request->session()->regenerate();
 
@@ -482,7 +521,7 @@ class LoginController extends Controller
         ]);
 
         // Clear OTP session data
-        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_requested_at']);
+        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_phone_display', 'otp_requested_at']);
 
         // Redirect berdasarkan role user
         switch ($user->role) {

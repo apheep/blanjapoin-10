@@ -58,14 +58,15 @@
                                 <button type="button"
                                         id="keyword-edit-btn-{{ $keyword->id }}"
                                         data-keyword-edit-id="{{ $keyword->id }}"
-                                        onclick="openEditKeyword({{ $keyword->id }}, {{ json_encode($keyword) }})"
+                                        data-keyword-data="{{ json_encode($keyword, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                                        onclick="openEditKeyword({{ $keyword->id }}, JSON.parse(this.getAttribute('data-keyword-data')))"
                                         class="text-blue-600 hover:text-blue-900 transition-colors"
                                         title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
 
                                 <button type="button"
-                                        onclick="showDeleteConfirmation('Keyword', '{{ $keyword->nama_produk }}', {{ $keyword->id }})"
+                                        onclick="showDeleteConfirmation('Keyword', {{ json_encode($keyword->nama_produk) }}, {{ $keyword->id }})"
                                         class="text-red-600 hover:text-red-900 transition-colors"
                                         title="Hapus">
                                     <i class="fas fa-trash"></i>
@@ -87,8 +88,8 @@
                                     </div>
                                 @else
                                     <div class="flex items-center gap-2">
-                                        <button onclick="showApproveConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
-                                        <button onclick="showRejectConfirmation('Keyword','{{ $keyword->nama_produk }}',{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Reject"><i class="fas fa-times text-sm"></i></button>
+                                        <button onclick="showApproveConfirmation('Keyword',{{ json_encode($keyword->nama_produk) }},{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
+                                        <button onclick="showRejectConfirmation('Keyword',{{ json_encode($keyword->nama_produk) }},{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Reject"><i class="fas fa-times text-sm"></i></button>
                                     </div>
                                 @endif
                             </td>

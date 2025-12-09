@@ -67,6 +67,11 @@ class IklanController extends Controller
         $territorial = is_string($territorial) ? trim($territorial) : null;
         if ($territorial === '') {
             $territorial = null;
+        } elseif ($territorial !== null) {
+            // Normalize territorial to slug format to ensure consistency
+            // If it's already a slug, territorialSlug will return it as-is
+            // If it's a display name, it will be converted to slug
+            $territorial = territorialSlug($territorial);
         }
 
         // Get the highest order value and add 1

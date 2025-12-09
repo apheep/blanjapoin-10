@@ -52,20 +52,24 @@
                             <input type="text" name="redeem" id="editRedeem" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="Enter redeem points">
                         </div>
 
-                        <!-- Row 4: Diskon (Persen + Rupiah) -->
+                        <!-- Row 4: Diskon (Persen + Rupiah + Free) -->
                         <div class="md:col-span-2">
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Diskon <span class="text-red-500">*</span> (Pilih salah satu)</label>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-3 gap-3">
                                 <div class="flex items-center gap-2">
-                                    <input type="number" name="diskon_percent" id="editDiskonPercent" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="0" min="0" max="100" onchange="validateEditDiskon()">
+                                    <input type="number" name="diskon_percent" id="editDiskonPercent" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="0" min="0" max="100" onchange="handleEditPercentRupiahChange()">
                                     <span class="text-gray-600 font-medium">%</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-gray-600 font-medium">Rp</span>
-                                    <input type="number" name="diskon_rupiah" id="editDiskonRupiah" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="0" onchange="validateEditDiskon()">
+                                    <input type="number" name="diskon_rupiah" id="editDiskonRupiah" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="0" onchange="handleEditPercentRupiahChange()">
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" name="diskon_free" id="editDiskonFree" value="free" class="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-400 transition-all duration-300 ease-out transform translate-y-2 opacity-0" onchange="handleEditFreeChange()">
+                                    <label for="editDiskonFree" class="text-gray-600 font-medium cursor-pointer">Free</label>
                                 </div>
                             </div>
-                            <p id="editDiskonError" class="text-red-500 text-xs mt-1 hidden">Silakan isi salah satu dari diskon (persen atau rupiah)</p>
+                            <p id="editDiskonError" class="text-red-500 text-xs mt-1 hidden">Silakan isi salah satu dari diskon (persen, rupiah, atau free)</p>
                         </div>
 
                         <!-- Row 5: Stock -->
@@ -195,14 +199,27 @@ function openEditKeyword(id, keywordData) {
     
     // Parse diskon
     const diskonStr = keywordData.diskon || '';
-    if (diskonStr.includes('%')) {
+    const diskonPercent = document.getElementById('editDiskonPercent');
+    const diskonRupiah = document.getElementById('editDiskonRupiah');
+    const diskonFree = document.getElementById('editDiskonFree');
+    
+    // Reset semua field diskon
+    diskonPercent.value = '';
+    diskonRupiah.value = '';
+    diskonFree.checked = false;
+    diskonPercent.disabled = false;
+    diskonRupiah.disabled = false;
+    
+    if (diskonStr.toLowerCase().includes('free') || diskonStr.toLowerCase() === 'gratis') {
+        diskonFree.checked = true;
+        diskonPercent.disabled = true;
+        diskonRupiah.disabled = true;
+    } else if (diskonStr.includes('%')) {
         const percent = diskonStr.replace('%', '').trim();
-        document.getElementById('editDiskonPercent').value = percent;
-        document.getElementById('editDiskonRupiah').value = '';
+        diskonPercent.value = percent;
     } else if (diskonStr.includes('Rp')) {
         const rupiah = diskonStr.replace('Rp', '').replace(/\./g, '').replace(/,/g, '').trim();
-        document.getElementById('editDiskonRupiah').value = rupiah;
-        document.getElementById('editDiskonPercent').value = '';
+        diskonRupiah.value = rupiah;
     }
     
     // Show current image if exists
@@ -284,15 +301,46 @@ function updateEditProductName() {
 function validateEditDiskon() {
     const diskonPercent = document.getElementById('editDiskonPercent').value;
     const diskonRupiah = document.getElementById('editDiskonRupiah').value;
+    const diskonFree = document.getElementById('editDiskonFree').checked;
     const errorMsg = document.getElementById('editDiskonError');
     
-    if (!diskonPercent && !diskonRupiah) {
+    if (!diskonPercent && !diskonRupiah && !diskonFree) {
         errorMsg.classList.remove('hidden');
         return false;
     } else {
         errorMsg.classList.add('hidden');
         return true;
     }
+}
+
+function handleEditFreeChange() {
+    const diskonFree = document.getElementById('editDiskonFree');
+    const diskonPercent = document.getElementById('editDiskonPercent');
+    const diskonRupiah = document.getElementById('editDiskonRupiah');
+    
+    if (diskonFree.checked) {
+        diskonPercent.value = '';
+        diskonRupiah.value = '';
+        diskonPercent.disabled = true;
+        diskonRupiah.disabled = true;
+    } else {
+        diskonPercent.disabled = false;
+        diskonRupiah.disabled = false;
+    }
+    validateEditDiskon();
+}
+
+function handleEditPercentRupiahChange() {
+    const diskonFree = document.getElementById('editDiskonFree');
+    const diskonPercent = document.getElementById('editDiskonPercent');
+    const diskonRupiah = document.getElementById('editDiskonRupiah');
+    
+    if (diskonPercent.value || diskonRupiah.value) {
+        diskonFree.checked = false;
+        diskonPercent.disabled = false;
+        diskonRupiah.disabled = false;
+    }
+    validateEditDiskon();
 }
 
 function validateEditDateRange() {

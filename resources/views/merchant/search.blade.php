@@ -68,8 +68,7 @@
                     data-point="{{ (int) $result->redeem }}"
                     data-search-name="{{ $searchName }}"
                     data-search-location="{{ $searchLocation }}"
-                    onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" 
-                    class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer h-full min-h-[280px]"
+                    class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 h-full min-h-[280px]"
                 >
                     <!-- Mobile Layout -->
                     <div class="lg:hidden flex flex-col h-full">
@@ -84,32 +83,28 @@
                             </div>
                         </div>
                         <div class="flex flex-col p-3 space-y-2 flex-1">
-                            <h3 class="text-2xl font-bold text-neutral-900 leading-tight">
-                                {{ $merchantName ?: $productName }}
+                            <h3 class="text-lg font-bold text-neutral-900 leading-tight truncate">
+                                {{ $merchantName }}
                             </h3>
+                            <div class="text-[10px] text-gray-500 -mt-1 -mb-1">
+                                <span>Promo</span>
+                            </div>
                             <div class="text-[11px] text-neutral-600 leading-relaxed">
                                 @if(!is_null($result->diskon))
                                     <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
-                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-5 h-5 object-contain">
+                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-7 h-7 object-contain">
                                         <span class="text-xl font-bold text-red-500">{{ formatDiskon($result->diskon) }}</span>
                                     </div>
                                 @endif
-                                @if($result->skb)
-                                <div class="relative">
-                                    <div id="{{ $uniqueId }}-text" class="line-clamp-3 transition-all duration-300">
-                                        {{ $result->skb }}
-                                    </div>
-                                    <button 
-                                        id="{{ $uniqueId }}-btn" 
-                                        onclick="event.stopPropagation(); toggleDescriptionSearch('{{ $uniqueId }}')" 
-                                        class="hidden mt-1 text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors"
-                                    >
-                                        <span id="{{ $uniqueId }}-btn-text">See details</span>
-                                        <svg id="{{ $uniqueId }}-arrow" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </button>
+                                @if($productName)
+                                <div class="mb-1 font-semibold text-neutral-700 text-base truncate">
+                                    {{ $productName }}
                                 </div>
+                                @endif
+                                @if($result->skb)
+                                <button onclick="event.stopPropagation(); openSearchDescriptionSheet({{ $result->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($result->skb) }}, {{ json_encode($result->diskon ? formatDiskon($result->diskon) : null) }})" class="mt-1 text-[10px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                                    Lihat Deskripsi
+                                </button>
                                 @endif
                             </div>
                             <div class="inline-flex items-center gap-1.5 bg-white rounded-full px-0.5 py-0.5 self-start">
@@ -130,6 +125,9 @@
                                 </div>
                                 @endif
                             </div>
+                            <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="mt-2 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs">
+                                Redeem
+                            </button>
                         </div>
                     </div>
 
@@ -150,7 +148,7 @@
                             @if($result->diskon)
                             <div class="text-right flex-shrink-0 ml-2">
                                 <div class="inline-flex items-center gap-2">
-                                    <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-10 h-10 object-contain">
+                                    <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-14 h-14 object-contain">
                                     <span class="text-base md:text-2xl font-black text-red-600">{{ formatDiskon($result->diskon) }}</span>
                                 </div>
                             </div>
@@ -178,24 +176,17 @@
                         <!-- Details -->
                         <div class="flex flex-col px-4 md:px-5 pb-4 md:pb-5 flex-1 min-h-0">
                             <h4 class="text-base md:text-lg font-black text-neutral-900 mb-2 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
-                                {{ $productName ?: $merchantName }}
+                                {{ $merchantName }}
                             </h4>
+                            @if($productName)
+                            <p class="text-lg md:text-xl text-neutral-600 mb-2.5 leading-relaxed font-semibold truncate">
+                                {{ $productName }}
+                            </p>
+                            @endif
                             @if($result->skb)
-                            <div class="relative">
-                                <p id="{{ $uniqueId }}-text-desktop" class="text-xs md:text-sm text-neutral-600 mb-2.5 leading-relaxed line-clamp-2 transition-all duration-300">
-                                    {{ $result->skb }}
-                                </p>
-                                <button 
-                                    id="{{ $uniqueId }}-btn-desktop" 
-                                    onclick="event.stopPropagation(); toggleDescriptionDesktopSearch('{{ $uniqueId }}')" 
-                                    class="hidden text-orange-600 font-semibold items-center gap-1 hover:text-orange-700 transition-colors text-xs"
-                                >
-                                    <span id="{{ $uniqueId }}-btn-text-desktop">See details</span>
-                                    <svg id="{{ $uniqueId }}-arrow-desktop" class="w-3 h-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-                            </div>
+                            <button onclick="event.stopPropagation(); openSearchDescriptionSheet({{ $result->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($result->skb) }}, {{ json_encode($result->diskon ? formatDiskon($result->diskon) : null) }})" class="self-start text-left mb-2.5 text-xs md:text-sm font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                                Lihat Deskripsi
+                            </button>
                             @endif
                             @if($result->end_date)
                             <div class="flex items-center gap-1.5 text-xs text-neutral-500 mb-3">
@@ -206,19 +197,17 @@
                             </div>
                             @endif
                             <div class="mt-auto pt-3 border-t border-neutral-100">
-                                <div class="flex items-center justify-between">
+                                <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center gap-1.5">
                                         <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
                                         <span class="text-xl md:text-2xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                                             {{ number_format($result->redeem, 0, ',', '.') }}
                                         </span>
                                     </div>
-                                    <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                        <svg class="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                                        </svg>
-                                    </div>
                                 </div>
+                                <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2.5 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base">
+                                    Redeem
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -254,105 +243,48 @@
     });
 </script>
 
-<!-- JavaScript untuk toggle deskripsi di halaman Search (mengikuti pola shop.blade.php) -->
 <script>
-    // Toggle description (Mobile)
-    function toggleDescriptionSearch(uniqueId) {
-        const textElement = document.getElementById(uniqueId + '-text');
-        const btnTextElement = document.getElementById(uniqueId + '-btn-text');
-        const arrowElement = document.getElementById(uniqueId + '-arrow');
-
-        if (!textElement || !btnTextElement || !arrowElement) return;
-
-        if (textElement.classList.contains('line-clamp-3')) {
-            textElement.classList.remove('line-clamp-3');
-            btnTextElement.textContent = 'Show less';
-            arrowElement.classList.add('rotate-180');
-        } else {
-            textElement.classList.add('line-clamp-3');
-            btnTextElement.textContent = 'See details';
-            arrowElement.classList.remove('rotate-180');
-        }
-    }
-
-    // Toggle description (Desktop)
-    function toggleDescriptionDesktopSearch(uniqueId) {
-        const textElement = document.getElementById(uniqueId + '-text-desktop');
-        const btnTextElement = document.getElementById(uniqueId + '-btn-text-desktop');
-        const arrowElement = document.getElementById(uniqueId + '-arrow-desktop');
-
-        if (!textElement || !btnTextElement || !arrowElement) return;
-
-        if (textElement.classList.contains('line-clamp-2')) {
-            textElement.classList.remove('line-clamp-2');
-            btnTextElement.textContent = 'Show less';
-            arrowElement.classList.add('rotate-180');
-        } else {
-            textElement.classList.add('line-clamp-2');
-            btnTextElement.textContent = 'See details';
-            arrowElement.classList.remove('rotate-180');
-        }
-    }
-
-    // Cek apakah teks terpotong dan tampilkan tombol See details
-    function checkTruncatedTextSearch() {
-        // Mobile text (3 lines)
-        const mobileTextElements = document.querySelectorAll('[id$="-text"]:not([id$="-text-desktop"])');
-
-        mobileTextElements.forEach(function(textElement) {
-            const parentCard = textElement.closest('.voucher-card');
-            if (!parentCard || parentCard.offsetParent === null) return;
-
-            const uniqueId = textElement.id.replace('-text', '');
-            const btnElement = document.getElementById(uniqueId + '-btn');
-
-            if (btnElement) {
-                const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
-                if (isOverflowing) {
-                    btnElement.classList.remove('hidden');
-                    btnElement.classList.add('flex');
-                } else {
-                    btnElement.classList.add('hidden');
-                    btnElement.classList.remove('flex');
-                }
-            }
-        });
-
-        // Desktop text (2 lines)
-        const desktopTextElements = document.querySelectorAll('[id$="-text-desktop"]');
-
-        desktopTextElements.forEach(function(textElement) {
-            const parentCard = textElement.closest('.voucher-card');
-            if (!parentCard || parentCard.offsetParent === null) return;
-
-            const uniqueId = textElement.id.replace('-text-desktop', '');
-            const btnElement = document.getElementById(uniqueId + '-btn-desktop');
-
-            if (btnElement) {
-                const isOverflowing = textElement.scrollHeight > textElement.clientHeight + 2;
-                if (isOverflowing) {
-                    btnElement.classList.remove('hidden');
-                    btnElement.classList.add('flex');
-                } else {
-                    btnElement.classList.add('hidden');
-                    btnElement.classList.remove('flex');
-                }
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            checkTruncatedTextSearch();
-        }, 100);
-    });
-
-    let resizeTimerSearch;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimerSearch);
-        resizeTimerSearch = setTimeout(function() {
-            checkTruncatedTextSearch();
-        }, 250);
-    });
+// Search Description Bottom Sheet Function
+function openSearchDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
+ const contentHTML = `
+  <div class="px-5 pb-6">
+   <div class="space-y-3">
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
+     <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
+    </div>
+    
+    ${productName ? `
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Produk :</span>
+     <span class="text-sm text-neutral-900 ml-2">${productName}</span>
+    </div>
+    ` : ''}
+    
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">Promo :</span>
+     <span class="text-sm text-neutral-900 ml-2">${diskon || '-'}</span>
+    </div>
+    
+    ${skb ? `
+    <div>
+     <span class="text-sm font-semibold text-neutral-700">SKB :</span>
+     <div class="mt-2">
+      <p class="text-sm text-neutral-600 leading-relaxed">
+       ${skb}
+      </p>
+     </div>
+    </div>
+    ` : ''}
+   </div>
+  </div>
+ `;
+ 
+ if (typeof openBottomSheet === 'function') {
+  openBottomSheet('Deskripsi', contentHTML);
+ } else {
+  console.error('openBottomSheet function not found');
+ }
+}
 </script>
 @endsection
