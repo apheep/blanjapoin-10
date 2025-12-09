@@ -76,11 +76,11 @@
      </div>
 
      <section class="relative z-10 space-y-10 md:space-y-12"></section>
-     <div class="mt-10 md:-mt-10">
+     <div class="mt-1 md:mt-0">
        @include('partials.spesial_promo', ['specialPromos' => $specialPromos ?? null])
       </div>
 
-      <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-6 md:pt-10" id="categorySection">
+      <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-1 md:pt-2" id="categorySection">
        <!-- Mobile Version: 5 columns (4 categories + See All) -->
        <div class="grid grid-cols-5 gap-2 md:hidden">
       <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
@@ -162,7 +162,7 @@
 
 <div class="mx-auto w-full max-w-[1400px]">
  <main class="px-4 md:px-8 lg:px-10 pb-12 md:pb-16">
-   <section class="mt-8 md:mt-12 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
+   <section class="mt-0 md:mt-6 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
      <!-- Mobile Version -->
      <div class="md:hidden flex items-center gap-2">
       <div class="flex-1 rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">

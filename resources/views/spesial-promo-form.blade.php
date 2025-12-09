@@ -96,10 +96,126 @@
         .toast.hide {
             animation: slideOutRight 0.3s ease-out forwards;
         }
+        
+        /* Custom Input Search Class */
+        .search-input {
+            width: 100%;
+            border-radius: 9999px;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+            padding: 0.5rem 2.5rem;
+            font-size: 0.875rem;
+        }
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+        .search-input:focus {
+            border-color: #fb923c;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.1);
+        }
+        
+        /* Custom Toggle Switch Class */
+        .toggle-switch {
+            width: 2.25rem;
+            height: 1.25rem;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            position: relative;
+            transition: all 0.3s ease-in-out;
+        }
+        .toggle-switch:hover {
+            background-color: #d1d5db;
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 1rem;
+            height: 1rem;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 9999px;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* Custom Badge Status Classes */
+        .badge-approved {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(to right, #dcfce7, #d1fae5);
+            color: #15803d;
+            font-weight: 500;
+            font-size: 0.875rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        .badge-pending {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(to right, #fef3c7, #fde68a);
+            color: #b45309;
+            font-weight: 500;
+            font-size: 0.875rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        .badge-rejected {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(to right, #fee2e2, #fecdd3);
+            color: #991b1b;
+            font-weight: 500;
+            font-size: 0.875rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Custom Pagination Button */
+        .pagination-btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover {
+            background-color: #f9fafb;
+        }
+        
+        .pagination-btn-active {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(to right, #F81611, #F0B100);
+            border-radius: 0.5rem;
+        }
+        
+        .pagination-btn-disabled {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #9ca3af;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            cursor: not-allowed;
+        }
     </style>
 </head>
-<body class="min-h-screen bg-gray-50 font-poppins">
-
+<body class="min-h-screen bg-white font-poppins">
     @if(session('success'))
         <div data-flash-message="{{ session('success') }}" data-flash-type="success" class="hidden"></div>
     @endif
@@ -141,14 +257,14 @@
         </div>
 
         <!-- Search and Date Filter -->
-        <form method="GET" action="{{ route('spesial-promo.form') }}" id="specialPromoSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 overflow-visible" onsubmit="return true;">
-            <div class="relative flex-1 w-full sm:max-w-[400px]">
+        <form method="GET" action="{{ route('spesial-promo.form') }}" id="specialPromoSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 overflow-visible">
+            <div class="relative w-full max-w-[280px] sm:max-w-[180px]">
                 <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <input name="q"
                        id="specialPromoSearchInput"
                        value="{{ request()->query('q', '') }}"
-                       class="w-full rounded-full border border-gray-200 bg-white px-10 py-2 text-sm placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 focus:outline-none"
-                       placeholder="Search nama produk, merchant, keyword ID..."
+                       class="search-input"
+                       placeholder="Search"
                        onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('specialPromoSearchForm').submit(); }" />
                 @if(request()->has('q'))
                     <button type="button" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -157,9 +273,9 @@
                 @endif
             </div>
             <div class="flex-shrink-0 overflow-visible" style="position: relative; z-index: 50;">
-                @include('partials.date-filter', ['filterId' => 'dateFilterSpecialPromo'])
+                @include('partials.date-withdraw', ['filterId' => 'specialPromoDateFilter'])
             </div>
-            @if(request()->has('q') || request()->has('start_date') || request()->has('end_date'))
+            @if(request()->has('q') || request()->has('date'))
                 <a href="{{ route('spesial-promo.form') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
                     <i class="fas fa-times mr-1"></i>Clear
                 </a>
@@ -181,7 +297,7 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA LINK</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SKB</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">SKB</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">TRX</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sisa Stock</th>
@@ -197,17 +313,17 @@
                                 </td>
                                 <td class="px-4 py-4">
                                     @if($keyword->status === 'approve')
-                                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
+                                        <div class="badge-approved">
                                             <i class="fas fa-check-circle text-green-600"></i>
                                             <span>Approved</span>
                                         </div>
                                     @elseif($keyword->status === 'pending')
-                                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 font-medium text-sm shadow-sm">
+                                        <div class="badge-pending">
                                             <i class="fas fa-clock text-yellow-600"></i>
                                             <span>Pending</span>
                                         </div>
                                     @elseif($keyword->status === 'reject')
-                                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-red-100 to-rose-100 text-red-700 font-medium text-sm shadow-sm">
+                                        <div class="badge-rejected">
                                             <i class="fas fa-times-circle text-red-600"></i>
                                             <span>Rejected</span>
                                         </div>
@@ -219,7 +335,7 @@
                                                data-keyword-id="{{ $keyword->id }}" 
                                                class="sr-only peer toggle-special-promo" 
                                                {{ ($keyword->is_special_promo ?? 0) ? 'checked' : '' }} />
-                                        <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                                        <div class="toggle-switch peer-checked:bg-green-600 hover:peer-checked:bg-green-700 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                                     </label>
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-900">
@@ -240,7 +356,23 @@
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->redeem ?? '-' }}</td>
                                 <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->diskon ? formatDiskon($keyword->diskon) : '-' }}</td>
-                                <td class="px-4 py-4 text-xs text-gray-500">{{ $keyword->skb ?? '-' }}</td>
+                                <td class="px-4 py-4 w-48">
+                                    @if($keyword->skb)
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-500 truncate flex-1" title="{{ $keyword->skb }}">
+                                                {{ Str::limit($keyword->skb, 20, '...') }}
+                                            </span>
+                                            <button type="button"
+                                                    onclick="showSKBDetail({{ json_encode($keyword->skb) }}, {{ json_encode($keyword->nama_produk) }}, {{ json_encode($keyword->merchant->nama_merchant ?? '-') }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : '-') }})"
+                                                    class="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded transition-colors whitespace-nowrap flex-shrink-0"
+                                                    title="Lihat Detail SKB">
+                                                Detail
+                                            </button>
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-4">
                                     <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
                                 </td>
@@ -284,50 +416,83 @@
                 </table>
             </div>
             
-            @if($keywords->hasPages())
-                <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
-                    <div class="text-sm text-gray-600">
+            <!-- Pagination -->
+            <div class="bg-white px-4 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="text-sm text-gray-600">
+                    @if($keywords->total() > 0)
                         Menampilkan <span class="font-semibold">{{ $keywords->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywords->lastItem() }}</span> dari <span class="font-semibold">{{ $keywords->total() }}</span> data
-                    </div>
-                    
-                    <div class="flex items-center space-x-2">
-                        {{-- Previous Page Link --}}
-                        @if ($keywords->onFirstPage())
-                            <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                        @else
-                            <a href="{{ $keywords->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                        @endif
+                    @else
+                        Tidak ada data
+                    @endif
+                </div>
+                
+                @if($keywords->total() > 0)
+                <div class="flex items-center space-x-2">
+                    {{-- Previous Page Link --}}
+                    @if ($keywords->onFirstPage())
+                        <button disabled class="pagination-btn-disabled">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                    @else
+                        <a href="{{ $keywords->previousPageUrl() }}" class="pagination-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    @endif
 
-                        {{-- Pagination Elements --}}
-                        @foreach ($keywords->getUrlRange(1, $keywords->lastPage()) as $page => $url)
+                    {{-- Pagination Elements with Smart Pagination --}}
+                    @php
+                        $currentPage = $keywords->currentPage();
+                        $lastPage = $keywords->lastPage();
+                        $startPage = max(1, $currentPage - 2);
+                        $endPage = min($lastPage, $currentPage + 2);
+                    @endphp
+                    
+                    @if($lastPage > 1)
+                        @if($startPage > 1)
+                            <a href="{{ $keywords->url(1) }}" class="pagination-btn">1</a>
+                            @if($startPage > 2)
+                                <span class="px-2 text-gray-400">...</span>
+                            @endif
+                        @endif
+                        
+                        @for($page = $startPage; $page <= $endPage; $page++)
                             @if ($page == $keywords->currentPage())
-                                <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                                <button disabled class="pagination-btn-active">
                                     {{ $page }}
                                 </button>
                             @else
-                                <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <a href="{{ $keywords->url($page) }}" class="pagination-btn">
                                     {{ $page }}
                                 </a>
                             @endif
-                        @endforeach
-
-                        {{-- Next Page Link --}}
-                        @if ($keywords->hasMorePages())
-                            <a href="{{ $keywords->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
-                        @else
-                            <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
+                        @endfor
+                        
+                        @if($endPage < $lastPage)
+                            @if($endPage < $lastPage - 1)
+                                <span class="px-2 text-gray-400">...</span>
+                            @endif
+                            <a href="{{ $keywords->url($lastPage) }}" class="pagination-btn">{{ $lastPage }}</a>
                         @endif
-                    </div>
+                    @else
+                        {{-- Show current page even if only 1 page --}}
+                        <button disabled class="pagination-btn-active">
+                            1
+                        </button>
+                    @endif
+
+                    {{-- Next Page Link --}}
+                    @if ($keywords->hasMorePages())
+                        <a href="{{ $keywords->nextPageUrl() }}" class="pagination-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    @else
+                        <button disabled class="pagination-btn-disabled">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    @endif
                 </div>
-            @endif
+                @endif
+            </div>
         </div>
     </main>
 
@@ -426,139 +591,16 @@
         
         // Clear search function
         function clearSearch() {
-            document.getElementById('specialPromoSearchInput').value = '';
-            document.getElementById('specialPromoSearchForm').submit();
+            window.location.href = '{{ route("spesial-promo.form") }}';
         }
         
-        // Override applyDateFilterCompact untuk spesial promo form (server-side filtering)
-        // Hanya override jika belum ada
-        if (!window.applyDateFilterCompactOriginal) {
-            window.applyDateFilterCompactOriginal = window.applyDateFilterCompact;
-        }
-        
-        window.applyDateFilterCompact = function(filterId) {
-            // Jika filterId adalah dateFilterSpecialPromo, gunakan server-side filtering
-            if (filterId === 'dateFilterSpecialPromo') {
-                applySpecialPromoDateFilter(filterId);
-                return;
-            }
-            
-            // Untuk filter lain, gunakan fungsi asli (client-side)
-            if (window.applyDateFilterCompactOriginal) {
-                window.applyDateFilterCompactOriginal(filterId);
-            }
-        };
-        
-        // Function to apply date filter for special promo (server-side)
-        function applySpecialPromoDateFilter(filterId) {
-            const state = window.calendarState?.[filterId];
-            const form = document.getElementById('specialPromoSearchForm');
-            
-            if (!form) return;
-            
-            // Remove existing date inputs
-            const existingStartDate = form.querySelector('input[name="start_date"]');
-            const existingEndDate = form.querySelector('input[name="end_date"]');
-            if (existingStartDate) existingStartDate.remove();
-            if (existingEndDate) existingEndDate.remove();
-            
-            // If no dates selected, clear filter
-            if (!state || (!state.startDate && !state.endDate)) {
-                form.submit();
-                return;
-            }
-            
-            // Format dates to YYYY-MM-DD
-            const formatDateForInput = (date) => {
-                if (!date) return null;
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            };
-            
-            const startDate = state.startDate ? formatDateForInput(state.startDate) : null;
-            const endDate = state.endDate ? formatDateForInput(state.endDate) : null;
-            
-            // Add date inputs to form
-            if (startDate) {
-                const startInput = document.createElement('input');
-                startInput.type = 'hidden';
-                startInput.name = 'start_date';
-                startInput.value = startDate;
-                form.appendChild(startInput);
-            }
-            
-            if (endDate) {
-                const endInput = document.createElement('input');
-                endInput.type = 'hidden';
-                endInput.name = 'end_date';
-                endInput.value = endDate;
-                form.appendChild(endInput);
-            }
-            
-            // Submit form
-            form.submit();
-        }
-        
-        // Prevent form submit when clicking date filter button
+        // Search form handling
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('specialPromoSearchForm');
-            if (form) {
-                // Prevent form submit kecuali dari search input (Enter key) atau Apply button
-                let shouldSubmit = false;
-                
-                form.addEventListener('submit', function(e) {
-                    if (!shouldSubmit) {
-                        e.preventDefault();
-                        return false;
-                    }
-                });
-                
-                // Allow submit dari search input (Enter key)
-                const searchInput = document.getElementById('specialPromoSearchInput');
-                if (searchInput) {
-                    searchInput.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            shouldSubmit = true;
-                        }
-                    });
-                }
-                
-                // Prevent form submit when clicking inside date filter dropdown
-                setTimeout(function() {
-                    const dateFilterDropdown = document.getElementById('dateFilterSpecialPromo');
-                    if (dateFilterDropdown) {
-                        dateFilterDropdown.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                        }, true);
-                    }
-                    
-                    // Prevent form submit when clicking date filter toggle button
-                    const dateFilterButton = document.querySelector('button[onclick*="dateFilterSpecialPromo"]');
-                    if (dateFilterButton) {
-                        dateFilterButton.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            shouldSubmit = false;
-                            return false;
-                        }, true);
-                    }
-                }, 100);
-                
-                // Reset shouldSubmit setelah submit
-                form.addEventListener('submit', function() {
-                    setTimeout(function() {
-                        shouldSubmit = false;
-                    }, 100);
-                });
-            }
-            
+            // Initialize date filter from URL params
             const urlParams = new URLSearchParams(window.location.search);
-            const startDateParam = urlParams.get('start_date');
-            const endDateParam = urlParams.get('end_date');
+            const dateParam = urlParams.get('date');
             
-            if (startDateParam || endDateParam) {
+            if (dateParam) {
                 // Initialize calendar state if not exists
                 if (!window.calendarState) {
                     window.calendarState = {};
@@ -580,39 +622,262 @@
                     return null;
                 };
                 
-                const startDateObj = toDateObj(startDateParam);
-                const endDateObj = toDateObj(endDateParam);
+                const dateObj = toDateObj(dateParam);
                 
                 // Set calendar state
-                if (startDateObj || endDateObj) {
-                    window.calendarState['dateFilterSpecialPromo'] = {
-                        currentMonth: startDateObj ? startDateObj.getMonth() : (endDateObj ? endDateObj.getMonth() : new Date().getMonth()),
-                        currentYear: startDateObj ? startDateObj.getFullYear() : (endDateObj ? endDateObj.getFullYear() : new Date().getFullYear()),
-                        startDate: startDateObj,
-                        endDate: endDateObj,
-                        activeType: startDateObj ? 'start' : 'end'
+                if (dateObj) {
+                    window.calendarState['specialPromoDateFilter'] = {
+                        currentMonth: dateObj.getMonth(),
+                        currentYear: dateObj.getFullYear(),
+                        selectedDate: dateObj,
+                        activeType: 'date'
                     };
                 }
                 
-                // Update input fields
-                const startInput = document.getElementById('startInputdateFilterSpecialPromo');
-                const endInput = document.getElementById('endInputdateFilterSpecialPromo');
-                
-                if (startInput && startDateObj) {
-                    const day = String(startDateObj.getDate()).padStart(2, '0');
-                    const month = String(startDateObj.getMonth() + 1).padStart(2, '0');
-                    const year = startDateObj.getFullYear();
-                    startInput.value = `${day}/${month}/${year}`;
-                }
-                
-                if (endInput && endDateObj) {
-                    const day = String(endDateObj.getDate()).padStart(2, '0');
-                    const month = String(endDateObj.getMonth() + 1).padStart(2, '0');
-                    const year = endDateObj.getFullYear();
-                    endInput.value = `${day}/${month}/${year}`;
+                // Update input field
+                const dateInput = document.getElementById('dateInputspecialPromoDateFilter');
+                if (dateInput && dateObj) {
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const year = dateObj.getFullYear();
+                    dateInput.value = `${day}/${month}/${year}`;
                 }
             }
+            
+            // Search form handling
+            const specialPromoSearchForm = document.getElementById('specialPromoSearchForm');
+            const specialPromoSearchInput = document.getElementById('specialPromoSearchInput');
+            
+            if (specialPromoSearchForm && specialPromoSearchInput) {
+                // Prevent form submission on Enter if date filter is open
+                specialPromoSearchForm.addEventListener('submit', function(e) {
+                    // Check if any date filter dropdown is open
+                    const openDateFilters = document.querySelectorAll('[id^="withdrawDateFilter"]:not(.hidden), [id^="dateFilter"]:not(.hidden), [id^="specialPromoDateFilter"]:not(.hidden)');
+                    if (openDateFilters.length > 0) {
+                        e.preventDefault();
+                        // Close all date filters
+                        openDateFilters.forEach(filter => {
+                            filter.classList.add('hidden');
+                            filter.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+                            filter.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+                        });
+                        // Submit form after closing filters
+                        setTimeout(() => {
+                            specialPromoSearchForm.submit();
+                        }, 200);
+                        return false;
+                    }
+                });
+                
+                // Handle Enter key in search input
+                specialPromoSearchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // Close any open date filter dropdowns
+                        const openDateFilters = document.querySelectorAll('[id^="withdrawDateFilter"]:not(.hidden), [id^="dateFilter"]:not(.hidden), [id^="specialPromoDateFilter"]:not(.hidden)');
+                        openDateFilters.forEach(filter => {
+                            filter.classList.add('hidden');
+                            filter.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+                            filter.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+                        });
+                        // Submit form
+                        setTimeout(() => {
+                            specialPromoSearchForm.submit();
+                        }, 100);
+                    }
+                });
+            }
         });
+        
+        // User dropdown toggle function
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            const arrow = document.getElementById('userDropdownArrow');
+            if (!dropdown) return;
+
+            if (dropdown.classList.contains('opacity-0')) {
+                dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            } else {
+                dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const btn = document.getElementById('userDropdownBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (!btn || !dropdown) return;
+
+            if (!btn.contains(event.target) && !dropdown.contains(event.target) && dropdown.classList.contains('opacity-100')) {
+                toggleUserDropdown();
+            }
+        });
+
+        // Function to show SKB detail in modal
+        function showSKBDetail(skbText, productName, merchantName, promoText) {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end md:items-center justify-center p-0 md:p-4';
+            overlay.id = 'skb-modal-overlay';
+            overlay.onclick = function(e) {
+                if (e.target === overlay) {
+                    closeSKBModal();
+                }
+            };
+
+            // Create modal content - responsive: bottom sheet on mobile, centered on desktop
+            const modal = document.createElement('div');
+            modal.className = 'bg-white rounded-t-3xl md:rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col';
+            
+            // Set initial state for animation
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+                modal.style.transform = 'translateY(100%)';
+                modal.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            } else {
+                modal.style.transform = 'scale(0.95) translateY(-10px)';
+                modal.style.opacity = '0';
+                modal.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            }
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            // Drag handle for mobile (top bar)
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'md:hidden pt-3 pb-2 flex justify-center';
+            dragHandle.innerHTML = `
+                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            `;
+            
+            // Modal header
+            const header = document.createElement('div');
+            header.className = 'px-6 py-4 border-b border-gray-200 flex items-center justify-between';
+            header.innerHTML = `
+                <h3 class="text-lg font-semibold text-gray-900">Deskripsi</h3>
+                <button onclick="closeSKBModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            `;
+
+            // Modal body
+            const body = document.createElement('div');
+            body.className = 'px-6 py-4 overflow-y-auto flex-1';
+            body.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-1">Merchant:</p>
+                        <p class="text-sm text-gray-900">${merchantName}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-1">Produk:</p>
+                        <p class="text-sm text-gray-900">${productName}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-1">Promo:</p>
+                        <p class="text-sm text-gray-900">${promoText}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 mb-1">SKB:</p>
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mt-2">
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap break-words">${skbText}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Modal footer
+            const footer = document.createElement('div');
+            footer.className = 'px-6 py-4 border-t border-gray-200 flex justify-end gap-2';
+            const copyButton = document.createElement('button');
+            copyButton.className = 'px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors';
+            copyButton.innerHTML = '<i class="fas fa-copy mr-2"></i>Copy';
+            copyButton.onclick = function() {
+                copySKBToClipboard(skbText, copyButton);
+            };
+            
+            const closeButton = document.createElement('button');
+            closeButton.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors';
+            closeButton.textContent = 'Tutup';
+            closeButton.onclick = closeSKBModal;
+            
+            footer.appendChild(copyButton);
+            footer.appendChild(closeButton);
+
+            modal.appendChild(dragHandle);
+            modal.appendChild(header);
+            modal.appendChild(body);
+            modal.appendChild(footer);
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (isMobile) {
+                        modal.style.transform = 'translateY(0)';
+                    } else {
+                        modal.style.transform = 'scale(1) translateY(0)';
+                        modal.style.opacity = '1';
+                    }
+                    overlay.style.opacity = '1';
+                });
+            });
+        }
+
+        function closeSKBModal() {
+            const overlay = document.getElementById('skb-modal-overlay');
+            if (overlay) {
+                const modal = overlay.querySelector('div[class*="rounded"]');
+                if (modal) {
+                    const isMobile = window.innerWidth < 768;
+                    
+                    // Ensure transitions are set before animating
+                    if (isMobile) {
+                        modal.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                        modal.style.transform = 'translateY(100%)';
+                    } else {
+                        modal.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+                        modal.style.transform = 'scale(0.95) translateY(-10px)';
+                        modal.style.opacity = '0';
+                    }
+                    
+                    overlay.style.transition = 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    overlay.style.opacity = '0';
+                    
+                    // Remove after animation completes
+                    setTimeout(() => {
+                        overlay.remove();
+                        document.body.style.overflow = '';
+                    }, 300);
+                }
+            }
+        }
+
+        function copySKBToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success message
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Gagal menyalin teks');
+            });
+        }
     </script>
 </body>
 </html>

@@ -252,8 +252,8 @@
         const input = document.getElementById('dateInput' + filterId);
         if (!input || !input.value.trim()) {
             // Clear filter if no date selected
-            // Try to find the form (could be withdrawSearchForm or historyDateFilterForm)
-            const form = document.getElementById('withdrawSearchForm') || document.getElementById('historyDateFilterForm');
+            // Try to find the form (could be withdrawSearchForm, historyDateFilterForm, or specialPromoSearchForm)
+            const form = document.getElementById('withdrawSearchForm') || document.getElementById('historyDateFilterForm') || document.getElementById('specialPromoSearchForm');
             if (form) {
                 const dateInput = form.querySelector('input[name="date"]');
                 if (dateInput) dateInput.remove();
@@ -284,8 +284,8 @@
         const dateObj = new Date(year, month - 1, day);
         const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         
-        // Submit form with date filter (try both possible form IDs)
-        const form = document.getElementById('withdrawSearchForm') || document.getElementById('historyDateFilterForm');
+        // Submit form with date filter (try all possible form IDs)
+        const form = document.getElementById('withdrawSearchForm') || document.getElementById('historyDateFilterForm') || document.getElementById('specialPromoSearchForm');
         if (form) {
             // Remove existing date input
             const existingDate = form.querySelector('input[name="date"]');
@@ -305,7 +305,7 @@
     // Close date filter when clicking outside
     document.addEventListener('click', function(event) {
         // Close all date filter dropdowns when clicking outside
-        document.querySelectorAll('[id^="withdrawDateFilter"], [id^="dateFilter"], [id^="historyWithdrawDateFilter"], [id^="withdrawApprovalDateFilter"]').forEach(dropdown => {
+        document.querySelectorAll('[id^="withdrawDateFilter"], [id^="dateFilter"], [id^="historyWithdrawDateFilter"], [id^="withdrawApprovalDateFilter"], [id^="specialPromoDateFilter"]').forEach(dropdown => {
             if (!dropdown.classList.contains('hidden') && 
                 !event.target.closest('#' + dropdown.id) && 
                 !event.target.closest('button[onclick*="toggleWithdrawDateFilter"]')) {
