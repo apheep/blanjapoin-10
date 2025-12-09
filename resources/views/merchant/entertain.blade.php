@@ -25,6 +25,7 @@
                 $uniqueId = 'entertain-card-' . $keyword->id;
             @endphp
             <article
+                id="{{ $uniqueId }}"
                 data-voucher-card="true"
                 data-search-name="{{ $searchName }}"
                 data-point="{{ (int) $keyword->redeem }}"
