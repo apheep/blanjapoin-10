@@ -12,7 +12,7 @@
         }
     </style>
     <div class="mx-auto w-full max-w-[1200px]">
-        <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-orange-100/70 px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-7">
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-7">
             <div class="flex items-center justify-between gap-3 mb-4 sm:mb-5">
                 <div class="flex items-center gap-2 sm:gap-3">
                     <span class="text-lg sm:text-xl">🔥</span>
@@ -71,16 +71,16 @@
                                     data-keyword-id="{{ $keyword->id }}"
                                     data-merchant-category="{{ $merchantCategory }}"
                                     data-section-id="{{ $sectionId }}"
-                                    class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-2xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 flex flex-col flex-shrink-0 special-promo-card cursor-pointer"
+                                    class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col flex-shrink-0 special-promo-card cursor-pointer"
                                     data-carousel-item
                                 >
                             <div class="relative px-3 pt-3 pb-2 sm:px-4 sm:pt-4 sm:pb-3 flex-shrink-0">
-                                <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
+                                <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden group-hover:shadow-md transition-shadow duration-300">
                                     <img src="{{ $image }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                                 </div>
                             </div>
 
-                            <div class="flex flex-col px-3 pb-3 sm:px-4 sm:pb-4 flex-1">
+                            <div class="flex flex-col px-3 pb-2 sm:px-4 sm:pb-2 flex-1">
                                 @if(!is_null($keyword->diskon))
                                 <div class="flex items-center gap-1.5 mb-1">
                                     <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-4 h-4 sm:w-5 sm:h-5 object-contain">
@@ -98,7 +98,7 @@
                             </div>
 
                             <!-- Footer -->
-                            <div class="px-3 pb-3 sm:px-4 sm:pb-4 pt-2 border-t border-neutral-100 bg-neutral-50/50">
+                            <div class="px-3 pb-3 sm:px-4 sm:pb-4 pt-0 bg-white">
                                 <div class="flex items-center justify-between gap-2">
                                     <div class="flex items-center gap-1.5">
                                         <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
