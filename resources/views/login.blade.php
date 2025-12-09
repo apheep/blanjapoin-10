@@ -29,12 +29,8 @@
           <div class="relative">
             <label for="no_hp" class="block text-xs font-semibold text-neutral-700 mb-1">Nomor HP</label>
             <div class="relative">
-              <input type="text" id="no_hp" name="no_hp" placeholder="08xxxxxxxxxx" value="{{ old('no_hp', session('otp_phone_display')) }}" required autofocus class="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2 pl-10 text-sm outline-none ring-0 focus:border-orange-400 focus:ring-2 focus:ring-orange-400">
-              <div class="absolute left-3 top-2.5 text-neutral-400">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                  <path d="M10.5 18.75a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5h-3ZM15.75 15.75a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H9.75ZM8.25 8.25a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v-.008ZM12 8.25a.75.75 0 0 0-.75.75v3c0 .414.336.75.75.75h3a.75.75 0 0 0 0-1.5h-2.25v-2.25a.75.75 0 0 0-.75-.75Z"/>
-                </svg>
-              </div>
+              <div class="absolute left-3 top-2.5 text-neutral-500 text-sm font-medium z-10">62</div>
+              <input type="text" id="no_hp" name="no_hp" placeholder="8xxxxxxxxxx" value="{{ old('no_hp', session('otp_phone_display')) }}" required autofocus class="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2 pl-12 text-sm outline-none ring-0 focus:border-orange-400 focus:ring-2 focus:ring-orange-400">
             </div>
             @error('no_hp')
               <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -90,12 +86,9 @@
           </div>
           @endif
 
-          @if(session('otp_redirect_url'))
+          @if(session('otp_redirect_url') && (session('otp_type') == 'whatsapp' || session('otp_type') == 'telegram'))
           <div class="rounded-xl bg-blue-50 border border-blue-200 p-4 mb-4">
-            <p class="text-xs text-blue-700 mb-2">OTP telah dikirim via {{ session('otp_type') }}. Klik tombol di bawah untuk membuka aplikasi:</p>
-            <a href="{{ session('otp_redirect_url') }}" target="_blank" class="block w-full text-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all">
-              Buka {{ session('otp_type') == 'whatsapp' ? 'WhatsApp' : 'Telegram' }}
-            </a>
+            <p class="text-xs text-blue-700 mb-2">OTP telah dikirim via {{ session('otp_type') == 'whatsapp' ? 'WhatsApp' : 'Telegram' }}. Membuka aplikasi...</p>
           </div>
           @endif
 
@@ -126,8 +119,71 @@
   </div>
 </div>
 
+@php
+  $shouldAutoRedirect = session('otp_redirect_url') && (session('otp_type') == 'whatsapp' || session('otp_type') == 'telegram');
+  $redirectUrl = session('otp_redirect_url', '');
+@endphp
+
 <script>
+var shouldAutoRedirect = {{ $shouldAutoRedirect ? 'true' : 'false' }};
+var redirectUrl = {!! json_encode($redirectUrl) !!};
+
 document.addEventListener('DOMContentLoaded', function() {
+  // Auto redirect untuk WhatsApp/Telegram
+  if (shouldAutoRedirect && redirectUrl) {
+    setTimeout(function() {
+      window.open(redirectUrl, '_blank');
+    }, 1000);
+  }
+
+  // Format nomor HP dengan prefix 62
+  const noHpInput = document.getElementById('no_hp');
+  
+  // Format value yang sudah ada jika ada dari session
+  if (noHpInput.value) {
+    let currentValue = noHpInput.value.replace(/\D/g, '');
+    if (currentValue.startsWith('62')) {
+      noHpInput.value = currentValue.substring(2);
+    } else if (currentValue.startsWith('0')) {
+      noHpInput.value = currentValue.substring(1);
+    } else {
+      noHpInput.value = currentValue;
+    }
+  }
+
+  // Format input saat user mengetik
+  noHpInput.addEventListener('input', function() {
+    // Hanya ambil angka
+    let value = this.value.replace(/\D/g, '');
+    
+    // Jika dimulai dengan 0, hapus 0
+    if (value.startsWith('0')) {
+      value = value.substring(1);
+    }
+    
+    // Jika dimulai dengan 62, hapus 62
+    if (value.startsWith('62')) {
+      value = value.substring(2);
+    }
+    
+    this.value = value;
+  });
+
+  // Format saat blur (ketika user selesai mengetik)
+  noHpInput.addEventListener('blur', function() {
+    let value = this.value.replace(/\D/g, '');
+    
+    if (value.startsWith('0')) {
+      value = value.substring(1);
+    }
+    
+    if (value.startsWith('62')) {
+      value = value.substring(2);
+    }
+    
+    this.value = value;
+  });
+
   const sendOtpForm = document.getElementById('sendOtpForm');
   
   if (!sendOtpForm) {
@@ -138,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
   sendOtpForm.addEventListener('submit', function(e) {
     console.log('Form submit triggered');
     
-    const noHp = document.getElementById('no_hp').value;
+    let noHp = document.getElementById('no_hp').value.replace(/\D/g, '');
     const otpTypeInput = document.querySelector('input[name="otp_type"]:checked');
     
     if (!noHp) {
@@ -153,11 +209,21 @@ document.addEventListener('DOMContentLoaded', function() {
       return false;
     }
 
+    // Hapus 0 di depan jika ada
+    if (noHp.startsWith('0')) {
+      noHp = noHp.substring(1);
+    }
+    
+    // Tambahkan prefix 62 jika belum ada
+    if (!noHp.startsWith('62')) {
+      noHp = '62' + noHp;
+    }
+
     const otpType = otpTypeInput.value;
     
     console.log('Sending OTP:', { noHp, otpType });
 
-    // Set hidden input values
+    // Set hidden input values dengan format lengkap (62xxxxxxxxxxx)
     document.getElementById('no_hp_hidden').value = noHp;
     document.getElementById('otp_type_hidden').value = otpType;
 
@@ -169,19 +235,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form will submit normally and redirect will work
     return true;
   });
-});
 
-// Auto focus OTP field after sending
-document.getElementById('otp').addEventListener('input', function() {
-  this.value = this.value.replace(/[^0-9]/g, '');
-});
+  // Auto focus OTP field after sending
+  const otpInput = document.getElementById('otp');
+  if (otpInput) {
+    otpInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+    });
+  }
 
-// Update radio button styles on change
-document.querySelectorAll('input[name="otp_type"]').forEach(radio => {
-  radio.addEventListener('change', function() {
-    // Remove all checked classes
-    document.querySelectorAll('label').forEach(label => {
-      label.classList.remove('border-orange-500', 'bg-orange-50', 'border-green-500', 'bg-green-50', 'border-blue-500', 'bg-blue-50');
+  // Update radio button styles on change
+  document.querySelectorAll('input[name="otp_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      // Remove all checked classes
+      document.querySelectorAll('label').forEach(label => {
+        label.classList.remove('border-orange-500', 'bg-orange-50', 'border-green-500', 'bg-green-50', 'border-blue-500', 'bg-blue-50');
+      });
     });
   });
 });

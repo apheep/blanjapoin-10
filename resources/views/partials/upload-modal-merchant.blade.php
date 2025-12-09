@@ -29,7 +29,7 @@
                         {{-- Nama Merchant --}}
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama Merchant / Produk<span class="text-red-500">*</span>
+                                Nama Merchant / Program<span class="text-red-500">*</span>
                             </label>
                             <input type="text"
                                    name="nama_merchant"
@@ -108,7 +108,7 @@
                         {{-- Nama PIC --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama PIC Merchant / Produk
+                                Nama PIC Merchant / Program
                             </label>
                             <input type="text"
                                    name="nama_pic"
@@ -147,7 +147,7 @@
                                    class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                                    placeholder="Masukkan email PIC">
                         </div>
-                        <div>
+                        <div id="ktpUploadSection">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 Upload KTP (Opsional)
                             </label>
@@ -176,7 +176,7 @@
                 </div>
 
                 {{-- Section 3: Lokasi --}}
-                <div>
+                <div id="lokasiSection">
                     <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Alamat</h4>
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -298,7 +298,7 @@
                 </div>
 
                 {{-- Section 4: Logo --}}
-                <div>
+                <div id="logoSection">
                     <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Logo Merchant</h4>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -630,6 +630,12 @@ function openUploadMerchant() {
         
         // Ensure KTP upload is disabled on modal open
         toggleKtpUpload();
+        
+        // Check if kategori is already selected and toggle fields accordingly
+        const kategoriInput = document.getElementById('merchantKategoriValue');
+        if (kategoriInput && kategoriInput.value) {
+            toggleFieldsByKategori(kategoriInput.value);
+        }
     });
 }
 
@@ -659,6 +665,14 @@ function closeUploadMerchant() {
         if (kategoriBtn) {
             kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
         }
+        
+        // Reset visibility of all sections to default (visible)
+        const lokasiSection = document.getElementById('lokasiSection');
+        const ktpUploadSection = document.getElementById('ktpUploadSection');
+        const logoSection = document.getElementById('logoSection');
+        if (lokasiSection) lokasiSection.style.display = 'block';
+        if (ktpUploadSection) ktpUploadSection.style.display = 'block';
+        if (logoSection) logoSection.style.display = 'block';
 
             // Reset lokasi dropdowns
             document.getElementById('provinsiSearch').value = '';
@@ -779,6 +793,55 @@ function selectMerchantKategori(value) {
             dropdown.classList.add('hidden');
         }, 200);
     }
+    
+    // Toggle visibility berdasarkan kategori
+    toggleFieldsByKategori(value);
+}
+
+// Function to toggle field visibility based on kategori
+function toggleFieldsByKategori(kategori) {
+    const lokasiSection = document.getElementById('lokasiSection');
+    const ktpUploadSection = document.getElementById('ktpUploadSection');
+    const logoSection = document.getElementById('logoSection');
+    
+    const isTelkomsel = kategori === 'telkomsel';
+    
+    // Toggle Lokasi Section (Provinsi, Kabupaten, Kecamatan, Detail Alamat, Link Google Maps)
+    if (lokasiSection) {
+        if (isTelkomsel) {
+            lokasiSection.style.display = 'none';
+            // Clear values when hiding
+            document.getElementById('provinsiSearch').value = '';
+            document.getElementById('provinsiValue').value = '';
+            document.getElementById('kabupatenSearch').value = '';
+            document.getElementById('kabupatenValue').value = '';
+            document.getElementById('kecamatanSearch').value = '';
+            document.getElementById('kecamatanValue').value = '';
+            document.querySelector('textarea[name="detail_alamat"]').value = '';
+            document.getElementById('merchantLinkGmap').value = '';
+            document.getElementById('daerahCombined').value = '';
+        } else {
+            lokasiSection.style.display = 'block';
+        }
+    }
+    
+    // Toggle KTP Upload Section
+    if (ktpUploadSection) {
+        if (isTelkomsel) {
+            ktpUploadSection.style.display = 'none';
+            // Clear KTP upload if exists
+            const ktpInput = document.getElementById('uploadMerchantKtpInput');
+            if (ktpInput) {
+                ktpInput.value = '';
+                removeUploadMerchantKtp();
+            }
+        } else {
+            ktpUploadSection.style.display = 'block';
+        }
+    }
+    
+    // Logo Section tetap visible untuk semua kategori termasuk telkomsel
+    // Tidak perlu di-hide
 }
 
 // Klik di luar dropdown kategori → tutup

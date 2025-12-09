@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class IklanController extends Controller
@@ -17,6 +18,7 @@ class IklanController extends Controller
      */
     public function index(): View
     {
+        // Order by ascending to show newest items first (matching migration pattern where newest=lowest order)
         $iklans = Iklan::orderBy('order', 'asc')->get();
 
         // Get all available territories
@@ -67,16 +69,27 @@ class IklanController extends Controller
         $territorial = is_string($territorial) ? trim($territorial) : null;
         if ($territorial === '') {
             $territorial = null;
+        } elseif ($territorial !== null) {
+            // Normalize territorial to slug format to ensure consistency
+            // If it's already a slug, territorialSlug will return it as-is
+            // If it's a display name, it will be converted to slug
+            $territorial = territorialSlug($territorial);
         }
 
-        // Get the highest order value and add 1
-        $maxOrder = Iklan::max('order') ?? 0;
+        // Get the minimum order value and subtract 1 to place new items at the top
+        // This matches the migration pattern where newest items have order=1 (descending created_at)
+        // Ensure we don't create negative values
+        $minOrder = Iklan::min('order') ?? 1;
+        
+        // If minOrder is 1 or less, new items get order 0 (will appear first when sorted ascending)
+        // If minOrder > 1, new items get minOrder - 1 (will appear before current minimum)
+        $newOrder = $minOrder > 1 ? $minOrder - 1 : 0;
         
         Iklan::create([
             'image_path' => $path,
             'link_iklan' => $link,
             'territorial' => $territorial,
-            'order' => $maxOrder + 1,
+            'order' => $newOrder,
         ]);
 
         return redirect()
@@ -110,9 +123,12 @@ class IklanController extends Controller
             'orders.*' => ['required', 'integer', 'exists:iklans,id'],
         ]);
 
-        foreach ($request->orders as $order => $id) {
-            Iklan::where('id', $id)->update(['order' => $order + 1]);
-        }
+        // Use database transaction to ensure atomic updates
+        DB::transaction(function () use ($request) {
+            foreach ($request->orders as $order => $id) {
+                Iklan::where('id', $id)->update(['order' => $order + 1]);
+            }
+        });
 
         return response()->json([
             'success' => true,

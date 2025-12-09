@@ -33,8 +33,9 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'diskon_free'       => 'nullable|in:0,1',
                 'subsidy_enabled'   => 'nullable|in:0,1',
-                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|string',
                 'diamond_enabled'   => 'nullable|in:0,1',
                 'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
@@ -50,14 +51,14 @@ class KeywordController extends Controller
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
-            if (empty($request->diskon_percent) && empty($request->diskon_rupiah)) {
+            if (empty($request->diskon_percent) && empty($request->diskon_rupiah) && empty($request->diskon_free)) {
                 if ($request->wantsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'
+                        'message' => 'Silakan isi salah satu dari diskon (persen, rupiah, atau free)'
                     ], 422);
                 }
-                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'])->withInput();
+                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen, rupiah, atau free)'])->withInput();
             }
 
             // Validasi start date tidak boleh melebihi end date
@@ -75,7 +76,9 @@ class KeywordController extends Controller
 
             // Format diskon
             $diskon = '';
-            if ($request->diskon_percent) {
+            if (!empty($request->diskon_free)) {
+                $diskon = 'FREE';
+            } elseif ($request->diskon_percent) {
                 // Jika diskon 100%, tampilkan sebagai "FREE"
                 if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
                     $diskon = 'FREE';
@@ -86,16 +89,68 @@ class KeywordController extends Controller
                 $diskon = 'Rp ' . number_format($request->diskon_rupiah, 0, ',', '.');
             }
 
-            // Handle subsidy amount
+            // Initialize subsidy and diamond amounts to null to ensure they're always defined
             $subsidyAmount = null;
-            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
-                // Hapus format rupiah (titik sebagai pemisah ribuan)
-                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
-                $subsidyAmount = (float) $subsidyAmount;
+            $diamondAmount = null;
+
+            // Handle subsidy amount
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount !== null && $request->subsidy_amount !== '') {
+                // Handle format rupiah: hapus thousands separator (titik) tanpa merusak decimal separator
+                $amount = trim($request->subsidy_amount);
+                
+                // Jika menggunakan format Indonesia (koma sebagai decimal separator)
+                if (strpos($amount, ',') !== false) {
+                    // Ganti koma dengan titik untuk decimal separator
+                    $amount = str_replace(',', '.', $amount);
+                }
+                
+                // Hapus thousands separator (titik) tanpa merusak decimal separator
+                $dotCount = substr_count($amount, '.');
+                
+                if ($dotCount > 1) {
+                    // Multiple titik = ada thousands separator
+                    // Hapus semua titik kecuali yang terakhir (decimal separator)
+                    $parts = explode('.', $amount);
+                    $lastPart = array_pop($parts);
+                    $amount = implode('', $parts) . '.' . $lastPart;
+                } elseif ($dotCount == 1) {
+                    // Hanya 1 titik - cek apakah decimal atau thousands separator
+                    $parts = explode('.', $amount);
+                    if (count($parts) == 2) {
+                        $afterDot = $parts[1];
+                        // Jika bagian setelah titik adalah 3 digit, kemungkinan thousands separator
+                        // Jika 1-2 digit, kemungkinan decimal separator
+                        if (strlen($afterDot) == 3 && is_numeric($afterDot)) {
+                            // 3 digit = thousands separator, hapus titik
+                            $amount = implode('', $parts);
+                        }
+                        // Jika 1-2 digit, biarkan sebagai decimal separator
+                    }
+                } else {
+                    // Tidak ada titik, hapus semua titik (jika ada dari format lain)
+                    $amount = str_replace('.', '', $amount);
+                }
+                
+                // Validate parsed amount is numeric and >= 0
+                // Remove all non-numeric characters except decimal point for validation
+                $cleanAmount = preg_replace('/[^0-9.]/', '', $amount);
+                $parsedAmount = (float) $cleanAmount;
+                
+                // Check if the parsed value is valid (not NaN, not infinite, and >= 0)
+                if (!is_finite($parsedAmount) || $parsedAmount < 0) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nominal subsidi harus berupa angka positif'
+                        ], 422);
+                    }
+                    return back()->withErrors(['subsidy_amount' => 'Nominal subsidi harus berupa angka positif'])->withInput();
+                }
+                
+                $subsidyAmount = $parsedAmount;
             }
 
             // Handle diamond amount
-            $diamondAmount = null;
             if ($request->diamond_enabled == '1' && $request->diamond_amount) {
                 $diamondAmount = (int) $request->diamond_amount;
             }
@@ -173,8 +228,9 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'diskon_free'       => 'nullable|in:0,1',
                 'subsidy_enabled'   => 'nullable|in:0,1',
-                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|string',
                 'diamond_enabled'   => 'nullable|in:0,1',
                 'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
@@ -189,8 +245,8 @@ class KeywordController extends Controller
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
-            if (empty($request->diskon_percent) && empty($request->diskon_rupiah)) {
-                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen atau rupiah)'])->withInput();
+            if (empty($request->diskon_percent) && empty($request->diskon_rupiah) && empty($request->diskon_free)) {
+                return back()->withErrors(['diskon' => 'Silakan isi salah satu dari diskon (persen, rupiah, atau free)'])->withInput();
             }
 
             // Validasi start date tidak boleh melebihi end date
@@ -202,7 +258,9 @@ class KeywordController extends Controller
 
             // Format diskon
             $diskon = '';
-            if ($request->diskon_percent) {
+            if (!empty($request->diskon_free)) {
+                $diskon = 'FREE';
+            } elseif ($request->diskon_percent) {
                 // Jika diskon 100%, tampilkan sebagai "FREE"
                 if ($request->diskon_percent == 100 || $request->diskon_percent == '100') {
                     $diskon = 'FREE';
@@ -215,10 +273,54 @@ class KeywordController extends Controller
 
             // Handle subsidy amount
             $subsidyAmount = null;
-            if ($request->subsidy_enabled == '1' && $request->subsidy_amount) {
-                // Hapus format rupiah (titik sebagai pemisah ribuan)
-                $subsidyAmount = str_replace('.', '', $request->subsidy_amount);
-                $subsidyAmount = (float) $subsidyAmount;
+            if ($request->subsidy_enabled == '1' && $request->subsidy_amount !== null && $request->subsidy_amount !== '') {
+                // Handle format rupiah: hapus thousands separator (titik) tanpa merusak decimal separator
+                $amount = trim($request->subsidy_amount);
+                
+                // Jika menggunakan format Indonesia (koma sebagai decimal separator)
+                if (strpos($amount, ',') !== false) {
+                    // Ganti koma dengan titik untuk decimal separator
+                    $amount = str_replace(',', '.', $amount);
+                }
+                
+                // Hapus thousands separator (titik) tanpa merusak decimal separator
+                $dotCount = substr_count($amount, '.');
+                
+                if ($dotCount > 1) {
+                    // Multiple titik = ada thousands separator
+                    // Hapus semua titik kecuali yang terakhir (decimal separator)
+                    $parts = explode('.', $amount);
+                    $lastPart = array_pop($parts);
+                    $amount = implode('', $parts) . '.' . $lastPart;
+                } elseif ($dotCount == 1) {
+                    // Hanya 1 titik - cek apakah decimal atau thousands separator
+                    $parts = explode('.', $amount);
+                    if (count($parts) == 2) {
+                        $afterDot = $parts[1];
+                        // Jika bagian setelah titik adalah 3 digit, kemungkinan thousands separator
+                        // Jika 1-2 digit, kemungkinan decimal separator
+                        if (strlen($afterDot) == 3 && is_numeric($afterDot)) {
+                            // 3 digit = thousands separator, hapus titik
+                            $amount = implode('', $parts);
+                        }
+                        // Jika 1-2 digit, biarkan sebagai decimal separator
+                    }
+                } else {
+                    // Tidak ada titik, hapus semua titik (jika ada dari format lain)
+                    $amount = str_replace('.', '', $amount);
+                }
+                
+                // Validate parsed amount is numeric and >= 0
+                // Remove all non-numeric characters except decimal point for validation
+                $cleanAmount = preg_replace('/[^0-9.]/', '', $amount);
+                $parsedAmount = (float) $cleanAmount;
+                
+                // Check if the parsed value is valid (not NaN, not infinite, and >= 0)
+                if (!is_finite($parsedAmount) || $parsedAmount < 0) {
+                    return back()->withErrors(['subsidy_amount' => 'Nominal subsidi harus berupa angka positif'])->withInput();
+                }
+                
+                $subsidyAmount = $parsedAmount;
             }
 
             // Handle diamond amount
@@ -316,8 +418,6 @@ class KeywordController extends Controller
         $searchTerm = trim($request->get('q', ''));
         $status = $request->get('status');
         $merchantId = $request->get('merchant_id');
-        $keywordPage = $request->get('keyword_page', 1);
-        $merchantPage = $request->get('merchant_page', 1);
 
         $keywordsQuery = Keyword::with('merchant')
             ->when($merchantId, function ($query) use ($merchantId) {
@@ -343,16 +443,16 @@ class KeywordController extends Controller
             ->orderBy('id');
 
         // Paginate dengan parameter keyword_page yang terpisah
-        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        // Let Laravel automatically read the page number from the request using the page name
+        // Buat query params untuk appends, hanya tambahkan merchant_page jika ada di request
         $keywordQueryParams = $request->query();
-        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
-        if ($request->has('merchant_page')) {
+        // Hanya tambahkan merchant_page jika benar-benar ada di request (bukan null)
+        if ($request->has('merchant_page') && $request->get('merchant_page') !== null) {
             $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
         }
         
         $keywords = $keywordsQuery
-            ->paginate(10, ['*'], 'keyword_page', $keywordPage)
-            ->setPageName('keyword_page')
+            ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
 
         if ($request->ajax()) {
@@ -372,16 +472,16 @@ class KeywordController extends Controller
             }
         }
 
-        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        // Buat query params untuk appends, hanya tambahkan keyword_page jika ada di request
         $merchantQueryParams = $request->query();
-        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
-        if ($request->has('keyword_page')) {
+        // Hanya tambahkan keyword_page jika benar-benar ada di request (bukan null)
+        if ($request->has('keyword_page') && $request->get('keyword_page') !== null) {
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Let Laravel automatically read the page number from the request using the page name
         $merchants = Merchant::orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page', $merchantPage)
-            ->setPageName('merchant_page')
+            ->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
 
@@ -490,55 +590,10 @@ class KeywordController extends Controller
             });
         }
         
-        // Date filter (filter by start_date dan end_date keyword, sama seperti di keyword)
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        
-        if ($startDate && $endDate) {
-            // Filter keyword yang periodenya berada dalam range yang dipilih
-            $query->where(function ($q) use ($startDate, $endDate) {
-                $q->where(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang start_date dan end_date berada dalam range
-                    $subQuery->whereNotNull('start_date')
-                             ->whereNotNull('end_date')
-                             ->where('start_date', '>=', $startDate)
-                             ->where('end_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang hanya punya start_date
-                    $subQuery->whereNotNull('start_date')
-                             ->whereNull('end_date')
-                             ->where('start_date', '>=', $startDate)
-                             ->where('start_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($startDate, $endDate) {
-                    // Keyword yang hanya punya end_date
-                    $subQuery->whereNull('start_date')
-                             ->whereNotNull('end_date')
-                             ->where('end_date', '>=', $startDate)
-                             ->where('end_date', '<=', $endDate);
-                });
-            });
-        } elseif ($startDate) {
-            // Hanya start date filter
-            $query->where(function ($q) use ($startDate) {
-                $q->where(function ($subQuery) use ($startDate) {
-                    $subQuery->whereNotNull('start_date')
-                             ->where('start_date', '>=', $startDate);
-                })->orWhere(function ($subQuery) use ($startDate) {
-                    $subQuery->whereNotNull('end_date')
-                             ->where('end_date', '>=', $startDate);
-                });
-            });
-        } elseif ($endDate) {
-            // Hanya end date filter
-            $query->where(function ($q) use ($endDate) {
-                $q->where(function ($subQuery) use ($endDate) {
-                    $subQuery->whereNotNull('start_date')
-                             ->where('start_date', '<=', $endDate);
-                })->orWhere(function ($subQuery) use ($endDate) {
-                    $subQuery->whereNotNull('end_date')
-                             ->where('end_date', '<=', $endDate);
-                });
-            });
+        // Date filter (single date, sama seperti di withdraw-approval)
+        $date = $request->get('date');
+        if ($date) {
+            $query->whereDate('created_at', $date);
         }
         
         $keywords = $query->orderBy('id', 'desc')->paginate(10);
