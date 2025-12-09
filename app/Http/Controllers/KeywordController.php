@@ -33,8 +33,9 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'diskon_free'       => 'nullable|in:0,1',
                 'subsidy_enabled'   => 'nullable|in:0,1',
-                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|string',
                 'diamond_enabled'   => 'nullable|in:0,1',
                 'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
@@ -130,7 +131,23 @@ class KeywordController extends Controller
                     $amount = str_replace('.', '', $amount);
                 }
                 
-                $subsidyAmount = (float) $amount;
+                // Validate parsed amount is numeric and >= 0
+                // Remove all non-numeric characters except decimal point for validation
+                $cleanAmount = preg_replace('/[^0-9.]/', '', $amount);
+                $parsedAmount = (float) $cleanAmount;
+                
+                // Check if the parsed value is valid (not NaN, not infinite, and >= 0)
+                if (!is_finite($parsedAmount) || $parsedAmount < 0) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nominal subsidi harus berupa angka positif'
+                        ], 422);
+                    }
+                    return back()->withErrors(['subsidy_amount' => 'Nominal subsidi harus berupa angka positif'])->withInput();
+                }
+                
+                $subsidyAmount = $parsedAmount;
             }
 
             // Handle diamond amount
@@ -211,8 +228,9 @@ class KeywordController extends Controller
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
+                'diskon_free'       => 'nullable|in:0,1',
                 'subsidy_enabled'   => 'nullable|in:0,1',
-                'subsidy_amount'    => 'required_if:subsidy_enabled,1|numeric|min:0',
+                'subsidy_amount'    => 'required_if:subsidy_enabled,1|string',
                 'diamond_enabled'   => 'nullable|in:0,1',
                 'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
@@ -292,7 +310,17 @@ class KeywordController extends Controller
                     $amount = str_replace('.', '', $amount);
                 }
                 
-                $subsidyAmount = (float) $amount;
+                // Validate parsed amount is numeric and >= 0
+                // Remove all non-numeric characters except decimal point for validation
+                $cleanAmount = preg_replace('/[^0-9.]/', '', $amount);
+                $parsedAmount = (float) $cleanAmount;
+                
+                // Check if the parsed value is valid (not NaN, not infinite, and >= 0)
+                if (!is_finite($parsedAmount) || $parsedAmount < 0) {
+                    return back()->withErrors(['subsidy_amount' => 'Nominal subsidi harus berupa angka positif'])->withInput();
+                }
+                
+                $subsidyAmount = $parsedAmount;
             }
 
             // Handle diamond amount
@@ -416,10 +444,10 @@ class KeywordController extends Controller
 
         // Paginate dengan parameter keyword_page yang terpisah
         // Let Laravel automatically read the page number from the request using the page name
-        // Buat query params untuk appends, pastikan merchant_page tetap ada
+        // Buat query params untuk appends, hanya tambahkan merchant_page jika ada di request
         $keywordQueryParams = $request->query();
-        // Pastikan merchant_page tetap ada jika sebelumnya ada di request
-        if ($request->has('merchant_page')) {
+        // Hanya tambahkan merchant_page jika benar-benar ada di request (bukan null)
+        if ($request->has('merchant_page') && $request->get('merchant_page') !== null) {
             $keywordQueryParams['merchant_page'] = $request->get('merchant_page');
         }
         
@@ -444,10 +472,10 @@ class KeywordController extends Controller
             }
         }
 
-        // Buat query params untuk appends, pastikan keyword_page tetap ada
+        // Buat query params untuk appends, hanya tambahkan keyword_page jika ada di request
         $merchantQueryParams = $request->query();
-        // Pastikan keyword_page tetap ada jika sebelumnya ada di request
-        if ($request->has('keyword_page')) {
+        // Hanya tambahkan keyword_page jika benar-benar ada di request (bukan null)
+        if ($request->has('keyword_page') && $request->get('keyword_page') !== null) {
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
