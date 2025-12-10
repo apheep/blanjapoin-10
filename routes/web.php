@@ -24,6 +24,9 @@ Route::get('/', function () {
     $keywords = Keyword::with('merchant')
         ->where('is_active', 1)
         ->where('status', 'approve')
+        ->whereHas('merchant', function ($query) {
+            $query->where('is_active', 1);
+        })
         ->get();
     // Get iklans - only show iklans without territorial (null) for home page
     $iklans = Iklan::whereNull('territorial')
@@ -192,6 +195,9 @@ Route::middleware(['auth'])->group(function () {
         $keywords = Keyword::with('merchant')
             ->where('is_active', 1)
             ->where('status', 'approve')
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->get();
         // Get iklans - only show iklans without territorial (null) for home page
     $iklans = Iklan::whereNull('territorial')
