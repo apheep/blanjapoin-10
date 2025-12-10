@@ -166,6 +166,12 @@ class KeywordController extends Controller
                 $imagePath = $request->file('image')->store('keywords', 'public');
             }
 
+            // Determine status: if subsidy_enabled is 0 (no), auto-approve
+            $status = $request->status ?? 'pending';
+            if ($request->subsidy_enabled == '0' || $request->subsidy_enabled === 0 || $subsidyAmount === null) {
+                $status = 'approve';
+            }
+
             // Create keyword
             $keyword = Keyword::create([
                 'merchant_key'  => $request->merchant_key,
@@ -181,7 +187,7 @@ class KeywordController extends Controller
                 'end_date'      => $endDate,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
-                'status'        => $request->status ?? 'pending',
+                'status'        => $status,
             ]);
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -341,6 +347,12 @@ class KeywordController extends Controller
                 $imagePath = $keyword->image;
             }
 
+            // Determine status: if subsidy_enabled is 0 (no), auto-approve
+            $status = $request->status ?? $keyword->status;
+            if ($request->subsidy_enabled == '0' || $request->subsidy_enabled === 0 || $subsidyAmount === null) {
+                $status = 'approve';
+            }
+
             // Update keyword
             $keyword->update([
                 'merchant_key'  => $request->merchant_key,
@@ -356,7 +368,7 @@ class KeywordController extends Controller
                 'end_date'      => $request->end_date,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
-                'status'        => $request->status ?? 'pending',
+                'status'        => $status,
             ]);
 
             if ($request->wantsJson()) {
@@ -571,10 +583,12 @@ class KeywordController extends Controller
 
     public function spesialPromoForm(Request $request)
     {
+        // Query SEMUA keyword dengan status approve, termasuk yang sudah ada di database
+        // Tidak ada batasan apapun kecuali status = 'approve'
         $query = Keyword::with('merchant')
             ->where('status', 'approve');
         
-        // Search filter (sama seperti di keyword search)
+        // Search filter - hanya aktif jika ada search term
         $searchTerm = trim($request->get('q', ''));
         if ($searchTerm !== '') {
             $query->where(function ($q) use ($searchTerm) {
@@ -591,12 +605,15 @@ class KeywordController extends Controller
             });
         }
         
-        // Date filter (single date, sama seperti di withdraw-approval)
+        // Date filter - hanya aktif jika ada parameter date
+        // Jika tidak ada filter date, tampilkan SEMUA keyword dengan status approve
         $date = $request->get('date');
         if ($date) {
             $query->whereDate('created_at', $date);
         }
         
+        // Order by id desc - menampilkan semua keyword approved tanpa batasan
+        // Pagination 10 per page, tapi semua data akan muncul di halaman-halaman berikutnya
         $keywords = $query->orderBy('id', 'desc')->paginate(10);
         
         // Hitung jumlah keyword yang sudah aktif sebagai spesial promo

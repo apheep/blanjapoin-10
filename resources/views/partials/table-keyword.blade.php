@@ -76,7 +76,13 @@
 
                         @if(Auth::check() && Auth::user()->can_approve == 1)
                             <td id="keyword-action-{{ $keyword->id }}" class="px-4 py-4">
-                                @if($keyword->status === 'approve')
+                                {{-- Jika subsidy disabled (subsidy_amount null), langsung tampilkan approved tanpa approve/reject --}}
+                                @if($keyword->subsidy_amount === null)
+                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
+                                        <i class="fas fa-check-circle text-green-600"></i>
+                                        <span>Approved</span>
+                                    </div>
+                                @elseif($keyword->status === 'approve')
                                     <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
                                         <i class="fas fa-check-circle text-green-600"></i>
                                         <span>Approved</span>
@@ -87,6 +93,7 @@
                                         <span>Rejected</span>
                                     </div>
                                 @else
+                                    {{-- Tampilkan approve/reject hanya jika subsidy enabled dan status pending --}}
                                     <div class="flex items-center gap-2">
                                         <button onclick="showApproveConfirmation('Keyword',{{ json_encode($keyword->nama_produk) }},{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
                                         <button onclick="showRejectConfirmation('Keyword',{{ json_encode($keyword->nama_produk) }},{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Reject"><i class="fas fa-times text-sm"></i></button>
