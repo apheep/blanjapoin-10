@@ -77,13 +77,13 @@ class IklanController extends Controller
         }
 
         // Get the minimum order value and subtract 1 to place new items at the top
-        // This matches the migration pattern where newest items have order=1 (descending created_at)
-        // Ensure we don't create negative values
-        $minOrder = Iklan::min('order') ?? 1;
+        // System uses 0-based ordering where lower values appear first (orderBy('order', 'asc'))
+        // New items should get order = minOrder - 1 to appear before all existing items
+        $minOrder = Iklan::min('order') ?? 0;
         
-        // If minOrder is 1 or less, new items get order 0 (will appear first when sorted ascending)
-        // If minOrder > 1, new items get minOrder - 1 (will appear before current minimum)
-        $newOrder = $minOrder > 1 ? $minOrder - 1 : 0;
+        // New items get minOrder - 1 to appear before all existing items
+        // This allows negative values which will appear first when sorted ascending
+        $newOrder = $minOrder - 1;
         
         Iklan::create([
             'image_path' => $path,
@@ -124,9 +124,11 @@ class IklanController extends Controller
         ]);
 
         // Use database transaction to ensure atomic updates
+        // Frontend sends 0-based array indices which should be used directly as order values
+        // Lower order values appear first when sorted ascending (orderBy('order', 'asc'))
         DB::transaction(function () use ($request) {
             foreach ($request->orders as $order => $id) {
-                Iklan::where('id', $id)->update(['order' => $order + 1]);
+                Iklan::where('id', $id)->update(['order' => $order]);
             }
         });
 

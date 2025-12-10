@@ -29,6 +29,7 @@
                         $keyword->merchant && 
                         $keyword->status === 'approve' && 
                         $keyword->is_active == 1 &&
+                        $keyword->merchant->is_active == 1 &&
                         ($keyword->is_special_promo ?? 0) == 1
                     )
                     ->take(4);

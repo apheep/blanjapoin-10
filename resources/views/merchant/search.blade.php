@@ -125,9 +125,19 @@
                                 </div>
                                 @endif
                             </div>
-                            <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="mt-2 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs">
+                            @php
+                                $canRedeem = !$result->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($result->start_date)->startOfDay());
+                                $startDateFormatted = $result->start_date ? \Carbon\Carbon::parse($result->start_date)->format('d-M-y') : '';
+                            @endphp
+                            @if($canRedeem)
+                            <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="mt-2 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1.5 px-3 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[10px]">
                                 Redeem
                             </button>
+                            @else
+                            <button disabled class="mt-2 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1.5 px-3 rounded-lg cursor-not-allowed text-[10px]">
+                                Open {{ $startDateFormatted }}
+                            </button>
+                            @endif
                         </div>
                     </div>
 
@@ -205,9 +215,19 @@
                                         </span>
                                     </div>
                                 </div>
+                                @php
+                                    $canRedeem = !$result->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($result->start_date)->startOfDay());
+                                    $startDateFormatted = $result->start_date ? \Carbon\Carbon::parse($result->start_date)->format('d-M-y') : '';
+                                @endphp
+                                @if($canRedeem)
                                 <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2.5 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base">
                                     Redeem
                                 </button>
+                                @else
+                                <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2.5 px-4 rounded-lg cursor-not-allowed text-sm md:text-base">
+                                    Open {{ $startDateFormatted }}
+                                </button>
+                                @endif
                             </div>
                         </div>
                     </div>
