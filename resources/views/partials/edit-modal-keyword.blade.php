@@ -54,22 +54,65 @@
 
                         <!-- Row 4: Diskon (Persen + Rupiah + Free) -->
                         <div class="md:col-span-2">
-                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Diskon <span class="text-red-500">*</span> (Pilih salah satu)</label>
-                            <div class="grid grid-cols-3 gap-3">
-                                <div class="flex items-center gap-2">
-                                    <input type="number" name="diskon_percent" id="editDiskonPercent" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="0" min="0" max="100" onchange="handleEditPercentRupiahChange()">
-                                    <span class="text-gray-600 font-medium">%</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-gray-600 font-medium">Rp</span>
-                                    <input type="number" name="diskon_rupiah" id="editDiskonRupiah" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="0" onchange="handleEditPercentRupiahChange()">
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <input type="checkbox" name="diskon_free" id="editDiskonFree" value="free" class="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-400 transition-all duration-300 ease-out transform translate-y-2 opacity-0" onchange="handleEditFreeChange()">
-                                    <label for="editDiskonFree" class="text-gray-600 font-medium cursor-pointer">Free</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Diskon <span class="text-red-500">*</span> (Pilih salah satu)</label>
+                            
+                            <!-- Radio buttons untuk memilih jenis diskon -->
+                            <div class="flex items-center gap-4 mb-3">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="diskon_type" value="percent" id="editDiskonTypePercent" checked onchange="toggleEditDiskonType()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">Persen (%)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="diskon_type" value="rupiah" id="editDiskonTypeRupiah" onchange="toggleEditDiskonType()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">Rupiah (Rp)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="diskon_type" value="free" id="editDiskonTypeFree" onchange="toggleEditDiskonType()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">Free</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Input fields untuk diskon -->
+                            <div id="editDiskonPercentContainer" class="flex items-center gap-2">
+                                <span class="w-12 text-center text-gray-600 font-medium shrink-0">%</span>
+                                <input type="text" name="diskon_percent" id="editDiskonPercent" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="0" min="0" max="100" onchange="validateEditDiskon()">
+                            </div>
+                            <div id="editDiskonRupiahContainer" class="hidden flex items-center gap-2">
+                                <span class="w-12 text-center text-gray-600 font-medium shrink-0">Rp</span>
+                                <input type="text" name="diskon_rupiah" id="editDiskonRupiah" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="0" onchange="validateEditDiskon()">
+                            </div>
+                            <div id="editDiskonFreeContainer" class="hidden">
+                                <div class="px-4 py-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <p class="text-sm text-green-700 font-medium flex items-center gap-2">
+                                        <i class="fas fa-gift text-green-600"></i>
+                                        Produk ini akan ditandai sebagai <strong>FREE</strong>
+                                    </p>
                                 </div>
                             </div>
-                            <p id="editDiskonError" class="text-red-500 text-xs mt-1 hidden">Silakan isi salah satu dari diskon (persen, rupiah, atau free)</p>
+                            <p id="editDiskonError" class="text-red-500 text-xs mt-1 hidden">Silakan pilih salah satu jenis diskon (persen, rupiah, atau free)</p>
+                        </div>
+
+                        <!-- Row 4.5: Subsidi Diskon -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Subsidi Diskon</label>
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="subsidy_enabled" value="0" id="editSubsidyEnabledNo" checked onchange="toggleEditSubsidyAmount()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">No</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="subsidy_enabled" value="1" id="editSubsidyEnabledYes" onchange="toggleEditSubsidyAmount()" class="w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <span class="text-sm text-gray-700">Yes</span>
+                                </label>
+                            </div>
+                            <div id="editSubsidyAmountContainer" class="mt-3 hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Nominal Subsidi (Rupiah) <span class="text-red-500">*</span></label>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-12 text-center text-gray-600 font-medium shrink-0">Rp</span>
+                                    <input type="text" name="subsidy_amount" id="editSubsidyAmount" class="flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="0" inputmode="numeric" oninput="formatEditRupiahInput(this)">
+                                </div>
+                                <p id="editSubsidyAmountError" class="text-red-500 text-xs mt-1 hidden">Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes</p>
+                            </div>
                         </div>
 
                         <!-- Row 5: Stock -->
@@ -201,25 +244,33 @@ function openEditKeyword(id, keywordData) {
     const diskonStr = keywordData.diskon || '';
     const diskonPercent = document.getElementById('editDiskonPercent');
     const diskonRupiah = document.getElementById('editDiskonRupiah');
-    const diskonFree = document.getElementById('editDiskonFree');
+    const diskonTypePercent = document.getElementById('editDiskonTypePercent');
+    const diskonTypeRupiah = document.getElementById('editDiskonTypeRupiah');
+    const diskonTypeFree = document.getElementById('editDiskonTypeFree');
     
     // Reset semua field diskon
     diskonPercent.value = '';
     diskonRupiah.value = '';
-    diskonFree.checked = false;
-    diskonPercent.disabled = false;
-    diskonRupiah.disabled = false;
     
     if (diskonStr.toLowerCase().includes('free') || diskonStr.toLowerCase() === 'gratis') {
-        diskonFree.checked = true;
-        diskonPercent.disabled = true;
-        diskonRupiah.disabled = true;
+        diskonTypeFree.checked = true;
+        toggleEditDiskonType();
     } else if (diskonStr.includes('%')) {
         const percent = diskonStr.replace('%', '').trim();
         diskonPercent.value = percent;
+        diskonTypePercent.checked = true;
+        toggleEditDiskonType();
     } else if (diskonStr.includes('Rp')) {
         const rupiah = diskonStr.replace('Rp', '').replace(/\./g, '').replace(/,/g, '').trim();
         diskonRupiah.value = rupiah;
+        diskonTypeRupiah.checked = true;
+        toggleEditDiskonType();
+    } else {
+        // Default to percent if no valid diskon data
+        if (diskonTypePercent) {
+            diskonTypePercent.checked = true;
+        }
+        toggleEditDiskonType();
     }
     
     // Show current image if exists
@@ -241,12 +292,56 @@ function openEditKeyword(id, keywordData) {
     document.getElementById('editKeywordImagesPreview').classList.add('hidden');
     document.getElementById('editKeywordImagesText').textContent = 'Click to upload image';
     
+    // Ensure diskon type is properly displayed
+    setTimeout(() => {
+        toggleEditDiskonType();
+    }, 50);
+    
+    // Parse and populate subsidy data
+    setTimeout(() => {
+        const subsidyEnabled = keywordData.subsidy_enabled === 1 || keywordData.subsidy_enabled === '1' || keywordData.subsidy_enabled === true;
+        const subsidyAmount = keywordData.subsidy_amount || '';
+        
+        if (subsidyEnabled) {
+            const subsidyYesRadio = document.getElementById('editSubsidyEnabledYes');
+            if (subsidyYesRadio) {
+                subsidyYesRadio.checked = true;
+                
+                // Set nilai sebelum toggle agar nilai terlihat saat container muncul
+                const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+                if (subsidyAmountInput) {
+                    if (subsidyAmount && subsidyAmount !== '' && subsidyAmount !== '0') {
+                        // Format nilai subsidi dengan titik sebagai pemisah ribuan
+                        const numericValue = subsidyAmount.toString().replace(/[^\d]/g, '');
+                        if (numericValue) {
+                            subsidyAmountInput.value = parseInt(numericValue, 10).toLocaleString('id-ID');
+                        }
+                    } else {
+                        // Set default "0" jika tidak ada nilai
+                        subsidyAmountInput.value = '0';
+                    }
+                }
+                
+                // Toggle untuk menampilkan container
+                toggleEditSubsidyAmount();
+            }
+        } else {
+            const subsidyNoRadio = document.getElementById('editSubsidyEnabledNo');
+            if (subsidyNoRadio) {
+                subsidyNoRadio.checked = true;
+            }
+            toggleEditSubsidyAmount();
+        }
+    }, 60);
+    
     // Show modal with animation
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     
-    const formElements = modalContent.querySelectorAll('input, select, textarea, button, label, p, h3');
+    const formElements = modalContent.querySelectorAll('input, select, textarea, label, p, h3');
+    const buttons = modalContent.querySelectorAll('button');
     formElements.forEach(el => { el.style.transform = 'translateY(10px)'; el.style.opacity = '0'; });
+    buttons.forEach(btn => { btn.style.transform = 'translateY(10px)'; btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; });
     const backdrop = modal.querySelector('.fixed');
     backdrop.style.opacity = '0';
     
@@ -257,6 +352,13 @@ function openEditKeyword(id, keywordData) {
                 el.style.transform = 'translateY(0)';
                 el.style.opacity = '1';
             }, index * 30);
+        });
+        buttons.forEach((btn, index) => {
+            setTimeout(() => {
+                btn.style.transform = 'translateY(0)';
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }, (formElements.length + index) * 30);
         });
         if (modalContent) {
             modalContent.style.transform = 'scale(1)';
@@ -269,10 +371,12 @@ function closeEditKeyword() {
     const modal = document.getElementById('editModalKeyword');
     const modalContent = modal.querySelector('.relative');
     const backdrop = modal.querySelector('.fixed');
-    const formElements = modalContent.querySelectorAll('input, select, textarea, button, label, p, h3');
+    const formElements = modalContent.querySelectorAll('input, select, textarea, label, p, h3');
+    const buttons = modalContent.querySelectorAll('button');
     
     backdrop.style.opacity = '0';
     formElements.forEach(el => { el.style.transform = 'translateY(10px)'; el.style.opacity = '0'; });
+    buttons.forEach(btn => { btn.style.transform = 'translateY(10px)'; btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; });
     if (modalContent) { modalContent.style.transform = 'scale(0.95)'; modalContent.style.opacity = '0'; }
     
     setTimeout(() => {
@@ -280,7 +384,35 @@ function closeEditKeyword() {
         document.body.style.overflow = '';
         const form = document.getElementById('formEditKeyword');
         if (form) form.reset();
+        
+        // Reset diskon type to default (percent)
+        const diskonTypePercent = document.getElementById('editDiskonTypePercent');
+        if (diskonTypePercent) {
+            diskonTypePercent.checked = true;
+            toggleEditDiskonType();
+        }
+        const diskonError = document.getElementById('editDiskonError');
+        if (diskonError) {
+            diskonError.classList.add('hidden');
+        }
+        
+        // Reset subsidy container
+        const subsidyAmountContainer = document.getElementById('editSubsidyAmountContainer');
+        if (subsidyAmountContainer) {
+            subsidyAmountContainer.classList.add('hidden');
+        }
+        const subsidyError = document.getElementById('editSubsidyAmountError');
+        if (subsidyError) {
+            subsidyError.classList.add('hidden');
+        }
+        const subsidyEnabledNo = document.getElementById('editSubsidyEnabledNo');
+        if (subsidyEnabledNo) {
+            subsidyEnabledNo.checked = true;
+        }
+        toggleEditSubsidyAmount();
+        
         formElements.forEach(el => { el.style.transform = 'translateY(10px)'; el.style.opacity = '0'; });
+        buttons.forEach(btn => { btn.style.transform = 'translateY(10px)'; btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; });
         if (modalContent) { modalContent.style.transform = 'scale(0.95)'; modalContent.style.opacity = '0'; }
         if (backdrop) backdrop.style.opacity = '0';
     }, 400);
@@ -298,49 +430,93 @@ function updateEditProductName() {
     }
 }
 
-function validateEditDiskon() {
-    const diskonPercent = document.getElementById('editDiskonPercent').value;
-    const diskonRupiah = document.getElementById('editDiskonRupiah').value;
-    const diskonFree = document.getElementById('editDiskonFree').checked;
+// Fungsi untuk toggle jenis diskon
+function toggleEditDiskonType() {
+    const form = document.getElementById('formEditKeyword');
+    const diskonType = form ? form.querySelector('input[name="diskon_type"]:checked') : document.querySelector('input[name="diskon_type"]:checked');
+    const percentContainer = document.getElementById('editDiskonPercentContainer');
+    const rupiahContainer = document.getElementById('editDiskonRupiahContainer');
+    const freeContainer = document.getElementById('editDiskonFreeContainer');
+    const diskonPercent = document.getElementById('editDiskonPercent');
+    const diskonRupiah = document.getElementById('editDiskonRupiah');
     const errorMsg = document.getElementById('editDiskonError');
     
-    if (!diskonPercent && !diskonRupiah && !diskonFree) {
-        errorMsg.classList.remove('hidden');
+    if (!diskonType) {
+        // Default to percent if no selection
+        const defaultPercent = document.getElementById('editDiskonTypePercent');
+        if (defaultPercent && percentContainer) {
+            defaultPercent.checked = true;
+            percentContainer.classList.remove('hidden');
+            if (rupiahContainer) rupiahContainer.classList.add('hidden');
+            if (freeContainer) freeContainer.classList.add('hidden');
+        }
+        return;
+    }
+    
+    // Hide all containers first
+    if (percentContainer) percentContainer.classList.add('hidden');
+    if (rupiahContainer) rupiahContainer.classList.add('hidden');
+    if (freeContainer) freeContainer.classList.add('hidden');
+    
+    // Clear inputs when switching types
+    if (diskonType.value === 'percent') {
+        if (diskonRupiah) diskonRupiah.value = '';
+    } else if (diskonType.value === 'rupiah') {
+        if (diskonPercent) diskonPercent.value = '';
+    } else if (diskonType.value === 'free') {
+        if (diskonPercent) diskonPercent.value = '';
+        if (diskonRupiah) diskonRupiah.value = '';
+    }
+    
+    // Show selected container
+    if (diskonType.value === 'percent') {
+        if (percentContainer) percentContainer.classList.remove('hidden');
+    } else if (diskonType.value === 'rupiah') {
+        if (rupiahContainer) rupiahContainer.classList.remove('hidden');
+    } else if (diskonType.value === 'free') {
+        if (freeContainer) freeContainer.classList.remove('hidden');
+    }
+    
+    // Hide error message when switching types
+    if (errorMsg) errorMsg.classList.add('hidden');
+    
+    // Validate after toggle
+    validateEditDiskon();
+}
+
+// Fungsi untuk validasi diskon
+function validateEditDiskon() {
+    const form = document.getElementById('formEditKeyword');
+    const diskonType = form ? form.querySelector('input[name="diskon_type"]:checked') : document.querySelector('input[name="diskon_type"]:checked');
+    const diskonPercent = document.getElementById('editDiskonPercent');
+    const diskonRupiah = document.getElementById('editDiskonRupiah');
+    const errorMsg = document.getElementById('editDiskonError');
+    
+    if (!diskonType) {
+        if (errorMsg) errorMsg.classList.remove('hidden');
         return false;
-    } else {
-        errorMsg.classList.add('hidden');
+    }
+    
+    if (diskonType.value === 'free') {
+        // Free is always valid
+        if (errorMsg) errorMsg.classList.add('hidden');
         return true;
+    } else if (diskonType.value === 'percent') {
+        const percentValue = diskonPercent ? diskonPercent.value : '';
+        if (!percentValue || percentValue <= 0) {
+            if (errorMsg) errorMsg.classList.remove('hidden');
+            return false;
+        }
+    } else if (diskonType.value === 'rupiah') {
+        const rupiahValue = diskonRupiah ? diskonRupiah.value : '';
+        if (!rupiahValue || rupiahValue <= 0) {
+            if (errorMsg) errorMsg.classList.remove('hidden');
+            return false;
+        }
     }
-}
-
-function handleEditFreeChange() {
-    const diskonFree = document.getElementById('editDiskonFree');
-    const diskonPercent = document.getElementById('editDiskonPercent');
-    const diskonRupiah = document.getElementById('editDiskonRupiah');
     
-    if (diskonFree.checked) {
-        diskonPercent.value = '';
-        diskonRupiah.value = '';
-        diskonPercent.disabled = true;
-        diskonRupiah.disabled = true;
-    } else {
-        diskonPercent.disabled = false;
-        diskonRupiah.disabled = false;
-    }
-    validateEditDiskon();
-}
-
-function handleEditPercentRupiahChange() {
-    const diskonFree = document.getElementById('editDiskonFree');
-    const diskonPercent = document.getElementById('editDiskonPercent');
-    const diskonRupiah = document.getElementById('editDiskonRupiah');
-    
-    if (diskonPercent.value || diskonRupiah.value) {
-        diskonFree.checked = false;
-        diskonPercent.disabled = false;
-        diskonRupiah.disabled = false;
-    }
-    validateEditDiskon();
+    if (errorMsg) errorMsg.classList.add('hidden');
+    return true;
 }
 
 function validateEditDateRange() {
@@ -357,7 +533,73 @@ function validateEditDateRange() {
     }
 }
 
+// Fungsi untuk toggle subsidy amount
+function toggleEditSubsidyAmount() {
+    const form = document.getElementById('formEditKeyword');
+    const subsidyEnabled = form ? form.querySelector('input[name="subsidy_enabled"]:checked') : document.querySelector('input[name="subsidy_enabled"]:checked');
+    const subsidyAmountContainer = document.getElementById('editSubsidyAmountContainer');
+    const subsidyAmount = document.getElementById('editSubsidyAmount');
+    const subsidyError = document.getElementById('editSubsidyAmountError');
+    
+    if (!subsidyAmountContainer) return;
+    
+    if (subsidyEnabled && subsidyEnabled.value === '1') {
+        subsidyAmountContainer.classList.remove('hidden');
+        if (subsidyAmount) {
+            subsidyAmount.required = true;
+            // Set default value "0" jika kosong
+            const currentValue = subsidyAmount.value ? subsidyAmount.value.replace(/[^\d]/g, '') : '';
+            if (!currentValue || currentValue === '' || currentValue === '0') {
+                subsidyAmount.value = '0';
+            } else {
+                // Format nilai yang sudah ada dengan pemisah ribuan
+                subsidyAmount.value = parseInt(currentValue, 10).toLocaleString('id-ID');
+            }
+        }
+    } else {
+        subsidyAmountContainer.classList.add('hidden');
+        if (subsidyAmount) {
+            subsidyAmount.required = false;
+            subsidyAmount.value = '';
+        }
+        if (subsidyError) subsidyError.classList.add('hidden');
+    }
+}
+
+// Fungsi untuk format rupiah input
+function formatEditRupiahInput(input) {
+    // Hapus semua karakter selain angka
+    let value = input.value.replace(/[^\d]/g, '');
+    
+    // Format dengan titik sebagai pemisah ribuan
+    if (value) {
+        value = parseInt(value, 10).toLocaleString('id-ID');
+    }
+    
+    input.value = value;
+}
+
+// Fungsi untuk mendapatkan nilai numerik dari input rupiah yang sudah diformat
+function getEditNumericValue(input) {
+    return input.value.replace(/[^\d]/g, '');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize diskon type display
+    const diskonTypePercent = document.getElementById('editDiskonTypePercent');
+    if (diskonTypePercent) {
+        // Ensure percent is checked by default if no other is selected
+        const form = document.getElementById('formEditKeyword');
+        const checkedType = form ? form.querySelector('input[name="diskon_type"]:checked') : null;
+        if (!checkedType && diskonTypePercent) {
+            diskonTypePercent.checked = true;
+        }
+        toggleEditDiskonType();
+    }
+    
+    // Initialize subsidy display
+    toggleEditSubsidyAmount();
+    
     const form = document.getElementById('formEditKeyword');
     if (form) {
         form.addEventListener('submit', function(e) {
@@ -368,9 +610,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
+            // Handle free diskon: set diskon_percent = 100 jika free dipilih
+            const diskonType = form.querySelector('input[name="diskon_type"]:checked');
+            if (diskonType && diskonType.value === 'free') {
+                const diskonPercent = document.getElementById('editDiskonPercent');
+                const diskonRupiah = document.getElementById('editDiskonRupiah');
+                if (diskonPercent) {
+                    diskonPercent.value = '100'; // 100% diskon = free
+                }
+                if (diskonRupiah) {
+                    diskonRupiah.value = ''; // Clear rupiah value
+                }
+            } else {
+                // Clear nilai yang tidak dipilih
+                if (diskonType && diskonType.value === 'percent') {
+                    const diskonRupiah = document.getElementById('editDiskonRupiah');
+                    if (diskonRupiah) diskonRupiah.value = '';
+                } else if (diskonType && diskonType.value === 'rupiah') {
+                    const diskonPercent = document.getElementById('editDiskonPercent');
+                    if (diskonPercent) diskonPercent.value = '';
+                }
+            }
+            
             // Validasi date range sebelum submit
             if (!validateEditDateRange()) {
                 return false;
+            }
+            
+            // Validasi subsidy amount jika subsidy enabled
+            const subsidyEnabled = form.querySelector('input[name="subsidy_enabled"]:checked');
+            if (subsidyEnabled && subsidyEnabled.value === '1') {
+                const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+                const subsidyAmount = getEditNumericValue(subsidyAmountInput);
+                const subsidyError = document.getElementById('editSubsidyAmountError');
+                if (!subsidyAmount || subsidyAmount <= 0) {
+                    if (subsidyError) subsidyError.classList.remove('hidden');
+                    return false;
+                } else {
+                    if (subsidyError) subsidyError.classList.add('hidden');
+                    // Set nilai numerik murni (tanpa format) ke input sebelum submit
+                    // Format Indonesia: hapus titik (pemisah ribuan), ganti koma dengan titik (desimal)
+                    let cleanValue = subsidyAmountInput.value.toString().replace(/\./g, ''); // Hapus titik
+                    cleanValue = cleanValue.replace(/,/g, '.'); // Ganti koma dengan titik
+                    cleanValue = cleanValue.replace(/[^\d.]/g, ''); // Hapus karakter lain
+                    
+                    // Pastikan hanya ada satu titik desimal
+                    const parts = cleanValue.split('.');
+                    if (parts.length > 2) {
+                        cleanValue = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    
+                    subsidyAmountInput.value = cleanValue;
+                }
+            } else {
+                // Jika subsidy disabled, pastikan input kosong
+                const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+                if (subsidyAmountInput) {
+                    subsidyAmountInput.value = '';
+                }
             }
             
             // Kumpulkan data untuk ditampilkan di modal verifikasi (opsional)
