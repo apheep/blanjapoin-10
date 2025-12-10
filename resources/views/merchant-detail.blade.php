@@ -384,7 +384,20 @@
                     if (data.html) {
                         setTimeout(() => {
                             container.innerHTML = data.html;
+                            
+                            // Execute scripts from the injected HTML
+                            const scripts = container.querySelectorAll('script');
+                            scripts.forEach(oldScript => {
+                                const newScript = document.createElement('script');
+                                Array.from(oldScript.attributes).forEach(attr => {
+                                    newScript.setAttribute(attr.name, attr.value);
+                                });
+                                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                oldScript.parentNode.replaceChild(newScript, oldScript);
+                            });
+                            
                             attachDetailKeywordPaginationHandlers();
+                            attachDetailKeywordToggleHandlers();
                             updateDetailKeywordUrlState();
 
                             // Re-apply date filter jika sebelumnya sudah di-set
@@ -416,6 +429,127 @@
             });
         }
 
+        // Function to attach toggle keyword status handlers after AJAX reload
+        function attachDetailKeywordToggleHandlers() {
+            // Track ongoing requests to prevent duplicate toggles
+            if (!window.keywordToggleInProgress) {
+                window.keywordToggleInProgress = new Set();
+            }
+
+            // Define toggleKeywordStatus function specifically for merchant-detail page
+            // This will override or complement the one from table-keyword.blade.php
+            window.toggleKeywordStatusDetail = function(keywordId) {
+                const checkbox = document.querySelector(`.toggle-keyword-status[data-keyword-id="${keywordId}"]`);
+                if (!checkbox) return;
+
+                // Prevent multiple simultaneous requests for the same keyword
+                if (window.keywordToggleInProgress.has(keywordId)) {
+                    console.log('Toggle already in progress for keyword:', keywordId);
+                    return;
+                }
+
+                // Store original state before toggle
+                const originalChecked = checkbox.checked;
+                
+                // Mark as in progress
+                window.keywordToggleInProgress.add(keywordId);
+                
+                // Disable checkbox during request
+                checkbox.disabled = true;
+
+                fetch(`/api/keywords/${keywordId}/toggle-status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Gagal memperbarui status');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update checkbox to match database value
+                    if (checkbox) {
+                        checkbox.checked = data.is_active;
+                        checkbox.disabled = false;
+                    }
+                    console.log('Status keyword berhasil diperbarui', data);
+                    // No need to reload table - checkbox state already updated
+                })
+                .catch(error => {
+                    console.error('Error toggling keyword status:', error);
+                    // Revert checkbox on error
+                    if (checkbox) {
+                        checkbox.checked = originalChecked;
+                        checkbox.disabled = false;
+                    }
+                    alert('Gagal memperbarui status: ' + error.message);
+                })
+                .finally(() => {
+                    // Remove from in-progress set
+                    window.keywordToggleInProgress.delete(keywordId);
+                });
+            };
+
+            // Use the detail-specific function, or fallback to global one
+            const toggleFunction = window.toggleKeywordStatusDetail || window.toggleKeywordStatus;
+            if (!window.toggleKeywordStatus) {
+                window.toggleKeywordStatus = window.toggleKeywordStatusDetail;
+            }
+
+            // Attach event handlers directly to checkboxes in the container
+            // This ensures they work even if event delegation from table-keyword.blade.php doesn't work
+            const container = document.getElementById('keyword-table-container-detail');
+            if (container) {
+                container.querySelectorAll('.toggle-keyword-status').forEach(checkbox => {
+                    // Remove existing listeners by cloning
+                    const newCheckbox = checkbox.cloneNode(true);
+                    checkbox.parentNode.replaceChild(newCheckbox, checkbox);
+                    
+                    // Attach fresh event listener
+                    newCheckbox.addEventListener('change', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const keywordId = this.getAttribute('data-keyword-id');
+                        if (keywordId) {
+                            const toggleFn = window.toggleKeywordStatusDetail || window.toggleKeywordStatus;
+                            if (toggleFn) {
+                                toggleFn(keywordId);
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Also ensure global event delegation is set up as backup
+            if (!window.keywordToggleHandlerAttachedDetail) {
+                document.addEventListener('change', function(e) {
+                    const container = document.getElementById('keyword-table-container-detail');
+                    if (container && container.contains(e.target)) {
+                        if (e.target && e.target.classList.contains('toggle-keyword-status') && !e.target.disabled) {
+                            const keywordId = e.target.getAttribute('data-keyword-id');
+                            if (keywordId) {
+                                const toggleFn = window.toggleKeywordStatusDetail || window.toggleKeywordStatus;
+                                if (toggleFn) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleFn(keywordId);
+                                }
+                            }
+                        }
+                    }
+                });
+                window.keywordToggleHandlerAttachedDetail = true;
+            }
+        }
+
         function updateDetailKeywordUrlState() {
             const url = new URL(window.location.href);
             url.searchParams.set('tab', 'keyword');
@@ -437,6 +571,9 @@
 
         // Inisialisasi status dropdown & pencarian saat halaman pertama kali load
         document.addEventListener('DOMContentLoaded', function() {
+            // Ensure toggle handlers are attached on initial load
+            attachDetailKeywordToggleHandlers();
+            
             if (detailSelectedStatus !== 'all') {
                 setActiveStatusOption(detailSelectedStatus);
                 filterKeywordByStatusDetail(detailSelectedStatus);
