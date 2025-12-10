@@ -29,6 +29,7 @@ class KeywordController extends Controller
             $validated = $request->validate([
                 'merchant_key'      => 'required|exists:merchants,id',
                 'nama_produk'       => 'required|string|max:255',
+                'keyword_id'        => 'nullable|string|max:255',
                 'cta_link'          => 'nullable|string|max:255',
                 'redeem'            => 'nullable|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
