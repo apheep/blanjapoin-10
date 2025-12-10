@@ -18,6 +18,9 @@ class SpesialPromoController extends Controller
             ->where('is_special_promo', 1)
             ->where('is_active', 1)
             ->where('status', 'approve')
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->orderBy('id', 'desc')
             ->get();
 

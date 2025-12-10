@@ -24,6 +24,9 @@ Route::get('/', function () {
     $keywords = Keyword::with('merchant')
         ->where('is_active', 1)
         ->where('status', 'approve')
+        ->whereHas('merchant', function ($query) {
+            $query->where('is_active', 1);
+        })
         ->get();
     // Get iklans - only show iklans without territorial (null) for home page
     $iklans = Iklan::whereNull('territorial')
@@ -192,6 +195,9 @@ Route::middleware(['auth'])->group(function () {
         $keywords = Keyword::with('merchant')
             ->where('is_active', 1)
             ->where('status', 'approve')
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->get();
         // Get iklans - only show iklans without territorial (null) for home page
     $iklans = Iklan::whereNull('territorial')
@@ -335,6 +341,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/api/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::post('/api/users/bulk-delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
     Route::post('/api/users/bulk-toggle-approval', [UserController::class, 'bulkToggleApproval'])->name('users.bulk-toggle-approval');
+    Route::post('/api/users/import-preview', [UserController::class, 'importPreview'])->name('users.import-preview');
+    Route::post('/api/users/import', [UserController::class, 'import'])->name('users.import');
 
     // Halaman profil
     Route::get('/profile', function () {

@@ -59,8 +59,10 @@
                                 $searchName = strtolower(trim($merchantName . ' ' . $productName));
                                 $searchLocation = strtolower($locationName);
                                 $uniqueId = 'pelanggan-card-' . $keyword->id;
+                                $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
+                                $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
                             @endphp
-                            <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 cursor-pointer h-full min-h-[280px]">
+                            <article data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" @if($canRedeem) onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" @endif class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md transition-all duration-300 h-full min-h-[280px] {{ $canRedeem ? 'hover:shadow-xl hover:border-orange-300 hover:-translate-y-1 cursor-pointer' : 'opacity-75 cursor-not-allowed' }}">
                                 
                                 <!-- Mobile Layout -->
                                 <div class="lg:hidden flex flex-col h-full">
@@ -119,6 +121,11 @@
                                                 </div>
                                             @endif
                                         </div>
+                                        @if(!$canRedeem)
+                                        <div class="mt-2 w-full inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-4 rounded-lg text-xs">
+                                            Open {{ $startDateFormatted }}
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -190,19 +197,26 @@
                                             </div>
                                         @endif
                                         <div class="mt-auto pt-3 border-t border-neutral-100">
-                                            <div class="flex items-center justify-between">
+                                            <div class="flex items-center justify-between mb-3">
                                                 <div class="flex items-center gap-1.5">
                                                     <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
                                                     <span class="text-xl md:text-2xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                                                         {{ number_format($keyword->redeem, 0, ',', '.') }}
                                                     </span>
                                                 </div>
+                                                @if($canRedeem)
                                                 <div class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                                                     <svg class="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                                                     </svg>
                                                 </div>
+                                                @endif
                                             </div>
+                                            @if(!$canRedeem)
+                                            <div class="w-full inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2.5 px-4 rounded-lg text-sm md:text-base">
+                                                Open {{ $startDateFormatted }}
+                                            </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

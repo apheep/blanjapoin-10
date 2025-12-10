@@ -125,9 +125,19 @@
                                 </div>
                                 @endif
                             </div>
-                            <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="mt-2 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs">
+                            @php
+                                $canRedeem = !$result->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($result->start_date)->startOfDay());
+                                $startDateFormatted = $result->start_date ? \Carbon\Carbon::parse($result->start_date)->format('d-M-y') : '';
+                            @endphp
+                            @if($canRedeem)
+                            <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="mt-2 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1.5 px-3 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[10px]">
                                 Redeem
                             </button>
+                            @else
+                            <button disabled class="mt-2 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1.5 px-3 rounded-lg cursor-not-allowed text-[10px]">
+                                Open {{ $startDateFormatted }}
+                            </button>
+                            @endif
                         </div>
                     </div>
 
@@ -205,9 +215,19 @@
                                         </span>
                                     </div>
                                 </div>
+                                @php
+                                    $canRedeem = !$result->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($result->start_date)->startOfDay());
+                                    $startDateFormatted = $result->start_date ? \Carbon\Carbon::parse($result->start_date)->format('d-M-y') : '';
+                                @endphp
+                                @if($canRedeem)
                                 <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2.5 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base">
                                     Redeem
                                 </button>
+                                @else
+                                <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2.5 px-4 rounded-lg cursor-not-allowed text-sm md:text-base">
+                                    Open {{ $startDateFormatted }}
+                                </button>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -243,48 +263,146 @@
     });
 </script>
 
+<!-- Bottom Sheet / Modal (Responsive) -->
+<div id="bottomSheet" class="fixed inset-0 z-[9999] hidden">
+    <div id="bottomSheetOverlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300" onclick="closeBottomSheet()" style="opacity: 0;"></div>
+    
+    <!-- Mobile: Bottom Sheet -->
+    <div id="bottomSheetPanel" class="md:hidden absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out" style="height: 55vh; transform: translateY(100%);">
+        <!-- Drag Indicator Bar -->
+        <div class="w-full flex justify-center pt-2 pb-1">
+            <div class="w-12 h-1 bg-neutral-300 rounded-full"></div>
+        </div>
+        <!-- Header -->
+        <div class="bg-white px-5 py-3 flex items-center">
+            <button onclick="closeBottomSheet()" class="text-neutral-700 hover:text-neutral-900 p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+            <h3 id="bottomSheetTitle" class="flex-1 text-center text-lg font-bold text-neutral-800 pr-7">Pilihan</h3>
+        </div>
+        <div id="bottomSheetContent" class="overflow-y-auto" style="height: calc(55vh - 70px);"></div>
+    </div>
+
+    <!-- Desktop: Modal Popup -->
+    <div id="desktopModal" class="hidden md:block fixed top-3/4 left-3/4 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ease-out w-full max-w-2xl" style="opacity: 0; transform: translate(-50%, -50%) scale(0.95);">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-orange-50 to-rose-50 px-6 py-4 flex items-center justify-between border-b border-neutral-200">
+            <h3 id="desktopModalTitle" class="text-xl font-bold text-neutral-800">Pilihan</h3>
+            <button onclick="closeBottomSheet()" class="text-neutral-700 hover:text-neutral-900 p-1 rounded-lg hover:bg-white/50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div id="desktopModalContent" class="overflow-y-auto p-6 max-h-[70vh]"></div>
+    </div>
+</div>
+
 <script>
-// Search Description Bottom Sheet Function
-function openSearchDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
- const contentHTML = `
-  <div class="px-5 pb-6">
-   <div class="space-y-3">
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
-     <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
-    </div>
-    
-    ${productName ? `
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">Produk :</span>
-     <span class="text-sm text-neutral-900 ml-2">${productName}</span>
-    </div>
-    ` : ''}
-    
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">Promo :</span>
-     <span class="text-sm text-neutral-900 ml-2">${diskon || '-'}</span>
-    </div>
-    
-    ${skb ? `
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">SKB :</span>
-     <div class="mt-2">
-      <p class="text-sm text-neutral-600 leading-relaxed">
-       ${skb}
-      </p>
-     </div>
-    </div>
-    ` : ''}
-   </div>
-  </div>
- `;
- 
- if (typeof openBottomSheet === 'function') {
-  openBottomSheet('Deskripsi', contentHTML);
- } else {
-  console.error('openBottomSheet function not found');
- }
-}
+    // Bottom Sheet / Modal (responsive)
+    function openBottomSheet(title, contentHTML) {
+        const sheet = document.getElementById('bottomSheet');
+        const overlay = document.getElementById('bottomSheetOverlay');
+        
+        // Mobile elements
+        const panel = document.getElementById('bottomSheetPanel');
+        const titleEl = document.getElementById('bottomSheetTitle');
+        const contentEl = document.getElementById('bottomSheetContent');
+        
+        // Desktop elements
+        const modal = document.getElementById('desktopModal');
+        const modalTitleEl = document.getElementById('desktopModalTitle');
+        const modalContentEl = document.getElementById('desktopModalContent');
+        
+        if (!sheet || !overlay) return;
+        
+        // Set content for both mobile and desktop
+        if (titleEl) titleEl.textContent = title;
+        if (contentEl) contentEl.innerHTML = contentHTML;
+        if (modalTitleEl) modalTitleEl.textContent = title;
+        if (modalContentEl) modalContentEl.innerHTML = contentHTML;
+        
+        // Show sheet/modal
+        sheet.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Trigger animation
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            if (panel) panel.style.transform = 'translateY(0)';
+            if (modal) {
+                modal.style.opacity = '1';
+                modal.style.transform = 'translate(-50%, -50%) scale(1)';
+            }
+        }, 10);
+    }
+
+    function closeBottomSheet() {
+        const sheet = document.getElementById('bottomSheet');
+        const overlay = document.getElementById('bottomSheetOverlay');
+        const panel = document.getElementById('bottomSheetPanel');
+        const modal = document.getElementById('desktopModal');
+        const contentEl = document.getElementById('bottomSheetContent');
+        const modalContentEl = document.getElementById('desktopModalContent');
+        
+        if (!sheet || !overlay) return;
+        
+        // Animate out
+        overlay.style.opacity = '0';
+        if (panel) panel.style.transform = 'translateY(100%)';
+        if (modal) {
+            modal.style.opacity = '0';
+            modal.style.transform = 'translate(-50%, -50%) scale(0.95)';
+        }
+        
+        // Hide after animation
+        setTimeout(() => {
+            sheet.classList.add('hidden');
+            document.body.style.overflow = '';
+            if (contentEl) contentEl.innerHTML = '';
+            if (modalContentEl) modalContentEl.innerHTML = '';
+        }, 300);
+    }
+
+    // Search Description Bottom Sheet Function
+    function openSearchDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
+        const contentHTML = `
+            <div class="px-5 pb-6">
+                <div class="space-y-3">
+                    <div>
+                        <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
+                        <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
+                    </div>
+                    
+                    ${productName ? `
+                    <div>
+                        <span class="text-sm font-semibold text-neutral-700">Produk :</span>
+                        <span class="text-sm text-neutral-900 ml-2">${productName}</span>
+                    </div>
+                    ` : ''}
+                    
+                    <div>
+                        <span class="text-sm font-semibold text-neutral-700">Promo :</span>
+                        <span class="text-sm text-neutral-900 ml-2">${diskon || '-'}</span>
+                    </div>
+                    
+                    ${skb ? `
+                    <div>
+                        <span class="text-sm font-semibold text-neutral-700">SKB :</span>
+                        <div class="mt-2">
+                            <p class="text-sm text-neutral-600 leading-relaxed">
+                                ${skb}
+                            </p>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        openBottomSheet('Deskripsi', contentHTML);
+    }
 </script>
 @endsection

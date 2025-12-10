@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class IklanController extends Controller
@@ -17,6 +18,7 @@ class IklanController extends Controller
      */
     public function index(): View
     {
+        // Order by ascending to show newest items first (matching migration pattern where newest=lowest order)
         $iklans = Iklan::orderBy('order', 'asc')->get();
 
         // Get all available territories
@@ -74,14 +76,20 @@ class IklanController extends Controller
             $territorial = territorialSlug($territorial);
         }
 
-        // Get the highest order value and add 1
-        $maxOrder = Iklan::max('order') ?? 0;
+        // Get the minimum order value and subtract 1 to place new items at the top
+        // System uses 0-based ordering where lower values appear first (orderBy('order', 'asc'))
+        // New items should get order = minOrder - 1 to appear before all existing items
+        $minOrder = Iklan::min('order') ?? 0;
+        
+        // New items get minOrder - 1 to appear before all existing items
+        // This allows negative values which will appear first when sorted ascending
+        $newOrder = $minOrder - 1;
         
         Iklan::create([
             'image_path' => $path,
             'link_iklan' => $link,
             'territorial' => $territorial,
-            'order' => $maxOrder + 1,
+            'order' => $newOrder,
         ]);
 
         return redirect()
@@ -115,9 +123,14 @@ class IklanController extends Controller
             'orders.*' => ['required', 'integer', 'exists:iklans,id'],
         ]);
 
-        foreach ($request->orders as $order => $id) {
-            Iklan::where('id', $id)->update(['order' => $order + 1]);
-        }
+        // Use database transaction to ensure atomic updates
+        // Frontend sends 0-based array indices which should be used directly as order values
+        // Lower order values appear first when sorted ascending (orderBy('order', 'asc'))
+        DB::transaction(function () use ($request) {
+            foreach ($request->orders as $order => $id) {
+                Iklan::where('id', $id)->update(['order' => $order]);
+            }
+        });
 
         return response()->json([
             'success' => true,
