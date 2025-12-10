@@ -55,6 +55,11 @@ class MerchantController extends Controller
     {
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
+            ->where('is_active', 1)
+            ->where('status', 'approve')
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->orderBy('id')
             ->paginate(10)
             ->withQueryString();
@@ -771,11 +776,16 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
         }
 
-        // Ambil semua keywords untuk merchant ini yang memiliki redeem points (semua status, diurutkan dari terbaru)
+        // Ambil semua keywords untuk merchant ini yang memiliki redeem points (hanya yang aktif dan approved)
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
+            ->where('is_active', 1)
+            ->where('status', 'approve')
             ->whereNotNull('redeem')
             ->where('redeem', '!=', '')
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(12)
             ->withQueryString();
