@@ -26,6 +26,14 @@ class User extends Authenticatable
         'email',
         'otp',
         'otp_expires_at',
+        'user_level',
+        'area',
+        'regional',
+        'branch',
+        'sub_branch',
+        'cluster',
+        'city',
+        'area_level',
     ];
 
     /**

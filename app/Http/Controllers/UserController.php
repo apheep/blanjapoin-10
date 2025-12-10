@@ -376,6 +376,14 @@ class UserController extends Controller
             $headerIndices['no_hp'] = array_search('no_hp', $headers) !== false ? array_search('no_hp', $headers) : null;
             $headerIndices['email'] = array_search('email', $headers) !== false ? array_search('email', $headers) : null;
             $headerIndices['can_approve'] = array_search('can_approve', $headers) !== false ? array_search('can_approve', $headers) : null;
+            $headerIndices['user_level'] = array_search('user_level', $headers) !== false ? array_search('user_level', $headers) : null;
+            $headerIndices['area'] = array_search('area', $headers) !== false ? array_search('area', $headers) : null;
+            $headerIndices['regional'] = array_search('regional', $headers) !== false ? array_search('regional', $headers) : null;
+            $headerIndices['branch'] = array_search('branch', $headers) !== false ? array_search('branch', $headers) : null;
+            $headerIndices['sub_branch'] = array_search('sub_branch', $headers) !== false ? array_search('sub_branch', $headers) : null;
+            $headerIndices['cluster'] = array_search('cluster', $headers) !== false ? array_search('cluster', $headers) : null;
+            $headerIndices['city'] = array_search('city', $headers) !== false ? array_search('city', $headers) : null;
+            $headerIndices['area_level'] = array_search('area_level', $headers) !== false ? array_search('area_level', $headers) : null;
 
             // Process data rows (skip header)
             $dataRows = array_slice($rows, 1);
@@ -395,6 +403,14 @@ class UserController extends Controller
                     $noHp = $headerIndices['no_hp'] !== null ? trim($row[$headerIndices['no_hp']] ?? '') : null;
                     $email = $headerIndices['email'] !== null ? trim($row[$headerIndices['email']] ?? '') : null;
                     $canApprove = $headerIndices['can_approve'] !== null ? trim($row[$headerIndices['can_approve']] ?? '0') : '0';
+                    $userLevel = $headerIndices['user_level'] !== null ? trim($row[$headerIndices['user_level']] ?? '') : null;
+                    $area = $headerIndices['area'] !== null ? trim($row[$headerIndices['area']] ?? '') : null;
+                    $regional = $headerIndices['regional'] !== null ? trim($row[$headerIndices['regional']] ?? '') : null;
+                    $branch = $headerIndices['branch'] !== null ? trim($row[$headerIndices['branch']] ?? '') : null;
+                    $subBranch = $headerIndices['sub_branch'] !== null ? trim($row[$headerIndices['sub_branch']] ?? '') : null;
+                    $cluster = $headerIndices['cluster'] !== null ? trim($row[$headerIndices['cluster']] ?? '') : null;
+                    $city = $headerIndices['city'] !== null ? trim($row[$headerIndices['city']] ?? '') : null;
+                    $areaLevel = $headerIndices['area_level'] !== null ? trim($row[$headerIndices['area_level']] ?? '') : null;
 
                     // Validation
                     if (empty($username) || strlen($username) < 3) {
@@ -436,6 +452,14 @@ class UserController extends Controller
                         'can_approve' => $canApproveInt,
                         'no_hp' => $noHp ?: null,
                         'email' => $email ?: null,
+                        'user_level' => $userLevel ?: null,
+                        'area' => $area ?: null,
+                        'regional' => $regional ?: null,
+                        'branch' => $branch ?: null,
+                        'sub_branch' => $subBranch ?: null,
+                        'cluster' => $cluster ?: null,
+                        'city' => $city ?: null,
+                        'area_level' => $areaLevel ?: null,
                     ]);
 
                     $createdUsers[] = $user;
