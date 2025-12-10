@@ -255,63 +255,72 @@
 </div>
 
 <script>
-    // Toggle Keyword Status
-    document.addEventListener('DOMContentLoaded', function() {
-        // Attach toggle listeners for server-rendered checkboxes
-        document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
-            toggle.addEventListener('change', (e) => {
-                const keywordId = e.target.dataset.keywordId;
-                if (!keywordId) return;
-                toggleKeywordStatus(keywordId);
-            });
-        });
-    });
+    // Function to toggle keyword status - defined in global scope so it's available after AJAX reload
+    function toggleKeywordStatus(keywordId) {
+        const checkbox = document.querySelector(`.toggle-keyword-status[data-keyword-id="${keywordId}"]`);
+        if (!checkbox) return;
 
-    // Function to toggle keyword status
-    async function toggleKeywordStatus(keywordId) {
-        try {
-            const response = await fetch(`/api/keywords/${keywordId}/toggle-status`, {
-                method: 'PATCH',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Gagal memperbarui status');
+        fetch(`/api/keywords/${keywordId}/toggle-status`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-
-            // Success - checkbox already toggled by user, no need to update UI
-            console.log('Status keyword berhasil diperbarui');
-        } catch (error) {
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Gagal memperbarui status');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Update checkbox to match database value
+            if (checkbox) {
+                checkbox.checked = data.is_active;
+            }
+            console.log('Status keyword berhasil diperbarui', data);
+        })
+        .catch(error => {
             console.error('Error toggling keyword status:', error);
             // Revert checkbox on error
-            const checkbox = document.querySelector(`.toggle-keyword-status[data-keyword-id="${keywordId}"]`);
             if (checkbox) {
                 checkbox.checked = !checkbox.checked;
             }
             alert('Gagal memperbarui status: ' + error.message);
-        }
+        });
     }
 
-    // Re-attach listeners after AJAX table reload
-    if (typeof attachKeywordPaginationHandlers !== 'undefined') {
-        const originalAttach = attachKeywordPaginationHandlers;
-        attachKeywordPaginationHandlers = function() {
-            originalAttach();
-            document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
-                toggle.addEventListener('change', (e) => {
-                    const keywordId = e.target.dataset.keywordId;
-                    if (!keywordId) return;
+    // Make function available globally
+    window.toggleKeywordStatus = toggleKeywordStatus;
+
+    // Use event delegation for toggle keyword status - works even after AJAX reload
+    if (!window.keywordToggleHandlerAttached) {
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('toggle-keyword-status')) {
+                const keywordId = e.target.getAttribute('data-keyword-id');
+                if (keywordId) {
                     toggleKeywordStatus(keywordId);
-                });
-            });
-        };
+                }
+            }
+        });
+        window.keywordToggleHandlerAttached = true;
     }
+
+    // Also attach directly for initial load (backup)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
+            toggle.addEventListener('change', function(e) {
+                const keywordId = e.target.getAttribute('data-keyword-id');
+                if (keywordId) {
+                    toggleKeywordStatus(keywordId);
+                }
+            });
+        });
+    });
 
     // Function to show SKB detail in modal
     function showSKBDetail(skbText, productName, merchantName, promoText) {

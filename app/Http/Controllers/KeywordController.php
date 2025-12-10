@@ -693,16 +693,26 @@ class KeywordController extends Controller
 
         try {
             $keyword = Keyword::findOrFail($id);
+            $oldStatus = $keyword->is_active;
             $keyword->is_active = $keyword->is_active ? 0 : 1;
             $keyword->save();
+
+            Log::info('Keyword status toggled', [
+                'keyword_id' => $id,
+                'old_status' => $oldStatus,
+                'new_status' => $keyword->is_active
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Status keyword berhasil diperbarui',
-                'is_active' => $keyword->is_active,
+                'is_active' => (bool)$keyword->is_active,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error toggling keyword status: ' . $e->getMessage());
+            Log::error('Error toggling keyword status: ' . $e->getMessage(), [
+                'keyword_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'error' => 'Gagal memperbarui status: ' . $e->getMessage()
