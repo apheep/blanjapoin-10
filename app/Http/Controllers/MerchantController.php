@@ -118,7 +118,7 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
-            ->where('status', 'approve')
+            // ->where('status', 'approve')
             ->whereHas('merchant', function ($query) {
                 $query->where('is_active', 1);
             })
@@ -1396,7 +1396,7 @@ class MerchantController extends Controller
         $locationName = territorialName($location);
         
         // Get all active merchants
-        $allMerchants = Merchant::where('is_active', 1)
+        $allMerchants = Merchant::query()
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->get();
@@ -1413,10 +1413,8 @@ class MerchantController extends Controller
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
-            ->where('is_active', 1)
             ->where('status', 'approve')
             ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
             })
             ->get();
         
