@@ -298,9 +298,12 @@ function openEditKeyword(id, keywordData) {
     }, 50);
     
     // Parse and populate subsidy data
+    // Determine subsidy enabled based on subsidy_amount (not subsidy_enabled field)
+    // If subsidy_amount exists and > 0, then subsidy is enabled
     setTimeout(() => {
-        const subsidyEnabled = keywordData.subsidy_enabled === 1 || keywordData.subsidy_enabled === '1' || keywordData.subsidy_enabled === true;
-        const subsidyAmount = keywordData.subsidy_amount || '';
+        const subsidyAmount = keywordData.subsidy_amount;
+        // Check if subsidy is enabled: if subsidy_amount is not null and > 0
+        const subsidyEnabled = subsidyAmount !== null && subsidyAmount !== undefined && subsidyAmount !== '' && parseFloat(subsidyAmount) > 0;
         
         if (subsidyEnabled) {
             const subsidyYesRadio = document.getElementById('editSubsidyEnabledYes');
@@ -312,9 +315,13 @@ function openEditKeyword(id, keywordData) {
                 if (subsidyAmountInput) {
                     if (subsidyAmount && subsidyAmount !== '' && subsidyAmount !== '0') {
                         // Format nilai subsidi dengan titik sebagai pemisah ribuan
-                        const numericValue = subsidyAmount.toString().replace(/[^\d]/g, '');
+                        const numericValue = subsidyAmount.toString().replace(/[^\d.]/g, '');
                         if (numericValue) {
-                            subsidyAmountInput.value = parseInt(numericValue, 10).toLocaleString('id-ID');
+                            // Parse as float to handle decimals, then format
+                            const floatValue = parseFloat(numericValue);
+                            if (!isNaN(floatValue)) {
+                                subsidyAmountInput.value = floatValue.toLocaleString('id-ID');
+                            }
                         }
                     } else {
                         // Set default "0" jika tidak ada nilai
