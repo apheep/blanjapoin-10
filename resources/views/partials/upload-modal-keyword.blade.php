@@ -14,7 +14,7 @@
             </button>
         </div>
         
-        <form id="formUploadKeyword" method="POST" action="{{ route('keywords.store') }}" enctype="multipart/form-data" class="flex-1 overflow-y-auto">
+        <form id="formUploadKeyword" method="POST" action="{{ route('keywords.store') }}" enctype="multipart/form-data" class="flex-1 overflow-y-auto" novalidate>
             @csrf
             <input type="hidden" name="redirect_to" id="keywordRedirectUpload">
             <input type="hidden" name="stay_on_detail" id="keywordStayOnDetailUpload">
@@ -28,7 +28,7 @@
                             <!-- Custom Dropdown -->
                             <div class="relative">
                                 <!-- Hidden select for form submission -->
-                                <select name="merchant_key" id="merchantSelect" class="hidden" required>
+                                <select name="merchant_key" id="merchantSelect" class="hidden">
                                     <option value="">-- Pilih Merchant --</option>
                                     @foreach($allMerchants as $merchant)
                                         <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email_pic ?? '' }}">{{ $merchant->nama_merchant }}</option>
@@ -85,24 +85,24 @@
                         <!-- Row 1.5: Nama Produk -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Nama Produk <span class="text-red-500">*</span></label>
-                            <input type="text" name="nama_produk" id="productName" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Nama produk akan otomatis terisi" required> 
+                            <input type="text" name="nama_produk" id="productName" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Nama produk akan otomatis terisi"> 
                         </div>
 
                         <!-- Row 1.6: Keyword ID -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Keyword ID</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Keyword ID <span class="text-red-500">*</span></label>
                             <input type="text" name="keyword_id" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter keyword ID">
                         </div>
 
                         <!-- Row 2: CTA -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">CTA</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">CTA <span class="text-red-500">*</span></label>
                             <input type="url" name="cta_link" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="https://example.com">
                         </div>
 
                         <!-- Row 3: Redeem Point -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Redeem Point</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Redeem Point <span class="text-red-500">*</span></label>
                             <input type="number" name="redeem" min="0" step="1" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter redeem points">
                         </div>
 
@@ -191,13 +191,13 @@
 
                         <!-- Row 5: Stock -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock <span class="text-red-500">*</span></label>
                             <input type="number" name="stock" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter stock">
                         </div>
 
                         <!-- Row 6: SKB -->
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">SKB</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">SKB <span class="text-red-500">*</span></label>
                             <textarea name="skb" rows="5" class="w-full px-4 pt-3 h-[140px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm resize-none" placeholder="Enter SKB"></textarea>
                         </div>
 

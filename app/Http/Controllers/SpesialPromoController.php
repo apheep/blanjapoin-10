@@ -14,6 +14,8 @@ class SpesialPromoController extends Controller
      */
     public function index()
     {
+        // Query keyword dengan is_special_promo = 1, status approve, dan is_active = 1
+        // Pastikan merchant juga aktif jika ada
         $keywords = Keyword::with('merchant')
             ->where('is_special_promo', 1)
             ->where('is_active', 1)
