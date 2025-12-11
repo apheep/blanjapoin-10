@@ -111,9 +111,14 @@
                     <i class="fas fa-times-circle text-red-600 text-3xl"></i>
                 </div>
                 <h4 class="text-lg font-medium text-gray-900 mb-2">Upload Gagal!</h4>
-                <p class="text-sm text-gray-600 mb-6">
-                    <span id="errorMessage">Terjadi kesalahan saat mengupload data.</span>
-                </p>
+                <div class="text-sm text-gray-600 mb-6">
+                    <p id="errorMessage" class="mb-3">Terjadi kesalahan saat mengupload data.</p>
+                    <div id="missingFieldsList" class="hidden mt-4">
+                        <p class="font-semibold text-gray-800 mb-2">Field yang belum diisi:</p>
+                        <ul id="missingFieldsItems" class="list-disc list-inside text-left max-h-40 overflow-y-auto bg-red-50 p-3 rounded-lg border border-red-200">
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -535,7 +540,10 @@ function confirmUpload() {
                             const contentType = response.headers.get('content-type');
                             if (contentType && contentType.includes('application/json')) {
                                 return response.json().then(data => {
-                                    throw new Error(data.message || data.error || `HTTP ${response.status}`);
+                                    // Create error object with data for better handling
+                                    const error = new Error(data.message || data.error || `HTTP ${response.status}`);
+                                    error.data = data;
+                                    throw error;
                                 });
                             } else {
                                 // Jika bukan JSON, baca sebagai text
@@ -578,12 +586,41 @@ function confirmUpload() {
                                 window.location.href = currentUrl.toString();
                             }, 300);
                         } else {
-                            showUploadErrorModal('Gagal menyimpan data: ' + (data.message || 'Unknown error'));
+                            // Show error with missing fields if available
+                            let errorMessage = data.message || 'Gagal menyimpan data';
+                            let missingFields = data.missing_fields || [];
+                            
+                            showUploadErrorModal(errorMessage, missingFields);
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        showUploadErrorModal('Terjadi kesalahan saat menyimpan data.\n\n' + error.message);
+                        
+                        let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
+                        let missingFields = [];
+                        
+                        // Check if error has data object (from JSON response)
+                        if (error.data) {
+                            if (error.data.message) {
+                                errorMessage = error.data.message;
+                            }
+                            if (error.data.missing_fields && Array.isArray(error.data.missing_fields)) {
+                                missingFields = error.data.missing_fields;
+                            }
+                        } else if (error.message) {
+                            errorMessage = error.message;
+                            
+                            // Try to extract missing fields from error message
+                            const fieldMatch = errorMessage.match(/Field yang belum diisi: ([^.]+)/);
+                            if (fieldMatch) {
+                                const fieldsStr = fieldMatch[1];
+                                missingFields = fieldsStr.split(',').map(f => f.trim());
+                                // Remove field list from main message
+                                errorMessage = errorMessage.replace(/Field yang belum diisi:.*?\./, '').trim();
+                            }
+                        }
+                        
+                        showUploadErrorModal(errorMessage, missingFields);
                     });
                 }
             }, 300);
@@ -651,10 +688,38 @@ function closeUploadSuccessModal() {
     }, 300);
 }
 
-function showUploadErrorModal(message) {
+function showUploadErrorModal(message, missingFields = []) {
     // Update error message
     const errorMessageSpan = document.getElementById('errorMessage');
-    if (errorMessageSpan) errorMessageSpan.textContent = message || 'Terjadi kesalahan saat mengupload data.';
+    if (errorMessageSpan) {
+        // Clean up message - remove duplicate "Field yang belum diisi" if present
+        let cleanMessage = message || 'Terjadi kesalahan saat mengupload data.';
+        if (missingFields && missingFields.length > 0) {
+            // Remove the field list from message if it's already there
+            const fieldListPattern = /Field yang belum diisi:.*?\./g;
+            cleanMessage = cleanMessage.replace(fieldListPattern, '').trim();
+        }
+        errorMessageSpan.textContent = cleanMessage;
+    }
+    
+    // Show missing fields if available
+    const missingFieldsList = document.getElementById('missingFieldsList');
+    const missingFieldsItems = document.getElementById('missingFieldsItems');
+    
+    if (missingFields && missingFields.length > 0 && missingFieldsList && missingFieldsItems) {
+        missingFieldsItems.innerHTML = '';
+        missingFields.forEach(field => {
+            const li = document.createElement('li');
+            li.className = 'text-red-700 mb-1';
+            li.textContent = field;
+            missingFieldsItems.appendChild(li);
+        });
+        missingFieldsList.classList.remove('hidden');
+    } else {
+        if (missingFieldsList) {
+            missingFieldsList.classList.add('hidden');
+        }
+    }
     
     // Show modal with animation
     const modal = document.getElementById('uploadErrorModal');

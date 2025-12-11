@@ -230,7 +230,7 @@ function formatSKB(text) {
 function openVacationDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
  const contentHTML = `
   <div class="px-5 pb-6">
-   <div class="space-y-2">
+   <div class="space-y-1">
     <div>
      <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
      <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
@@ -251,8 +251,8 @@ function openVacationDescriptionSheet(keywordId, merchantName, productName, skb,
     ${skb ? `
     <div>
      <span class="text-sm font-semibold text-neutral-700">SKB :</span>
-     <div class="mt-1">
-      <div class="text-sm text-neutral-600 leading-normal whitespace-pre-line break-words">
+     <div class="mt-0">
+      <div class="text-sm text-neutral-600 leading-none whitespace-pre-line break-words" style="line-height: 0.8;">
        ${formatSKB(skb)}
       </div>
      </div>
