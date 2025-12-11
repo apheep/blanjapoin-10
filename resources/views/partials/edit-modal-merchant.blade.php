@@ -183,23 +183,23 @@
                     <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Alamat</h4>
                     <div class="space-y-4">
                         {{-- City Dropdown --}}
-                        <div class="relative">
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Kota/Kabupaten
-                            </label>
                             <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Kota/Kabupaten
+                                </label>
+                                <div class="relative">
                                 <input type="hidden" name="city" id="editCityValue">
-                                <input type="text"
+                                    <input type="text"
                                        id="editCitySearch"
                                        placeholder="Cari atau pilih kota..."
-                                       autocomplete="off"
-                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                           autocomplete="off"
+                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                                        onfocus="openEditCityDropdown(event)"
                                        onclick="openEditCityDropdown(event)"
                                        oninput="filterEditCityDropdown(this.value)">
-                                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                                 <div id="editCityDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
-                                    <div class="max-h-60 overflow-y-auto">
+                                        <div class="max-h-60 overflow-y-auto">
                                         <div id="editCityOptions" class="py-1"></div>
                                     </div>
                                 </div>
@@ -978,7 +978,7 @@ function selectEditCity(city) {
     if (hiddenInput) hiddenInput.value = city;
     
     closeEditCityDropdown();
-    updateEditDaerahCombined();
+        updateEditDaerahCombined();
 }
 
 // Update daerah combined (only city now)

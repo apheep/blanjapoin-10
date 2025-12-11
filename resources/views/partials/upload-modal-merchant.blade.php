@@ -98,6 +98,23 @@
                                 <input type="hidden" name="link_blanjapoin" id="linkBlanjapoinFull">
                             </div>
                         </div>
+
+                        {{-- Status Toggle --}}
+                        @if(Auth::check() && Auth::user()->can_approve == 1)
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                General Link
+                            </label>
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Status">
+                                <input type="checkbox" 
+                                       id="uploadMerchantStatusToggle"
+                                       class="sr-only peer" />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                                <span class="ml-3 text-sm text-gray-700" id="uploadMerchantStatusText">Tidak Aktif</span>
+                            </label>
+                            <input type="hidden" name="is_active" id="uploadMerchantStatusHidden" value="0">
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -654,14 +671,28 @@ function closeUploadMerchant() {
         }
         if (text) text.textContent = 'Click to upload Logo Merchant';
         
-        // Reset preview KTP
-        const ktpPreview = document.getElementById('uploadMerchantKtpPreview');
-        const ktpText = document.getElementById('uploadMerchantKtpText');
-        if (ktpPreview) {
-            ktpPreview.innerHTML = '';
-            ktpPreview.classList.add('hidden');
-        }
-        if (ktpText) ktpText.textContent = 'Click to upload KTP';
+            // Reset preview KTP
+            const ktpPreview = document.getElementById('uploadMerchantKtpPreview');
+            const ktpText = document.getElementById('uploadMerchantKtpText');
+            if (ktpPreview) {
+                ktpPreview.innerHTML = '';
+                ktpPreview.classList.add('hidden');
+            }
+            if (ktpText) ktpText.textContent = 'Click to upload KTP';
+            
+            // Reset status toggle
+            const statusToggle = document.getElementById('uploadMerchantStatusToggle');
+            const statusHidden = document.getElementById('uploadMerchantStatusHidden');
+            const statusText = document.getElementById('uploadMerchantStatusText');
+            if (statusToggle) {
+                statusToggle.checked = false; // Default to inactive
+            }
+            if (statusHidden) {
+                statusHidden.value = '0';
+            }
+            if (statusText) {
+                statusText.textContent = 'Tidak Aktif';
+            }
         }
     }, 300);
 }
@@ -804,6 +835,25 @@ function updateLinkBlanjapoin() {
     const fullLink = code ? `blanjapoin.id/dash/${code}` : '';
     document.getElementById('linkBlanjapoinFull').value = fullLink;
 }
+
+// ======================
+// Toggle Status (is_active)
+// ======================
+document.addEventListener('DOMContentLoaded', function() {
+    const statusToggle = document.getElementById('uploadMerchantStatusToggle');
+    const statusHidden = document.getElementById('uploadMerchantStatusHidden');
+    const statusText = document.getElementById('uploadMerchantStatusText');
+    
+    if (statusToggle && statusHidden) {
+        statusToggle.addEventListener('change', function() {
+            const isActive = this.checked ? 1 : 0;
+            statusHidden.value = isActive;
+            if (statusText) {
+                statusText.textContent = isActive ? 'Aktif' : 'Tidak Aktif';
+            }
+        });
+    }
+});
 
 // ======================
 // Validate WA PIC (Indonesian Mobile Prefixes)
