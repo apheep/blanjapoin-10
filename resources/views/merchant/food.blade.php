@@ -186,11 +186,51 @@
 
 
     <script>
+// Function to format SKB text - split numbered items into separate lines
+function formatSKB(text) {
+ if (!text) return '';
+ 
+ // Check if text contains numbered items (1., 2., 3., etc.)
+ const numberedPattern = /(\d+\.\s+)/g;
+ const matches = text.match(numberedPattern);
+ 
+ if (matches && matches.length > 1) {
+  // Split by numbered patterns and format each item on a new line
+  const parts = text.split(/(\d+\.\s+)/);
+  let formatted = '';
+  
+  for (let i = 0; i < parts.length; i++) {
+   const part = parts[i];
+   if (!part.trim()) continue;
+   
+   // If this is a numbered item (like "1. "), add newline before it (except first)
+   if (part.match(numberedPattern)) {
+    if (i > 0 && formatted.trim()) {
+     formatted += '\n';
+    }
+    formatted += part;
+   } else {
+    // This is content, add it
+    formatted += part.trim();
+    // Add newline if next part is a numbered item
+    if (i < parts.length - 1 && parts[i + 1] && parts[i + 1].match(numberedPattern)) {
+     formatted += '\n';
+    }
+   }
+  }
+  
+  return formatted.trim();
+ }
+ 
+ // If no numbered pattern found, preserve existing line breaks
+ return text;
+}
+
 // Food Description Bottom Sheet Function
 function openFoodDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
  const contentHTML = `
   <div class="px-5 pb-6">
-   <div class="space-y-3">
+   <div class="space-y-1">
     <div>
      <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
      <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
@@ -211,10 +251,10 @@ function openFoodDescriptionSheet(keywordId, merchantName, productName, skb, dis
     ${skb ? `
     <div>
      <span class="text-sm font-semibold text-neutral-700">SKB :</span>
-     <div class="mt-2">
-      <p class="text-sm text-neutral-600 leading-relaxed">
-       ${skb}
-      </p>
+     <div class="mt-0">
+      <div class="text-sm text-neutral-600 leading-none whitespace-pre-line break-words" style="line-height: 1.2;">
+       ${formatSKB(skb)}
+      </div>
      </div>
     </div>
     ` : ''}

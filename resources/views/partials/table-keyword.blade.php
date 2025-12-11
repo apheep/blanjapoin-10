@@ -386,9 +386,9 @@
                     <p class="text-sm text-gray-900">${promoText}</p>
                 </div>
                 <div>
-                    <p class="text-sm font-semibold text-gray-700 mb-1">SKB:</p>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mt-2">
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap break-words">${skbText}</p>
+                    <p class="text-sm font-semibold text-gray-700 mb-0">SKB:</p>
+                    <div class="bg-gray-50 rounded-lg p-2 border border-gray-200 mt-0">
+                        <p class="text-sm text-gray-700 leading-none whitespace-pre-wrap break-words" style="line-height: 1.2;">${skbText}</p>
                     </div>
                 </div>
             </div>
