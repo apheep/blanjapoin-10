@@ -1550,19 +1550,33 @@ class MerchantController extends Controller
             ->get();
         
         // Filter merchants by matching cities from DimTeritorialNational
-        // Match merchant city dengan city yang ada di territorialData (case-insensitive)
-        $territorialDataLower = array_map('strtolower', array_map('trim', $territorialData));
-        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataLower) {
+        // Match merchant city dengan city yang ada di territorialData (case-insensitive, toleransi prefix Kota/Kabupaten)
+        // Normalisasi semua city name untuk matching yang lebih toleran
+        $territorialDataNormalized = array_map(function($city) {
+            return strtolower(trim(normalizeCityName($city)));
+        }, $territorialData);
+        
+        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataNormalized) {
             $merchantCity = trim(extractKabupatenKota($merchant->daerah));
             if (empty($merchantCity)) {
                 return false;
             }
-            // Try exact match first
+            
+            // Normalisasi merchant city (hapus prefix Kota/Kabupaten)
+            $merchantCityNormalized = strtolower(normalizeCityName($merchantCity));
+            
+            // Try exact match first (dengan normalisasi)
+            if (in_array($merchantCityNormalized, $territorialDataNormalized)) {
+                return true;
+            }
+            
+            // Try exact match dengan original (tanpa normalisasi) untuk backward compatibility
             if (in_array($merchantCity, $territorialData)) {
                 return true;
             }
-            // Try case-insensitive match
-            return in_array(strtolower($merchantCity), $territorialDataLower);
+            
+            // Try case-insensitive match dengan original
+            return in_array(strtolower($merchantCity), array_map('strtolower', $territorialData));
         })->values();
         
         // Get keywords for these merchants
@@ -1658,19 +1672,33 @@ class MerchantController extends Controller
             ->get();
         
         // Filter merchants by matching cities from DimTeritorialNational
-        // Match merchant city dengan city yang ada di territorialData (case-insensitive)
-        $territorialDataLower = array_map('strtolower', array_map('trim', $territorialData));
-        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataLower) {
+        // Match merchant city dengan city yang ada di territorialData (case-insensitive, toleransi prefix Kota/Kabupaten)
+        // Normalisasi semua city name untuk matching yang lebih toleran
+        $territorialDataNormalized = array_map(function($city) {
+            return strtolower(trim(normalizeCityName($city)));
+        }, $territorialData);
+        
+        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataNormalized) {
             $merchantCity = trim(extractKabupatenKota($merchant->daerah));
             if (empty($merchantCity)) {
                 return false;
             }
-            // Try exact match first
+            
+            // Normalisasi merchant city (hapus prefix Kota/Kabupaten)
+            $merchantCityNormalized = strtolower(normalizeCityName($merchantCity));
+            
+            // Try exact match first (dengan normalisasi)
+            if (in_array($merchantCityNormalized, $territorialDataNormalized)) {
+                return true;
+            }
+            
+            // Try exact match dengan original (tanpa normalisasi) untuk backward compatibility
             if (in_array($merchantCity, $territorialData)) {
                 return true;
             }
-            // Try case-insensitive match
-            return in_array(strtolower($merchantCity), $territorialDataLower);
+            
+            // Try case-insensitive match dengan original
+            return in_array(strtolower($merchantCity), array_map('strtolower', $territorialData));
         })->values();
         
         // Get keywords for these merchants
@@ -1766,19 +1794,33 @@ class MerchantController extends Controller
             ->get();
         
         // Filter merchants by matching cities from DimTeritorialNational
-        // Match merchant city dengan city yang ada di territorialData (case-insensitive)
-        $territorialDataLower = array_map('strtolower', array_map('trim', $territorialData));
-        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataLower) {
+        // Match merchant city dengan city yang ada di territorialData (case-insensitive, toleransi prefix Kota/Kabupaten)
+        // Normalisasi semua city name untuk matching yang lebih toleran
+        $territorialDataNormalized = array_map(function($city) {
+            return strtolower(trim(normalizeCityName($city)));
+        }, $territorialData);
+        
+        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataNormalized) {
             $merchantCity = trim(extractKabupatenKota($merchant->daerah));
             if (empty($merchantCity)) {
                 return false;
             }
-            // Try exact match first
+            
+            // Normalisasi merchant city (hapus prefix Kota/Kabupaten)
+            $merchantCityNormalized = strtolower(normalizeCityName($merchantCity));
+            
+            // Try exact match first (dengan normalisasi)
+            if (in_array($merchantCityNormalized, $territorialDataNormalized)) {
+                return true;
+            }
+            
+            // Try exact match dengan original (tanpa normalisasi) untuk backward compatibility
             if (in_array($merchantCity, $territorialData)) {
                 return true;
             }
-            // Try case-insensitive match
-            return in_array(strtolower($merchantCity), $territorialDataLower);
+            
+            // Try case-insensitive match dengan original
+            return in_array(strtolower($merchantCity), array_map('strtolower', $territorialData));
         })->values();
         
         // Get keywords for these merchants
