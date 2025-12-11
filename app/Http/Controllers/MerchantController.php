@@ -1471,4 +1471,328 @@ class MerchantController extends Controller
             'territories' => $territories,
         ]);
     }
+
+    /**
+     * Show merchants by regional
+     * Route: GET /reg/{location}
+     * Logic: 
+     *   - URL menggunakan nama regional langsung (contoh: /reg/jatim)
+     *   - Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
+     *   - Cari semua kota di DimTeritorialNational yang regional-nya = 'Jatim'
+     *   - Tampilkan semua merchant dari semua kota tersebut
+     *   - Contoh: Blitar (city) ada di cluster Tulungagung, branch Malang, regional Jatim
+     *     sehingga card Blitar akan tampil di:
+     *     - /city/blitar
+     *     - /cluster/tulungagung
+     *     - /branch/malang
+     *     - /reg/jatim
+     */
+    public function showByRegional($location)
+    {
+        // Convert slug back to readable name (location adalah nama regional langsung)
+        $locationName = territorialNameGeneric($location);
+        
+        // Get all cities that belong to this regional from DimTeritorialNational
+        // Query: SELECT DISTINCT city FROM dim_teritorial_national WHERE LOWER(regional) = LOWER('Jatim')
+        // Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
+        $territorialData = DimTeritorialNational::whereRaw('LOWER(TRIM(regional)) = ?', [strtolower(trim($locationName))])
+            ->distinct()
+            ->pluck('city')
+            ->filter(function($city) {
+                return !empty(trim($city));
+            })
+            ->map(function($city) {
+                return trim($city);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+        
+        if (empty($territorialData)) {
+            // Try with original location (slug) as fallback
+            $territorialData = DimTeritorialNational::whereRaw('LOWER(TRIM(regional)) = ?', [strtolower(trim($location))])
+                ->distinct()
+                ->pluck('city')
+                ->filter(function($city) {
+                    return !empty(trim($city));
+                })
+                ->map(function($city) {
+                    return trim($city);
+                })
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+        
+        // Get the actual regional name from database for display
+        $regionalData = DimTeritorialNational::where(function($query) use ($locationName, $location) {
+            $query->whereRaw('LOWER(regional) = ?', [strtolower($locationName)])
+                  ->orWhereRaw('LOWER(regional) = ?', [strtolower($location)]);
+        })->first();
+        
+        $displayName = $regionalData ? $regionalData->regional : $locationName;
+        
+        // Get all active merchants
+        $allMerchants = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->get();
+        
+        // Filter merchants by matching cities from DimTeritorialNational
+        // Match merchant city dengan city yang ada di territorialData (case-insensitive)
+        $territorialDataLower = array_map('strtolower', array_map('trim', $territorialData));
+        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataLower) {
+            $merchantCity = trim(extractKabupatenKota($merchant->daerah));
+            if (empty($merchantCity)) {
+                return false;
+            }
+            // Try exact match first
+            if (in_array($merchantCity, $territorialData)) {
+                return true;
+            }
+            // Try case-insensitive match
+            return in_array(strtolower($merchantCity), $territorialDataLower);
+        })->values();
+        
+        // Get keywords for these merchants
+        $merchantIds = $merchants->pluck('id');
+        $keywords = Keyword::with('merchant')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
+            })
+            ->get();
+        
+        // Get iklans - show all iklans (no territorial filter for regional/branch/cluster)
+        $iklans = Iklan::whereNull('territorial')
+            ->orderBy('order', 'asc')
+            ->get();
+        
+        return view('regional', [
+            'location' => $location,
+            'locationName' => $displayName,
+            'merchants' => $merchants,
+            'keywords' => $keywords,
+            'iklans' => $iklans,
+        ]);
+    }
+
+    /**
+     * Show merchants by branch
+     * Route: GET /branch/{location}
+     * Logic:
+     *   - URL menggunakan nama branch langsung (contoh: /branch/malang)
+     *   - Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
+     *   - Cari semua kota di DimTeritorialNational yang branch-nya = 'Malang'
+     *   - Tampilkan semua merchant dari semua kota tersebut
+     *   - Contoh: Blitar (city) ada di cluster Tulungagung, branch Malang, regional Jatim
+     *     sehingga card Blitar akan tampil di:
+     *     - /city/blitar
+     *     - /cluster/tulungagung
+     *     - /branch/malang
+     *     - /reg/jatim
+     */
+    public function showByBranch($location)
+    {
+        // Convert slug back to readable name (location adalah nama branch langsung)
+        $locationName = territorialNameGeneric($location);
+        
+        // Get all cities that belong to this branch from DimTeritorialNational
+        // Query: SELECT DISTINCT city FROM dim_teritorial_national WHERE LOWER(branch) = LOWER('Malang')
+        // Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
+        $territorialData = DimTeritorialNational::whereRaw('LOWER(TRIM(branch)) = ?', [strtolower(trim($locationName))])
+            ->distinct()
+            ->pluck('city')
+            ->filter(function($city) {
+                return !empty(trim($city));
+            })
+            ->map(function($city) {
+                return trim($city);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+        
+        if (empty($territorialData)) {
+            // Try with original location (slug) as fallback
+            $territorialData = DimTeritorialNational::whereRaw('LOWER(TRIM(branch)) = ?', [strtolower(trim($location))])
+                ->distinct()
+                ->pluck('city')
+                ->filter(function($city) {
+                    return !empty(trim($city));
+                })
+                ->map(function($city) {
+                    return trim($city);
+                })
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+        
+        // Get the actual branch name from database for display
+        $branchData = DimTeritorialNational::where(function($query) use ($locationName, $location) {
+            $query->whereRaw('LOWER(branch) = ?', [strtolower($locationName)])
+                  ->orWhereRaw('LOWER(branch) = ?', [strtolower($location)]);
+        })->first();
+        
+        $displayName = $branchData ? $branchData->branch : $locationName;
+        
+        // Get all active merchants
+        $allMerchants = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->get();
+        
+        // Filter merchants by matching cities from DimTeritorialNational
+        // Match merchant city dengan city yang ada di territorialData (case-insensitive)
+        $territorialDataLower = array_map('strtolower', array_map('trim', $territorialData));
+        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataLower) {
+            $merchantCity = trim(extractKabupatenKota($merchant->daerah));
+            if (empty($merchantCity)) {
+                return false;
+            }
+            // Try exact match first
+            if (in_array($merchantCity, $territorialData)) {
+                return true;
+            }
+            // Try case-insensitive match
+            return in_array(strtolower($merchantCity), $territorialDataLower);
+        })->values();
+        
+        // Get keywords for these merchants
+        $merchantIds = $merchants->pluck('id');
+        $keywords = Keyword::with('merchant')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
+            })
+            ->get();
+        
+        // Get iklans - show all iklans (no territorial filter for regional/branch/cluster)
+        $iklans = Iklan::whereNull('territorial')
+            ->orderBy('order', 'asc')
+            ->get();
+        
+        return view('branch', [
+            'location' => $location,
+            'locationName' => $displayName,
+            'merchants' => $merchants,
+            'keywords' => $keywords,
+            'iklans' => $iklans,
+        ]);
+    }
+
+    /**
+     * Show merchants by cluster
+     * Route: GET /cluster/{location}
+     * Logic:
+     *   - URL menggunakan nama cluster langsung (contoh: /cluster/tulungagung)
+     *   - Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
+     *   - Cari semua kota di DimTeritorialNational yang cluster-nya = 'Tulungagung'
+     *   - Tampilkan semua merchant dari semua kota tersebut
+     *   - Contoh: Blitar (city) ada di cluster Tulungagung, branch Malang, regional Jatim
+     *     sehingga card Blitar akan tampil di:
+     *     - /city/blitar
+     *     - /cluster/tulungagung
+     *     - /branch/malang
+     *     - /reg/jatim
+     */
+    public function showByCluster($location)
+    {
+        // Convert slug back to readable name (location adalah nama cluster langsung)
+        $locationName = territorialNameGeneric($location);
+        
+        // Get all cities that belong to this cluster from DimTeritorialNational
+        // Query: SELECT DISTINCT city FROM dim_teritorial_national WHERE LOWER(cluster) = LOWER('Tulungagung')
+        // Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
+        $territorialData = DimTeritorialNational::whereRaw('LOWER(TRIM(cluster)) = ?', [strtolower(trim($locationName))])
+            ->distinct()
+            ->pluck('city')
+            ->filter(function($city) {
+                return !empty(trim($city));
+            })
+            ->map(function($city) {
+                return trim($city);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+        
+        if (empty($territorialData)) {
+            // Try with original location (slug) as fallback
+            $territorialData = DimTeritorialNational::whereRaw('LOWER(TRIM(cluster)) = ?', [strtolower(trim($location))])
+                ->distinct()
+                ->pluck('city')
+                ->filter(function($city) {
+                    return !empty(trim($city));
+                })
+                ->map(function($city) {
+                    return trim($city);
+                })
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+        
+        // Get the actual cluster name from database for display
+        $clusterData = DimTeritorialNational::where(function($query) use ($locationName, $location) {
+            $query->whereRaw('LOWER(cluster) = ?', [strtolower($locationName)])
+                  ->orWhereRaw('LOWER(cluster) = ?', [strtolower($location)]);
+        })->first();
+        
+        $displayName = $clusterData ? $clusterData->cluster : $locationName;
+        
+        // Get all active merchants
+        $allMerchants = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->get();
+        
+        // Filter merchants by matching cities from DimTeritorialNational
+        // Match merchant city dengan city yang ada di territorialData (case-insensitive)
+        $territorialDataLower = array_map('strtolower', array_map('trim', $territorialData));
+        $merchants = $allMerchants->filter(function($merchant) use ($territorialData, $territorialDataLower) {
+            $merchantCity = trim(extractKabupatenKota($merchant->daerah));
+            if (empty($merchantCity)) {
+                return false;
+            }
+            // Try exact match first
+            if (in_array($merchantCity, $territorialData)) {
+                return true;
+            }
+            // Try case-insensitive match
+            return in_array(strtolower($merchantCity), $territorialDataLower);
+        })->values();
+        
+        // Get keywords for these merchants
+        $merchantIds = $merchants->pluck('id');
+        $keywords = Keyword::with('merchant')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
+            })
+            ->get();
+        
+        // Get iklans - show all iklans (no territorial filter for regional/branch/cluster)
+        $iklans = Iklan::whereNull('territorial')
+            ->orderBy('order', 'asc')
+            ->get();
+        
+        return view('cluster', [
+            'location' => $location,
+            'locationName' => $displayName,
+            'merchants' => $merchants,
+            'keywords' => $keywords,
+            'iklans' => $iklans,
+        ]);
+    }
 }
