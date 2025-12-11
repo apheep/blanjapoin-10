@@ -7,6 +7,8 @@ use App\Models\Keyword;
 use App\Models\Iklan;
 use App\Models\PortalUser;
 use App\Models\WithdrawRequest;
+use App\Models\DimTeritorialNational;
+use App\Models\User;
 use App\Exports\MerchantsExport;
 use App\Exports\MerchantKeywordsExport;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -48,14 +51,73 @@ class MerchantController extends Controller
             ->appends($keywordQueryParams);
             
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
-        return view('admin', compact('merchants', 'keywords', 'allMerchants'));
+        
+        // Get filtered cities based on user_level
+        $cities = $this->getFilteredCities();
+        
+        return view('admin', compact('merchants', 'keywords', 'allMerchants', 'cities'));
+    }
+    
+    /**
+     * Get filtered cities based on authenticated user's user_level
+     */
+    private function getFilteredCities()
+    {
+        if (!Auth::check()) {
+            return [];
+        }
+        
+        $user = Auth::user();
+        $userLevel = strtoupper($user->user_level ?? '');
+        
+        $query = DimTeritorialNational::select('city')
+            ->distinct()
+            ->orderBy('city');
+        
+        switch ($userLevel) {
+            case 'NATIONAL':
+                // Show all cities, no filter
+                break;
+                
+            case 'AREA':
+                // Filter by id_area from area_level (e.g., "AREA 3" -> id_area = 3)
+                if ($user->area_level) {
+                    // Extract number from "AREA 3" format
+                    preg_match('/AREA\s*(\d+)/i', $user->area_level, $matches);
+                    if (isset($matches[1])) {
+                        $idArea = (int)$matches[1];
+                        $query->where('id_area', $idArea);
+                    }
+                }
+                break;
+                
+            case 'REGIONAL':
+                // Filter by regional
+                if ($user->regional) {
+                    $query->where('regional', $user->regional);
+                }
+                break;
+                
+            case 'BRANCH':
+                // Filter by branch
+                if ($user->branch) {
+                    $query->where('branch', $user->branch);
+                }
+                break;
+                
+            default:
+                // If user_level is not recognized, return empty array
+                return [];
+        }
+        
+        return $query->pluck('city')->unique()->sort()->values()->toArray();
     }
 
     public function show(Merchant $merchant)
     {
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
-            ->where('is_active', 1)
+            // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             ->where('status', 'approve')
             ->whereHas('merchant', function ($query) {
                 $query->where('is_active', 1);
