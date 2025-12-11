@@ -179,75 +179,25 @@
                 <div id="lokasiSection">
                     <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Alamat</h4>
                     <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Provinsi --}}
+                        {{-- City Dropdown --}}
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Kota/Kabupaten
+                            </label>
                             <div class="relative">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Provinsi
-                                </label>
-                                <div class="relative">
-                                    <input type="hidden" name="provinsi" id="provinsiValue">
-                                    <input type="text"
-                                           id="provinsiSearch"
-                                           placeholder="Cari atau pilih provinsi..."
-                                           autocomplete="off"
-                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           onfocus="openSearchableDropdown('provinsi', event)"
-                                           onclick="openSearchableDropdown('provinsi', event)"
-                                           oninput="filterSearchableDropdown('provinsi', this.value)">
-                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                                    <div id="provinsiDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
-                                        <div class="max-h-60 overflow-y-auto">
-                                            <div id="provinsiOptions" class="py-1"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Kabupaten --}}
-                            <div class="relative">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Kabupaten/Kota
-                                </label>
-                                <div class="relative">
-                                    <input type="hidden" name="kabupaten" id="kabupatenValue">
-                                    <input type="text"
-                                           id="kabupatenSearch"
-                                           placeholder="Cari atau pilih kabupaten..."
-                                           autocomplete="off"
-                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           onfocus="openSearchableDropdown('kabupaten', event)"
-                                           onclick="openSearchableDropdown('kabupaten', event)"
-                                           oninput="filterSearchableDropdown('kabupaten', this.value)">
-                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                                    <div id="kabupatenDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
-                                        <div class="max-h-60 overflow-y-auto">
-                                            <div id="kabupatenOptions" class="py-1"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Kecamatan --}}
-                            <div class="relative">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Kecamatan
-                                </label>
-                                <div class="relative">
-                                    <input type="hidden" name="kecamatan" id="kecamatanValue">
-                                    <input type="text"
-                                           id="kecamatanSearch"
-                                           placeholder="Cari atau pilih kecamatan..."
-                                           autocomplete="off"
-                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           onfocus="openSearchableDropdown('kecamatan', event)"
-                                           onclick="openSearchableDropdown('kecamatan', event)"
-                                           oninput="filterSearchableDropdown('kecamatan', this.value)">
-                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                                    <div id="kecamatanDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
-                                        <div class="max-h-60 overflow-y-auto">
-                                            <div id="kecamatanOptions" class="py-1"></div>
-                                        </div>
+                                <input type="hidden" name="city" id="cityValue">
+                                <input type="text"
+                                       id="citySearch"
+                                       placeholder="Cari atau pilih kota..."
+                                       autocomplete="off"
+                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                       onfocus="openCityDropdown(event)"
+                                       onclick="openCityDropdown(event)"
+                                       oninput="filterCityDropdown(this.value)">
+                                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                <div id="cityDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
+                                    <div class="max-h-60 overflow-y-auto">
+                                        <div id="cityOptions" class="py-1"></div>
                                     </div>
                                 </div>
                             </div>
@@ -264,7 +214,7 @@
                                       placeholder="Masukkan detail alamat (jalan, nomor, RT/RW, dll)"></textarea>
                         </div>
 
-                        {{-- Hidden field untuk menyimpan daerah (dikombinasikan) --}}
+                        {{-- Hidden field untuk menyimpan daerah (city) --}}
                         <input type="hidden" name="daerah" id="daerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -452,6 +402,8 @@
 @include('partials.upload-verification-modal')
 
 <script>
+// Cities data from backend
+window.uploadMerchantCities = {!! json_encode($cities ?? []) !!};
 // ======================
 // Preview & remove image
 // ======================
@@ -616,11 +568,6 @@ function openUploadMerchant() {
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-
-    // Preload provinsi data saat modal dibuka
-    if (allProvinsiOptions.length === 0) {
-        fetchProvinces();
-    }
     
     requestAnimationFrame(() => {
         overlay?.classList.remove('opacity-0');
@@ -674,24 +621,14 @@ function closeUploadMerchant() {
         if (ktpUploadSection) ktpUploadSection.style.display = 'block';
         if (logoSection) logoSection.style.display = 'block';
 
-            // Reset lokasi dropdowns
-            document.getElementById('provinsiSearch').value = '';
-            document.getElementById('provinsiValue').value = '';
-            document.getElementById('provinsiOptions').innerHTML = '';
-            document.getElementById('kabupatenSearch').value = '';
-            document.getElementById('kabupatenValue').value = '';
-            document.getElementById('kabupatenOptions').innerHTML = '';
-            document.getElementById('kecamatanSearch').value = '';
-            document.getElementById('kecamatanValue').value = '';
-            document.getElementById('kecamatanOptions').innerHTML = '';
+            // Reset city dropdown
+            const citySearch = document.getElementById('citySearch');
+            const cityValue = document.getElementById('cityValue');
+            if (citySearch) citySearch.value = '';
+            if (cityValue) cityValue.value = '';
+            document.getElementById('cityOptions').innerHTML = '';
             document.getElementById('daerahCombined').value = '';
-            allKabupatenOptions = [];
-            allKecamatanOptions = [];
-            selectedProvinceCode = null;
-            selectedRegencyCode = null;
-            closeSearchableDropdown('provinsi');
-            closeSearchableDropdown('kabupaten');
-            closeSearchableDropdown('kecamatan');
+            closeCityDropdown();
             
             // Reset link blanjapoin
             document.getElementById('linkBlanjapoinCode').value = '';
@@ -811,12 +748,10 @@ function toggleFieldsByKategori(kategori) {
         if (isTelkomsel) {
             lokasiSection.style.display = 'none';
             // Clear values when hiding
-            document.getElementById('provinsiSearch').value = '';
-            document.getElementById('provinsiValue').value = '';
-            document.getElementById('kabupatenSearch').value = '';
-            document.getElementById('kabupatenValue').value = '';
-            document.getElementById('kecamatanSearch').value = '';
-            document.getElementById('kecamatanValue').value = '';
+            const citySearch = document.getElementById('citySearch');
+            const cityValue = document.getElementById('cityValue');
+            if (citySearch) citySearch.value = '';
+            if (cityValue) cityValue.value = '';
             document.querySelector('textarea[name="detail_alamat"]').value = '';
             document.getElementById('merchantLinkGmap').value = '';
             document.getElementById('daerahCombined').value = '';
@@ -1281,321 +1216,24 @@ function confirmLocation() {
 }
 
 // ======================
-// Lokasi Dropdowns (Provinsi, Kabupaten, Kecamatan) - Data dari API wilayah.id
-// ======================
-// Data akan diambil dari API wilayah.id secara dinamis
-
-// Store all options for searchable dropdowns
-let allProvinsiOptions = [];
-let allKabupatenOptions = [];
-let allKecamatanOptions = [];
-
-// Cache untuk menyimpan kode yang dipilih
-let selectedProvinceCode = null;
-let selectedRegencyCode = null;
-
-// ======================
-// API Functions - wilayah.id
+// City Dropdown Functions
 // ======================
 
-// Load provinsi dari API
-async function fetchProvinces() {
-    const container = document.getElementById('provinsiOptions');
-    const dropdown = document.getElementById('provinsiDropdown');
-    
-    // Show loading state
-    if (container) {
-        container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data provinsi...</div>';
-    }
-    if (dropdown) {
-        dropdown.classList.remove('hidden');
-        dropdown.style.display = 'block';
-    }
-    
-    try {
-        // Gunakan backend proxy untuk menghindari CORS
-        const response = await fetch('{{ route("api.wilayah.provinces") }}', {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('API Response:', data); // Debug log
-        
-        // Handle different response formats
-        const provincesData = data?.data || data?.provinces || data;
-        
-        if (Array.isArray(provincesData) && provincesData.length > 0) {
-            allProvinsiOptions = provincesData.map(prov => ({
-                value: prov.code || prov.id,
-                label: prov.name,
-                code: prov.code || prov.id
-            }));
-            
-            console.log('Loaded provinces:', allProvinsiOptions.length, allProvinsiOptions.slice(0, 3)); // Debug log
-            
-            // Render options
-            if (container) {
-                renderSearchableOptions('provinsi', allProvinsiOptions);
-            }
-            
-            // Ensure dropdown is visible
-            if (dropdown) {
-                dropdown.classList.remove('hidden');
-                dropdown.style.display = 'block';
-            }
-        } else {
-            throw new Error('Invalid data format or empty data');
-        }
-    } catch (error) {
-        console.error('Error fetching provinces:', error);
-        
-        // Show error message with retry option
-        if (container) {
-            container.innerHTML = `
-                <div class="px-4 py-2 text-sm text-red-500">
-                    <div>Gagal memuat data provinsi</div>
-                    <button onclick="fetchProvinces()" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline">Coba lagi</button>
-                </div>
-            `;
-        }
-        
-        // Keep dropdown visible to show error
-        if (dropdown) {
-            dropdown.classList.remove('hidden');
-            dropdown.style.display = 'block';
-        }
-    }
-}
+// Store cities from backend
+const cities = window.uploadMerchantCities || [];
 
-// Load kabupaten dari API berdasarkan kode provinsi
-async function fetchRegencies(provinceCode) {
-    if (!provinceCode) return;
-    
-    try {
-        allKabupatenOptions = [];
-        const kabupatenSearch = document.getElementById('kabupatenSearch');
-        const kabupatenValue = document.getElementById('kabupatenValue');
-        const kecamatanSearch = document.getElementById('kecamatanSearch');
-        const kecamatanValue = document.getElementById('kecamatanValue');
-        
-        // Reset kabupaten dan kecamatan
-        if (kabupatenSearch) kabupatenSearch.value = '';
-        if (kabupatenValue) kabupatenValue.value = '';
-        if (kecamatanSearch) kecamatanSearch.value = '';
-        if (kecamatanValue) kecamatanValue.value = '';
-        document.getElementById('kabupatenOptions').innerHTML = '';
-        document.getElementById('kecamatanOptions').innerHTML = '';
-        allKecamatanOptions = [];
-        
-        // Show loading state
-        const container = document.getElementById('kabupatenOptions');
-        if (container) {
-            container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data...</div>';
-        }
-        
-        // Gunakan backend proxy untuk menghindari CORS
-        const response = await fetch(`{{ url('/api/wilayah/regencies') }}/${provinceCode}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Regencies response:', data); // Debug log
-        
-        // Handle different response formats
-        const regenciesData = data?.data || data?.regencies || data;
-        
-        if (Array.isArray(regenciesData) && regenciesData.length > 0) {
-            allKabupatenOptions = regenciesData.map(kab => {
-                // Pastikan kode disimpan sebagai string dan tanpa karakter aneh
-                const code = String(kab.code || kab.id || '').trim();
-                return {
-                    value: code,
-                    label: kab.name || kab.nama,
-                    code: code
-                };
-            });
-            
-            console.log('Loaded regencies:', allKabupatenOptions.length); // Debug log
-            
-            const dropdown = document.getElementById('kabupatenDropdown');
-            renderSearchableOptions('kabupaten', allKabupatenOptions);
-            if (dropdown) {
-                dropdown.classList.remove('hidden');
-                dropdown.style.display = 'block';
-            }
-        } else {
-            throw new Error('Invalid data format or empty data');
-        }
-    } catch (error) {
-        console.error('Error fetching regencies:', error);
-        const container = document.getElementById('kabupatenOptions');
-        if (container) {
-            container.innerHTML = `
-                <div class="px-4 py-2 text-sm text-red-500">
-                    <div>Gagal memuat data kabupaten</div>
-                    <button onclick="fetchRegencies('${provinceCode}')" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline">Coba lagi</button>
-                </div>
-            `;
-        }
-    }
-}
-
-// Load kecamatan dari API berdasarkan kode kabupaten
-async function fetchDistricts(regencyCode) {
-    if (!regencyCode) return;
-    
-    const container = document.getElementById('kecamatanOptions');
-    const dropdown = document.getElementById('kecamatanDropdown');
-    
-    try {
-        allKecamatanOptions = [];
-        const kecamatanSearch = document.getElementById('kecamatanSearch');
-        const kecamatanValue = document.getElementById('kecamatanValue');
-        
-        // Reset kecamatan
-        if (kecamatanSearch) kecamatanSearch.value = '';
-        if (kecamatanValue) kecamatanValue.value = '';
-        if (container) container.innerHTML = '';
-        
-        // Show loading state
-        if (container) {
-            container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data kecamatan...</div>';
-        }
-        if (dropdown) {
-            dropdown.classList.remove('hidden');
-            dropdown.style.display = 'block';
-        }
-        
-        // Log untuk debugging
-        console.log('Fetching districts for regency code:', regencyCode);
-        
-        // Gunakan backend proxy untuk menghindari CORS
-        // Gunakan query parameter untuk menghindari masalah dengan titik di route
-        const url = `{{ url('/api/wilayah/districts-by-code') }}?code=${encodeURIComponent(regencyCode)}`;
-        console.log('Fetching from URL:', url, 'Original code:', regencyCode);
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        console.log('Response status:', response.status, response.statusText);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Response error:', errorText);
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Districts response data:', data); // Debug log
-        
-        // Check if response has error
-        if (data.error) {
-            throw new Error(data.error + (data.message ? ': ' + data.message : ''));
-        }
-        
-        // Handle different response formats
-        let districtsData = null;
-        if (data?.data) {
-            districtsData = Array.isArray(data.data) ? data.data : (data.data.data || null);
-        } else if (data?.districts) {
-            districtsData = Array.isArray(data.districts) ? data.districts : null;
-        } else if (Array.isArray(data)) {
-            districtsData = data;
-        }
-        
-        console.log('Parsed districts data:', districtsData);
-        
-        if (districtsData && Array.isArray(districtsData) && districtsData.length > 0) {
-            allKecamatanOptions = districtsData.map(kec => {
-                // Pastikan kode disimpan sebagai string dan tanpa karakter aneh
-                const code = String(kec.code || kec.id || kec.kode || '').trim();
-                return {
-                    value: code,
-                    label: kec.name || kec.nama,
-                    code: code
-                };
-            });
-            
-            console.log('Loaded districts:', allKecamatanOptions.length, 'items'); // Debug log
-            
-            // Render options
-            if (container) {
-                renderSearchableOptions('kecamatan', allKecamatanOptions);
-            }
-            
-            // Ensure dropdown is visible
-            if (dropdown) {
-                dropdown.classList.remove('hidden');
-                dropdown.style.display = 'block';
-            }
-        } else {
-            console.warn('No districts data found or empty array');
-            throw new Error('Data kecamatan kosong atau format tidak valid');
-        }
-    } catch (error) {
-        console.error('Error fetching districts:', error);
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            regencyCode: regencyCode
-        });
-        
-        // Show error message with retry option and more details
-        if (container) {
-            container.innerHTML = `
-                <div class="px-4 py-2 text-sm text-red-500">
-                    <div>Gagal memuat data kecamatan</div>
-                    <div class="text-xs text-gray-500 mt-1">${error.message}</div>
-                    <button onclick="fetchDistricts('${regencyCode}')" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline">Coba lagi</button>
-                </div>
-            `;
-        }
-        
-        // Keep dropdown visible to show error
-        if (dropdown) {
-            dropdown.classList.remove('hidden');
-            dropdown.style.display = 'block';
-        }
-    }
-}
-
-// Load provinsi saat DOM ready atau saat modal dibuka
+// Initialize saat DOM ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Preload provinsi data
-    fetchProvinces();
-    
     // Initialize KTP upload state (disabled by default)
     toggleKtpUpload();
     
-    // Close dropdowns saat klik di luar (dengan delay untuk menghindari konflik dengan open event)
+    // Close dropdown saat klik di luar
     let clickTimeout;
     document.addEventListener('click', function(event) {
         const target = event.target;
         
         // Skip jika klik di input atau dropdown option
-        if (target.id === 'provinsiSearch' || target.id === 'kabupatenSearch' || target.id === 'kecamatanSearch' ||
-            target.closest('#provinsiOptions') || target.closest('#kabupatenOptions') || target.closest('#kecamatanOptions')) {
+        if (target.id === 'citySearch' || target.closest('#cityOptions')) {
             clearTimeout(clickTimeout);
             return;
         }
@@ -1605,71 +1243,42 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Delay untuk memastikan open event sudah selesai
         clickTimeout = setTimeout(() => {
-            const provinsiInput = document.getElementById('provinsiSearch');
-            const kabupatenInput = document.getElementById('kabupatenSearch');
-            const kecamatanInput = document.getElementById('kecamatanSearch');
-            
-            const provinsiDropdown = document.getElementById('provinsiDropdown');
-            const kabupatenDropdown = document.getElementById('kabupatenDropdown');
-            const kecamatanDropdown = document.getElementById('kecamatanDropdown');
+            const cityInput = document.getElementById('citySearch');
+            const cityDropdown = document.getElementById('cityDropdown');
             
             // Check if click is inside dropdown container
-            const provinsiContainer = provinsiInput?.closest('.relative');
-            const kabupatenContainer = kabupatenInput?.closest('.relative');
-            const kecamatanContainer = kecamatanInput?.closest('.relative');
+            const cityContainer = cityInput?.closest('.relative');
             
-            // Close provinsi dropdown if click is outside
-            if (provinsiDropdown && !provinsiDropdown.classList.contains('hidden')) {
-                if (!provinsiContainer?.contains(target) && !provinsiDropdown?.contains(target)) {
-                    closeSearchableDropdown('provinsi');
+            // Close city dropdown if click is outside
+            if (cityDropdown && !cityDropdown.classList.contains('hidden')) {
+                if (!cityContainer?.contains(target) && !cityDropdown?.contains(target)) {
+                    closeCityDropdown();
                 }
             }
-            
-            // Close kabupaten dropdown if click is outside
-            if (kabupatenDropdown && !kabupatenDropdown.classList.contains('hidden')) {
-                if (!kabupatenContainer?.contains(target) && !kabupatenDropdown?.contains(target)) {
-                    closeSearchableDropdown('kabupaten');
-                }
-            }
-            
-            // Close kecamatan dropdown if click is outside
-            if (kecamatanDropdown && !kecamatanDropdown.classList.contains('hidden')) {
-                if (!kecamatanContainer?.contains(target) && !kecamatanDropdown?.contains(target)) {
-                    closeSearchableDropdown('kecamatan');
-                }
-            }
-        }, 150); // Delay 150ms untuk memberikan waktu open event selesai
+        }, 150);
     });
     
-    // Close dropdowns saat tekan ESC
+    // Close dropdown saat tekan ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            closeAllDropdowns();
+            closeCityDropdown();
         }
     });
 });
 
-// ======================
-// Searchable Dropdown Functions
-// ======================
-async function openSearchableDropdown(type, event) {
-    // Stop event propagation jika event tersedia
+// Open city dropdown
+function openCityDropdown(event) {
     if (event) {
         event.stopPropagation();
     }
     
-    const dropdown = document.getElementById(`${type}Dropdown`);
-    const optionsContainer = document.getElementById(`${type}Options`);
+    const dropdown = document.getElementById('cityDropdown');
+    const optionsContainer = document.getElementById('cityOptions');
     
     if (!dropdown || !optionsContainer) {
-        console.error(`Element not found for type: ${type}`, { dropdown: !!dropdown, optionsContainer: !!optionsContainer });
+        console.error('City dropdown elements not found');
         return;
     }
-    
-    // Close other dropdowns first
-    if (type !== 'provinsi') closeSearchableDropdown('provinsi');
-    if (type !== 'kabupaten') closeSearchableDropdown('kabupaten');
-    if (type !== 'kecamatan') closeSearchableDropdown('kecamatan');
     
     // Open dropdown
     dropdown.classList.remove('hidden');
@@ -1677,61 +1286,13 @@ async function openSearchableDropdown(type, event) {
     dropdown.style.opacity = '1';
     dropdown.style.visibility = 'visible';
     
-    // Load data jika belum ada
-    if (type === 'provinsi') {
-        if (allProvinsiOptions.length === 0) {
-            // Show loading
-            optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data provinsi...</div>';
-            await fetchProvinces();
-        } else {
-            // Render existing options
-            renderSearchableOptions(type, allProvinsiOptions);
-        }
-        return;
-    }
-    
-    if (type === 'kabupaten') {
-        if (allKabupatenOptions.length === 0) {
-            // Show message if no province selected
-            if (!selectedProvinceCode) {
-                optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Pilih provinsi terlebih dahulu</div>';
-                return;
-            }
-            await fetchRegencies(selectedProvinceCode);
-        } else {
-            // Render existing options
-            renderSearchableOptions(type, allKabupatenOptions);
-        }
-        return;
-    }
-    
-    if (type === 'kecamatan') {
-        // Check if regency code is available
-        if (!selectedRegencyCode) {
-            // Try to get from hidden input
-            const kabupatenValue = document.getElementById('kabupatenValue');
-            if (kabupatenValue && kabupatenValue.value) {
-                selectedRegencyCode = kabupatenValue.value;
-                console.log('Got regency code from input:', selectedRegencyCode);
-            } else {
-                optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Pilih kabupaten terlebih dahulu</div>';
-                return;
-            }
-        }
-        
-        // Always fetch if no data or if regency code changed
-        if (allKecamatanOptions.length === 0) {
-            await fetchDistricts(selectedRegencyCode);
-        } else {
-            // Render existing options
-            renderSearchableOptions(type, allKecamatanOptions);
-        }
-        return;
-    }
+    // Render cities
+    renderCityOptions(cities);
 }
 
-function closeSearchableDropdown(type) {
-    const dropdown = document.getElementById(`${type}Dropdown`);
+// Close city dropdown
+function closeCityDropdown() {
+    const dropdown = document.getElementById('cityDropdown');
     if (dropdown) {
         dropdown.classList.add('hidden');
         dropdown.style.display = 'none';
@@ -1740,134 +1301,59 @@ function closeSearchableDropdown(type) {
     }
 }
 
-// Close all dropdowns
-function closeAllDropdowns() {
-    closeSearchableDropdown('provinsi');
-    closeSearchableDropdown('kabupaten');
-    closeSearchableDropdown('kecamatan');
-}
-
-function filterSearchableDropdown(type, searchTerm) {
-    let options = [];
-    if (type === 'provinsi') {
-        options = allProvinsiOptions;
-    } else if (type === 'kabupaten') {
-        options = allKabupatenOptions;
-    } else if (type === 'kecamatan') {
-        options = allKecamatanOptions;
-    }
-    
+// Filter city dropdown
+function filterCityDropdown(searchTerm) {
     const filtered = searchTerm 
-        ? options.filter(opt => opt.label.toLowerCase().includes(searchTerm.toLowerCase()))
-        : options;
+        ? cities.filter(city => city.toLowerCase().includes(searchTerm.toLowerCase()))
+        : cities;
     
     // Open dropdown if not already open
-    const dropdown = document.getElementById(`${type}Dropdown`);
+    const dropdown = document.getElementById('cityDropdown');
     if (dropdown) {
         dropdown.classList.remove('hidden');
     }
     
-    renderSearchableOptions(type, filtered);
+    renderCityOptions(filtered);
 }
 
-function renderSearchableOptions(type, options) {
-    const container = document.getElementById(`${type}Options`);
+// Render city options
+function renderCityOptions(cityList) {
+    const container = document.getElementById('cityOptions');
     if (!container) return;
     
     container.innerHTML = '';
     
-    if (!options || options.length === 0) {
-        container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Tidak ada data</div>';
+    if (!cityList || cityList.length === 0) {
+        container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Tidak ada data kota</div>';
         return;
     }
     
-    options.forEach(option => {
+    cityList.forEach(city => {
         const div = document.createElement('div');
         div.className = 'px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 cursor-pointer transition-colors';
-        div.textContent = option.label || option.name || option;
-        const value = option.value || option.code || option;
-        const code = option.code || option.value || option;
-        const label = option.label || option.name || option;
-        div.onclick = () => selectSearchableOption(type, value, label, code);
+        div.textContent = city;
+        div.onclick = () => selectCity(city);
         container.appendChild(div);
     });
 }
 
-function selectSearchableOption(type, value, label, code) {
-    const searchInput = document.getElementById(`${type}Search`);
-    const hiddenInput = document.getElementById(`${type}Value`);
+// Select city
+function selectCity(city) {
+    const searchInput = document.getElementById('citySearch');
+    const hiddenInput = document.getElementById('cityValue');
     
-    if (searchInput) searchInput.value = label;
-    if (hiddenInput) hiddenInput.value = value;
+    if (searchInput) searchInput.value = city;
+    if (hiddenInput) hiddenInput.value = city;
     
-    closeSearchableDropdown(type);
-    
-    if (type === 'provinsi') {
-        selectedProvinceCode = code || value;
-        fetchRegencies(selectedProvinceCode);
-        updateDaerahCombined();
-    } else if (type === 'kabupaten') {
-        // Use code first, then value as fallback, ensure it's a clean string
-        const regencyCode = String(code || value || '').trim();
-        selectedRegencyCode = regencyCode || null;
-        console.log('Kabupaten selected:', {
-            label: label,
-            value: value,
-            code: code,
-            selectedRegencyCode: selectedRegencyCode,
-            originalCode: code,
-            originalValue: value
-        });
-        
-        // Validate code format (should be numeric, possibly with dots)
-        if (!selectedRegencyCode || (!/^[0-9.]+$/.test(selectedRegencyCode))) {
-            console.error('Invalid regency code format:', selectedRegencyCode);
-        }
-        
-        // Reset kecamatan data when kabupaten changes
-        allKecamatanOptions = [];
-        const kecamatanSearch = document.getElementById('kecamatanSearch');
-        const kecamatanValue = document.getElementById('kecamatanValue');
-        if (kecamatanSearch) kecamatanSearch.value = '';
-        if (kecamatanValue) kecamatanValue.value = '';
-        
-        if (selectedRegencyCode) {
-            // Fetch districts immediately
-            fetchDistricts(selectedRegencyCode);
-        } else {
-            console.error('Regency code is empty or invalid. Code:', code, 'Value:', value);
-            alert('Kode kabupaten tidak valid. Silakan pilih ulang.');
-        }
-        updateDaerahCombined();
-    } else if (type === 'kecamatan') {
-        updateDaerahCombined();
-    }
+    closeCityDropdown();
+    updateDaerahCombined();
 }
 
-// Event listener untuk close dropdown sudah di-handle di DOMContentLoaded
-
-// Functions ini sudah tidak diperlukan karena menggunakan API langsung
-// updateKabupatenOptions() dan updateKecamatanOptions() sudah diganti dengan fetchRegencies() dan fetchDistricts()
-
+// Update daerah combined (only city now)
 function updateDaerahCombined() {
-    const provinsiSearch = document.getElementById('provinsiSearch');
-    const kabupatenSearch = document.getElementById('kabupatenSearch');
-    const kecamatanSearch = document.getElementById('kecamatanSearch');
+    const citySearch = document.getElementById('citySearch');
     
-    const parts = [];
-    
-    // Gunakan nilai dari input search (yang sudah terisi label)
-    if (kecamatanSearch && kecamatanSearch.value && kecamatanSearch.value.trim() !== '') {
-        parts.push(kecamatanSearch.value.trim());
-    }
-    if (kabupatenSearch && kabupatenSearch.value && kabupatenSearch.value.trim() !== '') {
-        parts.push(kabupatenSearch.value.trim());
-    }
-    if (provinsiSearch && provinsiSearch.value && provinsiSearch.value.trim() !== '') {
-        parts.push(provinsiSearch.value.trim());
-    }
-    
-    const daerahCombined = parts.join(', ');
+    const daerahCombined = citySearch && citySearch.value ? citySearch.value.trim() : '';
     document.getElementById('daerahCombined').value = daerahCombined;
     
     console.log('Daerah combined updated:', daerahCombined);
@@ -1906,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update WA PIC sebelum submit
             updateWaPic();
             
-            // Update daerah sebelum submit
+            // Update daerah (city) sebelum submit
             updateDaerahCombined();
             
             // Debug: Log form data sebelum submit
