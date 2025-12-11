@@ -30,7 +30,7 @@
                         {{-- Nama Merchant --}}
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Nama Merchant <span class="text-red-500">*</span>
+                                Nama Merchant / Program<span class="text-red-500">*</span>
                             </label>
                             <input type="text"
                                    id="editMerchantNama"
@@ -77,7 +77,7 @@
                                             Kecantikan
                                         </button>
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all" onclick="selectEditMerchantKategori('telkomsel')">
-                                            Telkomsel Packet
+                                            Telkomsel Paket
                                         </button>
                                     </div>
                                 </div>
@@ -146,10 +146,11 @@
                             <input type="email"
                                    id="editMerchantEmailPic"
                                    name="email_pic"
+                                   oninput="toggleEditKtpUpload()"
                                    class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                                    placeholder="Masukkan email PIC">
                         </div>
-                        <div>
+                        <div id="editKtpUploadSection">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 Upload KTP (Opsional)
                             </label>
@@ -159,13 +160,15 @@
                                     name="ktp_pic"
                                     accept="image/*"
                                     class="hidden"
+                                    disabled
                                     onchange="previewEditMerchantKtp(this)">
                                 <button type="button"
-                                        onclick="document.getElementById('editMerchantKtpInput').click()"
-                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 focus:outline-none focus:border-orange-500 flex flex-col items-center justify-center text-gray-600 hover:text-orange-600 transition-all">
+                                        id="editMerchantKtpBtn"
+                                        onclick="handleEditKtpUploadClick()"
+                                    class="w-full min-h-[120px] px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg focus:outline-none flex flex-col items-center justify-center text-gray-400 transition-all cursor-not-allowed opacity-60">
                                 <i class="fas fa-upload text-3xl mb-2"></i>
                                 <span id="editMerchantKtpText" class="text-sm">
-                                        Click to upload KTP
+                                        Isi email PIC terlebih dahulu
                                     </span>
                                 <span class="text-xs text-gray-400 mt-1">PNG, JPG, JPEG maks 2MB</span>
                                 </button>
@@ -176,78 +179,28 @@
                 </div>
 
                 {{-- Section 3: Lokasi --}}
-                <div>
+                <div id="editLokasiSection">
                     <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Alamat</h4>
                     <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Provinsi --}}
+                        {{-- City Dropdown --}}
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Kota/Kabupaten
+                            </label>
                             <div class="relative">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Provinsi
-                                </label>
-                                <div class="relative">
-                                    <input type="hidden" name="provinsi" id="editProvinsiValue">
-                                    <input type="text"
-                                           id="editProvinsiSearch"
-                                           placeholder="Cari atau pilih provinsi..."
-                                           autocomplete="off"
-                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           onfocus="openEditSearchableDropdown('provinsi', event)"
-                                           onclick="openEditSearchableDropdown('provinsi', event)"
-                                           oninput="filterEditSearchableDropdown('provinsi', this.value)">
-                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                                    <div id="editProvinsiDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
-                                        <div class="max-h-60 overflow-y-auto">
-                                            <div id="editProvinsiOptions" class="py-1"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Kabupaten --}}
-                            <div class="relative">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Kabupaten/Kota
-                                </label>
-                                <div class="relative">
-                                    <input type="hidden" name="kabupaten" id="editKabupatenValue">
-                                    <input type="text"
-                                           id="editKabupatenSearch"
-                                           placeholder="Cari atau pilih kabupaten..."
-                                           autocomplete="off"
-                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           onfocus="openEditSearchableDropdown('kabupaten', event)"
-                                           onclick="openEditSearchableDropdown('kabupaten', event)"
-                                           oninput="filterEditSearchableDropdown('kabupaten', this.value)">
-                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                                    <div id="editKabupatenDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
-                                        <div class="max-h-60 overflow-y-auto">
-                                            <div id="editKabupatenOptions" class="py-1"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Kecamatan --}}
-                            <div class="relative">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Kecamatan
-                                </label>
-                                <div class="relative">
-                                    <input type="hidden" name="kecamatan" id="editKecamatanValue">
-                                    <input type="text"
-                                           id="editKecamatanSearch"
-                                           placeholder="Cari atau pilih kecamatan..."
-                                           autocomplete="off"
-                                           class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           onfocus="openEditSearchableDropdown('kecamatan', event)"
-                                           onclick="openEditSearchableDropdown('kecamatan', event)"
-                                           oninput="filterEditSearchableDropdown('kecamatan', this.value)">
-                                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                                    <div id="editKecamatanDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
-                                        <div class="max-h-60 overflow-y-auto">
-                                            <div id="editKecamatanOptions" class="py-1"></div>
-                                        </div>
+                                <input type="hidden" name="city" id="editCityValue">
+                                <input type="text"
+                                       id="editCitySearch"
+                                       placeholder="Cari atau pilih kota..."
+                                       autocomplete="off"
+                                       class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                       onfocus="openEditCityDropdown(event)"
+                                       onclick="openEditCityDropdown(event)"
+                                       oninput="filterEditCityDropdown(this.value)">
+                                <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                <div id="editCityDropdown" class="hidden absolute z-[100] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-60 overflow-hidden" style="top: 100%; left: 0;">
+                                    <div class="max-h-60 overflow-y-auto">
+                                        <div id="editCityOptions" class="py-1"></div>
                                     </div>
                                 </div>
                             </div>
@@ -265,7 +218,7 @@
                                       placeholder="Masukkan detail alamat (jalan, nomor, RT/RW, dll)"></textarea>
                         </div>
 
-                        {{-- Hidden field untuk menyimpan daerah (dikombinasikan) --}}
+                        {{-- Hidden field untuk menyimpan daerah (city) --}}
                         <input type="hidden" name="daerah" id="editDaerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -299,7 +252,7 @@
                 </div>
 
                 {{-- Section 4: Logo --}}
-                <div>
+                <div id="editLogoSection">
                     <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Logo Merchant</h4>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -347,6 +300,8 @@
 @include('partials.edit-verification-modal')
 
 <script>
+// Cities data from backend
+window.editMerchantCities = {!! json_encode($cities ?? []) !!};
 let currentEditMerchantId = null;
 
 // ======================
@@ -440,6 +395,68 @@ function removeEditMerchantKtp() {
 }
 
 // ======================
+// Toggle KTP Upload based on Email PIC
+// ======================
+function toggleEditKtpUpload() {
+    const emailInput = document.getElementById('editMerchantEmailPic');
+    const ktpInput = document.getElementById('editMerchantKtpInput');
+    const ktpBtn = document.getElementById('editMerchantKtpBtn');
+    const ktpText = document.getElementById('editMerchantKtpText');
+    
+    if (!emailInput || !ktpInput || !ktpBtn) return;
+    
+    const emailValue = emailInput.value.trim();
+    // Basic email validation: must contain @ and . with at least one character before @ and after .
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailValue && emailRegex.test(emailValue);
+    
+    if (isValidEmail) {
+        // Enable KTP upload
+        ktpInput.disabled = false;
+        ktpBtn.disabled = false;
+        ktpBtn.classList.remove('cursor-not-allowed', 'opacity-60');
+        ktpBtn.classList.add('hover:border-orange-400', 'focus:border-orange-500', 'hover:text-orange-600', 'text-gray-600', 'border-gray-300');
+        if (ktpText) {
+            ktpText.textContent = 'Click to upload KTP';
+        }
+    } else {
+        // Disable KTP upload
+        ktpInput.disabled = true;
+        ktpBtn.disabled = true;
+        ktpBtn.classList.add('cursor-not-allowed', 'opacity-60');
+        ktpBtn.classList.remove('hover:border-orange-400', 'focus:border-orange-500', 'hover:text-orange-600', 'text-gray-600');
+        if (ktpText) {
+            ktpText.textContent = 'Isi email PIC terlebih dahulu';
+        }
+        
+        // Clear KTP preview and input if email is cleared or invalid
+        const ktpPreview = document.getElementById('editMerchantKtpPreview');
+        if (ktpPreview && !ktpPreview.classList.contains('hidden')) {
+            removeEditMerchantKtp();
+        }
+    }
+}
+
+function handleEditKtpUploadClick() {
+    const emailInput = document.getElementById('editMerchantEmailPic');
+    const ktpInput = document.getElementById('editMerchantKtpInput');
+    
+    if (!emailInput || !ktpInput) return;
+    
+    const emailValue = emailInput.value.trim();
+    // Basic email validation: must contain @ and . with at least one character before @ and after .
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValidEmail = emailValue && emailRegex.test(emailValue);
+    
+    if (isValidEmail && !ktpInput.disabled) {
+        ktpInput.click();
+    } else {
+        alert('Mohon isi email PIC yang valid terlebih dahulu sebelum mengupload KTP');
+        emailInput.focus();
+    }
+}
+
+// ======================
 // Open / Close modal
 // ======================
 function openEditMerchant(id, merchantData) {
@@ -508,25 +525,23 @@ function openEditMerchant(id, merchantData) {
         emailPicEl.value = merchantData.email_pic || '';
     }
     
-    // Lokasi - parse daerah untuk provinsi, kabupaten, kecamatan
+    // Lokasi - set city dari daerah
     if (merchantData.daerah) {
-        const daerahParts = merchantData.daerah.split(',').map(s => s.trim()).reverse();
-        if (daerahParts.length >= 1) {
-            document.getElementById('editProvinsiSearch').value = daerahParts[0] || '';
-            document.getElementById('editProvinsiValue').value = '';
+        const citySearch = document.getElementById('editCitySearch');
+        const cityValue = document.getElementById('editCityValue');
+        if (citySearch) {
+            citySearch.value = merchantData.daerah || '';
         }
-        if (daerahParts.length >= 2) {
-            document.getElementById('editKabupatenSearch').value = daerahParts[1] || '';
-            document.getElementById('editKabupatenValue').value = '';
-        }
-        if (daerahParts.length >= 3) {
-            document.getElementById('editKecamatanSearch').value = daerahParts[2] || '';
-            document.getElementById('editKecamatanValue').value = '';
+        if (cityValue) {
+            cityValue.value = merchantData.daerah || '';
         }
     }
     
     document.getElementById('editMerchantDetailAlamat').value = merchantData.detail_daerah || '';
     document.getElementById('editMerchantLinkGmap').value = merchantData.link_gmap || '';
+    
+    // Update daerah combined
+    updateEditDaerahCombined();
     
     // Logo preview jika ada
     if (merchantData.logo_merchant) {
@@ -580,6 +595,15 @@ function openEditMerchant(id, merchantData) {
         panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
         panel?.classList.add('opacity-100', 'scale-100', 'translate-y-0');
         
+        // Ensure KTP upload is disabled/enabled based on email
+        toggleEditKtpUpload();
+        
+        // Check if kategori is already selected and toggle fields accordingly
+        const kategoriInput = document.getElementById('editMerchantKategoriValue');
+        if (kategoriInput && kategoriInput.value) {
+            toggleEditFieldsByKategori(kategoriInput.value);
+        }
+        
         // Pastikan semua field terisi setelah modal terbuka
         setTimeout(() => {
             // Update WA PIC setelah modal terbuka
@@ -615,24 +639,14 @@ function closeEditMerchant() {
                 kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
             }
 
-            // Reset lokasi dropdowns
-            document.getElementById('editProvinsiSearch').value = '';
-            document.getElementById('editProvinsiValue').value = '';
-            document.getElementById('editProvinsiOptions').innerHTML = '';
-            document.getElementById('editKabupatenSearch').value = '';
-            document.getElementById('editKabupatenValue').value = '';
-            document.getElementById('editKabupatenOptions').innerHTML = '';
-            document.getElementById('editKecamatanSearch').value = '';
-            document.getElementById('editKecamatanValue').value = '';
-            document.getElementById('editKecamatanOptions').innerHTML = '';
+            // Reset city dropdown
+            const citySearch = document.getElementById('editCitySearch');
+            const cityValue = document.getElementById('editCityValue');
+            if (citySearch) citySearch.value = '';
+            if (cityValue) cityValue.value = '';
+            document.getElementById('editCityOptions').innerHTML = '';
             document.getElementById('editDaerahCombined').value = '';
-            if (typeof allKabupatenOptions !== 'undefined') allKabupatenOptions = [];
-            if (typeof allKecamatanOptions !== 'undefined') allKecamatanOptions = [];
-            if (typeof selectedProvinceCode !== 'undefined') selectedProvinceCode = null;
-            if (typeof selectedRegencyCode !== 'undefined') selectedRegencyCode = null;
-            closeEditSearchableDropdown('provinsi');
-            closeEditSearchableDropdown('kabupaten');
-            closeEditSearchableDropdown('kecamatan');
+            closeEditCityDropdown();
             
             // Reset link blanjapoin
             document.getElementById('editLinkBlanjapoinCode').value = '';
@@ -727,6 +741,53 @@ function selectEditMerchantKategori(value) {
             dropdown.classList.add('hidden');
         }, 200);
     }
+    
+    // Toggle visibility berdasarkan kategori
+    toggleEditFieldsByKategori(value);
+}
+
+// Function to toggle field visibility based on kategori
+function toggleEditFieldsByKategori(kategori) {
+    const lokasiSection = document.getElementById('editLokasiSection');
+    const ktpUploadSection = document.getElementById('editKtpUploadSection');
+    const logoSection = document.getElementById('editLogoSection');
+    
+    const isTelkomsel = kategori === 'telkomsel';
+    
+    // Toggle Lokasi Section
+    if (lokasiSection) {
+        if (isTelkomsel) {
+            lokasiSection.style.display = 'none';
+            // Clear values when hiding
+            const citySearch = document.getElementById('editCitySearch');
+            const cityValue = document.getElementById('editCityValue');
+            if (citySearch) citySearch.value = '';
+            if (cityValue) cityValue.value = '';
+            document.querySelector('textarea[name="detail_alamat"]').value = '';
+            document.getElementById('editMerchantLinkGmap').value = '';
+            document.getElementById('editDaerahCombined').value = '';
+        } else {
+            lokasiSection.style.display = 'block';
+        }
+    }
+    
+    // Toggle KTP Upload Section
+    if (ktpUploadSection) {
+        if (isTelkomsel) {
+            ktpUploadSection.style.display = 'none';
+            // Clear KTP upload if exists
+            const ktpInput = document.getElementById('editMerchantKtpInput');
+            if (ktpInput) {
+                ktpInput.value = '';
+                removeEditMerchantKtp();
+            }
+        } else {
+            ktpUploadSection.style.display = 'block';
+        }
+    }
+    
+    // Logo Section tetap visible untuk semua kategori termasuk telkomsel
+    // Tidak perlu di-hide
 }
 
 // Klik di luar dropdown kategori → tutup
@@ -831,39 +892,25 @@ function updateEditWaPic() {
 }
 
 // ======================
-// Lokasi Dropdowns (Provinsi, Kabupaten, Kecamatan) - Reuse functions from upload modal
+// City Dropdown Functions
 // ======================
 
-// Store all options for searchable dropdowns (reuse from upload modal if available)
-let editAllProvinsiOptions = [];
-let editAllKabupatenOptions = [];
-let editAllKecamatanOptions = [];
+// Store cities from backend
+const editCities = window.editMerchantCities || [];
 
-// Cache untuk menyimpan kode yang dipilih
-let editSelectedProvinceCode = null;
-let editSelectedRegencyCode = null;
-
-// ======================
-// Searchable Dropdown Functions for Edit Modal
-// ======================
-async function openEditSearchableDropdown(type, event) {
-    // Stop event propagation jika event tersedia
+// Open city dropdown
+function openEditCityDropdown(event) {
     if (event) {
         event.stopPropagation();
     }
     
-    const dropdown = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
-    const optionsContainer = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Options`);
+    const dropdown = document.getElementById('editCityDropdown');
+    const optionsContainer = document.getElementById('editCityOptions');
     
     if (!dropdown || !optionsContainer) {
-        console.error(`Element not found for type: ${type}`, { dropdown: !!dropdown, optionsContainer: !!optionsContainer });
+        console.error('City dropdown elements not found');
         return;
     }
-    
-    // Close other dropdowns first
-    if (type !== 'provinsi') closeEditSearchableDropdown('provinsi');
-    if (type !== 'kabupaten') closeEditSearchableDropdown('kabupaten');
-    if (type !== 'kecamatan') closeEditSearchableDropdown('kecamatan');
     
     // Open dropdown
     dropdown.classList.remove('hidden');
@@ -871,76 +918,13 @@ async function openEditSearchableDropdown(type, event) {
     dropdown.style.opacity = '1';
     dropdown.style.visibility = 'visible';
     
-    // Load data jika belum ada - reuse functions from upload modal
-    if (type === 'provinsi') {
-        if (typeof allProvinsiOptions !== 'undefined' && allProvinsiOptions.length > 0) {
-            editAllProvinsiOptions = allProvinsiOptions;
-            renderEditSearchableOptions(type, editAllProvinsiOptions);
-        } else if (typeof fetchProvinces === 'function') {
-            optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Memuat data provinsi...</div>';
-            await fetchProvinces();
-            if (typeof allProvinsiOptions !== 'undefined') {
-                editAllProvinsiOptions = allProvinsiOptions;
-                renderEditSearchableOptions(type, editAllProvinsiOptions);
-            }
-        } else {
-            optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Fungsi fetchProvinces tidak tersedia</div>';
-        }
-        return;
-    }
-    
-    if (type === 'kabupaten') {
-        if (editAllKabupatenOptions.length === 0) {
-            if (!editSelectedProvinceCode) {
-                const provinsiValue = document.getElementById('editProvinsiValue');
-                if (provinsiValue && provinsiValue.value) {
-                    editSelectedProvinceCode = provinsiValue.value;
-                } else {
-                    optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Pilih provinsi terlebih dahulu</div>';
-                    return;
-                }
-            }
-            if (typeof fetchRegencies === 'function') {
-                await fetchRegencies(editSelectedProvinceCode);
-                if (typeof allKabupatenOptions !== 'undefined') {
-                    editAllKabupatenOptions = allKabupatenOptions;
-                    renderEditSearchableOptions(type, editAllKabupatenOptions);
-                }
-            }
-        } else {
-            renderEditSearchableOptions(type, editAllKabupatenOptions);
-        }
-        return;
-    }
-    
-    if (type === 'kecamatan') {
-        if (!editSelectedRegencyCode) {
-            const kabupatenValue = document.getElementById('editKabupatenValue');
-            if (kabupatenValue && kabupatenValue.value) {
-                editSelectedRegencyCode = kabupatenValue.value;
-            } else {
-                optionsContainer.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Pilih kabupaten terlebih dahulu</div>';
-                return;
-            }
-        }
-        
-        if (editAllKecamatanOptions.length === 0) {
-            if (typeof fetchDistricts === 'function') {
-                await fetchDistricts(editSelectedRegencyCode);
-                if (typeof allKecamatanOptions !== 'undefined') {
-                    editAllKecamatanOptions = allKecamatanOptions;
-                    renderEditSearchableOptions(type, editAllKecamatanOptions);
-                }
-            }
-        } else {
-            renderEditSearchableOptions(type, editAllKecamatanOptions);
-        }
-        return;
-    }
+    // Render cities
+    renderEditCityOptions(editCities);
 }
 
-function closeEditSearchableDropdown(type) {
-    const dropdown = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
+// Close city dropdown
+function closeEditCityDropdown() {
+    const dropdown = document.getElementById('editCityDropdown');
     if (dropdown) {
         dropdown.classList.add('hidden');
         dropdown.style.display = 'none';
@@ -949,114 +933,59 @@ function closeEditSearchableDropdown(type) {
     }
 }
 
-function filterEditSearchableDropdown(type, searchTerm) {
-    let options = [];
-    if (type === 'provinsi') {
-        options = editAllProvinsiOptions;
-    } else if (type === 'kabupaten') {
-        options = editAllKabupatenOptions;
-    } else if (type === 'kecamatan') {
-        options = editAllKecamatanOptions;
-    }
-    
+// Filter city dropdown
+function filterEditCityDropdown(searchTerm) {
     const filtered = searchTerm 
-        ? options.filter(opt => opt.label.toLowerCase().includes(searchTerm.toLowerCase()))
-        : options;
+        ? editCities.filter(city => city.toLowerCase().includes(searchTerm.toLowerCase()))
+        : editCities;
     
     // Open dropdown if not already open
-    const dropdown = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Dropdown`);
+    const dropdown = document.getElementById('editCityDropdown');
     if (dropdown) {
         dropdown.classList.remove('hidden');
     }
     
-    renderEditSearchableOptions(type, filtered);
+    renderEditCityOptions(filtered);
 }
 
-function renderEditSearchableOptions(type, options) {
-    const container = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Options`);
+// Render city options
+function renderEditCityOptions(cityList) {
+    const container = document.getElementById('editCityOptions');
     if (!container) return;
     
     container.innerHTML = '';
     
-    if (!options || options.length === 0) {
-        container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Tidak ada data</div>';
+    if (!cityList || cityList.length === 0) {
+        container.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Tidak ada data kota</div>';
         return;
     }
     
-    options.forEach(option => {
+    cityList.forEach(city => {
         const div = document.createElement('div');
         div.className = 'px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 cursor-pointer transition-colors';
-        div.textContent = option.label || option.name || option;
-        const value = option.value || option.code || option;
-        const code = option.code || option.value || option;
-        const label = option.label || option.name || option;
-        div.onclick = () => selectEditSearchableOption(type, value, label, code);
+        div.textContent = city;
+        div.onclick = () => selectEditCity(city);
         container.appendChild(div);
     });
 }
 
-function selectEditSearchableOption(type, value, label, code) {
-    const searchInput = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Search`);
-    const hiddenInput = document.getElementById(`edit${type.charAt(0).toUpperCase() + type.slice(1)}Value`);
+// Select city
+function selectEditCity(city) {
+    const searchInput = document.getElementById('editCitySearch');
+    const hiddenInput = document.getElementById('editCityValue');
     
-    if (searchInput) searchInput.value = label;
-    if (hiddenInput) hiddenInput.value = value;
+    if (searchInput) searchInput.value = city;
+    if (hiddenInput) hiddenInput.value = city;
     
-    closeEditSearchableDropdown(type);
-    
-    if (type === 'provinsi') {
-        editSelectedProvinceCode = code || value;
-        if (typeof fetchRegencies === 'function') {
-            fetchRegencies(editSelectedProvinceCode).then(() => {
-                if (typeof allKabupatenOptions !== 'undefined') {
-                    editAllKabupatenOptions = allKabupatenOptions;
-                }
-            });
-        }
-        updateEditDaerahCombined();
-    } else if (type === 'kabupaten') {
-        const regencyCode = String(code || value || '').trim();
-        editSelectedRegencyCode = regencyCode || null;
-        
-        // Reset kecamatan data when kabupaten changes
-        editAllKecamatanOptions = [];
-        const kecamatanSearch = document.getElementById('editKecamatanSearch');
-        const kecamatanValue = document.getElementById('editKecamatanValue');
-        if (kecamatanSearch) kecamatanSearch.value = '';
-        if (kecamatanValue) kecamatanValue.value = '';
-        
-        if (editSelectedRegencyCode && typeof fetchDistricts === 'function') {
-            fetchDistricts(editSelectedRegencyCode).then(() => {
-                if (typeof allKecamatanOptions !== 'undefined') {
-                    editAllKecamatanOptions = allKecamatanOptions;
-                }
-            });
-        }
-        updateEditDaerahCombined();
-    } else if (type === 'kecamatan') {
-        updateEditDaerahCombined();
-    }
+    closeEditCityDropdown();
+    updateEditDaerahCombined();
 }
 
+// Update daerah combined (only city now)
 function updateEditDaerahCombined() {
-    const provinsiSearch = document.getElementById('editProvinsiSearch');
-    const kabupatenSearch = document.getElementById('editKabupatenSearch');
-    const kecamatanSearch = document.getElementById('editKecamatanSearch');
+    const citySearch = document.getElementById('editCitySearch');
     
-    const parts = [];
-    
-    // Gunakan nilai dari input search (yang sudah terisi label)
-    if (kecamatanSearch && kecamatanSearch.value && kecamatanSearch.value.trim() !== '') {
-        parts.push(kecamatanSearch.value.trim());
-    }
-    if (kabupatenSearch && kabupatenSearch.value && kabupatenSearch.value.trim() !== '') {
-        parts.push(kabupatenSearch.value.trim());
-    }
-    if (provinsiSearch && provinsiSearch.value && provinsiSearch.value.trim() !== '') {
-        parts.push(provinsiSearch.value.trim());
-    }
-    
-    const daerahCombined = parts.join(', ');
+    const daerahCombined = citySearch && citySearch.value ? citySearch.value.trim() : '';
     document.getElementById('editDaerahCombined').value = daerahCombined;
     
     console.log('Edit Daerah combined updated:', daerahCombined);
@@ -1095,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update WA PIC sebelum submit
             updateEditWaPic();
             
-            // Update daerah sebelum submit
+            // Update daerah (city) sebelum submit
             updateEditDaerahCombined();
             
             // Debug: Log form data sebelum submit
@@ -1131,14 +1060,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Close dropdowns saat klik di luar (dengan delay untuk menghindari konflik dengan open event)
+    // Close dropdown saat klik di luar
     let clickTimeout;
     document.addEventListener('click', function(event) {
         const target = event.target;
         
-        // Skip jika klik di input atau dropdown option edit modal
-        if (target.id === 'editProvinsiSearch' || target.id === 'editKabupatenSearch' || target.id === 'editKecamatanSearch' ||
-            target.closest('#editProvinsiOptions') || target.closest('#editKabupatenOptions') || target.closest('#editKecamatanOptions')) {
+        // Skip jika klik di input atau dropdown option
+        if (target.id === 'editCitySearch' || target.closest('#editCityOptions')) {
             clearTimeout(clickTimeout);
             return;
         }
@@ -1148,50 +1076,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Delay untuk memastikan open event sudah selesai
         clickTimeout = setTimeout(() => {
-            const provinsiInput = document.getElementById('editProvinsiSearch');
-            const kabupatenInput = document.getElementById('editKabupatenSearch');
-            const kecamatanInput = document.getElementById('editKecamatanSearch');
-            
-            const provinsiDropdown = document.getElementById('editProvinsiDropdown');
-            const kabupatenDropdown = document.getElementById('editKabupatenDropdown');
-            const kecamatanDropdown = document.getElementById('editKecamatanDropdown');
+            const cityInput = document.getElementById('editCitySearch');
+            const cityDropdown = document.getElementById('editCityDropdown');
             
             // Check if click is inside dropdown container
-            const provinsiContainer = provinsiInput?.closest('.relative');
-            const kabupatenContainer = kabupatenInput?.closest('.relative');
-            const kecamatanContainer = kecamatanInput?.closest('.relative');
+            const cityContainer = cityInput?.closest('.relative');
             
-            // Close provinsi dropdown if click is outside
-            if (provinsiDropdown && !provinsiDropdown.classList.contains('hidden')) {
-                if (!provinsiContainer?.contains(target) && !provinsiDropdown?.contains(target)) {
-                    closeEditSearchableDropdown('provinsi');
-                }
-            }
-            
-            // Close kabupaten dropdown if click is outside
-            if (kabupatenDropdown && !kabupatenDropdown.classList.contains('hidden')) {
-                if (!kabupatenContainer?.contains(target) && !kabupatenDropdown?.contains(target)) {
-                    closeEditSearchableDropdown('kabupaten');
-                }
-            }
-            
-            // Close kecamatan dropdown if click is outside
-            if (kecamatanDropdown && !kecamatanDropdown.classList.contains('hidden')) {
-                if (!kecamatanContainer?.contains(target) && !kecamatanDropdown?.contains(target)) {
-                    closeEditSearchableDropdown('kecamatan');
+            // Close city dropdown if click is outside
+            if (cityDropdown && !cityDropdown.classList.contains('hidden')) {
+                if (!cityContainer?.contains(target) && !cityDropdown?.contains(target)) {
+                    closeEditCityDropdown();
                 }
             }
         }, 150);
     });
     
-    // Close dropdowns saat tekan ESC
+    // Close dropdown saat tekan ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            closeEditSearchableDropdown('provinsi');
-            closeEditSearchableDropdown('kabupaten');
-            closeEditSearchableDropdown('kecamatan');
+            closeEditCityDropdown();
         }
     });
+    
+    // Initialize KTP upload state (disabled by default)
+    toggleEditKtpUpload();
 });
 
 </script>

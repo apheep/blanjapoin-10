@@ -76,7 +76,13 @@
 
                         @if(Auth::check() && Auth::user()->can_approve == 1)
                             <td id="keyword-action-{{ $keyword->id }}" class="px-4 py-4">
-                                @if($keyword->status === 'approve')
+                                {{-- Jika subsidy disabled (subsidy_amount null), langsung tampilkan approved tanpa approve/reject --}}
+                                @if($keyword->subsidy_amount === null)
+                                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
+                                        <i class="fas fa-check-circle text-green-600"></i>
+                                        <span>Approved</span>
+                                    </div>
+                                @elseif($keyword->status === 'approve')
                                     <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
                                         <i class="fas fa-check-circle text-green-600"></i>
                                         <span>Approved</span>
@@ -87,6 +93,7 @@
                                         <span>Rejected</span>
                                     </div>
                                 @else
+                                    {{-- Tampilkan approve/reject hanya jika subsidy enabled dan status pending --}}
                                     <div class="flex items-center gap-2">
                                         <button onclick="showApproveConfirmation('Keyword',{{ json_encode($keyword->nama_produk) }},{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Approve"><i class="fas fa-check-circle text-sm"></i></button>
                                         <button onclick="showRejectConfirmation('Keyword',{{ json_encode($keyword->nama_produk) }},{{ $keyword->id }})" class="p-2.5 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 transition-all duration-200" title="Reject"><i class="fas fa-times text-sm"></i></button>
@@ -248,63 +255,72 @@
 </div>
 
 <script>
-    // Toggle Keyword Status
-    document.addEventListener('DOMContentLoaded', function() {
-        // Attach toggle listeners for server-rendered checkboxes
-        document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
-            toggle.addEventListener('change', (e) => {
-                const keywordId = e.target.dataset.keywordId;
-                if (!keywordId) return;
-                toggleKeywordStatus(keywordId);
-            });
-        });
-    });
+    // Function to toggle keyword status - defined in global scope so it's available after AJAX reload
+    function toggleKeywordStatus(keywordId) {
+        const checkbox = document.querySelector(`.toggle-keyword-status[data-keyword-id="${keywordId}"]`);
+        if (!checkbox) return;
 
-    // Function to toggle keyword status
-    async function toggleKeywordStatus(keywordId) {
-        try {
-            const response = await fetch(`/api/keywords/${keywordId}/toggle-status`, {
-                method: 'PATCH',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Gagal memperbarui status');
+        fetch(`/api/keywords/${keywordId}/toggle-status`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
-
-            // Success - checkbox already toggled by user, no need to update UI
-            console.log('Status keyword berhasil diperbarui');
-        } catch (error) {
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Gagal memperbarui status');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Update checkbox to match database value
+            if (checkbox) {
+                checkbox.checked = data.is_active;
+            }
+            console.log('Status keyword berhasil diperbarui', data);
+        })
+        .catch(error => {
             console.error('Error toggling keyword status:', error);
             // Revert checkbox on error
-            const checkbox = document.querySelector(`.toggle-keyword-status[data-keyword-id="${keywordId}"]`);
             if (checkbox) {
                 checkbox.checked = !checkbox.checked;
             }
             alert('Gagal memperbarui status: ' + error.message);
-        }
+        });
     }
 
-    // Re-attach listeners after AJAX table reload
-    if (typeof attachKeywordPaginationHandlers !== 'undefined') {
-        const originalAttach = attachKeywordPaginationHandlers;
-        attachKeywordPaginationHandlers = function() {
-            originalAttach();
-            document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
-                toggle.addEventListener('change', (e) => {
-                    const keywordId = e.target.dataset.keywordId;
-                    if (!keywordId) return;
+    // Make function available globally
+    window.toggleKeywordStatus = toggleKeywordStatus;
+
+    // Use event delegation for toggle keyword status - works even after AJAX reload
+    if (!window.keywordToggleHandlerAttached) {
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('toggle-keyword-status')) {
+                const keywordId = e.target.getAttribute('data-keyword-id');
+                if (keywordId) {
                     toggleKeywordStatus(keywordId);
-                });
-            });
-        };
+                }
+            }
+        });
+        window.keywordToggleHandlerAttached = true;
     }
+
+    // Also attach directly for initial load (backup)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
+            toggle.addEventListener('change', function(e) {
+                const keywordId = e.target.getAttribute('data-keyword-id');
+                if (keywordId) {
+                    toggleKeywordStatus(keywordId);
+                }
+            });
+        });
+    });
 
     // Function to show SKB detail in modal
     function showSKBDetail(skbText, productName, merchantName, promoText) {
@@ -370,9 +386,9 @@
                     <p class="text-sm text-gray-900">${promoText}</p>
                 </div>
                 <div>
-                    <p class="text-sm font-semibold text-gray-700 mb-1">SKB:</p>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mt-2">
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap break-words">${skbText}</p>
+                    <p class="text-sm font-semibold text-gray-700 mb-0">SKB:</p>
+                    <div class="bg-gray-50 rounded-lg p-2 border border-gray-200 mt-0">
+                        <p class="text-sm text-gray-700 leading-none whitespace-pre-wrap break-words" style="line-height: 1.2;">${skbText}</p>
                     </div>
                 </div>
             </div>

@@ -29,9 +29,9 @@ class KeywordController extends Controller
             $validated = $request->validate([
                 'merchant_key'      => 'required|exists:merchants,id',
                 'nama_produk'       => 'required|string|max:255',
-                'keyword_id'        => 'nullable|string|max:255',
-                'cta_link'          => 'nullable|string|max:255',
-                'redeem'            => 'nullable|string|max:255',
+                'keyword_id'        => 'required|string|max:255',
+                'cta_link'          => 'required|string|max:255',
+                'redeem'            => 'required|string|max:255',
                 'diskon_percent'    => 'nullable|numeric|min:0|max:100',
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
                 'diskon_free'       => 'nullable|in:0,1',
@@ -39,14 +39,19 @@ class KeywordController extends Controller
                 'subsidy_amount'    => 'required_if:subsidy_enabled,1|string',
                 'diamond_enabled'   => 'nullable|in:0,1',
                 'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
-                'skb'               => 'nullable|string',
+                'skb'               => 'required|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                'stock'             => 'nullable|integer|min:0',
+                'stock'             => 'required|integer|min:0',
 
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
+                'keyword_id.required' => 'Keyword ID wajib diisi',
+                'cta_link.required' => 'CTA wajib diisi',
+                'redeem.required' => 'Redeem Point wajib diisi',
+                'skb.required' => 'SKB wajib diisi',
+                'stock.required' => 'Stock wajib diisi',
                 'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
                 'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
             ]);
@@ -166,6 +171,15 @@ class KeywordController extends Controller
                 $imagePath = $request->file('image')->store('keywords', 'public');
             }
 
+            // Determine status: if subsidy_enabled is 0 (no), auto-approve
+            $status = $request->status ?? 'pending';
+            if ($request->subsidy_enabled == '0' || $request->subsidy_enabled === 0 || $subsidyAmount === null) {
+                $status = 'approve';
+            }
+
+            // Ensure stock has default value if null or empty
+            $stock = $request->stock !== null && $request->stock !== '' ? (int)$request->stock : 0;
+
             // Create keyword
             $keyword = Keyword::create([
                 'merchant_key'  => $request->merchant_key,
@@ -180,8 +194,8 @@ class KeywordController extends Controller
                 'start_date'    => $startDate,
                 'end_date'      => $endDate,
                 'image'         => $imagePath,
-                'stock'         => $request->stock,
-                'status'        => $request->status ?? 'pending',
+                'stock'         => $stock,
+                'status'        => $status,
             ]);
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -201,18 +215,167 @@ class KeywordController extends Controller
             }
 
             return redirect()->route('keywords.index')->with('success', 'Keyword berhasil ditambahkan!');
-        } catch (\Exception $e) {
-            // Log error untuk debugging
-            Log::error('Error creating keyword: ' . $e->getMessage());
+        } catch (ValidationException $e) {
+            // Handle validation errors
+            $errors = $e->validator->errors();
+            $missingFields = [];
+            
+            // Map field names to user-friendly labels
+            $fieldLabels = [
+                'merchant_key' => 'Nama Merchant',
+                'nama_produk' => 'Nama Produk',
+                'keyword_id' => 'Keyword ID',
+                'cta_link' => 'CTA',
+                'redeem' => 'Redeem Point',
+                'diskon' => 'Diskon',
+                'subsidy_amount' => 'Nominal Subsidi',
+                'diamond_amount' => 'Jumlah Diamond',
+                'stock' => 'Stock',
+                'start_date' => 'Tanggal Mulai',
+                'end_date' => 'Tanggal Berakhir',
+            ];
+            
+            // Collect missing fields
+            foreach ($errors->keys() as $field) {
+                $label = $fieldLabels[$field] ?? ucfirst(str_replace('_', ' ', $field));
+                $missingFields[] = $label;
+            }
+            
+            $errorMessage = 'Data gagal disimpan.';
+            if (!empty($missingFields)) {
+                $errorMessage .= ' Field yang belum diisi: ' . implode(', ', $missingFields) . '.';
+            }
             
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal menyimpan keyword: ' . $e->getMessage()
+                    'message' => $errorMessage,
+                    'errors' => $errors->toArray(),
+                    'missing_fields' => $missingFields
+                ], 422);
+            }
+            
+            return back()->withErrors(['error' => $errorMessage])->withInput();
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Handle database errors (like NOT NULL constraint violations)
+            Log::error('Database error creating keyword: ' . $e->getMessage());
+            
+            // Check if it's a NOT NULL constraint violation
+            if (strpos($e->getMessage(), 'cannot be null') !== false || strpos($e->getMessage(), 'Column') !== false) {
+                $missingFields = [];
+                
+                // Map field names to user-friendly labels
+                $fieldLabels = [
+                    'merchant_key' => 'Nama Merchant',
+                    'nama_produk' => 'Nama Produk',
+                    'stock' => 'Stock',
+                    'diskon' => 'Diskon',
+                ];
+                
+                // Extract column name from error message if possible
+                $columnName = null;
+                if (preg_match("/Column '([^']+)' cannot be null/", $e->getMessage(), $matches)) {
+                    $columnName = $matches[1];
+                }
+                
+                // Check required fields that might be missing
+                $requiredFields = ['merchant_key', 'nama_produk', 'stock'];
+                foreach ($requiredFields as $field) {
+                    // If we know the exact column, only check that one
+                    if ($columnName && $columnName !== $field) {
+                        continue;
+                    }
+                    
+                    $value = $request->input($field);
+                    if ($value === null || $value === '') {
+                        $label = $fieldLabels[$field] ?? ucfirst(str_replace('_', ' ', $field));
+                        if (!in_array($label, $missingFields)) {
+                            $missingFields[] = $label;
+                        }
+                    }
+                }
+                
+                // If we found the exact column, add it to missing fields
+                if ($columnName && !empty($fieldLabels[$columnName])) {
+                    $label = $fieldLabels[$columnName];
+                    if (!in_array($label, $missingFields)) {
+                        $missingFields[] = $label;
+                    }
+                }
+                
+                // Also check for stock specifically (most common issue)
+                if ($columnName === 'stock' || (!$columnName && ($request->stock === null || $request->stock === ''))) {
+                    if (!in_array('Stock', $missingFields)) {
+                        $missingFields[] = 'Stock';
+                    }
+                }
+                
+                $errorMessage = 'Data gagal disimpan.';
+                if (!empty($missingFields)) {
+                    $errorMessage .= ' Field yang belum diisi: ' . implode(', ', $missingFields) . '.';
+                } else {
+                    $errorMessage .= ' Pastikan semua field yang wajib sudah diisi.';
+                }
+                
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                        'missing_fields' => $missingFields
+                    ], 422);
+                }
+                
+                return back()->withErrors(['error' => $errorMessage])->withInput();
+            }
+            
+            // For other database errors, show generic message
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan keyword: Terjadi kesalahan pada database. Pastikan semua field yang wajib sudah diisi.'
+                ], 500);
+            }
+            
+            return back()->withErrors(['error' => 'Gagal menyimpan keyword: Terjadi kesalahan pada database. Pastikan semua field yang wajib sudah diisi.'])->withInput();
+        } catch (\Exception $e) {
+            // Log error untuk debugging
+            Log::error('Error creating keyword: ' . $e->getMessage());
+            
+            // Try to extract missing fields from error message
+            $missingFields = [];
+            $errorMessage = $e->getMessage();
+            
+            // Check common missing fields
+            $fieldLabels = [
+                'stock' => 'Stock',
+                'keyword_id' => 'Keyword ID',
+                'cta_link' => 'CTA',
+                'redeem' => 'Redeem Point',
+            ];
+            
+            foreach ($fieldLabels as $field => $label) {
+                $value = $request->input($field);
+                if ($value === null || $value === '') {
+                    $missingFields[] = $label;
+                }
+            }
+            
+            $userMessage = 'Gagal menyimpan keyword.';
+            if (!empty($missingFields)) {
+                $userMessage .= ' Field yang belum diisi: ' . implode(', ', $missingFields) . '.';
+            } else {
+                $userMessage .= ' Pastikan semua field yang wajib sudah diisi.';
+            }
+            
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $userMessage,
+                    'missing_fields' => $missingFields
                 ], 500);
             }
 
-            return back()->withErrors(['error' => 'Gagal menyimpan keyword: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['error' => $userMessage])->withInput();
         }
     }
 
@@ -341,6 +504,12 @@ class KeywordController extends Controller
                 $imagePath = $keyword->image;
             }
 
+            // Determine status: if subsidy_enabled is 0 (no), auto-approve
+            $status = $request->status ?? $keyword->status;
+            if ($request->subsidy_enabled == '0' || $request->subsidy_enabled === 0 || $subsidyAmount === null) {
+                $status = 'approve';
+            }
+
             // Update keyword
             $keyword->update([
                 'merchant_key'  => $request->merchant_key,
@@ -356,7 +525,7 @@ class KeywordController extends Controller
                 'end_date'      => $request->end_date,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
-                'status'        => $request->status ?? 'pending',
+                'status'        => $status,
             ]);
 
             if ($request->wantsJson()) {
@@ -571,10 +740,12 @@ class KeywordController extends Controller
 
     public function spesialPromoForm(Request $request)
     {
+        // Query SEMUA keyword dengan status approve, termasuk yang sudah ada di database
+        // Tidak ada batasan apapun kecuali status = 'approve'
         $query = Keyword::with('merchant')
             ->where('status', 'approve');
         
-        // Search filter (sama seperti di keyword search)
+        // Search filter - hanya aktif jika ada search term
         $searchTerm = trim($request->get('q', ''));
         if ($searchTerm !== '') {
             $query->where(function ($q) use ($searchTerm) {
@@ -591,12 +762,15 @@ class KeywordController extends Controller
             });
         }
         
-        // Date filter (single date, sama seperti di withdraw-approval)
+        // Date filter - hanya aktif jika ada parameter date
+        // Jika tidak ada filter date, tampilkan SEMUA keyword dengan status approve
         $date = $request->get('date');
         if ($date) {
             $query->whereDate('created_at', $date);
         }
         
+        // Order by id desc - menampilkan semua keyword approved tanpa batasan
+        // Pagination 10 per page, tapi semua data akan muncul di halaman-halaman berikutnya
         $keywords = $query->orderBy('id', 'desc')->paginate(10);
         
         // Hitung jumlah keyword yang sudah aktif sebagai spesial promo
@@ -676,16 +850,26 @@ class KeywordController extends Controller
 
         try {
             $keyword = Keyword::findOrFail($id);
+            $oldStatus = $keyword->is_active;
             $keyword->is_active = $keyword->is_active ? 0 : 1;
             $keyword->save();
+
+            Log::info('Keyword status toggled', [
+                'keyword_id' => $id,
+                'old_status' => $oldStatus,
+                'new_status' => $keyword->is_active
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Status keyword berhasil diperbarui',
-                'is_active' => $keyword->is_active,
+                'is_active' => (bool)$keyword->is_active,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error toggling keyword status: ' . $e->getMessage());
+            Log::error('Error toggling keyword status: ' . $e->getMessage(), [
+                'keyword_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'error' => 'Gagal memperbarui status: ' . $e->getMessage()
