@@ -432,7 +432,7 @@
                     <div>
                         <span class="text-sm font-semibold text-neutral-700">SKB :</span>
                         <div class="mt-0">
-                            <div class="text-sm text-neutral-600 leading-none whitespace-pre-line break-words" style="line-height: 0.8;">
+                            <div class="text-sm text-neutral-600 leading-none whitespace-pre-line break-words" style="line-height: 1.2;">
                                 ${formatSKB(skb)}
                             </div>
                         </div>
