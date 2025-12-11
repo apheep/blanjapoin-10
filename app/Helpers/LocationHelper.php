@@ -219,3 +219,28 @@ if (!function_exists('territorialNameGeneric')) {
     }
 }
 
+if (!function_exists('normalizeCityName')) {
+    /**
+     * Normalisasi nama kota untuk matching (toleransi prefix Kota/Kabupaten)
+     * Menghapus prefix "Kota" atau "Kabupaten" dan trim untuk matching yang lebih toleran
+     * 
+     * Contoh:
+     * - "Kota Blitar" -> "Blitar"
+     * - "Kabupaten Blitar" -> "Blitar"
+     * - "Blitar" -> "Blitar"
+     * 
+     * @param string|null $cityName
+     * @return string
+     */
+    function normalizeCityName($cityName) {
+        if (empty($cityName)) return '';
+        
+        $cityName = trim($cityName);
+        
+        // Hapus prefix "Kota" atau "Kabupaten" jika ada
+        $cityName = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $cityName);
+        
+        return trim($cityName);
+    }
+}
+
