@@ -21,6 +21,9 @@ use App\Models\Iklan;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
+    // Auto-disable keywords that have passed their end_date
+    Keyword::autoDisableExpiredKeywords();
+    
     $keywords = Keyword::with('merchant')
         ->where('is_active', 1)
         ->where('status', 'approve')
@@ -33,9 +36,8 @@ Route::get('/', function () {
         ->orderBy('order', 'asc')
         ->get();
     
-    // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
+    // Ambil semua daerah dan ekstrak hanya kabupaten/kota (semua merchant, tidak filter is_active)
     $allDaerah = Merchant::query()
-        ->where('is_active', 1)
         ->whereNotNull('daerah')
         ->where('daerah', '!=', '')
         ->distinct()
@@ -204,9 +206,8 @@ Route::middleware(['auth'])->group(function () {
         ->orderBy('order', 'asc')
         ->get();
         
-        // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
+        // Ambil semua daerah dan ekstrak hanya kabupaten/kota (semua merchant, tidak filter is_active)
         $allDaerah = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->distinct()

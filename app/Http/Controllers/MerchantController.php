@@ -115,6 +115,9 @@ class MerchantController extends Controller
 
     public function show(Merchant $merchant)
     {
+        // Auto-disable keywords that have passed their end_date
+        Keyword::autoDisableExpiredKeywords();
+        
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
@@ -199,6 +202,9 @@ class MerchantController extends Controller
         
         // SIMPAN DATA KE DATABASE - Pastikan semua field tersimpan
         // Ambil semua field langsung dari request tanpa transformasi untuk lat/long
+        // Handle is_active: ambil langsung dari request, default 1 jika tidak ada
+        $isActive = $request->input('is_active', 1);
+        
         $merchantData = [
             'nama_merchant'  => trim($request->input('nama_merchant', '')),
             'kategori'       => $getValue($request->input('kategori', null)),
@@ -218,6 +224,7 @@ class MerchantController extends Controller
             'link_gmap'      => $getValue($request->input('link_gmap', null)),
             'logo_merchant'  => $logoPath,
             'ktp_pic'        => $ktpPath,
+            'is_active'      => (int)$isActive,
         ];
         
         // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
@@ -1408,6 +1415,9 @@ class MerchantController extends Controller
             // Compare slug with slug (case-insensitive)
             return strtolower($merchantSlug) === strtolower($location);
         })->values();
+        
+        // Auto-disable keywords that have passed their end_date
+        Keyword::autoDisableExpiredKeywords();
         
         // Get keywords for these merchants
         $merchantIds = $merchants->pluck('id');

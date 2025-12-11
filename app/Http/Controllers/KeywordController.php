@@ -17,6 +17,9 @@ class KeywordController extends Controller
 {
     public function index()
     {
+        // Auto-disable keywords that have passed their end_date
+        Keyword::autoDisableExpiredKeywords();
+        
         $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
@@ -394,7 +397,7 @@ class KeywordController extends Controller
                 'diskon_rupiah'     => 'nullable|numeric|min:0',
                 'diskon_free'       => 'nullable|in:0,1',
                 'subsidy_enabled'   => 'nullable|in:0,1',
-                'subsidy_amount'    => 'required_if:subsidy_enabled,1|string',
+                'subsidy_amount'    => 'nullable|required_if:subsidy_enabled,1|string',
                 'diamond_enabled'   => 'nullable|in:0,1',
                 'diamond_amount'    => 'required_if:diamond_enabled,1|integer|min:0',
                 'skb'               => 'nullable|string',
@@ -585,6 +588,9 @@ class KeywordController extends Controller
 
     public function search(Request $request)
     {
+        // Auto-disable keywords that have passed their end_date
+        Keyword::autoDisableExpiredKeywords();
+        
         $searchTerm = trim($request->get('q', ''));
         $status = $request->get('status');
         $merchantId = $request->get('merchant_id');
@@ -660,6 +666,9 @@ class KeywordController extends Controller
 
     public function publicSearch(Request $request)
     {
+        // Auto-disable keywords that have passed their end_date
+        Keyword::autoDisableExpiredKeywords();
+        
         $searchTerm = trim($request->get('q', ''));
 
         $searchResults = Keyword::with('merchant')
