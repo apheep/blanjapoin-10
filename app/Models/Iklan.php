@@ -18,6 +18,9 @@ class Iklan extends Model
         'image_path',
         'link_iklan',
         'territorial',
+        'regional',
+        'branch',
+        'cluster',
         'order',
     ];
 }
