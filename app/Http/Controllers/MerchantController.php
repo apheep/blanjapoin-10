@@ -576,9 +576,12 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get iklans - only show iklans without territorial (null) for link pelanggan page
+        // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
         // Use orderBy('order', 'asc') to respect admin-configured order
         $iklans = Iklan::whereNull('territorial')
+            ->whereNull('regional')
+            ->whereNull('branch')
+            ->whereNull('cluster')
             ->orderBy('order', 'asc')
             ->get();
 
@@ -1428,27 +1431,34 @@ class MerchantController extends Controller
             })
             ->get();
         
-        // Get iklans - filter by territorial
-        // Show iklans that have no territorial (null) or match current location
+        // Get iklans - prioritize specific territorial banner, fallback to general
         // Normalize comparison by converting both to slug format for consistency
         $locationSlug = territorialSlug($location);
-        $iklans = Iklan::whereNull('territorial')
-            ->orWhere(function($query) use ($locationSlug) {
-                $query->whereNotNull('territorial');
-            })
+        
+        // First, try to get iklans that match this territorial
+        $specificIklans = Iklan::whereNotNull('territorial')
+            ->whereNull('regional')
+            ->whereNull('branch')
+            ->whereNull('cluster')
             ->orderBy('order', 'asc')
             ->get()
             ->filter(function($iklan) use ($locationSlug) {
-                // Show iklans without territorial
-                if ($iklan->territorial === null) {
-                    return true;
-                }
-                // Normalize both stored territorial and location to slug for comparison
-                // This handles cases where territorial might be stored as display name instead of slug
                 $storedSlug = territorialSlug($iklan->territorial);
                 return strtolower($storedSlug) === strtolower($locationSlug);
-            })
-            ->values();
+            });
+        
+        // If specific iklans found, use them. Otherwise, use general iklans
+        if ($specificIklans->isNotEmpty()) {
+            $iklans = $specificIklans->values();
+        } else {
+            // Get general iklans (all location fields are null)
+            $iklans = Iklan::whereNull('territorial')
+                ->whereNull('regional')
+                ->whereNull('branch')
+                ->whereNull('cluster')
+                ->orderBy('order', 'asc')
+                ->get();
+        }
         
         // Get all available territories for filter
         $allDaerah = Merchant::query()
@@ -1590,10 +1600,33 @@ class MerchantController extends Controller
             })
             ->get();
         
-        // Get iklans - show all iklans (no territorial filter for regional/branch/cluster)
-        $iklans = Iklan::whereNull('territorial')
+        // Get iklans - prioritize specific regional banner, fallback to general
+        $locationSlug = territorialSlugGeneric($location);
+        
+        // First, try to get iklans that match this regional
+        $specificIklans = Iklan::whereNotNull('regional')
+            ->whereNull('territorial')
+            ->whereNull('branch')
+            ->whereNull('cluster')
             ->orderBy('order', 'asc')
-            ->get();
+            ->get()
+            ->filter(function($iklan) use ($locationSlug) {
+                $storedSlug = territorialSlugGeneric($iklan->regional);
+                return strtolower($storedSlug) === strtolower($locationSlug);
+            });
+        
+        // If specific iklans found, use them. Otherwise, use general iklans
+        if ($specificIklans->isNotEmpty()) {
+            $iklans = $specificIklans->values();
+        } else {
+            // Get general iklans (all location fields are null)
+            $iklans = Iklan::whereNull('territorial')
+                ->whereNull('regional')
+                ->whereNull('branch')
+                ->whereNull('cluster')
+                ->orderBy('order', 'asc')
+                ->get();
+        }
         
         return view('regional', [
             'location' => $location,
@@ -1712,10 +1745,33 @@ class MerchantController extends Controller
             })
             ->get();
         
-        // Get iklans - show all iklans (no territorial filter for regional/branch/cluster)
-        $iklans = Iklan::whereNull('territorial')
+        // Get iklans - prioritize specific branch banner, fallback to general
+        $locationSlug = territorialSlugGeneric($location);
+        
+        // First, try to get iklans that match this branch
+        $specificIklans = Iklan::whereNotNull('branch')
+            ->whereNull('territorial')
+            ->whereNull('regional')
+            ->whereNull('cluster')
             ->orderBy('order', 'asc')
-            ->get();
+            ->get()
+            ->filter(function($iklan) use ($locationSlug) {
+                $storedSlug = territorialSlugGeneric($iklan->branch);
+                return strtolower($storedSlug) === strtolower($locationSlug);
+            });
+        
+        // If specific iklans found, use them. Otherwise, use general iklans
+        if ($specificIklans->isNotEmpty()) {
+            $iklans = $specificIklans->values();
+        } else {
+            // Get general iklans (all location fields are null)
+            $iklans = Iklan::whereNull('territorial')
+                ->whereNull('regional')
+                ->whereNull('branch')
+                ->whereNull('cluster')
+                ->orderBy('order', 'asc')
+                ->get();
+        }
         
         return view('branch', [
             'location' => $location,
@@ -1834,10 +1890,33 @@ class MerchantController extends Controller
             })
             ->get();
         
-        // Get iklans - show all iklans (no territorial filter for regional/branch/cluster)
-        $iklans = Iklan::whereNull('territorial')
+        // Get iklans - prioritize specific cluster banner, fallback to general
+        $locationSlug = territorialSlugGeneric($location);
+        
+        // First, try to get iklans that match this cluster
+        $specificIklans = Iklan::whereNotNull('cluster')
+            ->whereNull('territorial')
+            ->whereNull('regional')
+            ->whereNull('branch')
             ->orderBy('order', 'asc')
-            ->get();
+            ->get()
+            ->filter(function($iklan) use ($locationSlug) {
+                $storedSlug = territorialSlugGeneric($iklan->cluster);
+                return strtolower($storedSlug) === strtolower($locationSlug);
+            });
+        
+        // If specific iklans found, use them. Otherwise, use general iklans
+        if ($specificIklans->isNotEmpty()) {
+            $iklans = $specificIklans->values();
+        } else {
+            // Get general iklans (all location fields are null)
+            $iklans = Iklan::whereNull('territorial')
+                ->whereNull('regional')
+                ->whereNull('branch')
+                ->whereNull('cluster')
+                ->orderBy('order', 'asc')
+                ->get();
+        }
         
         return view('cluster', [
             'location' => $location,

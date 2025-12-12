@@ -31,8 +31,11 @@ Route::get('/', function () {
             $query->where('is_active', 1);
         })
         ->get();
-    // Get iklans - only show iklans without territorial (null) for home page
+    // Get iklans - only show general iklans (all location fields are null) for home page
     $iklans = Iklan::whereNull('territorial')
+        ->whereNull('regional')
+        ->whereNull('branch')
+        ->whereNull('cluster')
         ->orderBy('order', 'asc')
         ->get();
     
