@@ -32,43 +32,42 @@
       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
      </div>
     </div>
-    <div class="flex flex-col p-3 space-y-2 flex-1">
-     <h3 class="text-lg font-bold text-neutral-900 leading-tight truncate">
+    <div class="flex flex-col p-2.5 space-y-1 flex-1">
+     <h3 class="text-base font-bold text-neutral-900 leading-tight truncate">
       {{ $merchantName }}
      </h3>
-     <div class="text-[10px] text-gray-500 -mt-1 -mb-1">
-      <span>Promo</span
-      >
+     <div class="text-[9px] text-gray-500 -mt-0.5 -mb-0.5">
+      <span>Promo</span>
      </div>
-     <div class="text-[11px] text-neutral-600 leading-relaxed">
+     <div class="text-[10px] text-neutral-600 leading-snug">
       @if(!is_null($keyword->diskon))
-      <div class="font-bold text-red-500 flex items-center gap-2 mb-1">
+      <div class="font-bold text-red-500 flex items-center gap-1.5 mb-0.5">
        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-7 h-7 object-contain">
        <span class="text-xl font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
       </div>
       @endif
       @if($productName)
-      <div class="mb-1 font-semibold text-neutral-700 text-base truncate">
+      <div class="mb-0.5 font-semibold text-neutral-700 text-sm truncate">
        {{ $productName }}
       </div>
       @endif
       @if($keyword->skb)
-      <button onclick="event.stopPropagation(); openTelkomselDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-1 text-[10px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+      <button onclick="event.stopPropagation(); openTelkomselDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-0.5 text-[9px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
        Lihat Deskripsi
       </button>
       @endif
      </div>
-     <div class="inline-flex items-center gap-1.5 bg-white rounded-full px-0.5 py-0.5 self-start">
-      <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
-      <span class="text-[20px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
+     <div class="inline-flex items-center gap-1 bg-white rounded-full px-0.5 py-0.5 self-start">
+      <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[7px] font-bold shadow-sm">P</span>
+      <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
      </div>
-     <div class="flex flex-col gap-0.5 pt-1 border-t border-neutral-100 mt-auto">
-      <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
+     <div class="flex flex-col gap-0.5 pt-0.5 border-t border-neutral-100 mt-auto">
+      <div class="flex items-center gap-1 text-[9px] text-neutral-600">
        <span class="font-medium">Stock:</span>
        <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
       </div>
       @if($keyword->end_date)
-      <div class="flex items-center gap-1.5 text-[10px] text-neutral-600">
+      <div class="flex items-center gap-1 text-[9px] text-neutral-600">
        <span class="font-medium">Valid until:</span>
        <span class="font-semibold text-neutral-800">
         {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
@@ -81,11 +80,11 @@
         $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
      @endphp
      @if($canRedeem)
-     <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="mt-2 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1.5 px-3 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[10px]">
+     <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
       Redeem
      </button>
      @else
-     <button disabled class="mt-2 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1.5 px-3 rounded-lg cursor-not-allowed text-[10px]">
+     <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
       Open {{ $startDateFormatted }}
      </button>
      @endif
@@ -95,68 +94,68 @@
    <!-- Desktop Layout -->
    <div class="hidden lg:flex flex-col h-full">
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-neutral-100 flex-shrink-0 min-h-[80px] md:min-h-[90px]">
-     <div class="flex items-center gap-3 flex-1">
+    <div class="flex items-center justify-between p-3 md:p-4 border-b border-neutral-100 flex-shrink-0 min-h-[70px] md:min-h-[80px]">
+     <div class="flex items-center gap-2.5 flex-1">
       @if($keyword->merchant && $keyword->merchant->logo_merchant)
       <div class="relative flex-shrink-0">
        <div class="absolute inset-0 rounded-xl blur-sm "></div>
-       <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $merchantName }}" class="relative w-12 h-12 md:w-16 md:h-16 object-contain rounded-xl  shadow-md">
+       <img src="{{ asset('storage/' . $keyword->merchant->logo_merchant) }}" alt="{{ $merchantName }}" class="relative w-11 h-11 md:w-14 md:h-14 object-contain rounded-xl  shadow-md">
       </div>
       @else
-      <div class="w-12 h-12 md:w-16 md:h-16 flex-shrink-0"></div>
+      <div class="w-11 h-11 md:w-14 md:h-14 flex-shrink-0"></div>
       @endif
      </div>
      @if($keyword->diskon)
      <div class="text-right flex-shrink-0 ml-2">
-      <div class="inline-flex items-center gap-2">
-       <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-14 h-14 object-contain">
-       <span class="text-base md:text-2xl font-black text-red-600">{{ formatDiskon($keyword->diskon) }}</span>
+      <div class="inline-flex items-center gap-1.5">
+       <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-12 h-12 object-contain">
+       <span class="text-base md:text-xl font-black text-red-600">{{ formatDiskon($keyword->diskon) }}</span>
       </div>
      </div>
      @endif
     </div>
 
     <!-- Image with Stock Overlay -->
-    <div class="relative px-4 md:px-5 pt-4 pb-3 flex-shrink-0">
+    <div class="relative px-3 md:px-4 pt-3 pb-2 flex-shrink-0">
      <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
      </div>
-     <div class="absolute bottom-2 right-4 md:bottom-3 md:right-5 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold shadow-lg border border-white/10">
-      <span class="inline-flex items-center gap-1.5">
-       <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+     <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
+      <span class="inline-flex items-center gap-1">
+       <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
        <span>Stock: {{ $keyword->stock }}</span>
       </span>
      </div>
     </div>
 
     <!-- Details -->
-    <div class="flex flex-col px-4 md:px-5 pb-4 md:pb-5 flex-1 min-h-0">
-     <h4 class="text-base md:text-lg font-black text-neutral-900 mb-2 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
+    <div class="flex flex-col px-3 md:px-4 pb-3 md:pb-4 flex-1 min-h-0">
+     <h4 class="text-sm md:text-base font-black text-neutral-900 mb-1 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
       {{ $merchantName }}
      </h4>
      @if($productName)
-     <p class="text-lg md:text-xl text-neutral-600 mb-2.5 leading-relaxed font-semibold truncate">
+     <p class="text-base md:text-lg text-neutral-600 mb-1.5 leading-snug font-semibold truncate">
       {{ $productName }}
      </p>
      @endif
      @if($keyword->skb)
-     <button onclick="event.stopPropagation(); openTelkomselDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-2.5 text-xs md:text-sm font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+     <button onclick="event.stopPropagation(); openTelkomselDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-1.5 text-[10px] md:text-xs font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
       Lihat Deskripsi
      </button>
      @endif
      @if($keyword->end_date)
-     <div class="flex items-center gap-1.5 text-xs text-neutral-500 mb-3">
-      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+     <div class="flex items-center gap-1 text-[10px] text-neutral-500 mb-2">
+      <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
       </svg>
       <span class="truncate">Valid until: <span class="font-semibold text-neutral-700">{{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}</span></span>
      </div>
      @endif
-     <div class="mt-auto pt-3 border-t border-neutral-100">
-      <div class="flex items-center justify-between mb-3">
+     <div class="mt-auto pt-2 border-t border-neutral-100">
+      <div class="flex items-center justify-between mb-2">
        <div class="flex items-center gap-1.5">
-        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[8px] font-bold shadow-sm">P</span>
-        <span class="text-xl md:text-2xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+        <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[7px] font-bold shadow-sm">P</span>
+        <span class="text-lg md:text-xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
          {{ number_format($keyword->redeem, 0, ',', '.') }}
         </span>
        </div>
@@ -166,11 +165,11 @@
         $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
       @endphp
       @if($canRedeem)
-      <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2.5 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-sm md:text-base">
+      <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
        Redeem
       </button>
       @else
-      <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2.5 px-4 rounded-lg cursor-not-allowed text-sm md:text-base">
+      <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">
        Open {{ $startDateFormatted }}
       </button>
       @endif
