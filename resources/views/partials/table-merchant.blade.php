@@ -23,13 +23,35 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Quick Access</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 3, 'text')" data-sortable="true" data-column-index="3">
+                        <div class="flex items-center justify-center gap-1">
+                            <span>Merchant</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
+                    @endif
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 5, 'text')" data-sortable="true" data-column-index="5">
+                        <div class="flex items-center justify-center gap-1">
+                            <span>Kategori</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 6, 'text')" data-sortable="true" data-column-index="6">
+                        <div class="flex items-center justify-center gap-1">
+                            <span>Nama PIC</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Email PIC</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Daerah</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 9, 'text')" data-sortable="true" data-column-index="9">
+                        <div class="flex items-center justify-center gap-1">
+                            <span>Daerah</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMaps</th>
@@ -123,9 +145,10 @@
                         </td>
 
                         {{-- Merchant --}}
-                        <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900">{{ $merchant->nama_merchant }}</td>
+                        <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900" data-sort-value="{{ strtolower($merchant->nama_merchant) }}">{{ $merchant->nama_merchant }}</td>
 
                         {{-- Status Toggle --}}
+                        @if(Auth::check() && Auth::user()->can_approve == 1)
                         <td class="px-4 py-4 text-center">
                             <label class="relative inline-flex items-center cursor-pointer" title="Toggle Status">
                                 <input type="checkbox" 
@@ -135,12 +158,12 @@
                                 <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
                             </label>
                         </td>
-
+                        @endif
                         {{-- Kategori --}}
-                        <td class="px-4 py-4 text-center text-sm text-gray-700">{{ $merchant->kategori ?? '-' }}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700" data-sort-value="{{ strtolower($merchant->kategori ?? '-') }}">{{ $merchant->kategori ?? '-' }}</td>
 
                         {{-- Nama PIC --}}
-                        <td class="px-4 py-4 text-center text-sm text-gray-700">{{ $merchant->nama_pic ?? '-' }}</td>
+                        <td class="px-4 py-4 text-center text-sm text-gray-700" data-sort-value="{{ strtolower($merchant->nama_pic ?? '-') }}">{{ $merchant->nama_pic ?? '-' }}</td>
 
                         {{-- WA PIC --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
@@ -171,7 +194,7 @@
                         
 
                         {{-- Daerah --}}
-                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700">{{ $merchant->daerah }}</td>
+                        <td class="px-4 py-4 w-20 text-center text-sm text-gray-700" data-sort-value="{{ strtolower($merchant->daerah) }}">{{ $merchant->daerah }}</td>
 
                         {{-- Detail Daerah --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
@@ -740,4 +763,7 @@
             alert('Gagal memperbarui status: ' + error.message);
         }
     }
+
+    // Merchant table uses the same global sortTable function defined in table-keyword.blade.php
+    // No additional code needed here as the function handles both tables
 </script>

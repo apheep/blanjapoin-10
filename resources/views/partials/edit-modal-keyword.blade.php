@@ -194,177 +194,241 @@ function previewEditKeywordImages(input) {
 }
 
 function openEditKeyword(id, keywordData) {
-    currentEditKeywordId = id;
-    const modal = document.getElementById('editModalKeyword');
-    const modalContent = modal.querySelector('.relative');
-    const form = document.getElementById('formEditKeyword');
-    const redirectInput = document.getElementById('keywordRedirectEdit');
-    const stayFlagInput = document.getElementById('keywordStayOnDetailEdit');
-    
-    // Set form action
-    form.action = `/keywords/${id}`;
-    
-    // Set redirect URL - prioritize detail page, then keyword tab, then default
-    if (redirectInput && window.detailRedirectUrl) {
-        // Jika ada detailRedirectUrl, berarti dari halaman merchant detail
-        redirectInput.value = window.detailRedirectUrl;
-        if (stayFlagInput) {
-            stayFlagInput.value = '1';
+    try {
+        currentEditKeywordId = id;
+        const modal = document.getElementById('editModalKeyword');
+        if (!modal) {
+            console.error('Edit modal not found');
+            return;
         }
-    } else if (redirectInput) {
-        // Cek apakah kita sedang di halaman keyword (tab keyword)
-        const currentUrl = new URL(window.location.href);
-        const currentTab = currentUrl.searchParams.get('tab');
         
-        if (currentTab === 'keyword') {
-            // Jika sedang di tab keyword, set redirect ke halaman yang sama dengan tab=keyword
-            const baseUrl = currentUrl.pathname;
-            redirectInput.value = `${baseUrl}?tab=keyword`;
+        const modalContent = modal.querySelector('.relative');
+        if (!modalContent) {
+            console.error('Modal content not found');
+            return;
+        }
+        
+        const form = document.getElementById('formEditKeyword');
+        if (!form) {
+            console.error('Form not found');
+            return;
+        }
+        
+        const redirectInput = document.getElementById('keywordRedirectEdit');
+        const stayFlagInput = document.getElementById('keywordStayOnDetailEdit');
+        
+        // Set form action
+        form.action = `/keywords/${id}`;
+        
+        // Set redirect URL - prioritize detail page, then keyword tab, then default
+        if (redirectInput && window.detailRedirectUrl) {
+            // Jika ada detailRedirectUrl, berarti dari halaman merchant detail
+            redirectInput.value = window.detailRedirectUrl;
+            if (stayFlagInput) {
+                stayFlagInput.value = '1';
+            }
+        } else if (redirectInput) {
+            // Cek apakah kita sedang di halaman keyword (tab keyword)
+            const currentUrl = new URL(window.location.href);
+            const currentTab = currentUrl.searchParams.get('tab');
+            
+            if (currentTab === 'keyword') {
+                // Jika sedang di tab keyword, set redirect ke halaman yang sama dengan tab=keyword
+                const baseUrl = currentUrl.pathname;
+                redirectInput.value = `${baseUrl}?tab=keyword`;
+            } else {
+                // Default: redirect ke halaman admin dengan tab keyword
+                redirectInput.value = window.location.pathname + '?tab=keyword';
+            }
+            if (stayFlagInput) {
+                stayFlagInput.value = '';
+            }
+        }
+    
+        // Populate form fields
+        const editMerchantSelect = document.getElementById('editMerchantSelect');
+        const editProductName = document.getElementById('editProductName');
+        const editKeywordId = document.getElementById('editKeywordId');
+        const editCtaLink = document.getElementById('editCtaLink');
+        const editRedeem = document.getElementById('editRedeem');
+        const editStock = document.getElementById('editStock');
+        const editSkb = document.getElementById('editSkb');
+        const editStartDate = document.getElementById('editStartDate');
+        const editEndDate = document.getElementById('editEndDate');
+        
+        if (editMerchantSelect) editMerchantSelect.value = keywordData.merchant_key || '';
+        if (editProductName) editProductName.value = keywordData.nama_produk || '';
+        if (editKeywordId) editKeywordId.value = keywordData.keyword_id || '';
+        if (editCtaLink) editCtaLink.value = keywordData.cta_link || '';
+        if (editRedeem) editRedeem.value = keywordData.redeem || '';
+        if (editStock) editStock.value = keywordData.stock || '';
+        if (editSkb) editSkb.value = keywordData.skb || '';
+        if (editStartDate) editStartDate.value = keywordData.start_date || '';
+        if (editEndDate) editEndDate.value = keywordData.end_date || '';
+    
+        // Parse diskon
+        const diskonStr = keywordData.diskon || '';
+        const diskonPercent = document.getElementById('editDiskonPercent');
+        const diskonRupiah = document.getElementById('editDiskonRupiah');
+        const diskonTypePercent = document.getElementById('editDiskonTypePercent');
+        const diskonTypeRupiah = document.getElementById('editDiskonTypeRupiah');
+        const diskonTypeFree = document.getElementById('editDiskonTypeFree');
+        
+        // Reset semua field diskon
+        if (diskonPercent) diskonPercent.value = '';
+        if (diskonRupiah) diskonRupiah.value = '';
+        
+        if (diskonStr.toLowerCase().includes('free') || diskonStr.toLowerCase() === 'gratis') {
+            if (diskonTypeFree) diskonTypeFree.checked = true;
+            toggleEditDiskonType();
+        } else if (diskonStr.includes('%')) {
+            const percent = diskonStr.replace('%', '').trim();
+            if (diskonPercent) diskonPercent.value = percent;
+            if (diskonTypePercent) diskonTypePercent.checked = true;
+            toggleEditDiskonType();
+        } else if (diskonStr.includes('Rp')) {
+            const rupiah = diskonStr.replace('Rp', '').replace(/\./g, '').replace(/,/g, '').trim();
+            if (diskonRupiah) diskonRupiah.value = rupiah;
+            if (diskonTypeRupiah) diskonTypeRupiah.checked = true;
+            toggleEditDiskonType();
         } else {
-            // Default: redirect ke halaman admin dengan tab keyword
-            redirectInput.value = window.location.pathname + '?tab=keyword';
-    }
-    if (stayFlagInput) {
-            stayFlagInput.value = '';
+            // Default to percent if no valid diskon data
+            if (diskonTypePercent) {
+                diskonTypePercent.checked = true;
+            }
+            toggleEditDiskonType();
         }
-    }
-    
-    // Populate form fields
-    document.getElementById('editMerchantSelect').value = keywordData.merchant_key;
-    document.getElementById('editProductName').value = keywordData.nama_produk;
-    document.getElementById('editKeywordId').value = keywordData.keyword_id || '';
-    document.getElementById('editCtaLink').value = keywordData.cta_link || '';
-    document.getElementById('editRedeem').value = keywordData.redeem || '';
-    document.getElementById('editStock').value = keywordData.stock || '';
-    document.getElementById('editSkb').value = keywordData.skb || '';
-    document.getElementById('editStartDate').value = keywordData.start_date || '';
-    document.getElementById('editEndDate').value = keywordData.end_date || '';
-    
-    // Parse diskon
-    const diskonStr = keywordData.diskon || '';
-    const diskonPercent = document.getElementById('editDiskonPercent');
-    const diskonRupiah = document.getElementById('editDiskonRupiah');
-    const diskonTypePercent = document.getElementById('editDiskonTypePercent');
-    const diskonTypeRupiah = document.getElementById('editDiskonTypeRupiah');
-    const diskonTypeFree = document.getElementById('editDiskonTypeFree');
-    
-    // Reset semua field diskon
-    diskonPercent.value = '';
-    diskonRupiah.value = '';
-    
-    if (diskonStr.toLowerCase().includes('free') || diskonStr.toLowerCase() === 'gratis') {
-        diskonTypeFree.checked = true;
-        toggleEditDiskonType();
-    } else if (diskonStr.includes('%')) {
-        const percent = diskonStr.replace('%', '').trim();
-        diskonPercent.value = percent;
-        diskonTypePercent.checked = true;
-        toggleEditDiskonType();
-    } else if (diskonStr.includes('Rp')) {
-        const rupiah = diskonStr.replace('Rp', '').replace(/\./g, '').replace(/,/g, '').trim();
-        diskonRupiah.value = rupiah;
-        diskonTypeRupiah.checked = true;
-        toggleEditDiskonType();
-    } else {
-        // Default to percent if no valid diskon data
-        if (diskonTypePercent) {
-            diskonTypePercent.checked = true;
-        }
-        toggleEditDiskonType();
-    }
-    
-    // Show current image if exists
-    const currentImageDiv = document.getElementById('editKeywordCurrentImage');
-    if (keywordData.image) {
-        currentImageDiv.innerHTML = `
-            <div class="relative group">
-                <p class="text-xs text-gray-500 mb-2">Gambar saat ini:</p>
-                <img src="/storage/${keywordData.image}" alt="Current Image" class="w-full h-24 object-cover rounded-lg">
-            </div>
-        `;
-    } else {
-        currentImageDiv.innerHTML = '';
-    }
-    
-    // Clear file input
-    document.getElementById('editKeywordImagesInput').value = '';
-    document.getElementById('editKeywordImagesPreview').innerHTML = '';
-    document.getElementById('editKeywordImagesPreview').classList.add('hidden');
-    document.getElementById('editKeywordImagesText').textContent = 'Click to upload image';
-    
-    // Ensure diskon type is properly displayed
-    setTimeout(() => {
-        toggleEditDiskonType();
-    }, 50);
-    
-    // Parse and populate subsidy data
-    setTimeout(() => {
-        const subsidyEnabled = keywordData.subsidy_enabled === 1 || keywordData.subsidy_enabled === '1' || keywordData.subsidy_enabled === true;
-        const subsidyAmount = keywordData.subsidy_amount || '';
         
-        if (subsidyEnabled) {
-            const subsidyYesRadio = document.getElementById('editSubsidyEnabledYes');
-            if (subsidyYesRadio) {
-                subsidyYesRadio.checked = true;
-                
-                // Set nilai sebelum toggle agar nilai terlihat saat container muncul
-                const subsidyAmountInput = document.getElementById('editSubsidyAmount');
-                if (subsidyAmountInput) {
-                    if (subsidyAmount && subsidyAmount !== '' && subsidyAmount !== '0') {
+        // Show current image if exists
+        const currentImageDiv = document.getElementById('editKeywordCurrentImage');
+        if (currentImageDiv) {
+            if (keywordData.image) {
+                currentImageDiv.innerHTML = `
+                    <div class="relative group">
+                        <p class="text-xs text-gray-500 mb-2">Gambar saat ini:</p>
+                        <img src="/storage/${keywordData.image}" alt="Current Image" class="w-full h-24 object-cover rounded-lg">
+                    </div>
+                `;
+            } else {
+                currentImageDiv.innerHTML = '';
+            }
+        }
+        
+        // Clear file input
+        const editKeywordImagesInput = document.getElementById('editKeywordImagesInput');
+        const editKeywordImagesPreview = document.getElementById('editKeywordImagesPreview');
+        const editKeywordImagesText = document.getElementById('editKeywordImagesText');
+        if (editKeywordImagesInput) editKeywordImagesInput.value = '';
+        if (editKeywordImagesPreview) {
+            editKeywordImagesPreview.innerHTML = '';
+            editKeywordImagesPreview.classList.add('hidden');
+        }
+        if (editKeywordImagesText) editKeywordImagesText.textContent = 'Click to upload image';
+        
+        // Ensure diskon type is properly displayed
+        setTimeout(() => {
+            toggleEditDiskonType();
+        }, 50);
+        
+        // Parse and populate subsidy data
+        // Determine subsidy enabled based on subsidy_amount (not subsidy_enabled field)
+        // If subsidy_amount exists and > 0, then subsidy is enabled
+        setTimeout(() => {
+            const subsidyAmount = keywordData.subsidy_amount;
+            
+            // Check if subsidy is enabled: if subsidy_amount is not null, not undefined, not empty string, and > 0
+            // Convert to string first to handle various input types, then parse
+            let subsidyEnabled = false;
+            if (subsidyAmount !== null && subsidyAmount !== undefined && subsidyAmount !== '') {
+                // Remove any formatting (dots, commas) and parse
+                const cleanValue = subsidyAmount.toString().replace(/[^\d.]/g, '');
+                const numericValue = parseFloat(cleanValue);
+                subsidyEnabled = !isNaN(numericValue) && numericValue > 0;
+            }
+            
+            if (subsidyEnabled) {
+                const subsidyYesRadio = document.getElementById('editSubsidyEnabledYes');
+                const subsidyNoRadio = document.getElementById('editSubsidyEnabledNo');
+                if (subsidyYesRadio) {
+                    subsidyYesRadio.checked = true;
+                    if (subsidyNoRadio) {
+                        subsidyNoRadio.checked = false;
+                    }
+                    
+                    // Set nilai sebelum toggle agar nilai terlihat saat container muncul
+                    const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+                    if (subsidyAmountInput) {
                         // Format nilai subsidi dengan titik sebagai pemisah ribuan
-                        const numericValue = subsidyAmount.toString().replace(/[^\d]/g, '');
-                        if (numericValue) {
-                            subsidyAmountInput.value = parseInt(numericValue, 10).toLocaleString('id-ID');
+                        const cleanValue = subsidyAmount.toString().replace(/[^\d.]/g, '');
+                        if (cleanValue) {
+                            // Parse as float to handle decimals, then format
+                            const floatValue = parseFloat(cleanValue);
+                            if (!isNaN(floatValue) && floatValue > 0) {
+                                subsidyAmountInput.value = floatValue.toLocaleString('id-ID');
+                            } else {
+                                subsidyAmountInput.value = '';
+                            }
+                        } else {
+                            subsidyAmountInput.value = '';
                         }
-                    } else {
-                        // Set default "0" jika tidak ada nilai
-                        subsidyAmountInput.value = '0';
+                    }
+                    
+                    // Toggle untuk menampilkan container
+                    toggleEditSubsidyAmount();
+                }
+            } else {
+                const subsidyNoRadio = document.getElementById('editSubsidyEnabledNo');
+                const subsidyYesRadio = document.getElementById('editSubsidyEnabledYes');
+                if (subsidyNoRadio) {
+                    subsidyNoRadio.checked = true;
+                    if (subsidyYesRadio) {
+                        subsidyYesRadio.checked = false;
                     }
                 }
-                
-                // Toggle untuk menampilkan container
+                // Clear subsidy amount input
+                const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+                if (subsidyAmountInput) {
+                    subsidyAmountInput.value = '';
+                }
                 toggleEditSubsidyAmount();
             }
-        } else {
-            const subsidyNoRadio = document.getElementById('editSubsidyEnabledNo');
-            if (subsidyNoRadio) {
-                subsidyNoRadio.checked = true;
+        }, 60);
+    
+        // Show modal with animation
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        const formElements = modalContent.querySelectorAll('input, select, textarea, label, p, h3');
+        const buttons = modalContent.querySelectorAll('button');
+        formElements.forEach(el => { el.style.transform = 'translateY(10px)'; el.style.opacity = '0'; });
+        buttons.forEach(btn => { btn.style.transform = 'translateY(10px)'; btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; });
+        const backdrop = modal.querySelector('.fixed');
+        if (backdrop) backdrop.style.opacity = '0';
+        
+        setTimeout(() => {
+            if (backdrop) backdrop.style.opacity = '0.5';
+            formElements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.transform = 'translateY(0)';
+                    el.style.opacity = '1';
+                }, index * 30);
+            });
+            buttons.forEach((btn, index) => {
+                setTimeout(() => {
+                    btn.style.transform = 'translateY(0)';
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                }, (formElements.length + index) * 30);
+            });
+            if (modalContent) {
+                modalContent.style.transform = 'scale(1)';
+                modalContent.style.opacity = '1';
             }
-            toggleEditSubsidyAmount();
-        }
-    }, 60);
-    
-    // Show modal with animation
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    
-    const formElements = modalContent.querySelectorAll('input, select, textarea, label, p, h3');
-    const buttons = modalContent.querySelectorAll('button');
-    formElements.forEach(el => { el.style.transform = 'translateY(10px)'; el.style.opacity = '0'; });
-    buttons.forEach(btn => { btn.style.transform = 'translateY(10px)'; btn.style.opacity = '0'; btn.style.pointerEvents = 'none'; });
-    const backdrop = modal.querySelector('.fixed');
-    backdrop.style.opacity = '0';
-    
-    setTimeout(() => {
-        backdrop.style.opacity = '0.5';
-        formElements.forEach((el, index) => {
-            setTimeout(() => {
-                el.style.transform = 'translateY(0)';
-                el.style.opacity = '1';
-            }, index * 30);
-        });
-        buttons.forEach((btn, index) => {
-            setTimeout(() => {
-                btn.style.transform = 'translateY(0)';
-                btn.style.opacity = '1';
-                btn.style.pointerEvents = 'auto';
-            }, (formElements.length + index) * 30);
-        });
-        if (modalContent) {
-            modalContent.style.transform = 'scale(1)';
-            modalContent.style.opacity = '1';
-        }
-    }, 10);
+        }, 10);
+    } catch (error) {
+        console.error('Error opening edit keyword modal:', error);
+        alert('Terjadi kesalahan saat membuka form edit. Silakan refresh halaman dan coba lagi.');
+    }
 }
 
 function closeEditKeyword() {
@@ -547,6 +611,10 @@ function toggleEditSubsidyAmount() {
         subsidyAmountContainer.classList.remove('hidden');
         if (subsidyAmount) {
             subsidyAmount.required = true;
+            // Pastikan name attribute ada
+            if (!subsidyAmount.hasAttribute('name')) {
+                subsidyAmount.setAttribute('name', 'subsidy_amount');
+            }
             // Set default value "0" jika kosong
             const currentValue = subsidyAmount.value ? subsidyAmount.value.replace(/[^\d]/g, '') : '';
             if (!currentValue || currentValue === '' || currentValue === '0') {
@@ -561,6 +629,8 @@ function toggleEditSubsidyAmount() {
         if (subsidyAmount) {
             subsidyAmount.required = false;
             subsidyAmount.value = '';
+            // Hapus name attribute agar tidak dikirim ke server saat "No" dipilih
+            subsidyAmount.removeAttribute('name');
         }
         if (subsidyError) subsidyError.classList.add('hidden');
     }
@@ -639,8 +709,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validasi subsidy amount jika subsidy enabled
             const subsidyEnabled = form.querySelector('input[name="subsidy_enabled"]:checked');
+            const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+            
             if (subsidyEnabled && subsidyEnabled.value === '1') {
-                const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+                // Pastikan name attribute ada
+                if (subsidyAmountInput && !subsidyAmountInput.hasAttribute('name')) {
+                    subsidyAmountInput.setAttribute('name', 'subsidy_amount');
+                }
+                
                 const subsidyAmount = getEditNumericValue(subsidyAmountInput);
                 const subsidyError = document.getElementById('editSubsidyAmountError');
                 if (!subsidyAmount || subsidyAmount <= 0) {
@@ -663,12 +739,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     subsidyAmountInput.value = cleanValue;
                 }
             } else {
-                // Jika subsidy disabled, pastikan input kosong
-                const subsidyAmountInput = document.getElementById('editSubsidyAmount');
+                // Jika subsidy disabled, pastikan input kosong dan hapus name attribute
                 if (subsidyAmountInput) {
                     subsidyAmountInput.value = '';
+                    // Hapus name attribute agar tidak dikirim ke server
+                    subsidyAmountInput.removeAttribute('name');
                 }
             }
+            
             
             // Kumpulkan data untuk ditampilkan di modal verifikasi (opsional)
             const formData = new FormData(form);

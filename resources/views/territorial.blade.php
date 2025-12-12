@@ -112,8 +112,8 @@
                                 <div class="text-[10px] text-neutral-600 leading-snug">
                                     @if(!is_null($keyword->diskon))
                                     <div class="font-bold text-red-500 flex items-center gap-1.5 mb-0.5">
-                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-6 h-6 object-contain">
-                                        <span class="text-lg font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
+                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-7 h-7 object-contain">
+                                        <span class="text-xl font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
                                     </div>
                                     @endif
                                     @if($productName)
