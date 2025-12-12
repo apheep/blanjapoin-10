@@ -167,3 +167,126 @@ if (!function_exists('territorialName')) {
     }
 }
 
+if (!function_exists('territorialSlugGeneric')) {
+    /**
+     * Generate slug untuk URL teritorial (generic untuk cluster, branch, regional)
+     * Mengubah nama menjadi format URL-friendly
+     * 
+     * @param string|null $location
+     * @return string
+     */
+    function territorialSlugGeneric($location) {
+        if (empty($location)) return '';
+        
+        $location = trim($location);
+        
+        // Convert ke lowercase
+        $location = strtolower($location);
+        
+        // Replace spasi dengan dash
+        $location = str_replace(' ', '-', $location);
+        
+        // Remove special characters, keep only alphanumeric and dash
+        $location = preg_replace('/[^a-z0-9\-]/', '', $location);
+        
+        // Remove multiple dashes
+        $location = preg_replace('/-+/', '-', $location);
+        
+        // Trim dashes from start and end
+        $location = trim($location, '-');
+        
+        return $location;
+    }
+}
+
+if (!function_exists('territorialNameGeneric')) {
+    /**
+     * Convert slug kembali ke nama teritorial yang readable (generic)
+     * 
+     * @param string|null $slug
+     * @return string
+     */
+    function territorialNameGeneric($slug) {
+        if (empty($slug)) return '';
+        
+        // Replace dash dengan spasi
+        $name = str_replace('-', ' ', $slug);
+        
+        // Capitalize first letter of each word
+        $name = ucwords($name);
+        
+        return $name;
+    }
+}
+
+if (!function_exists('normalizeCityName')) {
+    /**
+     * Normalisasi nama kota untuk matching (toleransi prefix Kota/Kabupaten)
+     * Menghapus prefix "Kota" atau "Kabupaten" dan trim untuk matching yang lebih toleran
+     * 
+     * Contoh:
+     * - "Kota Blitar" -> "Blitar"
+     * - "Kabupaten Blitar" -> "Blitar"
+     * - "Blitar" -> "Blitar"
+     * 
+     * @param string|null $cityName
+     * @return string
+     */
+    function normalizeCityName($cityName) {
+        if (empty($cityName)) return '';
+        
+        $cityName = trim($cityName);
+        
+        // Hapus prefix "Kota" atau "Kabupaten" jika ada
+        $cityName = preg_replace('/^(Kota|Kabupaten)\s+/i', '', $cityName);
+        
+        return trim($cityName);
+    }
+}
+
+if (!function_exists('getRegionalNameFromAlias')) {
+    /**
+     * Convert alias regional ke nama regional yang sebenarnya
+     * Mapping alias untuk URL yang lebih pendek
+     * 
+     * Contoh:
+     * - "balnus" atau "bali-nusra" -> "Bali Nusra"
+     * - "jatengdiy" atau "jateng-diy" -> "Jateng DIY"
+     * - "jatim" -> "Jatim"
+     * 
+     * @param string|null $alias
+     * @return string
+     */
+    function getRegionalNameFromAlias($alias) {
+        if (empty($alias)) return '';
+        
+        $alias = strtolower(trim($alias));
+        
+        // Mapping alias ke nama regional
+        $regionalAliases = [
+            // Bali Nusra
+            'balnus' => 'Bali Nusra',
+            'bali-nusra' => 'Bali Nusra',
+            'balinusra' => 'Bali Nusra',
+            'bali nusra' => 'Bali Nusra',
+            
+            // Jateng DIY
+            'jatengdiy' => 'Jateng DIY',
+            'jateng-diy' => 'Jateng DIY',
+            'jateng diy' => 'Jateng DIY',
+            
+            // Jatim (tetap sama)
+            'jatim' => 'Jatim',
+            'jawa timur' => 'Jatim',
+        ];
+        
+        // Cek apakah ada mapping untuk alias ini
+        if (isset($regionalAliases[$alias])) {
+            return $regionalAliases[$alias];
+        }
+        
+        // Jika tidak ada mapping, convert slug ke readable name (untuk backward compatibility)
+        return territorialNameGeneric($alias);
+    }
+}
+

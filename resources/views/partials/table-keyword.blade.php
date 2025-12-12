@@ -32,9 +32,24 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     @endif
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Keyword ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 4, 'text')" data-sortable="true" data-column-index="4">
+                        <div class="flex items-center gap-1">
+                            <span>Merchant</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 5, 'text')" data-sortable="true" data-column-index="5">
+                        <div class="flex items-center gap-1">
+                            <span>Nama Produk</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 6, 'text')" data-sortable="true" data-column-index="6">
+                        <div class="flex items-center gap-1">
+                            <span>Keyword ID</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA LINK</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
@@ -128,13 +143,13 @@
                             </label>
                         </td>
 
-                        <td class="px-4 py-4 text-sm text-gray-900">
+                        <td class="px-4 py-4 text-sm text-gray-900" data-sort-value="{{ strtolower($keyword->merchant->nama_merchant ?? '-') }}">
                             <div class="font-medium">{{ $keyword->merchant->nama_merchant ?? '-' }}</div>
                         </td>
-                        <td class="px-4 py-4 text-sm text-gray-900">
+                        <td class="px-4 py-4 text-sm text-gray-900" data-sort-value="{{ strtolower($keyword->nama_produk) }}">
                             <div class="font-medium">{{ $keyword->nama_produk }}</div>
                         </td>
-                        <td class="px-4 py-4 text-sm text-gray-900">
+                        <td class="px-4 py-4 text-sm text-gray-900" data-sort-value="{{ strtolower($keyword->keyword_id ?? '-') }}">
                             <div class="font-medium">{{ $keyword->keyword_id ?? '-' }}</div>
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-900">
@@ -483,4 +498,120 @@
             alert('Gagal menyalin teks');
         });
     }
+
+    // Client-side table sorting functionality
+    // Store original order and sort state for each table
+    const tableSortData = {
+        'keyword-table-body': {
+            originalOrder: null,
+            sortState: {}
+        },
+        'merchant-table-body': {
+            originalOrder: null,
+            sortState: {}
+        }
+    };
+
+    function sortTable(tableBodyId, columnIndex, dataType) {
+        const tbody = document.getElementById(tableBodyId);
+        if (!tbody) return;
+
+        const tableData = tableSortData[tableBodyId];
+        if (!tableData) return;
+
+        // Store original order on first sort
+        if (!tableData.originalOrder) {
+            tableData.originalOrder = Array.from(tbody.querySelectorAll('tr')).map(tr => tr.cloneNode(true));
+        }
+
+        const rows = Array.from(tbody.querySelectorAll('tr:not(.hidden)'));
+        if (rows.length === 0) return;
+
+        // Get current sort state for this column
+        const currentState = tableData.sortState[columnIndex] || null;
+        let newState;
+
+        // Toggle: null -> 'asc' -> 'desc' -> null (reset)
+        if (currentState === null) {
+            newState = 'asc';
+        } else if (currentState === 'asc') {
+            newState = 'desc';
+        } else {
+            newState = null; // Reset
+        }
+
+        // Update sort state
+        tableData.sortState[columnIndex] = newState;
+
+        // Reset all sort icons for this column in this table
+        const table = tbody.closest('table');
+        if (table) {
+            const headers = table.querySelectorAll(`thead [data-column-index="${columnIndex}"] .sort-icon`);
+            headers.forEach(icon => {
+                icon.innerHTML = '<i class="fas fa-sort"></i>';
+                icon.className = 'sort-icon text-gray-400 text-[10px]';
+            });
+        }
+
+        if (newState === null) {
+            // Reset to original order
+            tbody.innerHTML = '';
+            tableData.originalOrder.forEach(tr => tbody.appendChild(tr.cloneNode(true)));
+            tableData.originalOrder = null;
+            tableData.sortState = {};
+            return;
+        }
+
+        // Update icon for current column
+        const tableForHeader = tbody.closest('table');
+        if (tableForHeader) {
+            const header = tableForHeader.querySelector(`thead [data-column-index="${columnIndex}"]`);
+            if (header) {
+                const icon = header.querySelector('.sort-icon');
+                if (icon) {
+                    if (newState === 'asc') {
+                        icon.innerHTML = '<i class="fas fa-sort-up"></i>';
+                        icon.className = 'sort-icon text-blue-600 text-[10px]';
+                    } else {
+                        icon.innerHTML = '<i class="fas fa-sort-down"></i>';
+                        icon.className = 'sort-icon text-blue-600 text-[10px]';
+                    }
+                }
+            }
+        }
+
+        // Sort rows
+        rows.sort((a, b) => {
+            const cellA = a.querySelector(`td:nth-child(${columnIndex + 1})`);
+            const cellB = b.querySelector(`td:nth-child(${columnIndex + 1})`);
+            
+            if (!cellA || !cellB) return 0;
+
+            let valueA, valueB;
+
+            if (dataType === 'text') {
+                // Use data-sort-value if available, otherwise get text content
+                valueA = (cellA.getAttribute('data-sort-value') || cellA.textContent.trim().toLowerCase()) || '';
+                valueB = (cellB.getAttribute('data-sort-value') || cellB.textContent.trim().toLowerCase()) || '';
+            } else {
+                valueA = parseFloat(cellA.textContent.replace(/[^\d.-]/g, '')) || 0;
+                valueB = parseFloat(cellB.textContent.replace(/[^\d.-]/g, '')) || 0;
+            }
+
+            let comparison = 0;
+            if (valueA < valueB) {
+                comparison = -1;
+            } else if (valueA > valueB) {
+                comparison = 1;
+            }
+
+            return newState === 'asc' ? comparison : -comparison;
+        });
+
+        // Reorder rows in DOM
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Make function globally available
+    window.sortTable = sortTable;
 </script>
