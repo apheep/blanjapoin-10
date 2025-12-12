@@ -1509,8 +1509,11 @@ class MerchantController extends Controller
      */
     public function showByRegional($location)
     {
-        // Convert slug back to readable name (location adalah nama regional langsung)
-        $locationName = territorialNameGeneric($location);
+        // Convert alias atau slug ke nama regional yang sebenarnya
+        // Support alias seperti: balnus, bali-nusra -> Bali Nusra
+        //                      jatengdiy, jateng-diy -> Jateng DIY
+        //                      jatim -> Jatim
+        $locationName = getRegionalNameFromAlias($location);
         
         // Get all cities that belong to this regional from DimTeritorialNational
         // Query: SELECT DISTINCT city FROM dim_teritorial_national WHERE LOWER(regional) = LOWER('Jatim')
@@ -1545,10 +1548,15 @@ class MerchantController extends Controller
         }
         
         // Get the actual regional name from database for display
-        $regionalData = DimTeritorialNational::where(function($query) use ($locationName, $location) {
-            $query->whereRaw('LOWER(regional) = ?', [strtolower($locationName)])
-                  ->orWhereRaw('LOWER(regional) = ?', [strtolower($location)]);
-        })->first();
+        // Cari berdasarkan locationName yang sudah di-convert dari alias
+        $regionalData = DimTeritorialNational::whereRaw('LOWER(TRIM(regional)) = ?', [strtolower(trim($locationName))])
+            ->first();
+        
+        // Jika tidak ditemukan, coba dengan original location
+        if (!$regionalData) {
+            $regionalData = DimTeritorialNational::whereRaw('LOWER(TRIM(regional)) = ?', [strtolower(trim($location))])
+                ->first();
+        }
         
         $displayName = $regionalData ? $regionalData->regional : $locationName;
         

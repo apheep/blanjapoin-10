@@ -244,3 +244,49 @@ if (!function_exists('normalizeCityName')) {
     }
 }
 
+if (!function_exists('getRegionalNameFromAlias')) {
+    /**
+     * Convert alias regional ke nama regional yang sebenarnya
+     * Mapping alias untuk URL yang lebih pendek
+     * 
+     * Contoh:
+     * - "balnus" atau "bali-nusra" -> "Bali Nusra"
+     * - "jatengdiy" atau "jateng-diy" -> "Jateng DIY"
+     * - "jatim" -> "Jatim"
+     * 
+     * @param string|null $alias
+     * @return string
+     */
+    function getRegionalNameFromAlias($alias) {
+        if (empty($alias)) return '';
+        
+        $alias = strtolower(trim($alias));
+        
+        // Mapping alias ke nama regional
+        $regionalAliases = [
+            // Bali Nusra
+            'balnus' => 'Bali Nusra',
+            'bali-nusra' => 'Bali Nusra',
+            'balinusra' => 'Bali Nusra',
+            'bali nusra' => 'Bali Nusra',
+            
+            // Jateng DIY
+            'jatengdiy' => 'Jateng DIY',
+            'jateng-diy' => 'Jateng DIY',
+            'jateng diy' => 'Jateng DIY',
+            
+            // Jatim (tetap sama)
+            'jatim' => 'Jatim',
+            'jawa timur' => 'Jatim',
+        ];
+        
+        // Cek apakah ada mapping untuk alias ini
+        if (isset($regionalAliases[$alias])) {
+            return $regionalAliases[$alias];
+        }
+        
+        // Jika tidak ada mapping, convert slug ke readable name (untuk backward compatibility)
+        return territorialNameGeneric($alias);
+    }
+}
+
