@@ -21,6 +21,9 @@ use App\Models\Iklan;
 
 // Tampilan awal untuk semua pengunjung
 Route::get('/', function () {
+    // Auto-disable keywords that have passed their end_date
+    Keyword::autoDisableExpiredKeywords();
+    
     $keywords = Keyword::with('merchant')
         ->where('is_active', 1)
         ->where('status', 'approve')
@@ -28,14 +31,16 @@ Route::get('/', function () {
             $query->where('is_active', 1);
         })
         ->get();
-    // Get iklans - only show iklans without territorial (null) for home page
+    // Get iklans - only show general iklans (all location fields are null) for home page
     $iklans = Iklan::whereNull('territorial')
+        ->whereNull('regional')
+        ->whereNull('branch')
+        ->whereNull('cluster')
         ->orderBy('order', 'asc')
         ->get();
     
-    // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
+    // Ambil semua daerah dan ekstrak hanya kabupaten/kota (semua merchant, tidak filter is_active)
     $allDaerah = Merchant::query()
-        ->where('is_active', 1)
         ->whereNotNull('daerah')
         ->where('daerah', '!=', '')
         ->distinct()
@@ -119,11 +124,26 @@ Route::get('/search', [KeywordController::class, 'publicSearch'])->name('merchan
 // Spesial Promo Public Page
 Route::get('/spesial-promo', [SpesialPromoController::class, 'index'])->name('spesial-promo.index');
 
-// ======================= CITY (PUBLIC) =======================
+// ======================= TERRITORIAL FILTERS (PUBLIC) =======================
 // Route untuk menampilkan merchant berdasarkan kota/kabupaten
 // Format: /city/{location} (contoh: /city/surabaya)
 // Route ini PUBLIC, tidak perlu login
 Route::get('/city/{location}', [MerchantController::class, 'showByTerritorial'])->name('city.show');
+
+// Route untuk menampilkan merchant berdasarkan regional
+// Format: /reg/{location} (contoh: /reg/jakarta)
+// Route ini PUBLIC, tidak perlu login
+Route::get('/reg/{location}', [MerchantController::class, 'showByRegional'])->name('regional.show');
+
+// Route untuk menampilkan merchant berdasarkan branch
+// Format: /branch/{location} (contoh: /branch/jakarta-barat)
+// Route ini PUBLIC, tidak perlu login
+Route::get('/branch/{location}', [MerchantController::class, 'showByBranch'])->name('branch.show');
+
+// Route untuk menampilkan merchant berdasarkan cluster
+// Format: /cluster/{location} (contoh: /cluster/jakarta-cluster-1)
+// Route ini PUBLIC, tidak perlu login
+Route::get('/cluster/{location}', [MerchantController::class, 'showByCluster'])->name('cluster.show');
 
 // Route untuk link pelanggan (public, tidak perlu login)
 Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
@@ -204,9 +224,8 @@ Route::middleware(['auth'])->group(function () {
         ->orderBy('order', 'asc')
         ->get();
         
-        // Ambil semua daerah dan ekstrak hanya kabupaten/kota (hanya merchant yang aktif)
+        // Ambil semua daerah dan ekstrak hanya kabupaten/kota (semua merchant, tidak filter is_active)
         $allDaerah = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->distinct()

@@ -14,6 +14,9 @@ class SpesialPromoController extends Controller
      */
     public function index()
     {
+        // Auto-disable keywords that have passed their end_date
+        Keyword::autoDisableExpiredKeywords();
+        
         // Query keyword dengan is_special_promo = 1, status approve, dan is_active = 1
         // Pastikan merchant juga aktif jika ada
         $keywords = Keyword::with('merchant')

@@ -42,6 +42,12 @@
                             <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
                         </div>
                     </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
+                    @if(Auth::check() && Auth::user()->can_approve == 1)
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                    @endif
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Kategori</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">WA PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Email PIC</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 9, 'text')" data-sortable="true" data-column-index="9">
@@ -146,6 +152,7 @@
                         <td class="px-4 py-4 w-20 text-center text-sm font-semibold text-gray-900" data-sort-value="{{ strtolower($merchant->nama_merchant) }}">{{ $merchant->nama_merchant }}</td>
 
                         {{-- Status Toggle --}}
+                        @if(Auth::check() && Auth::user()->can_approve == 1)
                         <td class="px-4 py-4 text-center">
                             <label class="relative inline-flex items-center cursor-pointer" title="Toggle Status">
                                 <input type="checkbox" 
@@ -155,7 +162,7 @@
                                 <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
                             </label>
                         </td>
-
+                        @endif
                         {{-- Kategori --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700" data-sort-value="{{ strtolower($merchant->kategori ?? '-') }}">{{ $merchant->kategori ?? '-' }}</td>
 

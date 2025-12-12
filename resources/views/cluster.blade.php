@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Merchant {{ $locationName }} - BlanjaPoin</title>
+    <title>Merchant Cluster {{ $locationName }} - BlanjaPoin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -58,7 +58,7 @@
                         <i class="fas fa-home"></i> Beranda
                     </a>
                     <span class="text-gray-400">/</span>
-                    <span class="text-sm font-semibold text-gray-700">City</span>
+                    <span class="text-sm font-semibold text-gray-700">Cluster</span>
                     <span class="text-gray-400">/</span>
                     <span class="text-sm font-semibold text-orange-600">{{ $locationName }}</span>
                 </div>
@@ -82,7 +82,7 @@
                         $locationName = extractKabupatenKota(optional($merchant)->daerah ?? '');
                         $searchName = strtolower(trim($merchantName . ' ' . $productName));
                         $searchLocation = strtolower($locationName);
-                        $uniqueId = 'territorial-card-' . $keyword->id;
+                        $uniqueId = 'cluster-card-' . $keyword->id;
                     @endphp
                     
                     <article 
@@ -257,7 +257,7 @@
                 <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
                     <i class="fas fa-store text-4xl text-gray-400"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Belum ada merchant di {{ $locationName }}</h3>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Belum ada merchant di Cluster {{ $locationName }}</h3>
                 <p class="text-gray-600 mb-6">Coba pilih teritorial lain atau kembali ke beranda</p>
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
                     <i class="fas fa-home"></i>
@@ -513,4 +513,5 @@
     </div>
 </body>
 </html>
+
 

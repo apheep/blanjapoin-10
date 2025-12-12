@@ -53,17 +53,145 @@
                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
                     </label>
                     <label class="block">
-                        <span class="text-sm font-semibold text-neutral-700">Teritorial <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
-                        <select id="territorialInput" name="territorial" 
-                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
-                            <option value="">Semua Teritorial (Tampil di semua halaman)</option>
-                            @foreach($territories as $territory)
-                                <option value="{{ $territory['slug'] }}" {{ old('territorial') === $territory['slug'] ? 'selected' : '' }}>
-                                    {{ $territory['name'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <p class="text-xs text-neutral-500 mt-1">Jika dipilih, iklan hanya akan tampil di halaman teritorial yang dipilih.</p>
+                        <span class="text-sm font-semibold text-neutral-700">Target Lokasi <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
+                        <div class="mt-2 relative">
+                            <select id="locationTypeInput" class="hidden">
+                                <option value="general" {{ old('location_type') === 'general' || (!old('location_type') && !old('territorial') && !old('regional') && !old('branch') && !old('cluster')) ? 'selected' : '' }}>General (Tampil di semua halaman jika tidak ada banner spesifik)</option>
+                                <option value="territorial" {{ old('location_type') === 'territorial' ? 'selected' : '' }}>Teritorial</option>
+                                <option value="regional" {{ old('location_type') === 'regional' ? 'selected' : '' }}>Regional</option>
+                                <option value="branch" {{ old('location_type') === 'branch' ? 'selected' : '' }}>Branch</option>
+                                <option value="cluster" {{ old('location_type') === 'cluster' ? 'selected' : '' }}>Cluster</option>
+                            </select>
+                            <button type="button" id="locationTypeBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="locationTypeText">General (Tampil di semua halaman jika tidak ada banner spesifik)</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="locationTypeDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="locationTypeSearch" placeholder="Cari tipe lokasi..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="locationTypeOptions" class="overflow-y-auto max-h-48">
+                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="general">General (Tampil di semua halaman jika tidak ada banner spesifik)</div>
+                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="territorial">Teritorial</div>
+                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="regional">Regional</div>
+                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="branch">Branch</div>
+                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="cluster">Cluster</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-neutral-500 mt-1">Pilih General untuk banner default, atau pilih lokasi spesifik. Banner spesifik akan muncul di lokasi tersebut, banner general akan muncul jika tidak ada banner spesifik.</p>
+                    </label>
+                    <label class="block hidden" id="territorialLabel">
+                        <span class="text-sm font-semibold text-neutral-700">Pilih Teritorial</span>
+                        <div class="mt-2 relative">
+                            <select id="territorialInput" name="territorial" class="hidden">
+                                <option value="">-- Pilih Teritorial --</option>
+                                @foreach($territories as $territory)
+                                    <option value="{{ $territory['slug'] }}" {{ old('territorial') === $territory['slug'] ? 'selected' : '' }}>
+                                        {{ $territory['name'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" id="territorialBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="territorialText">-- Pilih Teritorial --</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="territorialDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="territorialSearch" placeholder="Cari teritorial..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="territorialOptions" class="overflow-y-auto max-h-48">
+                                    <div class="territorial-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Teritorial --</div>
+                                    @foreach($territories as $territory)
+                                        <div class="territorial-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $territory['slug'] }}">{{ $territory['name'] }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="block hidden" id="regionalLabel">
+                        <span class="text-sm font-semibold text-neutral-700">Pilih Regional</span>
+                        <div class="mt-2 relative">
+                            <select id="regionalInput" name="regional" class="hidden">
+                                <option value="">-- Pilih Regional --</option>
+                                @foreach($regions as $region)
+                                    <option value="{{ $region['slug'] }}" {{ old('regional') === $region['slug'] ? 'selected' : '' }}>
+                                        {{ $region['name'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" id="regionalBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="regionalText">-- Pilih Regional --</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="regionalDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="regionalSearch" placeholder="Cari regional..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="regionalOptions" class="overflow-y-auto max-h-48">
+                                    <div class="regional-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Regional --</div>
+                                    @foreach($regions as $region)
+                                        <div class="regional-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $region['slug'] }}">{{ $region['name'] }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="block hidden" id="branchLabel">
+                        <span class="text-sm font-semibold text-neutral-700">Pilih Branch</span>
+                        <div class="mt-2 relative">
+                            <select id="branchInput" name="branch" class="hidden">
+                                <option value="">-- Pilih Branch --</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch['slug'] }}" {{ old('branch') === $branch['slug'] ? 'selected' : '' }}>
+                                        {{ $branch['name'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" id="branchBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="branchText">-- Pilih Branch --</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="branchDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="branchSearch" placeholder="Cari branch..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="branchOptions" class="overflow-y-auto max-h-48">
+                                    <div class="branch-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Branch --</div>
+                                    @foreach($branches as $branch)
+                                        <div class="branch-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $branch['slug'] }}">{{ $branch['name'] }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="block hidden" id="clusterLabel">
+                        <span class="text-sm font-semibold text-neutral-700">Pilih Cluster</span>
+                        <div class="mt-2 relative">
+                            <select id="clusterInput" name="cluster" class="hidden">
+                                <option value="">-- Pilih Cluster --</option>
+                                @foreach($clusters as $cluster)
+                                    <option value="{{ $cluster['slug'] }}" {{ old('cluster') === $cluster['slug'] ? 'selected' : '' }}>
+                                        {{ $cluster['name'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" id="clusterBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="clusterText">-- Pilih Cluster --</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="clusterDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="clusterSearch" placeholder="Cari cluster..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="clusterOptions" class="overflow-y-auto max-h-48">
+                                    <div class="cluster-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Cluster --</div>
+                                    @foreach($clusters as $cluster)
+                                        <div class="cluster-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $cluster['slug'] }}">{{ $cluster['name'] }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </label>
                     <button type="button" id="openConfirmModal" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition">
                         Simpan Iklan
@@ -109,15 +237,37 @@
                 </div>
                 <div class="flex items-center gap-3 flex-wrap">
                     <label class="flex items-center gap-2">
-                        <span class="text-sm font-semibold text-neutral-700 whitespace-nowrap">Filter Teritorial:</span>
-                        <select id="territorialFilter" 
-                                class="block w-full md:w-48 rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
-                            <option value="">Semua Teritorial</option>
-                            <option value="null">Tanpa Teritorial</option>
-                            @foreach($territories as $territory)
-                                <option value="{{ $territory['slug'] }}">{{ $territory['name'] }}</option>
-                            @endforeach
-                        </select>
+                        <span class="text-sm font-semibold text-neutral-700 whitespace-nowrap">Filter Lokasi:</span>
+                        <div class="relative w-full md:w-64">
+                            <input id="locationFilterInput" 
+                                   type="text" 
+                                   autocomplete="off"
+                                   placeholder="Cari atau pilih lokasi..."
+                                   class="block w-full rounded-xl border border-neutral-200 px-3 py-2 pr-10 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                                   readonly>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </div>
+                            <div id="locationFilterDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+                                <div class="p-2">
+                                    <div class="px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-1">Pilih Lokasi</div>
+                                    <div class="location-filter-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="" data-display="Semua Lokasi">
+                                        <span class="font-medium text-neutral-700">Semua Lokasi</span>
+                                    </div>
+                                    @if($hasGeneral)
+                                    <div class="location-filter-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="general" data-display="General (Semua Lokasi)">
+                                        <span class="font-medium text-neutral-700">General (Semua Lokasi)</span>
+                                    </div>
+                                    @endif
+                                    @foreach($allLocations as $location)
+                                    <div class="location-filter-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $location['filter_value'] }}" data-display="{{ $location['display'] }} - {{ $location['name'] }}">
+                                        <span class="font-medium text-neutral-700">{{ $location['display'] }}</span>
+                                        <span class="text-neutral-500 ml-2">- {{ $location['name'] }}</span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </label>
                     <button type="button" id="resetFilter" class="hidden px-3 py-2 text-sm font-semibold text-neutral-600 bg-neutral-100 border border-neutral-200 rounded-xl hover:bg-neutral-200 transition">
                         <i class="fas fa-times mr-1"></i>Reset
@@ -130,55 +280,101 @@
                     <thead class="text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
                         <tr>
                         <th class="py-3 text-center w-12 md:w-12 pr-3 md:pr-0"></th>
-                        <th class="py-3 text-left pl-3 md:pl-0">No</th>
-                        <th class="py-3 text-center">Preview</th>
-                        <th class="py-3 text-center">Link</th>
-                        <th class="py-3 text-center">Teritorial</th>
-                        <th class="py-3 text-center">Aksi</th>
+                        <th class="py-3 px-2 md:px-0 text-left pl-3 md:pl-0">No</th>
+                        <th class="py-3 px-2 md:px-0 text-center">Preview</th>
+                        <th class="py-3 px-2 md:px-3 text-center">Link</th>
+                        <th class="py-3 px-2 md:px-3 text-center">Lokasi</th>
+                        <th class="py-3 px-2 md:px-3 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="iklanTableBody" class="divide-y divide-neutral-100">
                         @forelse ($iklans as $iklan)
+                            @php
+                                $locationType = null;
+                                $locationSlug = null;
+                                $locationName = null;
+                                $locationDisplay = null;
+                                $locationRoute = null;
+                                
+                                if ($iklan->territorial) {
+                                    $locationType = 'territorial';
+                                    $locationSlug = $iklan->territorial;
+                                    $locationName = territorialName($iklan->territorial);
+                                    $locationDisplay = 'city/' . $iklan->territorial;
+                                    $locationRoute = route('city.show', $iklan->territorial);
+                                } elseif ($iklan->regional) {
+                                    $locationType = 'regional';
+                                    $locationSlug = $iklan->regional;
+                                    $locationName = territorialNameGeneric($iklan->regional);
+                                    $locationDisplay = 'reg/' . $iklan->regional;
+                                    $locationRoute = route('regional.show', $iklan->regional);
+                                } elseif ($iklan->branch) {
+                                    $locationType = 'branch';
+                                    $locationSlug = $iklan->branch;
+                                    $locationName = territorialNameGeneric($iklan->branch);
+                                    $locationDisplay = 'branch/' . $iklan->branch;
+                                    $locationRoute = route('branch.show', $iklan->branch);
+                                } elseif ($iklan->cluster) {
+                                    $locationType = 'cluster';
+                                    $locationSlug = $iklan->cluster;
+                                    $locationName = territorialNameGeneric($iklan->cluster);
+                                    $locationDisplay = 'cluster/' . $iklan->cluster;
+                                    $locationRoute = route('cluster.show', $iklan->cluster);
+                                } else {
+                                    $locationType = 'general';
+                                    $locationDisplay = 'General';
+                                }
+                                
+                                $filterValue = $locationType === 'general' ? 'general' : ($locationType . ':' . $locationSlug);
+                            @endphp
                             <tr data-iklan-id="{{ $iklan->id }}" 
-                                data-territorial="{{ $iklan->territorial ?? 'null' }}"
-                                class="cursor-move hover:bg-neutral-50 transition-colors draggable-row iklan-row">
+                                data-location="{{ $filterValue }}"
+                                class="cursor-move hover:bg-neutral-50 transition-all duration-300 ease-in-out draggable-row iklan-row">
                                 <td class="py-3 text-center pr-3 md:pr-0">
                                     <div class="flex items-center justify-center cursor-grab active:cursor-grabbing">
                                         <i class="fas fa-grip-vertical text-neutral-400 hover:text-neutral-600 transition-colors"></i>
                                     </div>
                                 </td>
-                                <td class="py-3 text-left  pl-3 md:pl-0">
+                                <td class="py-3 px-2 md:px-0 text-left pl-3 md:pl-0">
                                     {{ $loop->iteration }}
                                 </td>
-                                <td class="py-3 text-center flex items-center justify-center">
-                                    <div class="w-28 h-16 rounded-lg overflow-hidden bg-neutral-100 flex items-center justify-center">
+                                <td class="py-3 px-2 md:px-0 text-center flex items-center justify-center">
+                                    <div class="w-24 md:w-28 h-14 md:h-16 rounded-lg overflow-hidden bg-neutral-100 flex items-center justify-center">
                                         <img src="{{ asset('storage/' . $iklan->image_path) }}" alt="Iklan {{ $loop->iteration }}" class="w-full h-full object-cover">
                                     </div>
                                 </td>
-                                <td class="py-3 text-center text-xs text-neutral-500 max-w-[220px]">
+                                <td class="py-3 px-2 md:px-3 text-center text-xs text-neutral-500">
                                     @if ($iklan->link_iklan)
-                                        <a href="{{ $iklan->link_iklan }}" target="_blank" rel="noopener noreferrer" class="font-semibold text-orange-600 hover:text-orange-500 break-words">
-                                            {{ $iklan->link_iklan }}
+                                        <a href="{{ $iklan->link_iklan }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-2 py-1.5 md:px-0 md:py-0 font-semibold text-orange-600 hover:text-orange-500 transition rounded-lg hover:bg-orange-50 md:hover:bg-transparent">
+                                            <span>Link</span>
+                                            <i class="fas fa-external-link-alt text-[10px]"></i>
                                         </a>
                                     @else
                                         <span class="text-neutral-400 font-medium">-</span>
                                     @endif
                                 </td>
-                                <td class="py-3 text-center text-xs">
-                                    @if ($iklan->territorial)
-                                        <a href="{{ route('city.show', $iklan->territorial) }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition font-medium">
-                                            {{ territorialName($iklan->territorial) }}
-                                            <i class="fas fa-external-link-alt text-[10px]"></i>
-                                        </a>
+                                <td class="py-3 px-2 md:px-3 text-center text-xs">
+                                    @if ($locationType === 'general')
+                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-100 text-neutral-600 font-medium">
+                                            General
+                                        </span>
                                     @else
-                                        <span class="text-neutral-400 font-medium">Semua Teritorial</span>
+                                        <a href="{{ $locationRoute }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg 
+                                            @if($locationType === 'territorial') bg-orange-50 text-orange-600 hover:bg-orange-100
+                                            @elseif($locationType === 'regional') bg-blue-50 text-blue-600 hover:bg-blue-100
+                                            @elseif($locationType === 'branch') bg-purple-50 text-purple-600 hover:bg-purple-100
+                                            @elseif($locationType === 'cluster') bg-green-50 text-green-600 hover:bg-green-100
+                                            @endif transition font-medium">
+                                            <span class="whitespace-nowrap">{{ $locationDisplay }} - {{ $locationName }}</span>
+                                            <i class="fas fa-external-link-alt text-[10px] flex-shrink-0"></i>
+                                        </a>
                                     @endif
                                 </td>
-                                <td class="py-3 text-center">
+                                <td class="py-3 px-2 md:px-3 text-center">
                                     <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
+                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 md:w-10 md:h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
@@ -292,6 +488,256 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeDeleteButtons = document.querySelectorAll('[data-close-delete]');
     let pendingDeleteForm = null;
 
+    // Location type dropdown handler (mutually exclusive selection)
+    const locationTypeInput = document.getElementById('locationTypeInput');
+    const territorialLabel = document.getElementById('territorialLabel');
+    const regionalLabel = document.getElementById('regionalLabel');
+    const branchLabel = document.getElementById('branchLabel');
+    const clusterLabel = document.getElementById('clusterLabel');
+    const territorialInput = document.getElementById('territorialInput');
+    const regionalInput = document.getElementById('regionalInput');
+    const branchInput = document.getElementById('branchInput');
+    const clusterInput = document.getElementById('clusterInput');
+
+    function showLocationDropdown(type) {
+        // Hide all dropdowns first
+        territorialLabel?.classList.add('hidden');
+        regionalLabel?.classList.add('hidden');
+        branchLabel?.classList.add('hidden');
+        clusterLabel?.classList.add('hidden');
+        
+        // Reset all values
+        if (territorialInput) territorialInput.value = '';
+        if (regionalInput) regionalInput.value = '';
+        if (branchInput) branchInput.value = '';
+        if (clusterInput) clusterInput.value = '';
+
+        // Show selected dropdown (skip if general)
+        if (type === 'territorial') {
+            territorialLabel?.classList.remove('hidden');
+        } else if (type === 'regional') {
+            regionalLabel?.classList.remove('hidden');
+        } else if (type === 'branch') {
+            branchLabel?.classList.remove('hidden');
+        } else if (type === 'cluster') {
+            clusterLabel?.classList.remove('hidden');
+        }
+        // If type is 'general' or empty, all dropdowns stay hidden
+    }
+
+    // Initialize on page load (for old values after validation error)
+    if (locationTypeInput) {
+        // Check if any old value exists to determine which dropdown to show
+        const hasOldTerritorial = territorialInput && territorialInput.value !== '';
+        const hasOldRegional = regionalInput && regionalInput.value !== '';
+        const hasOldBranch = branchInput && branchInput.value !== '';
+        const hasOldCluster = clusterInput && clusterInput.value !== '';
+
+        // Determine location type from old values or from locationTypeInput itself
+        let locationType = locationTypeInput.value;
+        
+        if (hasOldTerritorial) {
+            locationType = 'territorial';
+            locationTypeInput.value = 'territorial';
+            showLocationDropdown('territorial');
+        } else if (hasOldRegional) {
+            locationType = 'regional';
+            locationTypeInput.value = 'regional';
+            showLocationDropdown('regional');
+        } else if (hasOldBranch) {
+            locationType = 'branch';
+            locationTypeInput.value = 'branch';
+            showLocationDropdown('branch');
+        } else if (hasOldCluster) {
+            locationType = 'cluster';
+            locationTypeInput.value = 'cluster';
+            showLocationDropdown('cluster');
+        } else if (locationType) {
+            // If locationTypeInput has a value but no old values, show that dropdown
+            showLocationDropdown(locationType);
+        }
+
+        // Handle change event
+        locationTypeInput.addEventListener('change', function() {
+            showLocationDropdown(this.value);
+            // Update button text
+            const locationTypeText = document.getElementById('locationTypeText');
+            if (locationTypeText) {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption) {
+                    locationTypeText.textContent = selectedOption.textContent;
+                }
+            }
+        });
+    }
+
+    // Searchable dropdown functions
+    function initSearchableDropdown(selectId, buttonId, textId, dropdownId, searchId, optionsId, optionClass) {
+        const select = document.getElementById(selectId);
+        const button = document.getElementById(buttonId);
+        const textSpan = document.getElementById(textId);
+        const dropdown = document.getElementById(dropdownId);
+        const searchInput = document.getElementById(searchId);
+        const optionsContainer = document.getElementById(optionsId);
+
+        if (!select || !button || !textSpan || !dropdown || !searchInput || !optionsContainer) return;
+
+        // Initialize text from selected option
+        const selectedOption = select.options[select.selectedIndex];
+        if (selectedOption) {
+            textSpan.textContent = selectedOption.textContent;
+        }
+
+        // Toggle dropdown
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = dropdown.classList.contains('hidden');
+            closeAllDropdowns();
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+                searchInput.value = '';
+                filterOptions(searchInput.value, optionsContainer, optionClass);
+                setTimeout(() => searchInput.focus(), 50);
+            }
+        });
+
+        // Prevent dropdown from closing when clicking inside
+        dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            e.stopPropagation();
+            filterOptions(e.target.value, optionsContainer, optionClass);
+        });
+
+        // Option selection
+        optionsContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const option = e.target.closest('.' + optionClass);
+            if (!option) return;
+            
+            const value = option.getAttribute('data-value');
+            const text = option.textContent.trim();
+            
+            select.value = value;
+            textSpan.textContent = text;
+            dropdown.classList.add('hidden');
+            
+            // Trigger change event
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Trigger change event for location type
+            if (selectId === 'locationTypeInput') {
+                showLocationDropdown(value);
+            }
+        });
+    }
+
+    // Global click handler to close all dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        const dropdownIds = ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown'];
+        const buttonIds = ['locationTypeBtn', 'territorialBtn', 'regionalBtn', 'branchBtn', 'clusterBtn'];
+        
+        let clickedInside = false;
+        
+        dropdownIds.forEach((dropdownId, index) => {
+            const dropdown = document.getElementById(dropdownId);
+            const button = document.getElementById(buttonIds[index]);
+            
+            if (dropdown && button) {
+                if (dropdown.contains(e.target) || button.contains(e.target)) {
+                    clickedInside = true;
+                }
+            }
+        });
+        
+        if (!clickedInside) {
+            closeAllDropdowns();
+        }
+    });
+
+    function filterOptions(searchTerm, container, optionClass) {
+        const term = searchTerm.toLowerCase().trim();
+        const options = container.querySelectorAll('.' + optionClass);
+        let visibleCount = 0;
+
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            // Also check data-display attribute if available
+            const displayText = option.getAttribute('data-display');
+            const searchText = displayText ? displayText.toLowerCase() : text;
+            
+            if (term === '' || text.includes(term) || searchText.includes(term)) {
+                option.style.display = '';
+                visibleCount++;
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        // Show/hide no results message
+        let noResults = container.querySelector('.no-results-msg');
+        if (visibleCount === 0 && term !== '') {
+            if (!noResults) {
+                noResults = document.createElement('div');
+                noResults.className = 'no-results-msg px-3 py-2 text-sm text-neutral-500 text-center';
+                noResults.textContent = 'Tidak ada hasil';
+                container.appendChild(noResults);
+            }
+            noResults.style.display = '';
+        } else if (noResults) {
+            noResults.style.display = 'none';
+        }
+    }
+
+    function closeAllDropdowns() {
+        ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown'].forEach(id => {
+            const dropdown = document.getElementById(id);
+            if (dropdown) dropdown.classList.add('hidden');
+        });
+    }
+
+    // Initialize all searchable dropdowns
+    initSearchableDropdown('locationTypeInput', 'locationTypeBtn', 'locationTypeText', 'locationTypeDropdown', 'locationTypeSearch', 'locationTypeOptions', 'location-type-option');
+    initSearchableDropdown('territorialInput', 'territorialBtn', 'territorialText', 'territorialDropdown', 'territorialSearch', 'territorialOptions', 'territorial-option');
+    initSearchableDropdown('regionalInput', 'regionalBtn', 'regionalText', 'regionalDropdown', 'regionalSearch', 'regionalOptions', 'regional-option');
+    initSearchableDropdown('branchInput', 'branchBtn', 'branchText', 'branchDropdown', 'branchSearch', 'branchOptions', 'branch-option');
+    initSearchableDropdown('clusterInput', 'clusterBtn', 'clusterText', 'clusterDropdown', 'clusterSearch', 'clusterOptions', 'cluster-option');
+
+    // Update button text on page load for location-specific dropdowns
+    function updateDropdownTexts() {
+        const territorialSelect = document.getElementById('territorialInput');
+        const territorialText = document.getElementById('territorialText');
+        if (territorialSelect && territorialText && territorialSelect.value) {
+            const selectedOption = territorialSelect.options[territorialSelect.selectedIndex];
+            if (selectedOption) territorialText.textContent = selectedOption.textContent;
+        }
+
+        const regionalSelect = document.getElementById('regionalInput');
+        const regionalText = document.getElementById('regionalText');
+        if (regionalSelect && regionalText && regionalSelect.value) {
+            const selectedOption = regionalSelect.options[regionalSelect.selectedIndex];
+            if (selectedOption) regionalText.textContent = selectedOption.textContent;
+        }
+
+        const branchSelect = document.getElementById('branchInput');
+        const branchText = document.getElementById('branchText');
+        if (branchSelect && branchText && branchSelect.value) {
+            const selectedOption = branchSelect.options[branchSelect.selectedIndex];
+            if (selectedOption) branchText.textContent = selectedOption.textContent;
+        }
+
+        const clusterSelect = document.getElementById('clusterInput');
+        const clusterText = document.getElementById('clusterText');
+        if (clusterSelect && clusterText && clusterSelect.value) {
+            const selectedOption = clusterSelect.options[clusterSelect.selectedIndex];
+            if (selectedOption) clusterText.textContent = selectedOption.textContent;
+        }
+    }
+    updateDropdownTexts();
+
     function openModal(modal, content) {
         if (!modal || !content) return;
         modal.classList.remove('hidden');
@@ -335,6 +781,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (confirmUploadBtn) {
         confirmUploadBtn.addEventListener('click', () => {
+            // Clear hidden location fields before submit to ensure only one is sent
+            const locationType = locationTypeInput?.value;
+            if (locationType !== 'territorial' && territorialInput) {
+                territorialInput.value = '';
+            }
+            if (locationType !== 'regional' && regionalInput) {
+                regionalInput.value = '';
+            }
+            if (locationType !== 'branch' && branchInput) {
+                branchInput.value = '';
+            }
+            if (locationType !== 'cluster' && clusterInput) {
+                clusterInput.value = '';
+            }
+            // If general or no location type selected, clear all
+            if (!locationType || locationType === '' || locationType === 'general') {
+                if (territorialInput) territorialInput.value = '';
+                if (regionalInput) regionalInput.value = '';
+                if (branchInput) branchInput.value = '';
+                if (clusterInput) clusterInput.value = '';
+            }
+            
             closeModal(uploadModal, uploadModalContent);
             uploadForm.submit();
         });
@@ -487,31 +955,135 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Filter functionality untuk teritorial
-    const territorialFilter = document.getElementById('territorialFilter');
+    // Filter functionality untuk lokasi (searchable dropdown)
+    const locationFilterInput = document.getElementById('locationFilterInput');
+    const locationFilterDropdown = document.getElementById('locationFilterDropdown');
     const resetFilterBtn = document.getElementById('resetFilter');
     const totalCount = document.getElementById('totalCount');
     const filteredCount = document.getElementById('filteredCount');
     const filteredNumber = document.getElementById('filteredNumber');
     const iklanRows = document.querySelectorAll('.iklan-row');
+    let currentFilterValue = '';
 
-    function filterByTerritorial(territorialValue) {
-        let visibleCount = 0;
+    // Get all location options
+    const locationOptions = Array.from(document.querySelectorAll('.location-filter-option')).map(option => ({
+        element: option,
+        value: option.getAttribute('data-value'),
+        display: option.getAttribute('data-display') || option.textContent.trim(),
+        text: option.textContent.trim()
+    }));
+
+    function renderLocationOptions(filter = '') {
+        const f = filter.trim().toLowerCase();
+        locationOptions.forEach(option => {
+            // Search in both display text and name
+            const displayText = option.display.toLowerCase();
+            const optionText = option.text.toLowerCase();
+            const matches = f === '' || displayText.includes(f) || optionText.includes(f);
+            option.element.style.display = matches ? 'block' : 'none';
+        });
         
-        iklanRows.forEach(row => {
-            const rowTerritorial = row.getAttribute('data-territorial');
-            const shouldShow = territorialValue === '' || rowTerritorial === territorialValue;
+        // Show "No results" if no matches
+        const visibleOptions = locationOptions.filter(opt => opt.element.style.display !== 'none');
+        let noResultsMsg = locationFilterDropdown.querySelector('.no-results-msg');
+        if (visibleOptions.length === 0) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'no-results-msg px-3 py-2 text-sm text-neutral-500';
+                noResultsMsg.textContent = 'Tidak ada hasil';
+                locationFilterDropdown.querySelector('.p-2').appendChild(noResultsMsg);
+            }
+            noResultsMsg.style.display = 'block';
+        } else if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
+    }
+
+    function openLocationDropdown() {
+        if (locationFilterDropdown) {
+            locationFilterDropdown.classList.remove('hidden');
+            renderLocationOptions(locationFilterInput.value);
+        }
+    }
+
+    function closeLocationDropdown() {
+        if (locationFilterDropdown) {
+            locationFilterDropdown.classList.add('hidden');
+        }
+    }
+
+    function setLocationFilter(value, displayText) {
+        currentFilterValue = value;
+        if (locationFilterInput) {
+            locationFilterInput.value = displayText || (value === '' ? 'Semua Lokasi' : (value === 'general' ? 'General (Semua Lokasi)' : ''));
+            locationFilterInput.setAttribute('readonly', 'readonly');
+        }
+        applyFilters();
+        closeLocationDropdown();
+    }
+
+    function applyFilters() {
+        let visibleCount = 0;
+        let hasActiveFilter = false;
+        const rowsToShow = [];
+        const rowsToHide = [];
+        
+        // First pass: determine which rows to show/hide
+        iklanRows.forEach((row) => {
+            const rowLocation = row.getAttribute('data-location');
             
-            if (shouldShow) {
-                row.style.display = '';
+            if (currentFilterValue === '') {
+                rowsToShow.push(row);
                 visibleCount++;
             } else {
-                row.style.display = 'none';
+                const shouldShow = rowLocation === currentFilterValue;
+                if (shouldShow) {
+                    rowsToShow.push(row);
+                    visibleCount++;
+                } else {
+                    rowsToHide.push(row);
+                }
             }
         });
 
+        // Hide rows with fade out animation
+        rowsToHide.forEach((row) => {
+            if (row.style.display !== 'none') {
+                row.style.transition = 'opacity 0.2s ease-in-out, transform 0.2s ease-in-out';
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    row.style.display = 'none';
+                }, 200);
+            }
+        });
+
+        // Show rows with fade in animation (staggered)
+        rowsToShow.forEach((row, index) => {
+            if (row.style.display === 'none') {
+                row.style.display = '';
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(-10px)';
+                row.style.transition = 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out';
+                
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        row.style.opacity = '1';
+                        row.style.transform = 'translateY(0)';
+                    });
+                }, index * 15); // Stagger animation
+            } else {
+                // Already visible, just ensure it's fully visible
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }
+        });
+
+        // Check if any filter is active
+        hasActiveFilter = currentFilterValue !== '';
+
         // Update counter
-        if (territorialValue === '') {
+        if (!hasActiveFilter) {
             totalCount.textContent = iklanRows.length;
             filteredCount.classList.add('hidden');
             resetFilterBtn.classList.add('hidden');
@@ -521,26 +1093,92 @@ document.addEventListener('DOMContentLoaded', function () {
             resetFilterBtn.classList.remove('hidden');
         }
 
-        // Update row numbers after filtering
-        if (tableBody) {
-            updateRowNumbers();
-        }
+        // Update row numbers after filtering (with slight delay for animation)
+        setTimeout(() => {
+            if (tableBody) {
+                updateRowNumbers();
+            }
+        }, 300);
     }
 
-    if (territorialFilter) {
-        territorialFilter.addEventListener('change', function() {
-            filterByTerritorial(this.value);
+    // Location filter input events
+    if (locationFilterInput) {
+        locationFilterInput.addEventListener('focus', () => {
+            openLocationDropdown();
+        });
+
+        locationFilterInput.addEventListener('click', () => {
+            openLocationDropdown();
+        });
+
+        locationFilterInput.addEventListener('input', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            renderLocationOptions(e.target.value);
+            openLocationDropdown();
+        });
+
+        // Prevent form submission on Enter key
+        locationFilterInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        // Make input editable for search
+        locationFilterInput.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            locationFilterInput.removeAttribute('readonly');
+            locationFilterInput.focus();
         });
     }
 
+    // Location filter dropdown click events
+    if (locationFilterDropdown) {
+        locationFilterDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const option = e.target.closest('.location-filter-option');
+            if (!option) return;
+            
+            e.preventDefault();
+            const value = option.getAttribute('data-value');
+            const display = option.getAttribute('data-display') || option.textContent.trim();
+            setLocationFilter(value, display);
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (locationFilterInput && locationFilterDropdown) {
+            if (!locationFilterInput.contains(e.target) && !locationFilterDropdown.contains(e.target)) {
+                closeLocationDropdown();
+                // Restore readonly if input is empty
+                if (!locationFilterInput.value) {
+                    locationFilterInput.setAttribute('readonly', 'readonly');
+                }
+            }
+        }
+    });
+
+    // Reset filter button
     if (resetFilterBtn) {
-        resetFilterBtn.addEventListener('click', function() {
-            if (territorialFilter) {
-                territorialFilter.value = '';
-                filterByTerritorial('');
+        resetFilterBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            setLocationFilter('', 'Semua Lokasi');
+            if (locationFilterInput) {
+                locationFilterInput.setAttribute('readonly', 'readonly');
             }
         });
     }
+
+    // Initialize all rows to be visible on page load
+    iklanRows.forEach(row => {
+        row.style.opacity = '1';
+        row.style.transform = 'translateY(0)';
+        row.style.transition = 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out';
+    });
 });
 
 // Dropdown user (desktop) – sama seperti di halaman admin
