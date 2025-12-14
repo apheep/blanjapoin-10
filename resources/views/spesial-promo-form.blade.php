@@ -283,33 +283,88 @@
         </form>
 
         <!-- Keywords Table -->
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+        <div class="bg-white rounded-xl shadow overflow-hidden" style="overflow: visible; position: relative; isolation: isolate;" id="tableContainer">
+            <div id="sortLoadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+                <div class="flex flex-col items-center gap-2">
+                    <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+                    <span class="text-xs text-gray-600">Mengurutkan...</span>
+                </div>
+            </div>
+            <div class="overflow-x-auto" style="overflow-y: visible; position: relative;">
+                <table class="min-w-full divide-y divide-gray-200" style="position: relative;">
                     <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('no')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>No</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconNo"></i>
+                                </button>
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Spesial Form</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Keyword ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('spesial_form')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Best Offer</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconSpesialForm"></i>
+                                </button>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('merchant')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Merchant</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconMerchant"></i>
+                                </button>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('nama_produk')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Nama Produk</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconNamaProduk"></i>
+                                </button>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('keyword_id')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Keyword ID</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconKeywordId"></i>
+                                </button>
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA LINK</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('redeem')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Redeem</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconRedeem"></i>
+                                </button>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('diskon')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Diskon</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconDiskon"></i>
+                                </button>
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">SKB</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('stock')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Stock</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconStock"></i>
+                                </button>
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">TRX</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sisa Stock</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Periode</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleSort('periode')" class="flex items-center gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span>Periode</span>
+                                    <i class="fas fa-sort text-[10px] text-gray-400" id="sortIconPeriode"></i>
+                                </button>
+                            </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Image</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody id="keywordTableBody" class="bg-white divide-y divide-gray-200" style="position: relative; overflow: visible;">
                         @forelse($keywords as $keyword)
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-4 py-4 text-sm font-medium text-gray-900">
-                                    {{ ($keywords->currentPage() - 1) * $keywords->perPage() + $loop->iteration }}
+                                    @if(request()->get('sort_by') === 'no' && request()->get('sort_order') === 'desc')
+                                        {{ $keywords->total() - ($keywords->firstItem() + $loop->index) + 1 }}
+                                    @else
+                                        {{ $keywords->firstItem() + $loop->index }}
+                                    @endif
                                 </td>
                                 <td class="px-4 py-4">
                                     @if($keyword->status === 'approve')
@@ -878,6 +933,172 @@
                 alert('Gagal menyalin teks');
             });
         }
+        
+        // Sorting function with AJAX
+        function handleSort(column) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSort = urlParams.get('sort_by');
+            const currentOrder = urlParams.get('sort_order');
+            
+            let newSort = column;
+            let newOrder = 'asc';
+            
+            if (currentSort === column) {
+                // Toggle between asc and desc
+                if (currentOrder === 'asc') {
+                    newOrder = 'desc';
+                } else {
+                    // Reset to default (no sort)
+                    newSort = null;
+                    newOrder = null;
+                }
+            }
+            
+            // Update URL params
+            if (newSort) {
+                urlParams.set('sort_by', newSort);
+                urlParams.set('sort_order', newOrder);
+            } else {
+                urlParams.delete('sort_by');
+                urlParams.delete('sort_order');
+            }
+            
+            // Update icons immediately
+            updateSortIcons(column, newOrder);
+            
+            // Update URL without reload
+            window.history.pushState({}, '', '?' + urlParams.toString());
+            
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('sortLoadingOverlay');
+            const tableBody = document.getElementById('keywordTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            if (loadingOverlay && tableBody && tableContainer) {
+                // Store current height to prevent layout shift
+                const currentHeight = tableContainer.offsetHeight;
+                tableContainer.style.minHeight = currentHeight + 'px';
+                
+                loadingOverlay.classList.remove('hidden');
+                
+                // Make AJAX request
+                fetch('{{ route("spesial-promo.form") }}?' + urlParams.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html',
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse HTML response
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTableBody = doc.getElementById('keywordTableBody');
+                    const newPaginationContainer = doc.querySelector('.bg-white.px-4.py-4.border-t.flex');
+                    
+                    if (newTableBody) {
+                        // Smooth transition
+                        tableBody.style.opacity = '0';
+                        tableBody.style.transition = 'opacity 0.2s';
+                        
+                        setTimeout(() => {
+                            // Replace table body content
+                            tableBody.innerHTML = newTableBody.innerHTML;
+                            
+                            // Re-attach toggle listeners for new checkboxes
+                            document.querySelectorAll('.toggle-special-promo').forEach(toggle => {
+                                toggle.addEventListener('change', (e) => {
+                                    const keywordId = e.target.dataset.keywordId;
+                                    if (!keywordId) return;
+                                    toggleSpecialPromo(keywordId);
+                                });
+                            });
+                            
+                            // Replace pagination container if exists
+                            const currentPaginationContainer = document.querySelector('.bg-white.px-4.py-4.border-t.flex');
+                            if (currentPaginationContainer && newPaginationContainer) {
+                                currentPaginationContainer.outerHTML = newPaginationContainer.outerHTML;
+                            }
+                            
+                            // Restore opacity
+                            tableBody.style.opacity = '1';
+                            
+                            // Remove min-height after transition
+                            setTimeout(() => {
+                                tableContainer.style.minHeight = '';
+                            }, 300);
+                            
+                            // Hide loading
+                            loadingOverlay.classList.add('hidden');
+                        }, 200);
+                    } else {
+                        // Fallback: reload if parsing fails
+                        loadingOverlay.classList.add('hidden');
+                        tableContainer.style.minHeight = '';
+                        window.location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingOverlay.classList.add('hidden');
+                    tableContainer.style.minHeight = '';
+                    // Fallback: reload on error
+                    window.location.reload();
+                });
+            }
+        }
+        
+        // Update sort icons based on current state
+        function updateSortIcons(activeColumn, order) {
+            const iconMap = {
+                'no': 'sortIconNo',
+                'spesial_form': 'sortIconSpesialForm',
+                'merchant': 'sortIconMerchant',
+                'nama_produk': 'sortIconNamaProduk',
+                'keyword_id': 'sortIconKeywordId',
+                'redeem': 'sortIconRedeem',
+                'diskon': 'sortIconDiskon',
+                'stock': 'sortIconStock',
+                'periode': 'sortIconPeriode'
+            };
+            
+            Object.keys(iconMap).forEach(col => {
+                const iconId = iconMap[col];
+                const icon = document.getElementById(iconId);
+                if (icon) {
+                    if (col === activeColumn && order) {
+                        if (order === 'asc') {
+                            icon.className = 'fas fa-sort-up text-[10px] text-gray-700';
+                        } else if (order === 'desc') {
+                            icon.className = 'fas fa-sort-down text-[10px] text-gray-700';
+                        } else {
+                            icon.className = 'fas fa-sort text-[10px] text-gray-400';
+                        }
+                    } else {
+                        // Reset to default
+                        icon.className = 'fas fa-sort text-[10px] text-gray-400';
+                    }
+                }
+            });
+        }
+        
+        // Initialize sort icons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSort = urlParams.get('sort_by');
+            const currentOrder = urlParams.get('sort_order');
+            
+            if (currentSort) {
+                updateSortIcons(currentSort, currentOrder);
+            }
+            
+            // Ensure min-height is reset on page load
+            const tableContainer = document.getElementById('tableContainer');
+            if (tableContainer) {
+                tableContainer.style.minHeight = '';
+            }
+        });
     </script>
 </body>
 </html>
