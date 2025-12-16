@@ -45,7 +45,7 @@ class KeywordController extends Controller
                 'skb'               => 'required|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
-                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp',
                 'stock'             => 'required|integer|min:0',
 
                 'status'            => 'nullable|in:approve,pending,reject',
@@ -403,7 +403,7 @@ class KeywordController extends Controller
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
-                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp',
                 'stock'             => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
