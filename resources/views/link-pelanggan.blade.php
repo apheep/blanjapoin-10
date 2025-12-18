@@ -37,7 +37,7 @@
         <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
             @include('partials.banner-carousel', ['iklans' => $iklans])
 
-                <div class="flex flex-wrap items-start justify-between gap-4 pl-1 mt-6">
+                <div class="flex flex-wrap items-start justify-between gap-4 pl-1 mt-10 md:mt-12">
                 <div>
                     <h1 class="text-2xl sm:text-2xl font-bold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</h1>
                 </div>
