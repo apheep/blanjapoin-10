@@ -122,9 +122,6 @@ class MerchantController extends Controller
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
-            ->whereHas('merchant', function ($query) {
-                $query->where('is_active', 1);
-            })
             ->orderBy('id')
             ->paginate(10)
             ->withQueryString();
