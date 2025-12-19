@@ -435,8 +435,58 @@ class MerchantController extends Controller
             }
             
             // Update merchant
+            $oldStartDate = $merchant->start_date;
+            $oldEndDate = $merchant->end_date;
             $merchant->update($merchantData);
+            
+            // Refresh merchant untuk mendapatkan nilai baru
+            $merchant->refresh();
+            $newStartDate = $merchant->start_date;
+            $newEndDate = $merchant->end_date;
+            
             Log::info('Merchant updated successfully', ['id' => $merchant->id]);
+            
+            // Update semua keyword yang terkait dengan merchant ini
+            // Jika start_date atau end_date merchant berubah, paksa semua keyword mengikuti merchant period
+            if ($oldStartDate != $newStartDate || $oldEndDate != $newEndDate) {
+                // Update semua keyword yang terkait - paksa semua start/end date mengikuti merchant
+                $keywords = Keyword::where('merchant_key', $merchant->id)->get();
+                $updatedCount = 0;
+                
+                foreach ($keywords as $keyword) {
+                    $originalStartDate = $keyword->start_date;
+                    $originalEndDate = $keyword->end_date;
+                    
+                    // Paksa semua keyword mengikuti merchant start_date dan end_date
+                    $keywordStartDate = $newStartDate;
+                    $keywordEndDate = $newEndDate;
+                    
+                    // Update keyword dengan start/end date merchant yang baru
+                    $keyword->update([
+                        'start_date' => $keywordStartDate,
+                        'end_date' => $keywordEndDate,
+                    ]);
+                    
+                    $updatedCount++;
+                    Log::info('Keyword updated due to merchant period change', [
+                        'keyword_id' => $keyword->id,
+                        'merchant_id' => $merchant->id,
+                        'old_start_date' => $originalStartDate,
+                        'new_start_date' => $keywordStartDate,
+                        'old_end_date' => $originalEndDate,
+                        'new_end_date' => $keywordEndDate,
+                    ]);
+                }
+                
+                if ($updatedCount > 0) {
+                    Log::info('Keywords updated due to merchant period change', [
+                        'merchant_id' => $merchant->id,
+                        'updated_count' => $updatedCount,
+                        'merchant_start_date' => $newStartDate,
+                        'merchant_end_date' => $newEndDate,
+                    ]);
+                }
+            }
             
             // Jika request dari AJAX, return JSON
             if ($request->wantsJson() || $request->ajax()) {
@@ -580,14 +630,38 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
+        // Get iklans - prioritize merchant-specific banner, fallback to general
         // Use orderBy('order', 'asc') to respect admin-configured order
-        $iklans = Iklan::whereNull('territorial')
+        // Check both merchant_key (legacy) and merchant_keys JSON array
+        $specificIklans = Iklan::where(function($query) use ($merchant) {
+                $query->where('merchant_key', $merchant->id)
+                      ->orWhereJsonContains('merchant_keys', $merchant->id);
+            })
+            ->whereNull('territorial')
             ->whereNull('regional')
             ->whereNull('branch')
             ->whereNull('cluster')
             ->orderBy('order', 'asc')
             ->get();
+        
+        // If specific merchant iklans found, use them. Otherwise, use general iklans
+        if ($specificIklans->isNotEmpty()) {
+            $iklans = $specificIklans;
+        } else {
+            // Get general iklans (all location fields are null and merchant_key/merchant_keys are null or empty)
+            $iklans = Iklan::whereNull('territorial')
+                ->whereNull('regional')
+                ->whereNull('branch')
+                ->whereNull('cluster')
+                ->whereNull('merchant_key')
+                ->where(function($query) {
+                    $query->whereNull('merchant_keys')
+                          ->orWhere('merchant_keys', '[]')
+                          ->orWhere('merchant_keys', '');
+                })
+                ->orderBy('order', 'asc')
+                ->get();
+        }
 
         return view('link-pelanggan', [
             'merchant' => $merchant,

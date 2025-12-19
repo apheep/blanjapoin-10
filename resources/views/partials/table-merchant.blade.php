@@ -32,6 +32,8 @@
                     @if(Auth::check() && Auth::user()->can_approve == 1)
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     @endif
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Start Periode</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">End Periode</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 5, 'text')" data-sortable="true" data-column-index="5">
                         <div class="flex items-center justify-center gap-1">
                             <span>Kategori</span>
@@ -159,6 +161,22 @@
                             </label>
                         </td>
                         @endif
+                        {{-- Start Periode --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->start_date)
+                                {{ \Carbon\Carbon::parse($merchant->start_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+                        {{-- End Periode --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->end_date)
+                                {{ \Carbon\Carbon::parse($merchant->end_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
                         {{-- Kategori --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700" data-sort-value="{{ strtolower($merchant->kategori ?? '-') }}">{{ $merchant->kategori ?? '-' }}</td>
 
@@ -251,14 +269,23 @@
                         {{-- Link Pelanggan --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($codePelanggan)
-                                <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
-                                   onclick="event.stopPropagation();"
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
-                                    <i class="fas fa-link text-xs"></i>
-                                    <span class="truncate max-w-xs">Link</span>
-                                </a>
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <a href="{{ route('link.pelanggan', $codePelanggan) }}" 
+                                       onclick="event.stopPropagation();"
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
+                                        <i class="fas fa-link text-xs"></i>
+                                        <span class="truncate max-w-xs">Link</span>
+                                    </a>
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); openQRCodeModal('{{ route('link.pelanggan', $codePelanggan) }}', '{{ $merchant->nama_merchant }}')"
+                                            class="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold text-white bg-gradient-to-r from-red-500 to-yellow-600 rounded-lg hover:from-red-600 hover:to-yellow-500 transition-colors shadow-sm hover:shadow-md"
+                                            title="Generate QR Code">
+                                        <i class="fas fa-qrcode text-xs"></i>
+                                        <span class="ml-1">QRCode</span>
+                                    </button>
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -299,7 +326,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="15" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="17" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data merchant.
                         </td>
                     </tr>
@@ -424,6 +451,26 @@
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Daerah</p>
                         <p class="text-base text-gray-700">{{ $merchant->daerah ?? '-' }}</p>
                     </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Start Periode</p>
+                        <p class="text-base text-gray-700">
+                            @if($merchant->start_date)
+                                {{ \Carbon\Carbon::parse($merchant->start_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">End Periode</p>
+                        <p class="text-base text-gray-700">
+                            @if($merchant->end_date)
+                                {{ \Carbon\Carbon::parse($merchant->end_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </p>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-between gap-3">
@@ -539,14 +586,22 @@
                         <div>
                             <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link Pelanggan</p>
                             @if($codePelanggan)
-                                <a href="{{ route('link.pelanggan', $codePelanggan) }}"
-                                   onclick="event.stopPropagation();"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-link text-[11px]"></i>
-                                    Buka Link
-                                </a>
+                                <div class="mt-1 flex flex-col gap-2">
+                                    <a href="{{ route('link.pelanggan', $codePelanggan) }}"
+                                       onclick="event.stopPropagation();"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-link text-[11px]"></i>
+                                        Buka Link
+                                    </a>
+                                    <button type="button"
+                                            onclick="event.stopPropagation(); openQRCodeModal('{{ route('link.pelanggan', $codePelanggan) }}', '{{ $merchant->nama_merchant }}')"
+                                            class="inline-flex items-center justify-center px-2 py-1 text-[10px] font-semibold text-white bg-gradient-to-r from-red-500 to-yellow-400 rounded-lg hover:from-red-600 hover:to-yellow-500 transition-colors shadow-sm">
+                                        <i class="fas fa-qrcode text-[10px]"></i>
+                                        <span class="ml-1">QRCode</span>
+                                    </button>
+                                </div>
                             @else
                                 <p class="text-xs text-gray-400 mt-1">-</p>
                             @endif
@@ -766,4 +821,212 @@
 
     // Merchant table uses the same global sortTable function defined in table-keyword.blade.php
     // No additional code needed here as the function handles both tables
+
+    // QR Code Modal Functions
+    function openQRCodeModal(linkUrl, merchantName) {
+        const modal = document.getElementById('qrcode-modal');
+        const overlay = document.getElementById('qrcode-modal-overlay');
+        const qrContainer = document.getElementById('qrcode-container');
+        const merchantTitle = document.getElementById('qrcode-merchant-name');
+        
+        if (!modal || !overlay || !qrContainer) return;
+        
+        // Set merchant name
+        if (merchantTitle) {
+            merchantTitle.textContent = merchantName || 'Merchant';
+        }
+        
+        // Clear previous QR code
+        qrContainer.innerHTML = '';
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Generate QR code with responsive size
+        setTimeout(() => {
+            if (typeof QRCode !== 'undefined') {
+                // Determine QR code size based on screen width
+                const isMobile = window.innerWidth < 640; // sm breakpoint
+                const qrSize = isMobile ? 150 : 200;
+                
+                new QRCode(qrContainer, {
+                    text: linkUrl,
+                    width: qrSize,
+                    height: qrSize,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } else {
+                qrContainer.innerHTML = '<p class="text-red-500 text-sm">QR Code library tidak tersedia. Silakan refresh halaman.</p>';
+            }
+        }, 100);
+        
+        // Store link URL for download
+        qrContainer.dataset.linkUrl = linkUrl;
+        qrContainer.dataset.merchantName = merchantName || 'Merchant';
+    }
+
+    function closeQRCodeModal() {
+        const modal = document.getElementById('qrcode-modal');
+        const qrContainer = document.getElementById('qrcode-container');
+        
+        if (!modal) return;
+        
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        // Clear QR code
+        if (qrContainer) {
+            qrContainer.innerHTML = '';
+        }
+    }
+
+    function downloadQRCode() {
+        const qrContainer = document.getElementById('qrcode-container');
+        if (!qrContainer) return;
+        
+        const canvas = qrContainer.querySelector('canvas');
+        if (!canvas) {
+            alert('QR Code belum siap, silakan tunggu sebentar');
+            return;
+        }
+        
+        const link = document.createElement('a');
+        const merchantName = qrContainer.dataset.merchantName || 'Merchant';
+        const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+        link.download = `qrcode-${merchantName.replace(/\s+/g, '-')}-${date}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    function printQRCode() {
+        const qrContainer = document.getElementById('qrcode-container');
+        const merchantTitle = document.getElementById('qrcode-merchant-name');
+        
+        if (!qrContainer) return;
+        
+        const canvas = qrContainer.querySelector('canvas');
+        if (!canvas) {
+            alert('QR Code belum siap, silakan tunggu sebentar');
+            return;
+        }
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const merchantName = merchantTitle ? merchantTitle.textContent : 'Merchant';
+        const printWindow = window.open('', '_blank');
+        
+        if (!printWindow) {
+            alert('Tidak dapat membuka jendela baru untuk cetak.');
+            return;
+        }
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Print QR Code - ${merchantName}</title>
+                <style>
+                    body {
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 100vh;
+                        font-family: 'Poppins', sans-serif;
+                    }
+                    h1 {
+                        margin-bottom: 20px;
+                        color: #333;
+                    }
+                    img {
+                        border: 3px solid #14b8a6;
+                        border-radius: 10px;
+                        padding: 10px;
+                        background: white;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>${merchantName}</h1>
+                <img src="${dataUrl}" alt="QR Code" width="300" height="300" />
+                <p style="margin-top: 20px; color: #666;">Scan untuk akses link pelanggan</p>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 250);
+    }
+
+    // Close modal when clicking overlay
+    document.addEventListener('DOMContentLoaded', function() {
+        const overlay = document.getElementById('qrcode-modal-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', closeQRCodeModal);
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('qrcode-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeQRCodeModal();
+                }
+            }
+        });
+    });
 </script>
+
+<!-- QR Code Modal -->
+<div id="qrcode-modal" class="fixed inset-0 z-[9999] hidden">
+    <div id="qrcode-modal-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"></div>
+    
+    <div class="absolute inset-0 flex items-center justify-center p-3 md:p-4">
+        <div class="relative bg-white rounded-2xl md:rounded-3xl shadow-2xl max-w-md w-full p-4 md:p-6 lg:p-8 transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
+            <!-- Close Button -->
+            <button onclick="closeQRCodeModal()" class="absolute top-2 right-2 md:top-4 md:right-4 text-gray-400 hover:text-gray-600 transition-colors z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 md:w-6 md:h-6">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+            
+            <!-- Header -->
+            <div class="text-center mb-4 md:mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-red-500 to-yellow-400 rounded-xl md:rounded-2xl mb-3 md:mb-4">
+                    <i class="fas fa-qrcode text-lg md:text-2xl text-white"></i>
+                </div>
+                <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">QR Code Pelanggan</h3>
+                <p id="qrcode-merchant-name" class="text-xs md:text-sm text-gray-600 font-semibold"></p>
+            </div>
+            
+            <!-- QR Code Display -->
+            <div class="flex justify-center mb-4 md:mb-6">
+                <div class="p-2 md:p-4 bg-white rounded-xl md:rounded-2xl shadow-lg border-2 border-gray-100">
+                    <div id="qrcode-container" class="inline-block"></div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-2 md:gap-3">
+                <button onclick="downloadQRCode()" 
+                        class="flex-1 bg-gradient-to-r from-red-500 to-yellow-400 text-white hover:from-red-600 hover:to-yellow-500 py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-sm md:text-base font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
+                    <i class="fas fa-download text-sm md:text-base"></i>
+                    <span>Download</span>
+                </button>
+                <button onclick="printQRCode()" 
+                        class="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200 py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-sm md:text-base font-semibold transition-all duration-200 flex items-center justify-center gap-2 border border-gray-300">
+                    <i class="fas fa-print text-sm md:text-base"></i>
+                    <span>Print</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QRCode.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>

@@ -79,6 +79,9 @@
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all" onclick="selectEditMerchantKategori('telkomsel')">
                                             Telkomsel Paket
                                         </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-amber-100 hover:to-yellow-100 hover:text-amber-800 rounded-lg transition-all" onclick="selectEditMerchantKategori('merchandise')">
+                                            Merchandise
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -758,7 +761,8 @@ function selectEditMerchantKategori(value) {
             'liburan': ['border-blue-300', 'text-blue-800', 'from-blue-100', 'to-cyan-100'],
             'belanja': ['border-green-300', 'text-green-800', 'from-green-100', 'to-emerald-100'],
             'kecantikan': ['border-pink-300', 'text-pink-800', 'from-pink-100', 'to-rose-100'],
-            'telkomsel': ['border-indigo-300', 'text-indigo-800', 'from-indigo-100', 'to-blue-100']
+            'telkomsel': ['border-indigo-300', 'text-indigo-800', 'from-indigo-100', 'to-blue-100'],
+            'merchandise': ['border-amber-300', 'text-amber-800', 'from-amber-100', 'to-yellow-100']
         };
         
         const colors = colorMap[value] || ['border-gray-300', 'text-gray-700'];
