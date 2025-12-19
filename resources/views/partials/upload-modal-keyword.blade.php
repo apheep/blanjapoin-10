@@ -31,7 +31,7 @@
                                 <select name="merchant_key" id="merchantSelect" class="hidden">
                                     <option value="">-- Pilih Merchant --</option>
                                     @foreach($allMerchants as $merchant)
-                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email_pic ?? '' }}" data-start-date="{{ $merchant->start_date ?? '' }}" data-end-date="{{ $merchant->end_date ?? '' }}">{{ $merchant->nama_merchant }}</option>
+                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email_pic ?? '' }}" data-start-date="{{ $merchant->start_date ?? '' }}" data-end-date="{{ $merchant->end_date ?? '' }}" data-kategori="{{ $merchant->kategori ?? '' }}">{{ $merchant->nama_merchant }}</option>
                                     @endforeach
                                 </select>
                                 
@@ -70,7 +70,8 @@
                                                     data-email="{{ $merchant->email_pic ?? '' }}"
                                                     data-start-date="{{ $merchant->start_date ?? '' }}"
                                                     data-end-date="{{ $merchant->end_date ?? '' }}"
-                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}', '{{ $merchant->email_pic ?? '' }}', '{{ $merchant->start_date ?? '' }}', '{{ $merchant->end_date ?? '' }}')">
+                                                    data-kategori="{{ $merchant->kategori ?? '' }}"
+                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}', '{{ $merchant->email_pic ?? '' }}', '{{ $merchant->start_date ?? '' }}', '{{ $merchant->end_date ?? '' }}', '{{ addslashes($merchant->kategori ?? '') }}')">
                                                 {{ $merchant->nama_merchant }}
                                             </button>
                                         @endforeach
@@ -79,6 +80,51 @@
                                         <div id="merchantEmptyState" class="hidden px-4 py-8 text-center">
                                             <p class="text-sm text-gray-500">Merchant tidak ditemukan</p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 1.3: Kategori Keyword -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Kategori Keyword</label>
+                            <div class="relative">
+                                <input type="hidden" name="kategori_keyword" id="keywordKategoriValue">
+                                <button
+                                    type="button"
+                                    id="keywordKategoriBtn"
+                                    onclick="toggleKeywordKategoriDropdown()"
+                                    class="w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                >
+                                    <span id="keywordKategoriLabel">Kategori akan otomatis terisi dari merchant</span>
+                                    <i class="fas fa-chevron-down text-xs ml-2"></i>
+                                </button>
+                                <div
+                                    id="keywordKategoriDropdown"
+                                    class="hidden absolute left-0 mt-2 bg-white rounded-xl shadow-xl p-2 border border-gray-200 w-full z-50"
+                                >
+                                    <div class="py-1 text-sm">
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all" onclick="selectKeywordKategori('kuliner')">
+                                            Kuliner
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all" onclick="selectKeywordKategori('hiburan')">
+                                            Hiburan
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all" onclick="selectKeywordKategori('liburan')">
+                                            Liburan
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all" onclick="selectKeywordKategori('belanja')">
+                                            Belanja
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all" onclick="selectKeywordKategori('kecantikan')">
+                                            Kecantikan
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all" onclick="selectKeywordKategori('telkomsel')">
+                                            Telkomsel Paket
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-amber-100 hover:to-yellow-100 hover:text-amber-800 rounded-lg transition-all" onclick="selectKeywordKategori('merchandise')">
+                                            Merchandise
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -510,6 +556,16 @@ function closeUploadKeyword() {
             opt.style.display = '';
         });
         
+        // Reset kategori dropdown
+        const kategoriInput = document.getElementById('keywordKategoriValue');
+        const kategoriLabel = document.getElementById('keywordKategoriLabel');
+        const kategoriBtn = document.getElementById('keywordKategoriBtn');
+        if (kategoriInput) kategoriInput.value = '';
+        if (kategoriLabel) kategoriLabel.textContent = 'Kategori akan otomatis terisi dari merchant';
+        if (kategoriBtn) {
+            kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
+        }
+        
         applyFixedMerchantContext();
     }, 300);
 }
@@ -532,14 +588,15 @@ function toggleCustomMerchantDropdown() {
     }
 }
 
-function selectMerchant(merchantId, merchantName, merchantEmail = '', merchantStartDate = '', merchantEndDate = '') {
+function selectMerchant(merchantId, merchantName, merchantEmail = '', merchantStartDate = '', merchantEndDate = '', merchantKategori = '') {
     const merchantSelect = document.getElementById('merchantSelect');
     merchantSelect.value = merchantId;
     
-    // Update option dengan email
+    // Update option dengan email dan kategori
     const selectedOption = merchantSelect.options[merchantSelect.selectedIndex];
     if (selectedOption) {
         selectedOption.dataset.email = merchantEmail;
+        selectedOption.dataset.kategori = merchantKategori;
     }
     
     const selectedText = document.getElementById('customMerchantSelectedText');
@@ -558,6 +615,11 @@ function selectMerchant(merchantId, merchantName, merchantEmail = '', merchantSt
             opt.classList.add('bg-gray-100', 'font-medium');
         }
     });
+    
+    // Auto-fill kategori_keyword dari merchant jika ada
+    if (merchantKategori) {
+        selectKeywordKategori(merchantKategori);
+    }
     
     // Auto-fill start_date dan end_date dari merchant jika ada
     if (merchantStartDate || merchantEndDate) {
@@ -695,8 +757,21 @@ function updateProductName() {
     
     if (selectedOption && selectedOption.value) {
         productNameInput.value = selectedOption.dataset.name || selectedOption.text;
+        // Auto-fill kategori_keyword dari merchant
+        if (selectedOption.dataset.kategori) {
+            selectKeywordKategori(selectedOption.dataset.kategori);
+        }
     } else {
         productNameInput.value = '';
+        // Reset kategori dropdown
+        const kategoriInput = document.getElementById('keywordKategoriValue');
+        const kategoriLabel = document.getElementById('keywordKategoriLabel');
+        const kategoriBtn = document.getElementById('keywordKategoriBtn');
+        if (kategoriInput) kategoriInput.value = '';
+        if (kategoriLabel) kategoriLabel.textContent = 'Kategori akan otomatis terisi dari merchant';
+        if (kategoriBtn) {
+            kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
+        }
     }
 }
 
@@ -998,6 +1073,97 @@ document.addEventListener('DOMContentLoaded', function() {
             // Stop propagation untuk mencegah event bubble ke modal/overlay
             event.stopPropagation();
         });
+    }
+});
+
+// ======================
+// Dropdown kategori keyword
+// ======================
+function toggleKeywordKategoriDropdown() {
+    const dropdown = document.getElementById('keywordKategoriDropdown');
+    if (!dropdown) return;
+
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        requestAnimationFrame(() => {
+            dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
+            dropdown.style.opacity = '1';
+            dropdown.style.transform = 'translateY(0)';
+        });
+    } else {
+        dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+        }, 200);
+    }
+}
+
+function selectKeywordKategori(value) {
+    const hiddenInput = document.getElementById('keywordKategoriValue');
+    const labelSpan = document.getElementById('keywordKategoriLabel');
+    const btn = document.getElementById('keywordKategoriBtn');
+    const dropdown = document.getElementById('keywordKategoriDropdown');
+
+    if (hiddenInput) hiddenInput.value = value;
+    if (labelSpan) {
+        // Format label dengan capitalize
+        const labelMap = {
+            'kuliner': 'Kuliner',
+            'hiburan': 'Hiburan',
+            'liburan': 'Liburan',
+            'belanja': 'Belanja',
+            'kecantikan': 'Kecantikan',
+            'telkomsel': 'Telkomsel Paket',
+            'merchandise': 'Merchandise'
+        };
+        labelSpan.textContent = labelMap[value] || value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    if (btn) {
+        btn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border transition-all duration-300';
+
+        const colorMap = {
+            'kuliner': ['border-orange-300', 'text-orange-800', 'from-orange-100', 'to-red-100'],
+            'hiburan': ['border-purple-300', 'text-purple-800', 'from-purple-100', 'to-pink-100'],
+            'liburan': ['border-blue-300', 'text-blue-800', 'from-blue-100', 'to-cyan-100'],
+            'belanja': ['border-green-300', 'text-green-800', 'from-green-100', 'to-emerald-100'],
+            'kecantikan': ['border-pink-300', 'text-pink-800', 'from-pink-100', 'to-rose-100'],
+            'telkomsel': ['border-indigo-300', 'text-indigo-800', 'from-indigo-100', 'to-blue-100'],
+            'merchandise': ['border-amber-300', 'text-amber-800', 'from-amber-100', 'to-yellow-100']
+        };
+        
+        const colors = colorMap[value] || ['border-gray-300', 'text-gray-700'];
+        btn.classList.add(...colors);
+        if (colors.length > 2) {
+            btn.classList.add('bg-gradient-to-r', colors[2], colors[3]);
+        } else {
+            btn.classList.add('hover:bg-gray-50');
+        }
+    }
+
+    if (dropdown) {
+        dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+        }, 200);
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('keywordKategoriDropdown');
+    const button = document.getElementById('keywordKategoriBtn');
+    
+    if (dropdown && button && !dropdown.contains(event.target) && !button.contains(event.target)) {
+        if (!dropdown.classList.contains('hidden')) {
+            toggleKeywordKategoriDropdown();
+        }
     }
 });
 </script>
