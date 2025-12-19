@@ -1001,4 +1001,23 @@ class KeywordController extends Controller
             ], 500);
         }
     }
+
+    public function getByMerchant(Request $request, $merchantId)
+    {
+        try {
+            $keywords = Keyword::where('merchant_key', $merchantId)
+                ->orderBy('nama_produk', 'asc')
+                ->get(['id', 'nama_produk', 'skb']);
+            
+            return response()->json([
+                'success' => true,
+                'keywords' => $keywords
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data keywords: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
