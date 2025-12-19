@@ -152,17 +152,25 @@ class IklanController extends Controller
                         'filter_value' => 'cluster:' . $cluster['slug']
                     ]);
                 }
-            } elseif ($iklan->merchant_key) {
-                $merchant = Merchant::find($iklan->merchant_key);
-                if ($merchant) {
-                    $allLocations->push([
-                        'type' => 'merchant',
-                        'type_label' => 'merchant',
-                        'name' => $merchant->nama_merchant,
-                        'slug' => (string) $merchant->id,
-                        'display' => 'Merchant/Program',
-                        'filter_value' => 'merchant:' . $merchant->id
-                    ]);
+            } elseif ($iklan->merchant_keys || $iklan->merchant_key) {
+                // Get merchants from merchant_keys JSON or fallback to merchant_key
+                $merchantIds = $iklan->merchant_keys ?? [];
+                if (empty($merchantIds) && $iklan->merchant_key) {
+                    $merchantIds = [$iklan->merchant_key];
+                }
+                
+                if (!empty($merchantIds)) {
+                    $merchants = Merchant::whereIn('id', $merchantIds)->get();
+                    foreach ($merchants as $merchant) {
+                        $allLocations->push([
+                            'type' => 'merchant',
+                            'type_label' => 'merchant',
+                            'name' => $merchant->nama_merchant,
+                            'slug' => (string) $merchant->id,
+                            'display' => 'Merchant/Program',
+                            'filter_value' => 'merchant:' . $merchant->id
+                        ]);
+                    }
                 }
             }
         }
@@ -204,7 +212,8 @@ class IklanController extends Controller
             'regional' => ['nullable', 'string'],
             'branch' => ['nullable', 'string'],
             'cluster' => ['nullable', 'string'],
-            'merchant_key' => ['nullable', 'integer', 'exists:merchants,id'],
+            'merchant_keys' => ['nullable', 'array'],
+            'merchant_keys.*' => ['integer', 'exists:merchants,id'],
         ]);
 
         $path = $request->file('image')->store('iklan', 'public');
@@ -220,14 +229,14 @@ class IklanController extends Controller
         $regional = null;
         $branch = null;
         $cluster = null;
-        $merchantKey = null;
+        $merchantKeys = [];
 
         // Check which location type is selected (priority: territorial > regional > branch > cluster > merchant)
         $territorialInput = $request->input('territorial');
         $regionalInput = $request->input('regional');
         $branchInput = $request->input('branch');
         $clusterInput = $request->input('cluster');
-        $merchantInput = $request->input('merchant_key');
+        $merchantInputs = $request->input('merchant_keys', []);
 
         if (!empty($territorialInput) && trim($territorialInput) !== '') {
             $territorial = territorialSlug(trim($territorialInput));
@@ -237,8 +246,12 @@ class IklanController extends Controller
             $branch = territorialSlugGeneric(trim($branchInput));
         } elseif (!empty($clusterInput) && trim($clusterInput) !== '') {
             $cluster = territorialSlugGeneric(trim($clusterInput));
-        } elseif (!empty($merchantInput)) {
-            $merchantKey = (int) $merchantInput;
+        } elseif (!empty($merchantInputs) && is_array($merchantInputs)) {
+            // Filter out empty values and convert to integers
+            $merchantKeys = array_filter(array_map('intval', $merchantInputs), function($id) {
+                return $id > 0;
+            });
+            $merchantKeys = array_values($merchantKeys); // Re-index array
         }
 
         // Get the minimum order value and subtract 1 to place new items at the top
@@ -250,14 +263,16 @@ class IklanController extends Controller
         // This allows negative values which will appear first when sorted ascending
         $newOrder = $minOrder - 1;
         
-        Iklan::create([
+        // Create iklan with merchant_keys as JSON array
+        $iklan = Iklan::create([
             'image_path' => $path,
             'link_iklan' => $link,
             'territorial' => $territorial,
             'regional' => $regional,
             'branch' => $branch,
             'cluster' => $cluster,
-            'merchant_key' => $merchantKey,
+            'merchant_key' => !empty($merchantKeys) ? $merchantKeys[0] : null, // Keep first merchant for backward compatibility
+            'merchant_keys' => !empty($merchantKeys) ? $merchantKeys : null, // Store as JSON array
             'order' => $newOrder,
         ]);
 

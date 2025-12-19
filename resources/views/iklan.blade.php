@@ -197,31 +197,13 @@
                     </label>
                     <label class="block hidden" id="merchantLabel">
                         <span class="text-sm font-semibold text-neutral-700">Pilih Merchant/Program</span>
-                        <div class="mt-2 relative">
-                            <select id="merchantInput" name="merchant_key" class="hidden">
-                                <option value="">-- Pilih Merchant/Program --</option>
-                                @foreach($merchants as $merchant)
-                                    <option value="{{ $merchant['id'] }}" {{ old('merchant_key') == $merchant['id'] ? 'selected' : '' }}>
-                                        {{ $merchant['name'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <button type="button" id="merchantBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
-                                <span id="merchantText">-- Pilih Merchant/Program --</span>
-                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
-                            </button>
-                            <div id="merchantDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
-                                <div class="p-2 border-b border-neutral-100">
-                                    <input type="text" id="merchantSearch" placeholder="Cari merchant/program..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
-                                </div>
-                                <div id="merchantOptions" class="overflow-y-auto max-h-48">
-                                    <div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Merchant/Program --</div>
-                                    @foreach($merchants as $merchant)
-                                        <div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $merchant['id'] }}">{{ $merchant['name'] }}</div>
-                                    @endforeach
-                                </div>
-                            </div>
+                        <div id="merchantContainer" class="mt-2 space-y-3">
+                            <!-- Merchant selection items will be added here dynamically -->
                         </div>
+                        <button type="button" id="addMerchantBtn" class="mt-2 w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 transition">
+                            <i class="fas fa-plus text-xs"></i>
+                            <span>Tambah Merchant/Program</span>
+                        </button>
                     </label>
                     <button type="button" id="openConfirmModal" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition">
                         Simpan Iklan
@@ -369,24 +351,22 @@
                                     $locationName = territorialNameGeneric($iklan->cluster);
                                     $locationDisplay = 'cluster/' . $iklan->cluster;
                                     $locationRoute = route('cluster.show', $iklan->cluster);
-                                } elseif ($iklan->merchant_key) {
+                                } elseif ($iklan->merchant_keys || $iklan->merchant_key) {
                                     $locationType = 'merchant';
-                                    $locationSlug = (string) $iklan->merchant_key;
-                                    $merchant = $iklan->merchant ?? \App\Models\Merchant::find($iklan->merchant_key);
-                                    $locationName = $merchant ? $merchant->nama_merchant : 'Merchant';
-                                    $locationDisplay = 'Merchant/Program';
+                                    // Get merchants from merchant_keys JSON or fallback to merchant_key
+                                    $merchantsList = $iklan->merchants; // Use accessor
                                     
-                                    // Extract code from link_blanjapoin to create link pelanggan route
-                                    $locationRoute = null;
-                                    if ($merchant && $merchant->link_blanjapoin) {
-                                        // Format: blanjapoin.id/dash/{code} or https://blanjapoin.id/dash/{code}
-                                        $linkBlanjapoin = $merchant->link_blanjapoin;
-                                        // Extract code after /dash/
-                                        if (preg_match('/\/dash\/([^\/\s]+)/', $linkBlanjapoin, $matches)) {
-                                            $code = $matches[1];
-                                            $locationRoute = route('link.pelanggan', $code);
-                                        }
+                                    if ($merchantsList->isNotEmpty()) {
+                                        $merchantNames = $merchantsList->pluck('nama_merchant')->toArray();
+                                        $locationName = implode(', ', $merchantNames);
+                                        $merchantIds = $merchantsList->pluck('id')->toArray();
+                                        $locationSlug = implode(',', $merchantIds);
+                                    } else {
+                                        $locationName = 'Merchant';
+                                        $locationSlug = '';
                                     }
+                                    $locationDisplay = 'Merchant/Program';
+                                    $locationRoute = null; // Multiple merchants, no single route
                                 } else {
                                     $locationType = 'general';
                                     $locationDisplay = 'General';
@@ -533,6 +513,9 @@
 
 <script>
 // Script khusus halaman iklan
+// Merchant data for multiple selection
+window.merchantsData = {!! json_encode($merchants) !!};
+
 document.addEventListener('DOMContentLoaded', function () {
     const page = document.getElementById('iklanPage');
     if (page) {
@@ -577,7 +560,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const regionalInput = document.getElementById('regionalInput');
     const branchInput = document.getElementById('branchInput');
     const clusterInput = document.getElementById('clusterInput');
-    const merchantInput = document.getElementById('merchantInput');
+
+    // Multiple merchant selection variables (must be declared before showLocationDropdown)
+    let merchantCounter = 0;
+    const merchantContainer = document.getElementById('merchantContainer');
+    const addMerchantBtn = document.getElementById('addMerchantBtn');
+    const merchantsData = window.merchantsData || [];
 
     function showLocationDropdown(type) {
         // Hide all dropdowns first
@@ -592,7 +580,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (regionalInput) regionalInput.value = '';
         if (branchInput) branchInput.value = '';
         if (clusterInput) clusterInput.value = '';
-        if (merchantInput) merchantInput.value = '';
+        
+        // Clear merchant container
+        if (merchantContainer) {
+            merchantContainer.innerHTML = '';
+        }
+        merchantCounter = 0;
 
         // Show selected dropdown (skip if general)
         if (type === 'territorial') {
@@ -605,6 +598,10 @@ document.addEventListener('DOMContentLoaded', function () {
             clusterLabel?.classList.remove('hidden');
         } else if (type === 'merchant') {
             merchantLabel?.classList.remove('hidden');
+            // Add first merchant selection when merchant type is selected
+            if (merchantContainer) {
+                createMerchantSelection(merchantCounter++);
+            }
         }
         // If type is 'general' or empty, all dropdowns stay hidden
     }
@@ -616,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hasOldRegional = regionalInput && regionalInput.value !== '';
         const hasOldBranch = branchInput && branchInput.value !== '';
         const hasOldCluster = clusterInput && clusterInput.value !== '';
-        const hasOldMerchant = merchantInput && merchantInput.value !== '';
+        const hasOldMerchant = document.querySelector('select[name="merchant_keys[]"]') && document.querySelector('select[name="merchant_keys[]"]').value !== '';
 
         // Determine location type from old values or from locationTypeInput itself
         let locationType = locationTypeInput.value;
@@ -669,7 +666,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById(searchId);
         const optionsContainer = document.getElementById(optionsId);
 
-        if (!select || !button || !textSpan || !dropdown || !searchInput || !optionsContainer) return;
+        if (!select || !button || !textSpan || !dropdown || !searchInput || !optionsContainer) {
+            console.warn('Missing elements for dropdown:', { selectId, buttonId, textId, dropdownId, searchId, optionsId });
+            return;
+        }
 
         // Initialize text from selected option
         const selectedOption = select.options[select.selectedIndex];
@@ -680,15 +680,29 @@ document.addEventListener('DOMContentLoaded', function () {
         // Toggle dropdown
         button.addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
+            
             const isHidden = dropdown.classList.contains('hidden');
+            
+            // Close all other dropdowns first
             closeAllDropdowns();
+            
+            // Open this dropdown if it was hidden
             if (isHidden) {
-                dropdown.classList.remove('hidden');
-                searchInput.value = '';
-                filterOptions(searchInput.value, optionsContainer, optionClass);
-                setTimeout(() => searchInput.focus(), 50);
+                // Set flag to prevent global handler from closing
+                justOpenedDropdown = button;
+                
+                // Use setTimeout with delay to ensure closeAllDropdowns completes
+                setTimeout(() => {
+                    dropdown.classList.remove('hidden');
+                    searchInput.value = '';
+                    filterOptions(searchInput.value, optionsContainer, optionClass);
+                    setTimeout(() => {
+                        searchInput.focus();
+                    }, 50);
+                }, 50);
             }
-        });
+        }, true); // Use capture phase to ensure this runs before global handler
 
         // Prevent dropdown from closing when clicking inside
         dropdown.addEventListener('click', (e) => {
@@ -724,26 +738,78 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Flag to prevent closing dropdown that was just opened
+    let justOpenedDropdown = null;
+    
     // Global click handler to close all dropdowns when clicking outside
     document.addEventListener('click', (e) => {
-        const dropdownIds = ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown', 'merchantDropdown'];
-        const buttonIds = ['locationTypeBtn', 'territorialBtn', 'regionalBtn', 'branchBtn', 'clusterBtn', 'merchantBtn'];
+        // Check if click is on any dropdown button or inside any dropdown
+        const locationTypeBtn = document.getElementById('locationTypeBtn');
+        const locationTypeDropdown = document.getElementById('locationTypeDropdown');
+        const territorialBtn = document.getElementById('territorialBtn');
+        const territorialDropdown = document.getElementById('territorialDropdown');
+        const regionalBtn = document.getElementById('regionalBtn');
+        const regionalDropdown = document.getElementById('regionalDropdown');
+        const branchBtn = document.getElementById('branchBtn');
+        const branchDropdown = document.getElementById('branchDropdown');
+        const clusterBtn = document.getElementById('clusterBtn');
+        const clusterDropdown = document.getElementById('clusterDropdown');
         
         let clickedInside = false;
         
-        dropdownIds.forEach((dropdownId, index) => {
-            const dropdown = document.getElementById(dropdownId);
-            const button = document.getElementById(buttonIds[index]);
-            
-            if (dropdown && button) {
-                if (dropdown.contains(e.target) || button.contains(e.target)) {
-                    clickedInside = true;
-                }
-            }
+        // Check location type dropdown
+        if (locationTypeBtn && locationTypeBtn.contains(e.target)) {
+            clickedInside = true;
+        }
+        if (locationTypeDropdown && locationTypeDropdown.contains(e.target)) {
+            clickedInside = true;
+        }
+        
+        // Check other location dropdowns
+        if ((territorialBtn && territorialBtn.contains(e.target)) || 
+            (territorialDropdown && territorialDropdown.contains(e.target)) ||
+            (regionalBtn && regionalBtn.contains(e.target)) || 
+            (regionalDropdown && regionalDropdown.contains(e.target)) ||
+            (branchBtn && branchBtn.contains(e.target)) || 
+            (branchDropdown && branchDropdown.contains(e.target)) ||
+            (clusterBtn && clusterBtn.contains(e.target)) || 
+            (clusterDropdown && clusterDropdown.contains(e.target))) {
+            clickedInside = true;
+        }
+        
+        // Check merchant dropdowns (multiple)
+        const merchantDropdowns = document.querySelectorAll('[id^="merchantDropdown_"]');
+        const merchantButtons = document.querySelectorAll('[id^="merchantBtn_"]');
+        merchantDropdowns.forEach(dropdown => {
+            if (dropdown.contains(e.target)) clickedInside = true;
+        });
+        merchantButtons.forEach(button => {
+            if (button.contains(e.target)) clickedInside = true;
         });
         
+        // Only close if clicked outside all dropdowns
+        // Don't close if the click was on a button that opens a dropdown
         if (!clickedInside) {
-            closeAllDropdowns();
+            // Check if any dropdown button was clicked (they handle their own opening)
+            const allDropdownButtons = document.querySelectorAll('[id$="Btn"]');
+            let isDropdownButton = false;
+            allDropdownButtons.forEach(btn => {
+                if (btn.contains(e.target)) {
+                    isDropdownButton = true;
+                }
+            });
+            
+            // Don't close if we just opened a dropdown
+            if (!isDropdownButton && justOpenedDropdown !== e.target) {
+                closeAllDropdowns();
+            }
+        }
+        
+        // Reset flag after a short delay
+        if (justOpenedDropdown) {
+            setTimeout(() => {
+                justOpenedDropdown = null;
+            }, 100);
         }
     });
 
@@ -782,9 +848,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function closeAllDropdowns() {
-        ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown', 'merchantDropdown'].forEach(id => {
+        ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown'].forEach(id => {
             const dropdown = document.getElementById(id);
             if (dropdown) dropdown.classList.add('hidden');
+        });
+        
+        // Close all merchant dropdowns (multiple)
+        document.querySelectorAll('[id^="merchantDropdown_"]').forEach(dropdown => {
+            dropdown.classList.add('hidden');
         });
     }
 
@@ -794,7 +865,65 @@ document.addEventListener('DOMContentLoaded', function () {
     initSearchableDropdown('regionalInput', 'regionalBtn', 'regionalText', 'regionalDropdown', 'regionalSearch', 'regionalOptions', 'regional-option');
     initSearchableDropdown('branchInput', 'branchBtn', 'branchText', 'branchDropdown', 'branchSearch', 'branchOptions', 'branch-option');
     initSearchableDropdown('clusterInput', 'clusterBtn', 'clusterText', 'clusterDropdown', 'clusterSearch', 'clusterOptions', 'cluster-option');
-    initSearchableDropdown('merchantInput', 'merchantBtn', 'merchantText', 'merchantDropdown', 'merchantSearch', 'merchantOptions', 'merchant-option');
+    
+    // Multiple merchant selection functionality (merchantCounter already declared above)
+    function createMerchantSelection(index) {
+        const merchantItem = document.createElement('div');
+        merchantItem.className = 'merchant-selection-item relative';
+        merchantItem.dataset.index = index;
+        
+        merchantItem.innerHTML = `
+            <div class="flex items-center gap-2">
+                <div class="flex-1 relative">
+                    <select id="merchantInput_${index}" name="merchant_keys[]" class="hidden">
+                        <option value="">-- Pilih Merchant/Program --</option>
+                        ${merchantsData.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+                    </select>
+                    <button type="button" id="merchantBtn_${index}" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                        <span id="merchantText_${index}">-- Pilih Merchant/Program --</span>
+                        <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                    </button>
+                    <div id="merchantDropdown_${index}" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                        <div class="p-2 border-b border-neutral-100">
+                            <input type="text" id="merchantSearch_${index}" placeholder="Cari merchant/program..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                        </div>
+                        <div id="merchantOptions_${index}" class="overflow-y-auto max-h-48">
+                            <div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Merchant/Program --</div>
+                            ${merchantsData.map(m => `<div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="${m.id}">${m.name}</div>`).join('')}
+                        </div>
+                    </div>
+                </div>
+                ${index > 0 ? `<button type="button" class="remove-merchant-btn inline-flex items-center justify-center w-10 h-10 rounded-xl text-rose-600 hover:bg-rose-50 transition" title="Hapus">
+                    <i class="fas fa-times"></i>
+                </button>` : ''}
+            </div>
+        `;
+        
+        merchantContainer.appendChild(merchantItem);
+        
+        // Initialize searchable dropdown for this merchant selection
+        initSearchableDropdown(`merchantInput_${index}`, `merchantBtn_${index}`, `merchantText_${index}`, `merchantDropdown_${index}`, `merchantSearch_${index}`, `merchantOptions_${index}`, 'merchant-option');
+        
+        // Add remove button functionality
+        const removeBtn = merchantItem.querySelector('.remove-merchant-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                merchantItem.remove();
+            });
+        }
+    }
+    
+    // Add first merchant selection when merchant label is shown
+    if (addMerchantBtn) {
+        addMerchantBtn.addEventListener('click', function() {
+            createMerchantSelection(merchantCounter++);
+        });
+    }
+    
+    // Initialize with one merchant selection if merchant type is selected
+    if (merchantLabel && !merchantLabel.classList.contains('hidden')) {
+        createMerchantSelection(merchantCounter++);
+    }
 
     // Update button text on page load for location-specific dropdowns
     function updateDropdownTexts() {
@@ -826,12 +955,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (selectedOption) clusterText.textContent = selectedOption.textContent;
         }
 
-        const merchantSelect = document.getElementById('merchantInput');
-        const merchantText = document.getElementById('merchantText');
-        if (merchantSelect && merchantText && merchantSelect.value) {
-            const selectedOption = merchantSelect.options[merchantSelect.selectedIndex];
-            if (selectedOption) merchantText.textContent = selectedOption.textContent;
-        }
+        // Update merchant dropdowns (multiple)
+        document.querySelectorAll('select[name="merchant_keys[]"]').forEach((select, index) => {
+            const textSpan = document.getElementById(`merchantText_${index}`);
+            if (select && textSpan && select.value) {
+                const selectedOption = select.options[select.selectedIndex];
+                if (selectedOption) textSpan.textContent = selectedOption.textContent;
+            }
+        });
     }
     updateDropdownTexts();
 
@@ -892,8 +1023,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (locationType !== 'cluster' && clusterInput) {
                 clusterInput.value = '';
             }
-            if (locationType !== 'merchant' && merchantInput) {
-                merchantInput.value = '';
+            if (locationType !== 'merchant') {
+                if (merchantContainer) {
+                    merchantContainer.innerHTML = '';
+                }
+                merchantCounter = 0;
             }
             // If general or no location type selected, clear all
             if (!locationType || locationType === '' || locationType === 'general') {
@@ -901,7 +1035,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (regionalInput) regionalInput.value = '';
                 if (branchInput) branchInput.value = '';
                 if (clusterInput) clusterInput.value = '';
-                if (merchantInput) merchantInput.value = '';
+                if (merchantContainer) {
+                    merchantContainer.innerHTML = '';
+                }
+                merchantCounter = 0;
             }
             
             closeModal(uploadModal, uploadModalContent);
