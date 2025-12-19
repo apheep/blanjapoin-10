@@ -222,6 +222,8 @@ class MerchantController extends Controller
             'logo_merchant'  => $logoPath,
             'ktp_pic'        => $ktpPath,
             'is_active'      => (int)$isActive,
+            'start_date'     => $request->input('start_date') ?: null,
+            'end_date'       => $request->input('end_date') ?: null,
         ];
         
         // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
@@ -344,9 +346,12 @@ class MerchantController extends Controller
             'link_gmap'      => 'nullable|string|max:500',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'start_date'     => 'nullable|date_format:Y-m-d',
+            'end_date'       => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
             'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+            'end_date.after_or_equal' => 'Tanggal akhir periode tidak boleh sebelum tanggal mulai periode',
         ]);
     
         try {
@@ -418,6 +423,8 @@ class MerchantController extends Controller
                 'link_gmap'      => $getValue($request->input('link_gmap', null)),
                 'logo_merchant'  => $logoPath,
                 'ktp_pic'        => $ktpPath,
+                'start_date'     => $request->input('start_date') ?: null,
+                'end_date'       => $request->input('end_date') ?: null,
             ];
             
             // Pastikan tidak ada field yang kosong string, semua harus null jika kosong

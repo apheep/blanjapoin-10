@@ -165,8 +165,46 @@ class KeywordController extends Controller
             }
 
             // Date input sudah dalam format YYYY-MM-DD dari date picker
+            // Auto-fill dari merchant jika tidak diisi
+            $merchant = Merchant::find($request->merchant_key);
             $startDate = $request->start_date;
             $endDate = $request->end_date;
+            
+            // Jika start_date tidak diisi, ambil dari merchant
+            if (empty($startDate) && $merchant && $merchant->start_date) {
+                $startDate = $merchant->start_date;
+            }
+            
+            // Jika end_date tidak diisi, ambil dari merchant
+            if (empty($endDate) && $merchant && $merchant->end_date) {
+                $endDate = $merchant->end_date;
+            }
+            
+            // Validasi: start_date keyword tidak boleh lebih awal dari start_date merchant
+            if ($startDate && $merchant && $merchant->start_date) {
+                if ($startDate < $merchant->start_date) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['start_date' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'])->withInput();
+                }
+            }
+            
+            // Validasi: end_date keyword tidak boleh melebihi end_date merchant
+            if ($endDate && $merchant && $merchant->end_date) {
+                if ($endDate > $merchant->end_date) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['end_date' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'])->withInput();
+                }
+            }
 
             // Handle image upload
             $imagePath = null;
@@ -496,6 +534,47 @@ class KeywordController extends Controller
                 $diamondAmount = (int) $request->diamond_amount;
             }
 
+            // Handle dates - auto-fill dari merchant jika tidak diisi
+            $merchant = Merchant::find($request->merchant_key);
+            $startDate = $request->start_date ?? $keyword->start_date;
+            $endDate = $request->end_date ?? $keyword->end_date;
+            
+            // Jika start_date tidak diisi, ambil dari merchant
+            if (empty($startDate) && $merchant && $merchant->start_date) {
+                $startDate = $merchant->start_date;
+            }
+            
+            // Jika end_date tidak diisi, ambil dari merchant
+            if (empty($endDate) && $merchant && $merchant->end_date) {
+                $endDate = $merchant->end_date;
+            }
+            
+            // Validasi: start_date keyword tidak boleh lebih awal dari start_date merchant
+            if ($startDate && $merchant && $merchant->start_date) {
+                if ($startDate < $merchant->start_date) {
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['start_date' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'])->withInput();
+                }
+            }
+            
+            // Validasi: end_date keyword tidak boleh melebihi end_date merchant
+            if ($endDate && $merchant && $merchant->end_date) {
+                if ($endDate > $merchant->end_date) {
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['end_date' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'])->withInput();
+                }
+            }
+
             // Handle image upload
             if ($request->hasFile('image')) {
                 // Delete old image if exists
@@ -524,8 +603,8 @@ class KeywordController extends Controller
                 'subsidy_amount'=> $subsidyAmount,
                 'diamond_amount'=> $diamondAmount,
                 'skb'           => $request->skb,
-                'start_date'    => $request->start_date,
-                'end_date'      => $request->end_date,
+                'start_date'    => $startDate,
+                'end_date'      => $endDate,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
                 'status'        => $status,

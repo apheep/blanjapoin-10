@@ -264,7 +264,32 @@
                     </div>
                 </div>
 
-                {{-- Section 4: Logo --}}
+                {{-- Section 4: Periode Merchant --}}
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Periode Merchant</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- Start Date --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Start Date Periode
+                            </label>
+                            <input type="date"
+                                   name="start_date"
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm">
+                        </div>
+                        {{-- End Date --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                End Date Periode
+                            </label>
+                            <input type="date"
+                                   name="end_date"
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Section 5: Logo --}}
                 <div id="logoSection">
                     <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Logo Merchant</h4>
                     <div>
