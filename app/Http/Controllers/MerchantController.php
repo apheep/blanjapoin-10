@@ -632,7 +632,11 @@ class MerchantController extends Controller
 
         // Get iklans - prioritize merchant-specific banner, fallback to general
         // Use orderBy('order', 'asc') to respect admin-configured order
-        $specificIklans = Iklan::where('merchant_key', $merchant->id)
+        // Check both merchant_key (legacy) and merchant_keys JSON array
+        $specificIklans = Iklan::where(function($query) use ($merchant) {
+                $query->where('merchant_key', $merchant->id)
+                      ->orWhereJsonContains('merchant_keys', $merchant->id);
+            })
             ->whereNull('territorial')
             ->whereNull('regional')
             ->whereNull('branch')
@@ -644,12 +648,17 @@ class MerchantController extends Controller
         if ($specificIklans->isNotEmpty()) {
             $iklans = $specificIklans;
         } else {
-            // Get general iklans (all location fields are null and merchant_key is null)
+            // Get general iklans (all location fields are null and merchant_key/merchant_keys are null or empty)
             $iklans = Iklan::whereNull('territorial')
                 ->whereNull('regional')
                 ->whereNull('branch')
                 ->whereNull('cluster')
                 ->whereNull('merchant_key')
+                ->where(function($query) {
+                    $query->whereNull('merchant_keys')
+                          ->orWhere('merchant_keys', '[]')
+                          ->orWhere('merchant_keys', '');
+                })
                 ->orderBy('order', 'asc')
                 ->get();
         }
