@@ -435,8 +435,58 @@ class MerchantController extends Controller
             }
             
             // Update merchant
+            $oldStartDate = $merchant->start_date;
+            $oldEndDate = $merchant->end_date;
             $merchant->update($merchantData);
+            
+            // Refresh merchant untuk mendapatkan nilai baru
+            $merchant->refresh();
+            $newStartDate = $merchant->start_date;
+            $newEndDate = $merchant->end_date;
+            
             Log::info('Merchant updated successfully', ['id' => $merchant->id]);
+            
+            // Update semua keyword yang terkait dengan merchant ini
+            // Jika start_date atau end_date merchant berubah, paksa semua keyword mengikuti merchant period
+            if ($oldStartDate != $newStartDate || $oldEndDate != $newEndDate) {
+                // Update semua keyword yang terkait - paksa semua start/end date mengikuti merchant
+                $keywords = Keyword::where('merchant_key', $merchant->id)->get();
+                $updatedCount = 0;
+                
+                foreach ($keywords as $keyword) {
+                    $originalStartDate = $keyword->start_date;
+                    $originalEndDate = $keyword->end_date;
+                    
+                    // Paksa semua keyword mengikuti merchant start_date dan end_date
+                    $keywordStartDate = $newStartDate;
+                    $keywordEndDate = $newEndDate;
+                    
+                    // Update keyword dengan start/end date merchant yang baru
+                    $keyword->update([
+                        'start_date' => $keywordStartDate,
+                        'end_date' => $keywordEndDate,
+                    ]);
+                    
+                    $updatedCount++;
+                    Log::info('Keyword updated due to merchant period change', [
+                        'keyword_id' => $keyword->id,
+                        'merchant_id' => $merchant->id,
+                        'old_start_date' => $originalStartDate,
+                        'new_start_date' => $keywordStartDate,
+                        'old_end_date' => $originalEndDate,
+                        'new_end_date' => $keywordEndDate,
+                    ]);
+                }
+                
+                if ($updatedCount > 0) {
+                    Log::info('Keywords updated due to merchant period change', [
+                        'merchant_id' => $merchant->id,
+                        'updated_count' => $updatedCount,
+                        'merchant_start_date' => $newStartDate,
+                        'merchant_end_date' => $newEndDate,
+                    ]);
+                }
+            }
             
             // Jika request dari AJAX, return JSON
             if ($request->wantsJson() || $request->ajax()) {

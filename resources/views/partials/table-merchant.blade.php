@@ -32,6 +32,8 @@
                     @if(Auth::check() && Auth::user()->can_approve == 1)
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     @endif
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Start Periode</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">End Periode</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 5, 'text')" data-sortable="true" data-column-index="5">
                         <div class="flex items-center justify-center gap-1">
                             <span>Kategori</span>
@@ -159,6 +161,22 @@
                             </label>
                         </td>
                         @endif
+                        {{-- Start Periode --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->start_date)
+                                {{ \Carbon\Carbon::parse($merchant->start_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+                        {{-- End Periode --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->end_date)
+                                {{ \Carbon\Carbon::parse($merchant->end_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
                         {{-- Kategori --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700" data-sort-value="{{ strtolower($merchant->kategori ?? '-') }}">{{ $merchant->kategori ?? '-' }}</td>
 
@@ -299,7 +317,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="15" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="17" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data merchant.
                         </td>
                     </tr>
@@ -423,6 +441,26 @@
                     <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Daerah</p>
                         <p class="text-base text-gray-700">{{ $merchant->daerah ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Start Periode</p>
+                        <p class="text-base text-gray-700">
+                            @if($merchant->start_date)
+                                {{ \Carbon\Carbon::parse($merchant->start_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">End Periode</p>
+                        <p class="text-base text-gray-700">
+                            @if($merchant->end_date)
+                                {{ \Carbon\Carbon::parse($merchant->end_date)->format('d/m/Y') }}
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </p>
                     </div>
                 </div>
 
