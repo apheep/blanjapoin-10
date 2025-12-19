@@ -630,14 +630,29 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
+        // Get iklans - prioritize merchant-specific banner, fallback to general
         // Use orderBy('order', 'asc') to respect admin-configured order
-        $iklans = Iklan::whereNull('territorial')
+        $specificIklans = Iklan::where('merchant_key', $merchant->id)
+            ->whereNull('territorial')
             ->whereNull('regional')
             ->whereNull('branch')
             ->whereNull('cluster')
             ->orderBy('order', 'asc')
             ->get();
+        
+        // If specific merchant iklans found, use them. Otherwise, use general iklans
+        if ($specificIklans->isNotEmpty()) {
+            $iklans = $specificIklans;
+        } else {
+            // Get general iklans (all location fields are null and merchant_key is null)
+            $iklans = Iklan::whereNull('territorial')
+                ->whereNull('regional')
+                ->whereNull('branch')
+                ->whereNull('cluster')
+                ->whereNull('merchant_key')
+                ->orderBy('order', 'asc')
+                ->get();
+        }
 
         return view('link-pelanggan', [
             'merchant' => $merchant,

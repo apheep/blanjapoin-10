@@ -221,6 +221,7 @@
         // =======================
         let detailSelectedStatus = new URL(window.location.href).searchParams.get('status') || 'all';
         let currentDetailKeywordQuery = new URL(window.location.href).searchParams.get('keyword_search') || '';
+        let currentDetailKeywordPage = new URL(window.location.href).searchParams.get('keyword_page') || new URL(window.location.href).searchParams.get('page') || '1';
 
         function toggleStatusDropdownDetail() {
             const dropdown = document.getElementById('statusDropdownDetail');
@@ -279,9 +280,13 @@
             button.className = buttonClasses;
             button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i id="statusArrowDetail" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>`;
 
+            // Reset to page 1 when filtering
+            currentDetailKeywordPage = '1';
+            
             // Reload table from server with current status & search term
             const requestUrl = buildDetailKeywordSearchRequestUrl();
             fetchDetailKeywordTable(requestUrl);
+            updateDetailKeywordUrlState();
 
             toggleStatusDropdownDetail();
         }
@@ -295,7 +300,10 @@
             }
             event.preventDefault();
             currentDetailKeywordQuery = event.target.value.trim();
+            // Reset to page 1 when searching
+            currentDetailKeywordPage = '1';
             fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+            updateDetailKeywordUrlState();
         });
 
         keywordSearchDetail?.addEventListener('input', (event) => {
@@ -307,7 +315,9 @@
             // Jika dikosongkan, reset hasil
             if (value === '' && currentDetailKeywordQuery !== '') {
                 currentDetailKeywordQuery = '';
+                currentDetailKeywordPage = '1';
                 fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+                updateDetailKeywordUrlState();
             }
         });
 
@@ -315,7 +325,9 @@
             if (!keywordSearchDetail) return;
             keywordSearchDetail.value = '';
             currentDetailKeywordQuery = '';
+            currentDetailKeywordPage = '1';
             fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+            updateDetailKeywordUrlState();
             keywordSearchDetailClear.classList.add('hidden');
         });
 
@@ -339,7 +351,7 @@
 
             base.searchParams.forEach((value, key) => {
                 // Abaikan param yang akan kita kelola sendiri
-                if (key === 'tab' || key === 'keyword_search' || key === 'status') {
+                if (key === 'tab' || key === 'keyword_search' || key === 'status' || key === 'keyword_page' || key === 'page') {
                     return;
                 }
                 searchUrl.searchParams.set(key, value);
@@ -355,6 +367,13 @@
                 searchUrl.searchParams.set('status', detailSelectedStatus);
             } else {
                 searchUrl.searchParams.delete('status');
+            }
+
+            // Tambahkan parameter page jika ada
+            if (currentDetailKeywordPage && currentDetailKeywordPage !== '1') {
+                searchUrl.searchParams.set('keyword_page', currentDetailKeywordPage);
+            } else {
+                searchUrl.searchParams.delete('keyword_page');
             }
 
             // Batasi ke merchant saat ini
@@ -424,8 +443,15 @@
             container.querySelectorAll('.keyword-pagination-link').forEach(link => {
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
+                    
+                    // Extract page number from href
+                    const hrefUrl = new URL(this.href, window.location.origin);
+                    const pageParam = hrefUrl.searchParams.get('keyword_page') || hrefUrl.searchParams.get('page') || '1';
+                    currentDetailKeywordPage = pageParam;
+                    
                     const requestUrl = buildDetailKeywordSearchRequestUrl(this.href);
                     fetchDetailKeywordTable(requestUrl);
+                    updateDetailKeywordUrlState();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
@@ -568,6 +594,16 @@
                 url.searchParams.delete('status');
             }
 
+            // Update page parameter
+            if (currentDetailKeywordPage && currentDetailKeywordPage !== '1') {
+                url.searchParams.set('keyword_page', currentDetailKeywordPage);
+                // Remove generic 'page' param if exists
+                url.searchParams.delete('page');
+            } else {
+                url.searchParams.delete('keyword_page');
+                url.searchParams.delete('page');
+            }
+
             window.history.replaceState({}, '', url);
         }
 
@@ -576,16 +612,36 @@
             // Ensure toggle handlers are attached on initial load
             attachDetailKeywordToggleHandlers();
             
-            if (detailSelectedStatus !== 'all') {
-                setActiveStatusOption(detailSelectedStatus);
-                filterKeywordByStatusDetail(detailSelectedStatus);
-            } else if (currentDetailKeywordQuery) {
-                if (keywordSearchDetail) keywordSearchDetail.value = currentDetailKeywordQuery;
-                fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
-                if (keywordSearchDetailClear) keywordSearchDetailClear.classList.remove('hidden');
+            // Initialize page from URL if available
+            const urlParams = new URL(window.location.href).searchParams;
+            const pageFromUrl = urlParams.get('keyword_page') || urlParams.get('page') || '1';
+            currentDetailKeywordPage = pageFromUrl;
+            
+            // If keyword_page is in URL (not page), trigger AJAX to load correct page
+            // because initial load uses 'page' parameter, not 'keyword_page'
+            const hasKeywordPage = urlParams.has('keyword_page');
+            const needsAjaxLoad = hasKeywordPage || detailSelectedStatus !== 'all' || currentDetailKeywordQuery;
+            
+            if (needsAjaxLoad) {
+                if (detailSelectedStatus !== 'all') {
+                    setActiveStatusOption(detailSelectedStatus);
+                    // Don't call filterKeywordByStatusDetail here to avoid double filter
+                    // Just fetch with current status
+                    fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+                } else if (currentDetailKeywordQuery) {
+                    if (keywordSearchDetail) keywordSearchDetail.value = currentDetailKeywordQuery;
+                    fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+                    if (keywordSearchDetailClear) keywordSearchDetailClear.classList.remove('hidden');
+                } else if (hasKeywordPage) {
+                    // If only keyword_page is in URL, trigger AJAX to load correct page
+                    fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+                }
             } else {
                 attachDetailKeywordPaginationHandlers();
             }
+            
+            // Update URL state on initial load (convert 'page' to 'keyword_page' if needed)
+            updateDetailKeywordUrlState();
         });
 
         // Pastikan redirect pada form add/edit tetap ke halaman detail ini

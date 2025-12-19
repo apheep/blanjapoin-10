@@ -56,11 +56,12 @@
                         <span class="text-sm font-semibold text-neutral-700">Target Lokasi <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
                         <div class="mt-2 relative">
                             <select id="locationTypeInput" class="hidden">
-                                <option value="general" {{ old('location_type') === 'general' || (!old('location_type') && !old('territorial') && !old('regional') && !old('branch') && !old('cluster')) ? 'selected' : '' }}>General (Tampil di semua halaman jika tidak ada banner spesifik)</option>
+                                <option value="general" {{ old('location_type') === 'general' || (!old('location_type') && !old('territorial') && !old('regional') && !old('branch') && !old('cluster') && !old('merchant_key')) ? 'selected' : '' }}>General (Tampil di semua halaman jika tidak ada banner spesifik)</option>
                                 <option value="territorial" {{ old('location_type') === 'territorial' ? 'selected' : '' }}>Teritorial</option>
                                 <option value="regional" {{ old('location_type') === 'regional' ? 'selected' : '' }}>Regional</option>
                                 <option value="branch" {{ old('location_type') === 'branch' ? 'selected' : '' }}>Branch</option>
                                 <option value="cluster" {{ old('location_type') === 'cluster' ? 'selected' : '' }}>Cluster</option>
+                                <option value="merchant" {{ old('location_type') === 'merchant' ? 'selected' : '' }}>Merchant/Program</option>
                             </select>
                             <button type="button" id="locationTypeBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
                                 <span id="locationTypeText">General (Tampil di semua halaman jika tidak ada banner spesifik)</span>
@@ -76,6 +77,7 @@
                                     <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="regional">Regional</div>
                                     <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="branch">Branch</div>
                                     <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="cluster">Cluster</div>
+                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="merchant">Merchant/Program</div>
                                 </div>
                             </div>
                         </div>
@@ -193,6 +195,34 @@
                             </div>
                         </div>
                     </label>
+                    <label class="block hidden" id="merchantLabel">
+                        <span class="text-sm font-semibold text-neutral-700">Pilih Merchant/Program</span>
+                        <div class="mt-2 relative">
+                            <select id="merchantInput" name="merchant_key" class="hidden">
+                                <option value="">-- Pilih Merchant/Program --</option>
+                                @foreach($merchants as $merchant)
+                                    <option value="{{ $merchant['id'] }}" {{ old('merchant_key') == $merchant['id'] ? 'selected' : '' }}>
+                                        {{ $merchant['name'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="button" id="merchantBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="merchantText">-- Pilih Merchant/Program --</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="merchantDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="merchantSearch" placeholder="Cari merchant/program..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="merchantOptions" class="overflow-y-auto max-h-48">
+                                    <div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Merchant/Program --</div>
+                                    @foreach($merchants as $merchant)
+                                        <div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $merchant['id'] }}">{{ $merchant['name'] }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </label>
                     <button type="button" id="openConfirmModal" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition">
                         Simpan Iklan
                     </button>
@@ -259,12 +289,31 @@
                                         <span class="font-medium text-neutral-700">General (Semua Lokasi)</span>
                                     </div>
                                     @endif
-                                    @foreach($allLocations as $location)
+                                    
+                                    @php
+                                        $merchantLocations = $allLocations->where('type', 'merchant');
+                                        $geographicLocations = $allLocations->where('type', '!=', 'merchant');
+                                    @endphp
+                                    
+                                    @if($merchantLocations->isNotEmpty())
+                                    <div class="px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide mt-2 mb-1 border-t border-neutral-100 pt-2">Merchant/Program</div>
+                                    @foreach($merchantLocations as $location)
                                     <div class="location-filter-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $location['filter_value'] }}" data-display="{{ $location['display'] }} - {{ $location['name'] }}">
                                         <span class="font-medium text-neutral-700">{{ $location['display'] }}</span>
                                         <span class="text-neutral-500 ml-2">- {{ $location['name'] }}</span>
                                     </div>
                                     @endforeach
+                                    @endif
+                                    
+                                    @if($geographicLocations->isNotEmpty())
+                                    <div class="px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wide mt-2 mb-1 {{ $merchantLocations->isNotEmpty() ? 'border-t border-neutral-100 pt-2' : '' }}">Lokasi Geografis</div>
+                                    @foreach($geographicLocations as $location)
+                                    <div class="location-filter-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $location['filter_value'] }}" data-display="{{ $location['display'] }} - {{ $location['name'] }}">
+                                        <span class="font-medium text-neutral-700">{{ $location['display'] }}</span>
+                                        <span class="text-neutral-500 ml-2">- {{ $location['name'] }}</span>
+                                    </div>
+                                    @endforeach
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -320,6 +369,24 @@
                                     $locationName = territorialNameGeneric($iklan->cluster);
                                     $locationDisplay = 'cluster/' . $iklan->cluster;
                                     $locationRoute = route('cluster.show', $iklan->cluster);
+                                } elseif ($iklan->merchant_key) {
+                                    $locationType = 'merchant';
+                                    $locationSlug = (string) $iklan->merchant_key;
+                                    $merchant = $iklan->merchant ?? \App\Models\Merchant::find($iklan->merchant_key);
+                                    $locationName = $merchant ? $merchant->nama_merchant : 'Merchant';
+                                    $locationDisplay = 'Merchant/Program';
+                                    
+                                    // Extract code from link_blanjapoin to create link pelanggan route
+                                    $locationRoute = null;
+                                    if ($merchant && $merchant->link_blanjapoin) {
+                                        // Format: blanjapoin.id/dash/{code} or https://blanjapoin.id/dash/{code}
+                                        $linkBlanjapoin = $merchant->link_blanjapoin;
+                                        // Extract code after /dash/
+                                        if (preg_match('/\/dash\/([^\/\s]+)/', $linkBlanjapoin, $matches)) {
+                                            $code = $matches[1];
+                                            $locationRoute = route('link.pelanggan', $code);
+                                        }
+                                    }
                                 } else {
                                     $locationType = 'general';
                                     $locationDisplay = 'General';
@@ -358,6 +425,17 @@
                                         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-100 text-neutral-600 font-medium">
                                             General
                                         </span>
+                                    @elseif ($locationType === 'merchant')
+                                        @if ($locationRoute)
+                                            <a href="{{ $locationRoute }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-50 text-pink-600 hover:bg-pink-100 transition font-medium">
+                                                <span class="whitespace-nowrap">{{ $locationDisplay }} - {{ $locationName }}</span>
+                                                <i class="fas fa-external-link-alt text-[10px] flex-shrink-0"></i>
+                                            </a>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-50 text-pink-600 font-medium">
+                                                <span class="whitespace-nowrap">{{ $locationDisplay }} - {{ $locationName }}</span>
+                                            </span>
+                                        @endif
                                     @else
                                         <a href="{{ $locationRoute }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg 
                                             @if($locationType === 'territorial') bg-orange-50 text-orange-600 hover:bg-orange-100
@@ -494,10 +572,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const regionalLabel = document.getElementById('regionalLabel');
     const branchLabel = document.getElementById('branchLabel');
     const clusterLabel = document.getElementById('clusterLabel');
+    const merchantLabel = document.getElementById('merchantLabel');
     const territorialInput = document.getElementById('territorialInput');
     const regionalInput = document.getElementById('regionalInput');
     const branchInput = document.getElementById('branchInput');
     const clusterInput = document.getElementById('clusterInput');
+    const merchantInput = document.getElementById('merchantInput');
 
     function showLocationDropdown(type) {
         // Hide all dropdowns first
@@ -505,12 +585,14 @@ document.addEventListener('DOMContentLoaded', function () {
         regionalLabel?.classList.add('hidden');
         branchLabel?.classList.add('hidden');
         clusterLabel?.classList.add('hidden');
+        merchantLabel?.classList.add('hidden');
         
         // Reset all values
         if (territorialInput) territorialInput.value = '';
         if (regionalInput) regionalInput.value = '';
         if (branchInput) branchInput.value = '';
         if (clusterInput) clusterInput.value = '';
+        if (merchantInput) merchantInput.value = '';
 
         // Show selected dropdown (skip if general)
         if (type === 'territorial') {
@@ -521,6 +603,8 @@ document.addEventListener('DOMContentLoaded', function () {
             branchLabel?.classList.remove('hidden');
         } else if (type === 'cluster') {
             clusterLabel?.classList.remove('hidden');
+        } else if (type === 'merchant') {
+            merchantLabel?.classList.remove('hidden');
         }
         // If type is 'general' or empty, all dropdowns stay hidden
     }
@@ -532,6 +616,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hasOldRegional = regionalInput && regionalInput.value !== '';
         const hasOldBranch = branchInput && branchInput.value !== '';
         const hasOldCluster = clusterInput && clusterInput.value !== '';
+        const hasOldMerchant = merchantInput && merchantInput.value !== '';
 
         // Determine location type from old values or from locationTypeInput itself
         let locationType = locationTypeInput.value;
@@ -552,6 +637,10 @@ document.addEventListener('DOMContentLoaded', function () {
             locationType = 'cluster';
             locationTypeInput.value = 'cluster';
             showLocationDropdown('cluster');
+        } else if (hasOldMerchant) {
+            locationType = 'merchant';
+            locationTypeInput.value = 'merchant';
+            showLocationDropdown('merchant');
         } else if (locationType) {
             // If locationTypeInput has a value but no old values, show that dropdown
             showLocationDropdown(locationType);
@@ -637,8 +726,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Global click handler to close all dropdowns when clicking outside
     document.addEventListener('click', (e) => {
-        const dropdownIds = ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown'];
-        const buttonIds = ['locationTypeBtn', 'territorialBtn', 'regionalBtn', 'branchBtn', 'clusterBtn'];
+        const dropdownIds = ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown', 'merchantDropdown'];
+        const buttonIds = ['locationTypeBtn', 'territorialBtn', 'regionalBtn', 'branchBtn', 'clusterBtn', 'merchantBtn'];
         
         let clickedInside = false;
         
@@ -693,7 +782,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function closeAllDropdowns() {
-        ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown'].forEach(id => {
+        ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown', 'merchantDropdown'].forEach(id => {
             const dropdown = document.getElementById(id);
             if (dropdown) dropdown.classList.add('hidden');
         });
@@ -705,6 +794,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initSearchableDropdown('regionalInput', 'regionalBtn', 'regionalText', 'regionalDropdown', 'regionalSearch', 'regionalOptions', 'regional-option');
     initSearchableDropdown('branchInput', 'branchBtn', 'branchText', 'branchDropdown', 'branchSearch', 'branchOptions', 'branch-option');
     initSearchableDropdown('clusterInput', 'clusterBtn', 'clusterText', 'clusterDropdown', 'clusterSearch', 'clusterOptions', 'cluster-option');
+    initSearchableDropdown('merchantInput', 'merchantBtn', 'merchantText', 'merchantDropdown', 'merchantSearch', 'merchantOptions', 'merchant-option');
 
     // Update button text on page load for location-specific dropdowns
     function updateDropdownTexts() {
@@ -734,6 +824,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (clusterSelect && clusterText && clusterSelect.value) {
             const selectedOption = clusterSelect.options[clusterSelect.selectedIndex];
             if (selectedOption) clusterText.textContent = selectedOption.textContent;
+        }
+
+        const merchantSelect = document.getElementById('merchantInput');
+        const merchantText = document.getElementById('merchantText');
+        if (merchantSelect && merchantText && merchantSelect.value) {
+            const selectedOption = merchantSelect.options[merchantSelect.selectedIndex];
+            if (selectedOption) merchantText.textContent = selectedOption.textContent;
         }
     }
     updateDropdownTexts();
@@ -795,12 +892,16 @@ document.addEventListener('DOMContentLoaded', function () {
             if (locationType !== 'cluster' && clusterInput) {
                 clusterInput.value = '';
             }
+            if (locationType !== 'merchant' && merchantInput) {
+                merchantInput.value = '';
+            }
             // If general or no location type selected, clear all
             if (!locationType || locationType === '' || locationType === 'general') {
                 if (territorialInput) territorialInput.value = '';
                 if (regionalInput) regionalInput.value = '';
                 if (branchInput) branchInput.value = '';
                 if (clusterInput) clusterInput.value = '';
+                if (merchantInput) merchantInput.value = '';
             }
             
             closeModal(uploadModal, uploadModalContent);
@@ -1015,7 +1116,12 @@ document.addEventListener('DOMContentLoaded', function () {
     function setLocationFilter(value, displayText) {
         currentFilterValue = value;
         if (locationFilterInput) {
-            locationFilterInput.value = displayText || (value === '' ? 'Semua Lokasi' : (value === 'general' ? 'General (Semua Lokasi)' : ''));
+            if (value === '') {
+                // Jika reset, kosongkan input
+                locationFilterInput.value = '';
+            } else {
+                locationFilterInput.value = displayText || (value === 'general' ? 'General (Semua Lokasi)' : '');
+            }
             locationFilterInput.setAttribute('readonly', 'readonly');
         }
         applyFilters();
@@ -1153,9 +1259,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (locationFilterInput && locationFilterDropdown) {
             if (!locationFilterInput.contains(e.target) && !locationFilterDropdown.contains(e.target)) {
                 closeLocationDropdown();
-                // Restore readonly if input is empty
-                if (!locationFilterInput.value) {
+                // Restore readonly only if input has a value (not empty)
+                if (locationFilterInput.value && locationFilterInput.value.trim() !== '') {
                     locationFilterInput.setAttribute('readonly', 'readonly');
+                } else {
+                    // If empty, remove readonly so user can click to filter again
+                    locationFilterInput.removeAttribute('readonly');
                 }
             }
         }
@@ -1166,9 +1275,10 @@ document.addEventListener('DOMContentLoaded', function () {
         resetFilterBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            setLocationFilter('', 'Semua Lokasi');
+            setLocationFilter('', '');
             if (locationFilterInput) {
-                locationFilterInput.setAttribute('readonly', 'readonly');
+                // Remove readonly so user can click to filter again
+                locationFilterInput.removeAttribute('readonly');
             }
         });
     }
