@@ -31,7 +31,7 @@
                                 <select name="merchant_key" id="merchantSelect" class="hidden">
                                     <option value="">-- Pilih Merchant --</option>
                                     @foreach($allMerchants as $merchant)
-                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email_pic ?? '' }}">{{ $merchant->nama_merchant }}</option>
+                                        <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-email="{{ $merchant->email_pic ?? '' }}" data-start-date="{{ $merchant->start_date ?? '' }}" data-end-date="{{ $merchant->end_date ?? '' }}">{{ $merchant->nama_merchant }}</option>
                                     @endforeach
                                 </select>
                                 
@@ -68,7 +68,9 @@
                                                     data-value="{{ $merchant->id }}"
                                                     data-name="{{ $merchant->nama_merchant }}"
                                                     data-email="{{ $merchant->email_pic ?? '' }}"
-                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}', '{{ $merchant->email_pic ?? '' }}')">
+                                                    data-start-date="{{ $merchant->start_date ?? '' }}"
+                                                    data-end-date="{{ $merchant->end_date ?? '' }}"
+                                                    onclick="selectMerchant({{ $merchant->id }}, '{{ addslashes($merchant->nama_merchant) }}', '{{ $merchant->email_pic ?? '' }}', '{{ $merchant->start_date ?? '' }}', '{{ $merchant->end_date ?? '' }}')">
                                                 {{ $merchant->nama_merchant }}
                                             </button>
                                         @endforeach
@@ -325,6 +327,11 @@ function applyFixedMerchantContext() {
         if (stayFlagInput) {
             stayFlagInput.value = '1';
         }
+        
+        // Auto-fill start_date dan end_date dari merchant jika ada
+        if (window.fixedMerchantStartDate || window.fixedMerchantEndDate) {
+            fillKeywordDatesFromMerchant(window.fixedMerchantStartDate || '', window.fixedMerchantEndDate || '');
+        }
     } else {
         merchantSelect.disabled = false;
         
@@ -388,7 +395,7 @@ function openUploadKeyword() {
         endDate: null
     };
     
-    // Clear date inputs
+    // Clear date inputs first (will be auto-filled if fixed merchant has dates)
     const startInput = document.getElementById('startDateUpload');
     const endInput = document.getElementById('endDateUpload');
     if (startInput) startInput.value = '';
@@ -398,6 +405,12 @@ function openUploadKeyword() {
     const endHidden = document.getElementById('endDateHiddenUpload');
     if (startHidden) startHidden.value = '';
     if (endHidden) endHidden.value = '';
+    
+    // After clearing, auto-fill dates from fixed merchant if available
+    // This ensures dates are filled when opening modal from merchant detail page
+    if (window.fixedMerchantId && (window.fixedMerchantStartDate || window.fixedMerchantEndDate)) {
+        fillKeywordDatesFromMerchant(window.fixedMerchantStartDate || '', window.fixedMerchantEndDate || '');
+    }
     
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -519,7 +532,7 @@ function toggleCustomMerchantDropdown() {
     }
 }
 
-function selectMerchant(merchantId, merchantName, merchantEmail = '') {
+function selectMerchant(merchantId, merchantName, merchantEmail = '', merchantStartDate = '', merchantEndDate = '') {
     const merchantSelect = document.getElementById('merchantSelect');
     merchantSelect.value = merchantId;
     
@@ -546,9 +559,96 @@ function selectMerchant(merchantId, merchantName, merchantEmail = '') {
         }
     });
     
+    // Auto-fill start_date dan end_date dari merchant jika ada
+    if (merchantStartDate || merchantEndDate) {
+        fillKeywordDatesFromMerchant(merchantStartDate, merchantEndDate);
+    }
+    
     toggleCustomMerchantDropdown();
     updateProductName();
     merchantSelect.dispatchEvent(new Event('change'));
+}
+
+// Function to fill keyword dates from merchant dates
+function fillKeywordDatesFromMerchant(merchantStartDate, merchantEndDate) {
+    // Format: merchant dates are in YYYY-MM-DD format
+    // Need to convert to DD/MM/YYYY for display and set calendar state
+    
+    if (merchantStartDate) {
+        // Parse YYYY-MM-DD to Date object
+        const startParts = merchantStartDate.split('-');
+        if (startParts.length === 3) {
+            const startDate = new Date(parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]));
+            
+            // Format for display (DD/MM/YYYY)
+            const day = String(startDate.getDate()).padStart(2, '0');
+            const month = String(startDate.getMonth() + 1).padStart(2, '0');
+            const year = startDate.getFullYear();
+            const formattedStart = `${day}/${month}/${year}`;
+            
+            // Update display input
+            const startInput = document.getElementById('startDateUpload');
+            if (startInput) {
+                startInput.value = formattedStart;
+            }
+            
+            // Update hidden input (YYYY-MM-DD format)
+            let startHidden = document.getElementById('startDateHiddenUpload');
+            if (!startHidden) {
+                startHidden = document.createElement('input');
+                startHidden.type = 'hidden';
+                startHidden.id = 'startDateHiddenUpload';
+                startHidden.name = 'start_date';
+                if (startInput && startInput.parentElement) {
+                    startInput.parentElement.appendChild(startHidden);
+                }
+            }
+            startHidden.value = merchantStartDate;
+            
+            // Update calendar state
+            if (typeof uploadCalendarState !== 'undefined') {
+                uploadCalendarState.startDate = startDate;
+            }
+        }
+    }
+    
+    if (merchantEndDate) {
+        // Parse YYYY-MM-DD to Date object
+        const endParts = merchantEndDate.split('-');
+        if (endParts.length === 3) {
+            const endDate = new Date(parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]));
+            
+            // Format for display (DD/MM/YYYY)
+            const day = String(endDate.getDate()).padStart(2, '0');
+            const month = String(endDate.getMonth() + 1).padStart(2, '0');
+            const year = endDate.getFullYear();
+            const formattedEnd = `${day}/${month}/${year}`;
+            
+            // Update display input
+            const endInput = document.getElementById('endDateUpload');
+            if (endInput) {
+                endInput.value = formattedEnd;
+            }
+            
+            // Update hidden input (YYYY-MM-DD format)
+            let endHidden = document.getElementById('endDateHiddenUpload');
+            if (!endHidden) {
+                endHidden = document.createElement('input');
+                endHidden.type = 'hidden';
+                endHidden.id = 'endDateHiddenUpload';
+                endHidden.name = 'end_date';
+                if (endInput && endInput.parentElement) {
+                    endInput.parentElement.appendChild(endHidden);
+                }
+            }
+            endHidden.value = merchantEndDate;
+            
+            // Update calendar state
+            if (typeof uploadCalendarState !== 'undefined') {
+                uploadCalendarState.endDate = endDate;
+            }
+        }
+    }
 }
 
 function filterMerchantOptions(searchTerm) {
@@ -677,21 +777,55 @@ function validateDateRange() {
     const endHidden = document.getElementById('endDateHiddenUpload');
     const errorMsg = document.getElementById('dateError');
     
-    if (!startHidden || !endHidden) {
-        if (errorMsg) errorMsg.classList.add('hidden');
-        return true;
+    if (!errorMsg) return true;
+    
+    let errorMessage = '';
+    
+    if (startHidden && endHidden) {
+        const startDate = startHidden.value;
+        const endDate = endHidden.value;
+        
+        // Validasi: start_date tidak boleh lebih besar dari end_date
+        if (startDate && endDate && startDate > endDate) {
+            errorMessage = 'Tanggal mulai tidak boleh melebihi tanggal berakhir';
+        }
+        
+        // Validasi: start_date tidak boleh lebih awal dari merchant start_date
+        if (startDate && (window.fixedMerchantStartDate || (startHidden.dataset && startHidden.dataset.merchantStartDate))) {
+            const merchantStartDate = window.fixedMerchantStartDate || (startHidden.dataset && startHidden.dataset.merchantStartDate);
+            if (merchantStartDate && startDate < merchantStartDate) {
+                errorMessage = 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' + formatDateDisplay(merchantStartDate) + ')';
+            }
+        }
+        
+        // Validasi: end_date tidak boleh melebihi merchant end_date
+        if (endDate && (window.fixedMerchantEndDate || (endHidden.dataset && endHidden.dataset.merchantEndDate))) {
+            const merchantEndDate = window.fixedMerchantEndDate || (endHidden.dataset && endHidden.dataset.merchantEndDate);
+            if (merchantEndDate && endDate > merchantEndDate) {
+                errorMessage = 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' + formatDateDisplay(merchantEndDate) + ')';
+            }
+        }
     }
     
-    const startDate = startHidden.value;
-    const endDate = endHidden.value;
-    
-    if (startDate && endDate && startDate > endDate) {
-        if (errorMsg) errorMsg.classList.remove('hidden');
+    if (errorMessage) {
+        errorMsg.textContent = errorMessage;
+        errorMsg.classList.remove('hidden');
         return false;
     } else {
-        if (errorMsg) errorMsg.classList.add('hidden');
+        errorMsg.classList.add('hidden');
         return true;
     }
+}
+
+// Helper function untuk format date display
+function formatDateDisplay(dateString) {
+    if (!dateString) return '';
+    // Format: YYYY-MM-DD to DD/MM/YYYY
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    return dateString;
 }
 
 // Fungsi untuk toggle subsidy amount

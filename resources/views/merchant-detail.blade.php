@@ -211,6 +211,8 @@
     <script>
         window.fixedMerchantId = {{ $merchant->id }};
         window.fixedMerchantName = {!! json_encode($merchant->nama_merchant) !!};
+        window.fixedMerchantStartDate = {!! json_encode($merchant->start_date ?? '') !!};
+        window.fixedMerchantEndDate = {!! json_encode($merchant->end_date ?? '') !!};
     </script>
 
     <script>
