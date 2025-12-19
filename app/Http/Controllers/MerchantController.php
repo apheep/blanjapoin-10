@@ -122,9 +122,6 @@ class MerchantController extends Controller
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
-            ->whereHas('merchant', function ($query) {
-                $query->where('is_active', 1);
-            })
             ->orderBy('id')
             ->paginate(10)
             ->withQueryString();
@@ -225,6 +222,8 @@ class MerchantController extends Controller
             'logo_merchant'  => $logoPath,
             'ktp_pic'        => $ktpPath,
             'is_active'      => (int)$isActive,
+            'start_date'     => $request->input('start_date') ?: null,
+            'end_date'       => $request->input('end_date') ?: null,
         ];
         
         // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
@@ -347,9 +346,12 @@ class MerchantController extends Controller
             'link_gmap'      => 'nullable|string|max:500',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'start_date'     => 'nullable|date_format:Y-m-d',
+            'end_date'       => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
             'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+            'end_date.after_or_equal' => 'Tanggal akhir periode tidak boleh sebelum tanggal mulai periode',
         ]);
     
         try {
@@ -421,6 +423,8 @@ class MerchantController extends Controller
                 'link_gmap'      => $getValue($request->input('link_gmap', null)),
                 'logo_merchant'  => $logoPath,
                 'ktp_pic'        => $ktpPath,
+                'start_date'     => $request->input('start_date') ?: null,
+                'end_date'       => $request->input('end_date') ?: null,
             ];
             
             // Pastikan tidak ada field yang kosong string, semua harus null jika kosong
@@ -431,8 +435,58 @@ class MerchantController extends Controller
             }
             
             // Update merchant
+            $oldStartDate = $merchant->start_date;
+            $oldEndDate = $merchant->end_date;
             $merchant->update($merchantData);
+            
+            // Refresh merchant untuk mendapatkan nilai baru
+            $merchant->refresh();
+            $newStartDate = $merchant->start_date;
+            $newEndDate = $merchant->end_date;
+            
             Log::info('Merchant updated successfully', ['id' => $merchant->id]);
+            
+            // Update semua keyword yang terkait dengan merchant ini
+            // Jika start_date atau end_date merchant berubah, paksa semua keyword mengikuti merchant period
+            if ($oldStartDate != $newStartDate || $oldEndDate != $newEndDate) {
+                // Update semua keyword yang terkait - paksa semua start/end date mengikuti merchant
+                $keywords = Keyword::where('merchant_key', $merchant->id)->get();
+                $updatedCount = 0;
+                
+                foreach ($keywords as $keyword) {
+                    $originalStartDate = $keyword->start_date;
+                    $originalEndDate = $keyword->end_date;
+                    
+                    // Paksa semua keyword mengikuti merchant start_date dan end_date
+                    $keywordStartDate = $newStartDate;
+                    $keywordEndDate = $newEndDate;
+                    
+                    // Update keyword dengan start/end date merchant yang baru
+                    $keyword->update([
+                        'start_date' => $keywordStartDate,
+                        'end_date' => $keywordEndDate,
+                    ]);
+                    
+                    $updatedCount++;
+                    Log::info('Keyword updated due to merchant period change', [
+                        'keyword_id' => $keyword->id,
+                        'merchant_id' => $merchant->id,
+                        'old_start_date' => $originalStartDate,
+                        'new_start_date' => $keywordStartDate,
+                        'old_end_date' => $originalEndDate,
+                        'new_end_date' => $keywordEndDate,
+                    ]);
+                }
+                
+                if ($updatedCount > 0) {
+                    Log::info('Keywords updated due to merchant period change', [
+                        'merchant_id' => $merchant->id,
+                        'updated_count' => $updatedCount,
+                        'merchant_start_date' => $newStartDate,
+                        'merchant_end_date' => $newEndDate,
+                    ]);
+                }
+            }
             
             // Jika request dari AJAX, return JSON
             if ($request->wantsJson() || $request->ajax()) {
