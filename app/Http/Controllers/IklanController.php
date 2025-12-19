@@ -178,9 +178,8 @@ class IklanController extends Controller
         // Remove duplicates and sort
         $allLocations = $allLocations->unique('filter_value')->sortBy('name')->values();
 
-        // Get all active merchants for merchant/program selection
-        $merchants = Merchant::where('is_active', 1)
-            ->orderBy('nama_merchant')
+        // Get all merchants for merchant/program selection (both active and inactive)
+        $merchants = Merchant::orderBy('nama_merchant')
             ->get()
             ->map(function($merchant) {
                 return [
