@@ -20,7 +20,7 @@ class IklanController extends Controller
     public function index(): View
     {
         // Order by ascending to show newest items first (matching migration pattern where newest=lowest order)
-        $iklans = Iklan::orderBy('order', 'asc')->get();
+        $iklans = Iklan::with('merchant')->orderBy('order', 'asc')->get();
 
         // Get all available territories from DimTeritorialNational (all cities)
         $territories = DimTeritorialNational::whereNotNull('city')
@@ -152,6 +152,26 @@ class IklanController extends Controller
                         'filter_value' => 'cluster:' . $cluster['slug']
                     ]);
                 }
+            } elseif ($iklan->merchant_keys || $iklan->merchant_key) {
+                // Get merchants from merchant_keys JSON or fallback to merchant_key
+                $merchantIds = $iklan->merchant_keys ?? [];
+                if (empty($merchantIds) && $iklan->merchant_key) {
+                    $merchantIds = [$iklan->merchant_key];
+                }
+                
+                if (!empty($merchantIds)) {
+                    $merchants = Merchant::whereIn('id', $merchantIds)->get();
+                    foreach ($merchants as $merchant) {
+                        $allLocations->push([
+                            'type' => 'merchant',
+                            'type_label' => 'merchant',
+                            'name' => $merchant->nama_merchant,
+                            'slug' => (string) $merchant->id,
+                            'display' => 'Merchant/Program',
+                            'filter_value' => 'merchant:' . $merchant->id
+                        ]);
+                    }
+                }
             }
         }
         
@@ -160,12 +180,24 @@ class IklanController extends Controller
             ->whereNull('regional')
             ->whereNull('branch')
             ->whereNull('cluster')
+            ->whereNull('merchant_key')
             ->isNotEmpty();
         
         // Remove duplicates and sort
         $allLocations = $allLocations->unique('filter_value')->sortBy('name')->values();
 
-        return view('iklan', compact('iklans', 'territories', 'regions', 'branches', 'clusters', 'allLocations', 'hasGeneral'));
+        // Get all merchants for merchant/program selection (both active and inactive)
+        $merchants = Merchant::orderBy('nama_merchant')
+            ->get()
+            ->map(function($merchant) {
+                return [
+                    'id' => $merchant->id,
+                    'name' => $merchant->nama_merchant,
+                ];
+            })
+            ->values();
+
+        return view('iklan', compact('iklans', 'territories', 'regions', 'branches', 'clusters', 'allLocations', 'hasGeneral', 'merchants'));
     }
 
     /**
@@ -180,6 +212,8 @@ class IklanController extends Controller
             'regional' => ['nullable', 'string'],
             'branch' => ['nullable', 'string'],
             'cluster' => ['nullable', 'string'],
+            'merchant_keys' => ['nullable', 'array'],
+            'merchant_keys.*' => ['integer', 'exists:merchants,id'],
         ]);
 
         $path = $request->file('image')->store('iklan', 'public');
@@ -195,12 +229,14 @@ class IklanController extends Controller
         $regional = null;
         $branch = null;
         $cluster = null;
+        $merchantKeys = [];
 
-        // Check which location type is selected (priority: territorial > regional > branch > cluster)
+        // Check which location type is selected (priority: territorial > regional > branch > cluster > merchant)
         $territorialInput = $request->input('territorial');
         $regionalInput = $request->input('regional');
         $branchInput = $request->input('branch');
         $clusterInput = $request->input('cluster');
+        $merchantInputs = $request->input('merchant_keys', []);
 
         if (!empty($territorialInput) && trim($territorialInput) !== '') {
             $territorial = territorialSlug(trim($territorialInput));
@@ -210,6 +246,12 @@ class IklanController extends Controller
             $branch = territorialSlugGeneric(trim($branchInput));
         } elseif (!empty($clusterInput) && trim($clusterInput) !== '') {
             $cluster = territorialSlugGeneric(trim($clusterInput));
+        } elseif (!empty($merchantInputs) && is_array($merchantInputs)) {
+            // Filter out empty values and convert to integers
+            $merchantKeys = array_filter(array_map('intval', $merchantInputs), function($id) {
+                return $id > 0;
+            });
+            $merchantKeys = array_values($merchantKeys); // Re-index array
         }
 
         // Get the minimum order value and subtract 1 to place new items at the top
@@ -221,13 +263,16 @@ class IklanController extends Controller
         // This allows negative values which will appear first when sorted ascending
         $newOrder = $minOrder - 1;
         
-        Iklan::create([
+        // Create iklan with merchant_keys as JSON array
+        $iklan = Iklan::create([
             'image_path' => $path,
             'link_iklan' => $link,
             'territorial' => $territorial,
             'regional' => $regional,
             'branch' => $branch,
             'cluster' => $cluster,
+            'merchant_key' => !empty($merchantKeys) ? $merchantKeys[0] : null, // Keep first merchant for backward compatibility
+            'merchant_keys' => !empty($merchantKeys) ? $merchantKeys : null, // Store as JSON array
             'order' => $newOrder,
         ]);
 

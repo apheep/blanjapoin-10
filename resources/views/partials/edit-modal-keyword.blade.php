@@ -23,9 +23,54 @@
                             <select name="merchant_key" id="editMerchantSelect" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" required onchange="updateEditProductName()">
                                 <option value="">-- Pilih Merchant --</option>
                                 @foreach($allMerchants as $merchant)
-                                    <option value="{{ $merchant->id }}">{{ $merchant->nama_merchant }}</option>
+                                    <option value="{{ $merchant->id }}" data-name="{{ $merchant->nama_merchant }}" data-kategori="{{ $merchant->kategori ?? '' }}">{{ $merchant->nama_merchant }}</option>
                                 @endforeach
                             </select>
+                        </div>
+
+                        <!-- Row 1.3: Kategori Keyword -->
+                        <div class="md:col-span-2">
+                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Kategori Keyword</label>
+                            <div class="relative">
+                                <input type="hidden" name="kategori_keyword" id="editKeywordKategoriValue">
+                                <button
+                                    type="button"
+                                    id="editKeywordKategoriBtn"
+                                    onclick="toggleEditKeywordKategoriDropdown()"
+                                    class="w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                >
+                                    <span id="editKeywordKategoriLabel">Kategori akan otomatis terisi dari merchant</span>
+                                    <i class="fas fa-chevron-down text-xs ml-2"></i>
+                                </button>
+                                <div
+                                    id="editKeywordKategoriDropdown"
+                                    class="hidden absolute left-0 mt-2 bg-white rounded-xl shadow-xl p-2 border border-gray-200 w-full z-50"
+                                >
+                                    <div class="py-1 text-sm">
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('kuliner')">
+                                            Kuliner
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('hiburan')">
+                                            Hiburan
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('liburan')">
+                                            Liburan
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('belanja')">
+                                            Belanja
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('kecantikan')">
+                                            Kecantikan
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('telkomsel')">
+                                            Telkomsel Paket
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-amber-100 hover:to-yellow-100 hover:text-amber-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('merchandise')">
+                                            Merchandise
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Row 1.5: Nama Produk -->
@@ -265,6 +310,11 @@ function openEditKeyword(id, keywordData) {
         if (editSkb) editSkb.value = keywordData.skb || '';
         if (editStartDate) editStartDate.value = keywordData.start_date || '';
         if (editEndDate) editEndDate.value = keywordData.end_date || '';
+        
+        // Set kategori_keyword jika ada
+        if (keywordData.kategori_keyword) {
+            selectEditKeywordKategori(keywordData.kategori_keyword);
+        }
     
         // Parse diskon
         const diskonStr = keywordData.diskon || '';
@@ -489,8 +539,21 @@ function updateEditProductName() {
     
     if (selectedOption.value) {
         productNameInput.value = selectedOption.text;
+        // Auto-fill kategori_keyword dari merchant jika ada
+        if (selectedOption.dataset.kategori) {
+            selectEditKeywordKategori(selectedOption.dataset.kategori);
+        }
     } else {
         productNameInput.value = '';
+        // Reset kategori dropdown
+        const kategoriInput = document.getElementById('editKeywordKategoriValue');
+        const kategoriLabel = document.getElementById('editKeywordKategoriLabel');
+        const kategoriBtn = document.getElementById('editKeywordKategoriBtn');
+        if (kategoriInput) kategoriInput.value = '';
+        if (kategoriLabel) kategoriLabel.textContent = 'Kategori akan otomatis terisi dari merchant';
+        if (kategoriBtn) {
+            kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
+        }
     }
 }
 
@@ -767,5 +830,96 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const modal = document.getElementById('editModalKeyword');
     if (modal) { modal.addEventListener('click', function(event) { if (event.target === this) closeEditKeyword(); }); }
+});
+
+// ======================
+// Dropdown kategori keyword (Edit)
+// ======================
+function toggleEditKeywordKategoriDropdown() {
+    const dropdown = document.getElementById('editKeywordKategoriDropdown');
+    if (!dropdown) return;
+
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        requestAnimationFrame(() => {
+            dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
+            dropdown.style.opacity = '1';
+            dropdown.style.transform = 'translateY(0)';
+        });
+    } else {
+        dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+        }, 200);
+    }
+}
+
+function selectEditKeywordKategori(value) {
+    const hiddenInput = document.getElementById('editKeywordKategoriValue');
+    const labelSpan = document.getElementById('editKeywordKategoriLabel');
+    const btn = document.getElementById('editKeywordKategoriBtn');
+    const dropdown = document.getElementById('editKeywordKategoriDropdown');
+
+    if (hiddenInput) hiddenInput.value = value;
+    if (labelSpan) {
+        // Format label dengan capitalize
+        const labelMap = {
+            'kuliner': 'Kuliner',
+            'hiburan': 'Hiburan',
+            'liburan': 'Liburan',
+            'belanja': 'Belanja',
+            'kecantikan': 'Kecantikan',
+            'telkomsel': 'Telkomsel Paket',
+            'merchandise': 'Merchandise'
+        };
+        labelSpan.textContent = labelMap[value] || value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    if (btn) {
+        btn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border transition-all duration-300';
+
+        const colorMap = {
+            'kuliner': ['border-orange-300', 'text-orange-800', 'from-orange-100', 'to-red-100'],
+            'hiburan': ['border-purple-300', 'text-purple-800', 'from-purple-100', 'to-pink-100'],
+            'liburan': ['border-blue-300', 'text-blue-800', 'from-blue-100', 'to-cyan-100'],
+            'belanja': ['border-green-300', 'text-green-800', 'from-green-100', 'to-emerald-100'],
+            'kecantikan': ['border-pink-300', 'text-pink-800', 'from-pink-100', 'to-rose-100'],
+            'telkomsel': ['border-indigo-300', 'text-indigo-800', 'from-indigo-100', 'to-blue-100'],
+            'merchandise': ['border-amber-300', 'text-amber-800', 'from-amber-100', 'to-yellow-100']
+        };
+        
+        const colors = colorMap[value] || ['border-gray-300', 'text-gray-700'];
+        btn.classList.add(...colors);
+        if (colors.length > 2) {
+            btn.classList.add('bg-gradient-to-r', colors[2], colors[3]);
+        } else {
+            btn.classList.add('hover:bg-gray-50');
+        }
+    }
+
+    if (dropdown) {
+        dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
+        dropdown.style.opacity = '0';
+        dropdown.style.transform = 'translateY(-6px)';
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+        }, 200);
+    }
+}
+
+// Close dropdown when clicking outside (Edit)
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('editKeywordKategoriDropdown');
+    const button = document.getElementById('editKeywordKategoriBtn');
+    
+    if (dropdown && button && !dropdown.contains(event.target) && !button.contains(event.target)) {
+        if (!dropdown.classList.contains('hidden')) {
+            toggleEditKeywordKategoriDropdown();
+        }
+    }
 });
 </script>

@@ -42,5 +42,6 @@ class Merchant extends Model
     {
         return $this->hasMany(Keyword::class, 'merchant_key', 'id');
     }
+
 }
 

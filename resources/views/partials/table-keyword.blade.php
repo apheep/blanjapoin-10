@@ -40,11 +40,17 @@
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 5, 'text')" data-sortable="true" data-column-index="5">
                         <div class="flex items-center gap-1">
-                            <span>Nama Produk</span>
+                            <span>Kategori Keyword</span>
                             <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
                         </div>
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 6, 'text')" data-sortable="true" data-column-index="6">
+                        <div class="flex items-center gap-1">
+                            <span>Nama Produk</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 7, 'text')" data-sortable="true" data-column-index="7">
                         <div class="flex items-center gap-1">
                             <span>Keyword ID</span>
                             <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
@@ -141,6 +147,37 @@
                         <td class="px-4 py-4 text-sm text-gray-900" data-sort-value="{{ strtolower($keyword->merchant->nama_merchant ?? '-') }}">
                             <div class="font-medium">{{ $keyword->merchant->nama_merchant ?? '-' }}</div>
                         </td>
+                        <td class="px-4 py-4 text-sm text-gray-900" data-sort-value="{{ strtolower($keyword->kategori_keyword ?? '-') }}">
+                            @if($keyword->kategori_keyword)
+                                @php
+                                    $kategoriColors = [
+                                        'kuliner' => 'bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 border-orange-300',
+                                        'hiburan' => 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-300',
+                                        'liburan' => 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-300',
+                                        'belanja' => 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300',
+                                        'kecantikan' => 'bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 border-pink-300',
+                                        'telkomsel' => 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-800 border-indigo-300',
+                                        'merchandise' => 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-300'
+                                    ];
+                                    $kategoriLabel = [
+                                        'kuliner' => 'Kuliner',
+                                        'hiburan' => 'Hiburan',
+                                        'liburan' => 'Liburan',
+                                        'belanja' => 'Belanja',
+                                        'kecantikan' => 'Kecantikan',
+                                        'telkomsel' => 'Telkomsel Paket',
+                                        'merchandise' => 'Merchandise'
+                                    ];
+                                    $color = $kategoriColors[strtolower($keyword->kategori_keyword)] ?? 'bg-gray-100 text-gray-800 border-gray-300';
+                                    $label = $kategoriLabel[strtolower($keyword->kategori_keyword)] ?? ucfirst($keyword->kategori_keyword);
+                                @endphp
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg border text-xs font-medium {{ $color }}">
+                                    {{ $label }}
+                                </span>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-4 text-sm text-gray-900" data-sort-value="{{ strtolower($keyword->nama_produk) }}">
                             <div class="font-medium">{{ $keyword->nama_produk }}</div>
                         </td>
@@ -203,14 +240,14 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="16" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="17" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data keyword.
                         </td>
                     </tr>
                 @endforelse
 
                 <tr id="keyword-filter-empty-row" class="hidden">
-                    <td colspan="16" class="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colspan="17" class="px-4 py-6 text-center text-sm text-gray-500">
                         Tidak ada keyword pada rentang tanggal yang dipilih.
                     </td>
                 </tr>
@@ -237,17 +274,57 @@
                 @endif
 
                 {{-- Pagination Elements --}}
-                @foreach ($keywordPaginator->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
-                    @if ($page == $keywordPaginator->currentPage())
-                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                @php
+                    $current = $keywordPaginator->currentPage();
+                    $last    = $keywordPaginator->lastPage();
+
+                    $range = 2; // kiri/kanan dari current
+
+                    $start = max(1, $current - $range);
+                    $end   = min($last, $current + $range);
+                @endphp
+
+                {{-- First Page (muncul hanya kalau window tidak mulai dari 1) --}}
+                @if ($start > 1)
+                    <a href="{{ $keywordPaginator->url(1) }}"
+                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        1
+                    </a>
+                @endif
+
+                {{-- Left Ellipsis --}}
+                @if ($start > 2)
+                    <span class="px-2 text-gray-400">…</span>
+                @endif
+
+                {{-- Middle Pages --}}
+                @for ($page = $start; $page <= $end; $page++)
+                    @if ($page == $current)
+                        <button disabled
+                                class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                             {{ $page }}
                         </button>
                     @else
-                        <a href="{{ $url }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <a href="{{ $keywordPaginator->url($page) }}"
+                        class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                             {{ $page }}
                         </a>
                     @endif
-                @endforeach
+                @endfor
+
+                {{-- Right Ellipsis --}}
+                @if ($end < $last - 1)
+                    <span class="px-2 text-gray-400">…</span>
+                @endif
+
+                {{-- Last Page (muncul hanya kalau window tidak berakhir di last) --}}
+                @if ($end < $last)
+                    <a href="{{ $keywordPaginator->url($last) }}"
+                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        {{ $last }}
+                    </a>
+                @endif
+
 
                 {{-- Next Page Link --}}
                 @if ($keywordPaginator->hasMorePages())

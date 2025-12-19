@@ -31,6 +31,7 @@ class KeywordController extends Controller
         try {
             $validated = $request->validate([
                 'merchant_key'      => 'required|exists:merchants,id',
+                'kategori_keyword'  => 'nullable|string|max:255',
                 'nama_produk'       => 'required|string|max:255',
                 'keyword_id'        => 'required|string|max:255',
                 'cta_link'          => 'required|string|max:255',
@@ -221,22 +222,29 @@ class KeywordController extends Controller
             // Ensure stock has default value if null or empty
             $stock = $request->stock !== null && $request->stock !== '' ? (int)$request->stock : 0;
 
+            // Get kategori_keyword from request, or use merchant's kategori as default
+            $kategoriKeyword = $request->kategori_keyword;
+            if (empty($kategoriKeyword) && $merchant && $merchant->kategori) {
+                $kategoriKeyword = $merchant->kategori;
+            }
+
             // Create keyword
             $keyword = Keyword::create([
-                'merchant_key'  => $request->merchant_key,
-                'nama_produk'   => $request->nama_produk,
-                'keyword_id'    => $request->keyword_id,
-                'cta_link'      => $request->cta_link,
-                'redeem'        => $request->redeem,
-                'diskon'        => $diskon,
-                'subsidy_amount'=> $subsidyAmount,
-                'diamond_amount'=> $diamondAmount,
-                'skb'           => $request->skb,
-                'start_date'    => $startDate,
-                'end_date'      => $endDate,
-                'image'         => $imagePath,
-                'stock'         => $stock,
-                'status'        => $status,
+                'merchant_key'      => $request->merchant_key,
+                'kategori_keyword' => $kategoriKeyword,
+                'nama_produk'      => $request->nama_produk,
+                'keyword_id'       => $request->keyword_id,
+                'cta_link'         => $request->cta_link,
+                'redeem'           => $request->redeem,
+                'diskon'           => $diskon,
+                'subsidy_amount'   => $subsidyAmount,
+                'diamond_amount'   => $diamondAmount,
+                'skb'              => $request->skb,
+                'start_date'       => $startDate,
+                'end_date'         => $endDate,
+                'image'            => $imagePath,
+                'stock'            => $stock,
+                'status'           => $status,
             ]);
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -427,6 +435,7 @@ class KeywordController extends Controller
 
             $validated = $request->validate([
                 'merchant_key'      => 'required|exists:merchants,id',
+                'kategori_keyword'  => 'nullable|string|max:255',
                 'nama_produk'       => 'required|string|max:255',
                 'keyword_id'        => 'nullable|string|max:255',
                 'cta_link'          => 'nullable|string|max:255',
@@ -592,22 +601,31 @@ class KeywordController extends Controller
                 $status = 'approve';
             }
 
+            // Get kategori_keyword from request, or use merchant's kategori as default, or keep existing value
+            $kategoriKeyword = $request->kategori_keyword;
+            if (empty($kategoriKeyword) && $merchant && $merchant->kategori) {
+                $kategoriKeyword = $merchant->kategori;
+            } elseif (empty($kategoriKeyword)) {
+                $kategoriKeyword = $keyword->kategori_keyword;
+            }
+
             // Update keyword
             $keyword->update([
-                'merchant_key'  => $request->merchant_key,
-                'nama_produk'   => $request->nama_produk,
-                'keyword_id'    => $request->keyword_id,
-                'cta_link'      => $request->cta_link,
-                'redeem'        => $request->redeem,
-                'diskon'        => $diskon,
-                'subsidy_amount'=> $subsidyAmount,
-                'diamond_amount'=> $diamondAmount,
-                'skb'           => $request->skb,
-                'start_date'    => $startDate,
-                'end_date'      => $endDate,
-                'image'         => $imagePath,
-                'stock'         => $request->stock,
-                'status'        => $status,
+                'merchant_key'      => $request->merchant_key,
+                'kategori_keyword'  => $kategoriKeyword,
+                'nama_produk'       => $request->nama_produk,
+                'keyword_id'        => $request->keyword_id,
+                'cta_link'          => $request->cta_link,
+                'redeem'            => $request->redeem,
+                'diskon'            => $diskon,
+                'subsidy_amount'    => $subsidyAmount,
+                'diamond_amount'    => $diamondAmount,
+                'skb'               => $request->skb,
+                'start_date'        => $startDate,
+                'end_date'          => $endDate,
+                'image'             => $imagePath,
+                'stock'             => $request->stock,
+                'status'            => $status,
             ]);
 
             if ($request->wantsJson()) {
@@ -998,6 +1016,25 @@ class KeywordController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getByMerchant(Request $request, $merchantId)
+    {
+        try {
+            $keywords = Keyword::where('merchant_key', $merchantId)
+                ->orderBy('nama_produk', 'asc')
+                ->get(['id', 'nama_produk', 'skb']);
+            
+            return response()->json([
+                'success' => true,
+                'keywords' => $keywords
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data keywords: ' . $e->getMessage()
             ], 500);
         }
     }

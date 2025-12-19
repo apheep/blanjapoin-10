@@ -21,6 +21,35 @@ class Iklan extends Model
         'regional',
         'branch',
         'cluster',
+        'merchant_key',
+        'merchant_keys',
         'order',
     ];
+
+    protected $casts = [
+        'merchant_keys' => 'array',
+    ];
+
+    /**
+     * Get the merchant that owns the iklan (legacy single merchant).
+     */
+    public function merchant()
+    {
+        return $this->belongsTo(Merchant::class, 'merchant_key', 'id');
+    }
+
+    /**
+     * Get all merchants associated with this iklan from merchant_keys JSON.
+     */
+    public function getMerchantsAttribute()
+    {
+        $merchantIds = $this->merchant_keys ?? [];
+        if (empty($merchantIds) && $this->merchant_key) {
+            $merchantIds = [$this->merchant_key];
+        }
+        if (empty($merchantIds)) {
+            return collect([]);
+        }
+        return Merchant::whereIn('id', $merchantIds)->get();
+    }
 }
