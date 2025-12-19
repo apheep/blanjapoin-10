@@ -45,7 +45,7 @@ class KeywordController extends Controller
                 'skb'               => 'required|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
-                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp',
                 'stock'             => 'required|integer|min:0',
 
                 'status'            => 'nullable|in:approve,pending,reject',
@@ -165,8 +165,46 @@ class KeywordController extends Controller
             }
 
             // Date input sudah dalam format YYYY-MM-DD dari date picker
+            // Auto-fill dari merchant jika tidak diisi
+            $merchant = Merchant::find($request->merchant_key);
             $startDate = $request->start_date;
             $endDate = $request->end_date;
+            
+            // Jika start_date tidak diisi, ambil dari merchant
+            if (empty($startDate) && $merchant && $merchant->start_date) {
+                $startDate = $merchant->start_date;
+            }
+            
+            // Jika end_date tidak diisi, ambil dari merchant
+            if (empty($endDate) && $merchant && $merchant->end_date) {
+                $endDate = $merchant->end_date;
+            }
+            
+            // Validasi: start_date keyword tidak boleh lebih awal dari start_date merchant
+            if ($startDate && $merchant && $merchant->start_date) {
+                if ($startDate < $merchant->start_date) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['start_date' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'])->withInput();
+                }
+            }
+            
+            // Validasi: end_date keyword tidak boleh melebihi end_date merchant
+            if ($endDate && $merchant && $merchant->end_date) {
+                if ($endDate > $merchant->end_date) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['end_date' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'])->withInput();
+                }
+            }
 
             // Handle image upload
             $imagePath = null;
@@ -403,7 +441,7 @@ class KeywordController extends Controller
                 'skb'               => 'nullable|string',
                 'start_date'        => 'nullable|date_format:Y-m-d',
                 'end_date'          => 'nullable|date_format:Y-m-d',
-                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp',
                 'stock'             => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
@@ -496,6 +534,47 @@ class KeywordController extends Controller
                 $diamondAmount = (int) $request->diamond_amount;
             }
 
+            // Handle dates - auto-fill dari merchant jika tidak diisi
+            $merchant = Merchant::find($request->merchant_key);
+            $startDate = $request->start_date ?? $keyword->start_date;
+            $endDate = $request->end_date ?? $keyword->end_date;
+            
+            // Jika start_date tidak diisi, ambil dari merchant
+            if (empty($startDate) && $merchant && $merchant->start_date) {
+                $startDate = $merchant->start_date;
+            }
+            
+            // Jika end_date tidak diisi, ambil dari merchant
+            if (empty($endDate) && $merchant && $merchant->end_date) {
+                $endDate = $merchant->end_date;
+            }
+            
+            // Validasi: start_date keyword tidak boleh lebih awal dari start_date merchant
+            if ($startDate && $merchant && $merchant->start_date) {
+                if ($startDate < $merchant->start_date) {
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['start_date' => 'Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' . $merchant->start_date . ')'])->withInput();
+                }
+            }
+            
+            // Validasi: end_date keyword tidak boleh melebihi end_date merchant
+            if ($endDate && $merchant && $merchant->end_date) {
+                if ($endDate > $merchant->end_date) {
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'
+                        ], 422);
+                    }
+                    return back()->withErrors(['end_date' => 'Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' . $merchant->end_date . ')'])->withInput();
+                }
+            }
+
             // Handle image upload
             if ($request->hasFile('image')) {
                 // Delete old image if exists
@@ -524,8 +603,8 @@ class KeywordController extends Controller
                 'subsidy_amount'=> $subsidyAmount,
                 'diamond_amount'=> $diamondAmount,
                 'skb'           => $request->skb,
-                'start_date'    => $request->start_date,
-                'end_date'      => $request->end_date,
+                'start_date'    => $startDate,
+                'end_date'      => $endDate,
                 'image'         => $imagePath,
                 'stock'         => $request->stock,
                 'status'        => $status,
@@ -778,9 +857,46 @@ class KeywordController extends Controller
             $query->whereDate('created_at', $date);
         }
         
-        // Order by id desc - menampilkan semua keyword approved tanpa batasan
+        // Sorting
+        $sortBy = $request->get('sort_by');
+        $sortOrder = $request->get('sort_order', 'asc');
+        
+        if ($sortBy === 'no') {
+            // Sort by ID: asc = smallest first (1, 2, 3...), desc = largest first (...3, 2, 1)
+            $query->reorder();
+            $query->orderBy('keywords.id', $sortOrder);
+        } elseif ($sortBy === 'spesial_form') {
+            // Sort by is_special_promo: asc = false first, desc = true first
+            $query->orderBy('is_special_promo', $sortOrder);
+        } elseif ($sortBy === 'merchant') {
+            $query->leftJoin('merchants', 'keywords.merchant_key', '=', 'merchants.id')
+                  ->orderBy('merchants.nama_merchant', $sortOrder)
+                  ->select('keywords.*')
+                  ->groupBy('keywords.id');
+        } elseif ($sortBy === 'nama_produk') {
+            $query->orderBy('nama_produk', $sortOrder);
+        } elseif ($sortBy === 'keyword_id') {
+            $query->orderBy('keyword_id', $sortOrder);
+        } elseif ($sortBy === 'redeem') {
+            $query->orderBy('redeem', $sortOrder);
+        } elseif ($sortBy === 'diskon') {
+            $query->orderBy('diskon', $sortOrder);
+        } elseif ($sortBy === 'stock') {
+            // Arrow up (asc) = descending (paling banyak dulu), Arrow down (desc) = ascending (paling sedikit dulu)
+            $actualOrder = $sortOrder === 'asc' ? 'desc' : 'asc';
+            $query->orderBy('stock', $actualOrder);
+        } elseif ($sortBy === 'periode') {
+            // Arrow up (asc) = descending (terbaru dulu), Arrow down (desc) = ascending (terlama dulu)
+            $actualOrder = $sortOrder === 'asc' ? 'desc' : 'asc';
+            $query->orderBy('start_date', $actualOrder);
+            $query->orderBy('end_date', $actualOrder);
+        } else {
+            // Default: order by id desc
+            $query->orderBy('id', 'desc');
+        }
+        
         // Pagination 10 per page, tapi semua data akan muncul di halaman-halaman berikutnya
-        $keywords = $query->orderBy('id', 'desc')->paginate(10);
+        $keywords = $query->paginate(10)->withQueryString();
         
         // Hitung jumlah keyword yang sudah aktif sebagai spesial promo
         $activeSpecialPromoCount = Keyword::where('is_special_promo', 1)

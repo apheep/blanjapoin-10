@@ -236,6 +236,16 @@ function selectDateUpload(day) {
     const dateValue = formatDateForInputUpload(selectedDate);
     
     if (uploadCalendarState.activeType === 'start') {
+        // Validasi: start_date tidak boleh lebih awal dari merchant start_date
+        if (window.fixedMerchantStartDate) {
+            const merchantStartDate = new Date(window.fixedMerchantStartDate);
+            merchantStartDate.setHours(0, 0, 0, 0);
+            if (selectedDate < merchantStartDate) {
+                alert('Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' + formatDateDisplayUpload(merchantStartDate) + ')');
+                return;
+            }
+        }
+        
         uploadCalendarState.startDate = selectedDate;
         document.getElementById('startDateUpload').value = formattedDate;
         
@@ -263,6 +273,17 @@ function selectDateUpload(day) {
             alert('Tanggal akhir tidak boleh sebelum tanggal mulai');
             return;
         }
+        
+        // Validasi: end_date tidak boleh melebihi merchant end_date
+        if (window.fixedMerchantEndDate) {
+            const merchantEndDate = new Date(window.fixedMerchantEndDate);
+            merchantEndDate.setHours(0, 0, 0, 0);
+            if (selectedDate > merchantEndDate) {
+                alert('Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' + formatDateDisplayUpload(merchantEndDate) + ')');
+                return;
+            }
+        }
+        
         // Also check if end date is before today
         if (selectedDate.getTime() < today.getTime()) {
             return;
@@ -395,6 +416,17 @@ function validateDateInput(input, type) {
     
     // Update state and hidden input
     if (type === 'start') {
+        // Validasi: start_date tidak boleh lebih awal dari merchant start_date
+        if (window.fixedMerchantStartDate) {
+            const merchantStartDate = new Date(window.fixedMerchantStartDate);
+            merchantStartDate.setHours(0, 0, 0, 0);
+            if (date < merchantStartDate) {
+                input.classList.add('border-red-500');
+                alert('Tanggal mulai keyword tidak boleh lebih awal dari tanggal mulai periode merchant (' + formatDateDisplayUpload(merchantStartDate) + ')');
+                return;
+            }
+        }
+        
         uploadCalendarState.startDate = date;
         let hiddenInput = document.getElementById('startDateHiddenUpload');
         if (!hiddenInput) {
@@ -419,6 +451,18 @@ function validateDateInput(input, type) {
             alert('Tanggal akhir tidak boleh sebelum tanggal mulai');
             return;
         }
+        
+        // Validasi: end_date tidak boleh melebihi merchant end_date
+        if (window.fixedMerchantEndDate) {
+            const merchantEndDate = new Date(window.fixedMerchantEndDate);
+            merchantEndDate.setHours(0, 0, 0, 0);
+            if (date > merchantEndDate) {
+                input.classList.add('border-red-500');
+                alert('Tanggal akhir keyword tidak boleh melebihi tanggal akhir periode merchant (' + formatDateDisplayUpload(merchantEndDate) + ')');
+                return;
+            }
+        }
+        
         uploadCalendarState.endDate = date;
         let hiddenInput = document.getElementById('endDateHiddenUpload');
         if (!hiddenInput) {
