@@ -630,6 +630,7 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Get iklans - prioritize merchant-specific banner, fallback to general
         // Ambil keywords dari merchant ini untuk section kategori (filter berdasarkan kategori keyword)
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
@@ -642,12 +643,36 @@ class MerchantController extends Controller
 
         // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
         // Use orderBy('order', 'asc') to respect admin-configured order
-        $iklans = Iklan::whereNull('territorial')
+        // Check both merchant_key (legacy) and merchant_keys JSON array
+        $specificIklans = Iklan::where(function($query) use ($merchant) {
+                $query->where('merchant_key', $merchant->id)
+                      ->orWhereJsonContains('merchant_keys', $merchant->id);
+            })
+            ->whereNull('territorial')
             ->whereNull('regional')
             ->whereNull('branch')
             ->whereNull('cluster')
             ->orderBy('order', 'asc')
             ->get();
+        
+        // If specific merchant iklans found, use them. Otherwise, use general iklans
+        if ($specificIklans->isNotEmpty()) {
+            $iklans = $specificIklans;
+        } else {
+            // Get general iklans (all location fields are null and merchant_key/merchant_keys are null or empty)
+            $iklans = Iklan::whereNull('territorial')
+                ->whereNull('regional')
+                ->whereNull('branch')
+                ->whereNull('cluster')
+                ->whereNull('merchant_key')
+                ->where(function($query) {
+                    $query->whereNull('merchant_keys')
+                          ->orWhere('merchant_keys', '[]')
+                          ->orWhere('merchant_keys', '');
+                })
+                ->orderBy('order', 'asc')
+                ->get();
+        }
 
         return view('link-pelanggan', [
             'merchant' => $merchant,

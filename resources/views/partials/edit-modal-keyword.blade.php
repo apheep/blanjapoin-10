@@ -68,6 +68,12 @@
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-amber-100 hover:to-yellow-100 hover:text-amber-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('merchandise')">
                                             Merchandise
                                         </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-pink-100 hover:text-red-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_video')">
+                                            Paket Video
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-violet-100 hover:to-purple-100 hover:text-violet-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_games')">
+                                            Paket games
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -874,7 +880,9 @@ function selectEditKeywordKategori(value) {
             'belanja': 'Belanja',
             'kecantikan': 'Kecantikan',
             'telkomsel': 'Telkomsel Paket',
-            'merchandise': 'Merchandise'
+            'merchandise': 'Merchandise',
+            'paket_video': 'Paket Video',
+            'paket_games': 'Paket games'
         };
         labelSpan.textContent = labelMap[value] || value.charAt(0).toUpperCase() + value.slice(1);
     }
@@ -889,7 +897,9 @@ function selectEditKeywordKategori(value) {
             'belanja': ['border-green-300', 'text-green-800', 'from-green-100', 'to-emerald-100'],
             'kecantikan': ['border-pink-300', 'text-pink-800', 'from-pink-100', 'to-rose-100'],
             'telkomsel': ['border-indigo-300', 'text-indigo-800', 'from-indigo-100', 'to-blue-100'],
-            'merchandise': ['border-amber-300', 'text-amber-800', 'from-amber-100', 'to-yellow-100']
+            'merchandise': ['border-amber-300', 'text-amber-800', 'from-amber-100', 'to-yellow-100'],
+            'paket_video': ['border-red-300', 'text-red-800', 'from-red-100', 'to-pink-100'],
+            'paket_games': ['border-violet-300', 'text-violet-800', 'from-violet-100', 'to-purple-100']
         };
         
         const colors = colorMap[value] || ['border-gray-300', 'text-gray-700'];

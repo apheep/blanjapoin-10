@@ -157,7 +157,9 @@
                                         'belanja' => 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300',
                                         'kecantikan' => 'bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 border-pink-300',
                                         'telkomsel' => 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-800 border-indigo-300',
-                                        'merchandise' => 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-300'
+                                        'merchandise' => 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-300',
+                                        'paket_video' => 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300',
+                                        'paket_games' => 'bg-gradient-to-r from-violet-100 to-purple-100 text-violet-800 border-violet-300'
                                     ];
                                     $kategoriLabel = [
                                         'kuliner' => 'Kuliner',
@@ -166,7 +168,9 @@
                                         'belanja' => 'Belanja',
                                         'kecantikan' => 'Kecantikan',
                                         'telkomsel' => 'Telkomsel Paket',
-                                        'merchandise' => 'Merchandise'
+                                        'merchandise' => 'Merchandise',
+                                        'paket_video' => 'Paket Video',
+                                        'paket_games' => 'Paket games'
                                     ];
                                     $color = $kategoriColors[strtolower($keyword->kategori_keyword)] ?? 'bg-gray-100 text-gray-800 border-gray-300';
                                     $label = $kategoriLabel[strtolower($keyword->kategori_keyword)] ?? ucfirst($keyword->kategori_keyword);
@@ -274,17 +278,57 @@
                 @endif
 
                 {{-- Pagination Elements --}}
-                @foreach ($keywordPaginator->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
-                    @if ($page == $keywordPaginator->currentPage())
-                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                @php
+                    $current = $keywordPaginator->currentPage();
+                    $last    = $keywordPaginator->lastPage();
+
+                    $range = 2; // kiri/kanan dari current
+
+                    $start = max(1, $current - $range);
+                    $end   = min($last, $current + $range);
+                @endphp
+
+                {{-- First Page (muncul hanya kalau window tidak mulai dari 1) --}}
+                @if ($start > 1)
+                    <a href="{{ $keywordPaginator->url(1) }}"
+                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        1
+                    </a>
+                @endif
+
+                {{-- Left Ellipsis --}}
+                @if ($start > 2)
+                    <span class="px-2 text-gray-400">…</span>
+                @endif
+
+                {{-- Middle Pages --}}
+                @for ($page = $start; $page <= $end; $page++)
+                    @if ($page == $current)
+                        <button disabled
+                                class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                             {{ $page }}
                         </button>
                     @else
-                        <a href="{{ $url }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <a href="{{ $keywordPaginator->url($page) }}"
+                        class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                             {{ $page }}
                         </a>
                     @endif
-                @endforeach
+                @endfor
+
+                {{-- Right Ellipsis --}}
+                @if ($end < $last - 1)
+                    <span class="px-2 text-gray-400">…</span>
+                @endif
+
+                {{-- Last Page (muncul hanya kalau window tidak berakhir di last) --}}
+                @if ($end < $last)
+                    <a href="{{ $keywordPaginator->url($last) }}"
+                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        {{ $last }}
+                    </a>
+                @endif
+
 
                 {{-- Next Page Link --}}
                 @if ($keywordPaginator->hasMorePages())
