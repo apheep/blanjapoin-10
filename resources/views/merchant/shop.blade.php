@@ -5,7 +5,9 @@
      @php
        $shopCategory = 'belanja';
        $shopKeywords = $keywords->filter(function ($keyword) use ($shopCategory) {
-       return $keyword->merchant && $keyword->merchant->kategori === $shopCategory
+       // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
+       $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+       return $keyword->merchant && $keywordCategory === $shopCategory
        && $keyword->status === 'approve'
        && $keyword->is_active == 1
        && $keyword->merchant->is_active == 1;
@@ -177,8 +179,8 @@
        </div>
       </article>
       @empty
-      <div class="col-span-3 text-center text-neutral-500 text-sm py-6">
-       Belum ada data promo untuk kategori ini.
+      <div class="col-span-10 text-center text-neutral-500 text-sm py-6">
+       Belum ada data promo untuk kategori Belanja.
       </div>
       @endforelse
      </div>

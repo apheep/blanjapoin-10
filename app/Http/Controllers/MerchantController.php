@@ -623,11 +623,21 @@ class MerchantController extends Controller
         }
 
         // Ambil semua voucher/keyword yang approved untuk merchant ini
-        $keywords = Keyword::with('merchant')
+        $merchantKeywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             ->where('status', 'approve')
             ->where('is_active', 1)
             ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Ambil keywords dari merchant ini untuk section kategori (filter berdasarkan kategori keyword)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
             ->get();
 
         // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
@@ -642,6 +652,7 @@ class MerchantController extends Controller
         return view('link-pelanggan', [
             'merchant' => $merchant,
             'keywords' => $keywords,
+            'merchantKeywords' => $merchantKeywords,
             'iklans' => $iklans,
         ]);
     }

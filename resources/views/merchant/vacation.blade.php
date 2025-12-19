@@ -6,7 +6,9 @@
  @php
   $vacationCategory = 'liburan';
   $vacationKeywords = $keywords->filter(function ($keyword) use ($vacationCategory) {
-   return $keyword->merchant && $keyword->merchant->kategori === $vacationCategory
+   // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
+   $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+   return $keyword->merchant && $keywordCategory === $vacationCategory
     && $keyword->status === 'approve'
     && $keyword->is_active == 1
     && $keyword->merchant->is_active == 1;
@@ -178,8 +180,8 @@
    </div>
   </article>
   @empty
-  <div class="col-span-2 text-center text-neutral-500 text-sm py-6">
-   Belum ada data promo untuk kategori Vacation.
+  <div class="col-span-10 text-center text-neutral-500 text-sm py-6">
+   Belum ada data promo untuk kategori Liburan.
   </div>
   @endforelse
  </div>
