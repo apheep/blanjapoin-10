@@ -197,13 +197,17 @@
                     </label>
                     <label class="block hidden" id="merchantLabel">
                         <span class="text-sm font-semibold text-neutral-700">Pilih Merchant/Program</span>
-                        <div id="merchantContainer" class="mt-2 space-y-3">
-                            <!-- Merchant selection items will be added here dynamically -->
+                        <div id="selectedMerchantsDisplay" class="mt-2 mb-2 space-y-2">
+                            <!-- Selected merchants will be displayed here -->
                         </div>
-                        <button type="button" id="addMerchantBtn" class="mt-2 w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 transition">
-                            <i class="fas fa-plus text-xs"></i>
-                            <span>Tambah Merchant/Program</span>
+                        <button type="button" id="openMerchantModalBtn" class="mt-2 w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-xl hover:bg-orange-100 transition">
+                            <i class="fas fa-check-square text-xs"></i>
+                            <span>Pilih Merchant/Program</span>
                         </button>
+                        <!-- Hidden inputs for form submission -->
+                        <div id="merchantHiddenInputs" class="hidden">
+                            <!-- Hidden inputs will be added here dynamically -->
+                        </div>
                     </label>
                     <button type="button" id="openConfirmModal" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-neutral-900 text-white font-semibold hover:bg-neutral-800 transition">
                         Simpan Iklan
@@ -407,23 +411,23 @@
                                         </span>
                                     @elseif ($locationType === 'merchant')
                                         @if ($locationRoute)
-                                            <a href="{{ $locationRoute }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-50 text-pink-600 hover:bg-pink-100 transition font-medium">
-                                                <span class="whitespace-nowrap">{{ $locationDisplay }} - {{ $locationName }}</span>
+                                            <a href="{{ $locationRoute }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-50 text-pink-600 hover:bg-pink-100 transition font-medium max-w-[200px] md:max-w-[300px]" title="{{ $locationDisplay }} - {{ $locationName }}">
+                                                <span class="truncate">{{ $locationDisplay }} - {{ $locationName }}</span>
                                                 <i class="fas fa-external-link-alt text-[10px] flex-shrink-0"></i>
                                             </a>
                                         @else
-                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-50 text-pink-600 font-medium">
-                                                <span class="whitespace-nowrap">{{ $locationDisplay }} - {{ $locationName }}</span>
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-50 text-pink-600 font-medium max-w-[200px] md:max-w-[300px]" title="{{ $locationDisplay }} - {{ $locationName }}">
+                                                <span class="truncate">{{ $locationDisplay }} - {{ $locationName }}</span>
                                             </span>
                                         @endif
                                     @else
-                                        <a href="{{ $locationRoute }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg 
+                                        <a href="{{ $locationRoute }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg max-w-[200px] md:max-w-[300px]
                                             @if($locationType === 'territorial') bg-orange-50 text-orange-600 hover:bg-orange-100
                                             @elseif($locationType === 'regional') bg-blue-50 text-blue-600 hover:bg-blue-100
                                             @elseif($locationType === 'branch') bg-purple-50 text-purple-600 hover:bg-purple-100
                                             @elseif($locationType === 'cluster') bg-green-50 text-green-600 hover:bg-green-100
-                                            @endif transition font-medium">
-                                            <span class="whitespace-nowrap">{{ $locationDisplay }} - {{ $locationName }}</span>
+                                            @endif transition font-medium" title="{{ $locationDisplay }} - {{ $locationName }}">
+                                            <span class="truncate">{{ $locationDisplay }} - {{ $locationName }}</span>
                                             <i class="fas fa-external-link-alt text-[10px] flex-shrink-0"></i>
                                         </a>
                                     @endif
@@ -511,6 +515,45 @@
     </div>
 </div>
 
+<div id="merchantSelectionModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
+    <div id="merchantModalContent" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] transform transition-all duration-300 scale-95 opacity-0 flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center">
+                <div class="w-10 h-10 mr-4 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 flex items-center justify-center">
+                    <i class="fas fa-check-square text-orange-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-neutral-900">Pilih Merchant/Program</h3>
+                    <p class="text-sm text-neutral-500">Pilih satu atau lebih merchant/program</p>
+                </div>
+            </div>
+            <button type="button" class="text-neutral-400 hover:text-neutral-600 transition" data-close-merchant-modal>
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto flex-1">
+            <div class="mb-4">
+                <input type="text" id="merchantSearchInput" placeholder="Cari merchant/program..." class="w-full px-4 py-2 text-sm border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+            </div>
+            <div id="merchantChecklistContainer" class="space-y-2">
+                <!-- Merchant checkboxes will be added here dynamically -->
+            </div>
+            <div id="merchantNoResults" class="hidden text-center py-8">
+                <p class="text-sm text-neutral-500">Tidak ada merchant/program ditemukan</p>
+            </div>
+        </div>
+        <div class="flex items-center justify-between px-6 py-4 bg-neutral-50 rounded-b-2xl border-t border-neutral-100 flex-shrink-0">
+            <div class="text-sm text-neutral-600">
+                <span id="selectedCount">0</span> merchant/program dipilih
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" data-close-merchant-modal class="px-4 py-2 text-sm font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-100 transition">Batal</button>
+                <button type="button" id="confirmMerchantSelectionBtn" class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-rose-500 rounded-lg hover:shadow-lg transition">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Script khusus halaman iklan
 // Merchant data for multiple selection
@@ -562,10 +605,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const clusterInput = document.getElementById('clusterInput');
 
     // Multiple merchant selection variables (must be declared before showLocationDropdown)
-    let merchantCounter = 0;
-    const merchantContainer = document.getElementById('merchantContainer');
-    const addMerchantBtn = document.getElementById('addMerchantBtn');
     const merchantsData = window.merchantsData || [];
+    const merchantModal = document.getElementById('merchantSelectionModal');
+    const merchantModalContent = document.getElementById('merchantModalContent');
+    const openMerchantModalBtn = document.getElementById('openMerchantModalBtn');
+    const merchantChecklistContainer = document.getElementById('merchantChecklistContainer');
+    const merchantSearchInput = document.getElementById('merchantSearchInput');
+    const selectedMerchantsDisplay = document.getElementById('selectedMerchantsDisplay');
+    const merchantHiddenInputs = document.getElementById('merchantHiddenInputs');
+    const confirmMerchantSelectionBtn = document.getElementById('confirmMerchantSelectionBtn');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const closeMerchantModalButtons = document.querySelectorAll('[data-close-merchant-modal]');
+    
+    let selectedMerchants = []; // Store selected merchant IDs
 
     function showLocationDropdown(type) {
         // Hide all dropdowns first
@@ -581,11 +633,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (branchInput) branchInput.value = '';
         if (clusterInput) clusterInput.value = '';
         
-        // Clear merchant container
-        if (merchantContainer) {
-            merchantContainer.innerHTML = '';
+        // Clear merchant selection only if switching away from merchant type
+        if (type !== 'merchant') {
+            selectedMerchants = [];
+            updateMerchantDisplay();
+            updateMerchantHiddenInputs();
         }
-        merchantCounter = 0;
 
         // Show selected dropdown (skip if general)
         if (type === 'territorial') {
@@ -598,10 +651,6 @@ document.addEventListener('DOMContentLoaded', function () {
             clusterLabel?.classList.remove('hidden');
         } else if (type === 'merchant') {
             merchantLabel?.classList.remove('hidden');
-            // Add first merchant selection when merchant type is selected
-            if (merchantContainer) {
-                createMerchantSelection(merchantCounter++);
-            }
         }
         // If type is 'general' or empty, all dropdowns stay hidden
     }
@@ -613,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const hasOldRegional = regionalInput && regionalInput.value !== '';
         const hasOldBranch = branchInput && branchInput.value !== '';
         const hasOldCluster = clusterInput && clusterInput.value !== '';
-        const hasOldMerchant = document.querySelector('select[name="merchant_keys[]"]') && document.querySelector('select[name="merchant_keys[]"]').value !== '';
+        const hasOldMerchant = document.querySelector('input[name="merchant_keys[]"]') && document.querySelector('input[name="merchant_keys[]"]').value !== '';
 
         // Determine location type from old values or from locationTypeInput itself
         let locationType = locationTypeInput.value;
@@ -777,15 +826,10 @@ document.addEventListener('DOMContentLoaded', function () {
             clickedInside = true;
         }
         
-        // Check merchant dropdowns (multiple)
-        const merchantDropdowns = document.querySelectorAll('[id^="merchantDropdown_"]');
-        const merchantButtons = document.querySelectorAll('[id^="merchantBtn_"]');
-        merchantDropdowns.forEach(dropdown => {
-            if (dropdown.contains(e.target)) clickedInside = true;
-        });
-        merchantButtons.forEach(button => {
-            if (button.contains(e.target)) clickedInside = true;
-        });
+        // Check merchant modal
+        if (merchantModal && merchantModal.contains(e.target)) {
+            clickedInside = true;
+        }
         
         // Only close if clicked outside all dropdowns
         // Don't close if the click was on a button that opens a dropdown
@@ -852,11 +896,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const dropdown = document.getElementById(id);
             if (dropdown) dropdown.classList.add('hidden');
         });
-        
-        // Close all merchant dropdowns (multiple)
-        document.querySelectorAll('[id^="merchantDropdown_"]').forEach(dropdown => {
-            dropdown.classList.add('hidden');
-        });
     }
 
     // Initialize all searchable dropdowns
@@ -866,63 +905,181 @@ document.addEventListener('DOMContentLoaded', function () {
     initSearchableDropdown('branchInput', 'branchBtn', 'branchText', 'branchDropdown', 'branchSearch', 'branchOptions', 'branch-option');
     initSearchableDropdown('clusterInput', 'clusterBtn', 'clusterText', 'clusterDropdown', 'clusterSearch', 'clusterOptions', 'cluster-option');
     
-    // Multiple merchant selection functionality (merchantCounter already declared above)
-    function createMerchantSelection(index) {
-        const merchantItem = document.createElement('div');
-        merchantItem.className = 'merchant-selection-item relative';
-        merchantItem.dataset.index = index;
+    // Merchant modal functionality
+    function renderMerchantChecklist(searchTerm = '') {
+        if (!merchantChecklistContainer) return;
         
-        merchantItem.innerHTML = `
-            <div class="flex items-center gap-2">
-                <div class="flex-1 relative">
-                    <select id="merchantInput_${index}" name="merchant_keys[]" class="hidden">
-                        <option value="">-- Pilih Merchant/Program --</option>
-                        ${merchantsData.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
-                    </select>
-                    <button type="button" id="merchantBtn_${index}" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
-                        <span id="merchantText_${index}">-- Pilih Merchant/Program --</span>
-                        <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
-                    </button>
-                    <div id="merchantDropdown_${index}" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
-                        <div class="p-2 border-b border-neutral-100">
-                            <input type="text" id="merchantSearch_${index}" placeholder="Cari merchant/program..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
-                        </div>
-                        <div id="merchantOptions_${index}" class="overflow-y-auto max-h-48">
-                            <div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Merchant/Program --</div>
-                            ${merchantsData.map(m => `<div class="merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="${m.id}">${m.name}</div>`).join('')}
-                        </div>
-                    </div>
-                </div>
-                ${index > 0 ? `<button type="button" class="remove-merchant-btn inline-flex items-center justify-center w-10 h-10 rounded-xl text-rose-600 hover:bg-rose-50 transition" title="Hapus">
-                    <i class="fas fa-times"></i>
-                </button>` : ''}
-            </div>
-        `;
+        const term = searchTerm.toLowerCase().trim();
+        const merchantNoResults = document.getElementById('merchantNoResults');
+        let visibleCount = 0;
         
-        merchantContainer.appendChild(merchantItem);
+        merchantChecklistContainer.innerHTML = '';
         
-        // Initialize searchable dropdown for this merchant selection
-        initSearchableDropdown(`merchantInput_${index}`, `merchantBtn_${index}`, `merchantText_${index}`, `merchantDropdown_${index}`, `merchantSearch_${index}`, `merchantOptions_${index}`, 'merchant-option');
+        merchantsData.forEach(merchant => {
+            const merchantName = merchant.name.toLowerCase();
+            const isVisible = term === '' || merchantName.includes(term);
+            
+            if (isVisible) {
+                visibleCount++;
+                const isChecked = selectedMerchants.includes(merchant.id);
+                const checkboxItem = document.createElement('label');
+                checkboxItem.className = 'flex items-center gap-3 p-3 rounded-xl border border-neutral-200 hover:bg-neutral-50 hover:border-orange-300 cursor-pointer transition';
+                checkboxItem.innerHTML = `
+                    <input type="checkbox" 
+                           class="w-5 h-5 text-orange-600 border-neutral-300 rounded focus:ring-orange-500 focus:ring-2 cursor-pointer" 
+                           value="${merchant.id}"
+                           ${isChecked ? 'checked' : ''}>
+                    <span class="flex-1 text-sm font-medium text-neutral-700">${merchant.name}</span>
+                `;
+                
+                checkboxItem.querySelector('input').addEventListener('change', function() {
+                    if (this.checked) {
+                        if (!selectedMerchants.includes(merchant.id)) {
+                            selectedMerchants.push(merchant.id);
+                        }
+                    } else {
+                        selectedMerchants = selectedMerchants.filter(id => id !== merchant.id);
+                    }
+                    updateSelectedCount();
+                });
+                
+                merchantChecklistContainer.appendChild(checkboxItem);
+            }
+        });
         
-        // Add remove button functionality
-        const removeBtn = merchantItem.querySelector('.remove-merchant-btn');
-        if (removeBtn) {
-            removeBtn.addEventListener('click', function() {
-                merchantItem.remove();
-            });
+        // Show/hide no results message
+        if (visibleCount === 0 && term !== '') {
+            if (merchantNoResults) {
+                merchantNoResults.classList.remove('hidden');
+            }
+        } else {
+            if (merchantNoResults) {
+                merchantNoResults.classList.add('hidden');
+            }
         }
     }
     
-    // Add first merchant selection when merchant label is shown
-    if (addMerchantBtn) {
-        addMerchantBtn.addEventListener('click', function() {
-            createMerchantSelection(merchantCounter++);
+    function updateSelectedCount() {
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = selectedMerchants.length;
+        }
+    }
+    
+    function updateMerchantDisplay() {
+        if (!selectedMerchantsDisplay) return;
+        
+        selectedMerchantsDisplay.innerHTML = '';
+        
+        if (selectedMerchants.length === 0) {
+            return;
+        }
+        
+        selectedMerchants.forEach(merchantId => {
+            const merchant = merchantsData.find(m => m.id == merchantId);
+            if (merchant) {
+                const merchantTag = document.createElement('div');
+                merchantTag.className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-sm text-orange-700';
+                merchantTag.innerHTML = `
+                    <span>${merchant.name}</span>
+                    <button type="button" class="remove-merchant-tag text-orange-600 hover:text-orange-800" data-merchant-id="${merchant.id}">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                
+                merchantTag.querySelector('.remove-merchant-tag').addEventListener('click', function() {
+                    selectedMerchants = selectedMerchants.filter(id => id != merchantId);
+                    updateMerchantDisplay();
+                    updateMerchantHiddenInputs();
+                    updateSelectedCount();
+                });
+                
+                selectedMerchantsDisplay.appendChild(merchantTag);
+            }
         });
     }
     
-    // Initialize with one merchant selection if merchant type is selected
-    if (merchantLabel && !merchantLabel.classList.contains('hidden')) {
-        createMerchantSelection(merchantCounter++);
+    function updateMerchantHiddenInputs() {
+        if (!merchantHiddenInputs) return;
+        
+        merchantHiddenInputs.innerHTML = '';
+        
+        selectedMerchants.forEach(merchantId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'merchant_keys[]';
+            input.value = merchantId;
+            merchantHiddenInputs.appendChild(input);
+        });
+    }
+    
+    function openMerchantModal() {
+        if (!merchantModal || !merchantModalContent) return;
+        
+        // Render checklist with current selections
+        renderMerchantChecklist(merchantSearchInput?.value || '');
+        updateSelectedCount();
+        
+        merchantModal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            merchantModalContent.classList.remove('scale-95', 'opacity-0');
+            merchantModalContent.classList.add('scale-100', 'opacity-100');
+        });
+    }
+    
+    function closeMerchantModal() {
+        if (!merchantModal || !merchantModalContent) return;
+        
+        merchantModalContent.classList.remove('scale-100', 'opacity-100');
+        merchantModalContent.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            merchantModal.classList.add('hidden');
+            if (merchantSearchInput) {
+                merchantSearchInput.value = '';
+            }
+        }, 250);
+    }
+    
+    // Event listeners for merchant modal
+    if (openMerchantModalBtn) {
+        openMerchantModalBtn.addEventListener('click', openMerchantModal);
+    }
+    
+    if (confirmMerchantSelectionBtn) {
+        confirmMerchantSelectionBtn.addEventListener('click', () => {
+            updateMerchantDisplay();
+            updateMerchantHiddenInputs();
+            closeMerchantModal();
+        });
+    }
+    
+    closeMerchantModalButtons.forEach(btn => {
+        btn.addEventListener('click', closeMerchantModal);
+    });
+    
+    if (merchantModal) {
+        merchantModal.addEventListener('click', (event) => {
+            if (event.target === merchantModal) {
+                closeMerchantModal();
+            }
+        });
+    }
+    
+    if (merchantSearchInput) {
+        merchantSearchInput.addEventListener('input', (e) => {
+            renderMerchantChecklist(e.target.value);
+        });
+    }
+    
+    // Initialize merchant display on page load if there are old values
+    const oldMerchantInputs = document.querySelectorAll('input[name="merchant_keys[]"]');
+    if (oldMerchantInputs.length > 0) {
+        oldMerchantInputs.forEach(input => {
+            if (input.value) {
+                selectedMerchants.push(parseInt(input.value));
+            }
+        });
+        updateMerchantDisplay();
+        updateMerchantHiddenInputs();
     }
 
     // Update button text on page load for location-specific dropdowns
@@ -955,14 +1112,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (selectedOption) clusterText.textContent = selectedOption.textContent;
         }
 
-        // Update merchant dropdowns (multiple)
-        document.querySelectorAll('select[name="merchant_keys[]"]').forEach((select, index) => {
-            const textSpan = document.getElementById(`merchantText_${index}`);
-            if (select && textSpan && select.value) {
-                const selectedOption = select.options[select.selectedIndex];
-                if (selectedOption) textSpan.textContent = selectedOption.textContent;
-            }
-        });
     }
     updateDropdownTexts();
 
@@ -1024,10 +1173,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 clusterInput.value = '';
             }
             if (locationType !== 'merchant') {
-                if (merchantContainer) {
-                    merchantContainer.innerHTML = '';
-                }
-                merchantCounter = 0;
+                selectedMerchants = [];
+                updateMerchantDisplay();
+                updateMerchantHiddenInputs();
             }
             // If general or no location type selected, clear all
             if (!locationType || locationType === '' || locationType === 'general') {
@@ -1035,10 +1183,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (regionalInput) regionalInput.value = '';
                 if (branchInput) branchInput.value = '';
                 if (clusterInput) clusterInput.value = '';
-                if (merchantContainer) {
-                    merchantContainer.innerHTML = '';
-                }
-                merchantCounter = 0;
+                selectedMerchants = [];
+                updateMerchantDisplay();
+                updateMerchantHiddenInputs();
             }
             
             closeModal(uploadModal, uploadModalContent);
