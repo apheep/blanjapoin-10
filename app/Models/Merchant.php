@@ -31,6 +31,8 @@ class Merchant extends Model
         'detail_daerah',
         'link_gmap',
         'is_active',
+        'start_date',
+        'end_date',
     ];
 
     // Jangan cast lat dan long, biarkan sebagai string/decimal dari database
