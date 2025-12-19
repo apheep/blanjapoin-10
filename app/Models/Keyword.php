@@ -14,6 +14,7 @@ class Keyword extends Model
 
     protected $fillable = [
         'merchant_key',
+        'kategori_keyword',
         'nama_produk',
         'keyword_id',
         'cta_link',
