@@ -21,6 +21,15 @@ class Iklan extends Model
         'regional',
         'branch',
         'cluster',
+        'merchant_key',
         'order',
     ];
+
+    /**
+     * Get the merchant that owns the iklan.
+     */
+    public function merchant()
+    {
+        return $this->belongsTo(Merchant::class, 'merchant_key', 'id');
+    }
 }
