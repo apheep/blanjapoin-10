@@ -39,7 +39,7 @@
 
                 <div class="flex flex-wrap items-start justify-between gap-4 pl-1 mt-10 md:mt-12">
                 <div>
-                    <h1 class="text-2xl sm:text-2xl font-bold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{{ $merchant->nama_merchant }}</h1>
                 </div>
             </div>
 
