@@ -235,32 +235,32 @@
     </section>
 
     <!-- shop Section -->
-    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="shopSection">
+    <div id="shopSection">
      @include('merchant.shop')
     </div>
  
     <!-- food Section -->
-    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="foodSection">
+    <div id="foodSection">
      @include('merchant.food')
     </div>
  
     <!-- telkomsel Section -->
-    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="telkomselSection">
+    <div id="telkomselSection">
      @include('merchant.telkomsel')
     </div>
  
     <!-- entertain Section -->
-    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="entertainSection">
+    <div id="entertainSection">
      @include('merchant.entertain')
     </div>
  
     <!-- vacation Section -->
-    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-100" id="vacationSection">
+    <div id="vacationSection">
      @include('merchant.vacation')
     </div>
  
     <!-- beauty Section -->
-    <div class="opacity-0 translate-y-4 transition-all duration-300 ease-out delay-350" id="beautySection">
+    <div id="beautySection">
      @include('merchant.beautyncare')
     </div>
    
@@ -334,17 +334,10 @@
      }
     }, 300);
     
-    // Animate sections with intersection observer
+    // Animate sections (category and search) with intersection observer
     const sections = [
-     'bannerSection',
      'categorySection', 
-     'searchSection',
-     'shopSection',
-     'foodSection',
-     'telkomselSection',
-     'entertainSection',
-     'vacationSection',
-     'beautySection'
+     'searchSection'
     ];
     
     const observerOptions = {
@@ -369,21 +362,12 @@
      }
     });
     
-    // Animate cards within sections with faster timing
-    const cardObserver = new IntersectionObserver((entries) => {
-     entries.forEach(entry => {
-      if (entry.isIntersecting) {
-       entry.target.style.opacity = '1';
-       entry.target.style.transform = 'translateY(0)';
-       cardObserver.unobserve(entry.target);
-      }
-     });
-    }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
-    
-    // Observe all cards
-    const cards = document.querySelectorAll('article[class*="opacity-0"]');
+    // Remove animation classes from all cards to make them visible immediately (no animation for cards)
+    const cards = document.querySelectorAll('[data-voucher-card="true"]');
     cards.forEach(card => {
-     cardObserver.observe(card);
+     card.classList.remove('opacity-0', 'translate-y-2');
+     card.style.opacity = '1';
+     card.style.transform = 'none';
     });
    });
 
@@ -1138,6 +1122,14 @@
 
    // Initialize filters and sorting after DOM is ready
    function initializeFiltersAndSorting() {
+    // Remove animation classes from all cards to make them visible immediately
+    const cards = document.querySelectorAll('[data-voucher-card="true"]');
+    cards.forEach(card => {
+     card.classList.remove('opacity-0', 'translate-y-2');
+     card.style.opacity = '1';
+     card.style.transform = 'none';
+    });
+    
     refreshVoucherCards();
     registerVoucherSections();
     applyPointSort(currentPointSort);
