@@ -237,17 +237,57 @@
                 @endif
 
                 {{-- Pagination Elements --}}
-                @foreach ($keywordPaginator->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
-                    @if ($page == $keywordPaginator->currentPage())
-                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                @php
+                    $current = $keywordPaginator->currentPage();
+                    $last    = $keywordPaginator->lastPage();
+
+                    $range = 2; // kiri/kanan dari current
+
+                    $start = max(1, $current - $range);
+                    $end   = min($last, $current + $range);
+                @endphp
+
+                {{-- First Page (muncul hanya kalau window tidak mulai dari 1) --}}
+                @if ($start > 1)
+                    <a href="{{ $keywordPaginator->url(1) }}"
+                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        1
+                    </a>
+                @endif
+
+                {{-- Left Ellipsis --}}
+                @if ($start > 2)
+                    <span class="px-2 text-gray-400">…</span>
+                @endif
+
+                {{-- Middle Pages --}}
+                @for ($page = $start; $page <= $end; $page++)
+                    @if ($page == $current)
+                        <button disabled
+                                class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                             {{ $page }}
                         </button>
                     @else
-                        <a href="{{ $url }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <a href="{{ $keywordPaginator->url($page) }}"
+                        class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                             {{ $page }}
                         </a>
                     @endif
-                @endforeach
+                @endfor
+
+                {{-- Right Ellipsis --}}
+                @if ($end < $last - 1)
+                    <span class="px-2 text-gray-400">…</span>
+                @endif
+
+                {{-- Last Page (muncul hanya kalau window tidak berakhir di last) --}}
+                @if ($end < $last)
+                    <a href="{{ $keywordPaginator->url($last) }}"
+                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        {{ $last }}
+                    </a>
+                @endif
+
 
                 {{-- Next Page Link --}}
                 @if ($keywordPaginator->hasMorePages())
