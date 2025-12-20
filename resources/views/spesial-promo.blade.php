@@ -12,7 +12,7 @@
     @include('partials.head')
 </head>
 <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen">
-    <nav id="navbar" class="sticky top-0 z-50 bg-white/80 backdrop-blur-sm transition-shadow duration-300 w-full">
+    {{-- <nav id="navbar" class="sticky top-0 z-50 bg-white/80 backdrop-blur-sm transition-shadow duration-300 w-full">
         <div class="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-10 py-4 md:py-5 lg:py-6">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -22,7 +22,7 @@
                 </div>
             </div>
         </div>
-    </nav>
+    </nav> --}}
 
     <style>
         .special-promo-card {

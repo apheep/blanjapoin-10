@@ -1,14 +1,14 @@
-<section id="section-entertain" class="mt-10 md:mt-14 mb-10 md:mb-14">
+<section id="section-paketgames" class="mt-10 md:mt-14 mb-10 md:mb-14">
     <div class="mb-4 md:mb-6 flex items-center justify-between">
-        <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🎬​ Hiburan</h2>
+        <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🎮 Paket Games</h2>
     </div>
 
     @php
-        $entertainCategory = 'hiburan';
-        $entertainKeywords = $keywords->filter(function ($keyword) use ($entertainCategory) {
+        $paketgamesCategory = 'paket games';
+        $paketgamesKeywords = $keywords->filter(function ($keyword) use ($paketgamesCategory) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-            return $keyword->merchant && $keywordCategory === $entertainCategory
+            return $keyword->merchant && strtolower($keywordCategory) === strtolower($paketgamesCategory)
                 && $keyword->status === 'approve'
                 && $keyword->is_active == 1
                 && $keyword->merchant->is_active == 1;
@@ -16,32 +16,24 @@
     @endphp
 
     <!-- All Cards -->
-    <div id="entertainCardContainer" data-voucher-container="true" data-voucher-section="entertain" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
-        @forelse($entertainKeywords as $keyword)
+    <div id="paketgamesCardContainer" data-voucher-container="true" data-voucher-section="paketgames" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
+        @forelse($paketgamesKeywords as $keyword)
             @php
                 $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
                 $productName = $keyword->nama_produk ?? '';
                 $locationName = extractKabupatenKota(optional($keyword->merchant)->daerah ?? '');
                 $searchName = strtolower(trim($merchantName . ' ' . $productName));
                 $searchLocation = strtolower($locationName);
-                $uniqueId = 'entertain-card-' . $keyword->id;
+                $uniqueId = 'paketgames-card-' . $keyword->id;
             @endphp
-            <article
-                id="{{ $uniqueId }}"
-                data-voucher-card="true"
-                data-search-name="{{ $searchName }}"
-                data-point="{{ (int) $keyword->redeem }}"
-                data-search-location="{{ $searchLocation }}"
-                class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]"
-            >
+            <article id="{{ $uniqueId }}" data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
                 <!-- Mobile Layout -->
                 <div class="lg:hidden flex flex-col h-full">
                     <div class="relative">
                         <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
+                            <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $keyword->nama_produk }}" class="w-full h-full object-cover" loading="lazy">
                         </div>
                     </div>
-
                     <div class="flex flex-col p-2.5 space-y-1 flex-1">
                         <h3 class="text-base font-bold text-neutral-900 leading-tight truncate">
                             {{ ($keyword->merchant)->nama_merchant}}
@@ -62,23 +54,20 @@
                             </div>
                             @endif
                             @if($keyword->skb)
-                            <button onclick="event.stopPropagation(); openEntertainDescriptionSheet({{ $keyword->id }}, {{ json_encode(($keyword->merchant)->nama_merchant) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-0.5 text-[9px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                            <button onclick="event.stopPropagation(); openTerritorialDescriptionSheet({{ $keyword->id }}, {{ json_encode(($keyword->merchant)->nama_merchant) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-0.5 text-[9px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
                                 Lihat Deskripsi
                             </button>
                             @endif
                         </div>
-
                         <div class="inline-flex items-center gap-1 bg-white rounded-full px-0.5 py-0.5 self-start">
                             <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[7px] font-bold shadow-sm">P</span>
                             <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
                         </div>
-
                         <div class="flex flex-col gap-0.5 pt-0.5 border-t border-neutral-100 mt-auto">
                             <div class="flex items-center gap-1 text-[9px] text-neutral-600">
                                 <span class="font-medium">Stock:</span>
                                 <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
                             </div>
-
                             @if($keyword->end_date)
                                 <div class="flex items-center gap-1 text-[9px] text-neutral-600">
                                     <span class="font-medium">Valid until:</span>
@@ -152,7 +141,7 @@
                         </p>
                         @endif
                         @if($keyword->skb)
-                        <button onclick="event.stopPropagation(); openEntertainDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-1.5 text-[10px] md:text-xs font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
+                        <button onclick="event.stopPropagation(); openTerritorialDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-1.5 text-[10px] md:text-xs font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
                             Lihat Deskripsi
                         </button>
                         @endif
@@ -192,94 +181,9 @@
             </article>
         @empty
             <div class="col-span-10 text-center text-neutral-500 text-sm py-6">
-                Belum ada data promo untuk kategori Hiburan.
+                Belum ada data promo untuk kategori Paket Games.
             </div>
         @endforelse
     </div>
-
-
-    <script>
-// Function to format SKB text - split numbered items into separate lines
-function formatSKB(text) {
- if (!text) return '';
- 
- // Check if text contains numbered items (1., 2., 3., etc.)
- const numberedPattern = /(\d+\.\s+)/g;
- const matches = text.match(numberedPattern);
- 
- if (matches && matches.length > 1) {
-  // Split by numbered patterns and format each item on a new line
-  const parts = text.split(/(\d+\.\s+)/);
-  let formatted = '';
-  
-  for (let i = 0; i < parts.length; i++) {
-   const part = parts[i];
-   if (!part.trim()) continue;
-   
-   // If this is a numbered item (like "1. "), add newline before it (except first)
-   if (part.match(numberedPattern)) {
-    if (i > 0 && formatted.trim()) {
-     formatted += '\n';
-    }
-    formatted += part;
-   } else {
-    // This is content, add it
-    formatted += part.trim();
-    // Add newline if next part is a numbered item
-    if (i < parts.length - 1 && parts[i + 1] && parts[i + 1].match(numberedPattern)) {
-     formatted += '\n';
-    }
-   }
-  }
-  
-  return formatted.trim();
- }
- 
- // If no numbered pattern found, preserve existing line breaks
- return text;
-}
-
-// Entertain Description Bottom Sheet Function
-function openEntertainDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
- const contentHTML = `
-  <div class="px-5 pb-6">
-   <div class="space-y-1">
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
-     <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
-    </div>
-    
-    ${productName ? `
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">Produk :</span>
-     <span class="text-sm text-neutral-900 ml-2">${productName}</span>
-    </div>
-    ` : ''}
-    
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">Promo :</span>
-     <span class="text-sm text-neutral-900 ml-2">${diskon || '-'}</span>
-    </div>
-    
-    ${skb ? `
-    <div>
-     <span class="text-sm font-semibold text-neutral-700">SKB :</span>
-     <div class="mt-0">
-      <div class="text-sm text-neutral-600 leading-none whitespace-pre-line break-words" style="line-height: 1.2;">
-       ${formatSKB(skb)}
-      </div>
-     </div>
-    </div>
-    ` : ''}
-   </div>
-  </div>
- `;
- 
- if (typeof openBottomSheet === 'function') {
-  openBottomSheet('Deskripsi', contentHTML);
- } else {
-  console.error('openBottomSheet function not found');
- }
-}
-</script>
 </section>
+

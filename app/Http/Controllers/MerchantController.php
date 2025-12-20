@@ -623,7 +623,7 @@ class MerchantController extends Controller
         }
 
         // Ambil semua voucher/keyword yang approved untuk merchant ini
-        $keywords = Keyword::with('merchant')
+        $merchantKeywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             ->where('status', 'approve')
             ->where('is_active', 1)
@@ -631,6 +631,17 @@ class MerchantController extends Controller
             ->get();
 
         // Get iklans - prioritize merchant-specific banner, fallback to general
+        // Ambil keywords dari merchant ini untuk section kategori (filter berdasarkan kategori keyword)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', function ($query) {
+                $query->where('is_active', 1);
+            })
+            ->get();
+
+        // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
         // Use orderBy('order', 'asc') to respect admin-configured order
         // Check both merchant_key (legacy) and merchant_keys JSON array
         $specificIklans = Iklan::where(function($query) use ($merchant) {
@@ -666,6 +677,7 @@ class MerchantController extends Controller
         return view('link-pelanggan', [
             'merchant' => $merchant,
             'keywords' => $keywords,
+            'merchantKeywords' => $merchantKeywords,
             'iklans' => $iklans,
         ]);
     }
@@ -1505,7 +1517,9 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
+            ->where('is_active', 1)
             ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
             })
             ->get();
         

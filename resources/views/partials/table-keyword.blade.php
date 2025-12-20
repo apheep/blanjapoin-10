@@ -157,7 +157,9 @@
                                         'belanja' => 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300',
                                         'kecantikan' => 'bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 border-pink-300',
                                         'telkomsel' => 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-800 border-indigo-300',
-                                        'merchandise' => 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-300'
+                                        'merchandise' => 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-300',
+                                        'paket_video' => 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300',
+                                        'paket_games' => 'bg-gradient-to-r from-violet-100 to-purple-100 text-violet-800 border-violet-300'
                                     ];
                                     $kategoriLabel = [
                                         'kuliner' => 'Kuliner',
@@ -166,7 +168,9 @@
                                         'belanja' => 'Belanja',
                                         'kecantikan' => 'Kecantikan',
                                         'telkomsel' => 'Telkomsel Paket',
-                                        'merchandise' => 'Merchandise'
+                                        'merchandise' => 'Merchandise',
+                                        'paket_video' => 'Paket Video',
+                                        'paket_games' => 'Paket games'
                                     ];
                                     $color = $kategoriColors[strtolower($keyword->kategori_keyword)] ?? 'bg-gray-100 text-gray-800 border-gray-300';
                                     $label = $kategoriLabel[strtolower($keyword->kategori_keyword)] ?? ucfirst($keyword->kategori_keyword);
