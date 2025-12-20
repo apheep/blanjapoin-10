@@ -5,13 +5,17 @@
 
     @php
         $paketgamesCategory = 'paket_games';
-        $paketgamesKeywords = $keywords->filter(function ($keyword) use ($paketgamesCategory) {
+        $isLinkPelanggan = $isLinkPelanggan ?? false;
+        $paketgamesKeywords = $keywords->filter(function ($keyword) use ($paketgamesCategory, $isLinkPelanggan) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-            return $keyword->merchant && strtolower($keywordCategory) === strtolower($paketgamesCategory)
+            $baseCondition = $keyword->merchant && strtolower($keywordCategory) === strtolower($paketgamesCategory)
                 && $keyword->status === 'approve'
-                && $keyword->is_active == 1
-                && $keyword->merchant->is_active == 1;
+                && $keyword->is_active == 1;
+            // Skip validasi merchant->is_active jika di halaman link-pelanggan
+            return $isLinkPelanggan 
+                ? $baseCondition 
+                : ($baseCondition && $keyword->merchant->is_active == 1);
         })->values();
     @endphp
 
