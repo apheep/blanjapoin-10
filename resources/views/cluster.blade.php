@@ -96,13 +96,17 @@
             <!-- Category Sections -->
             @php
                 // Helper function to check if category has data
-                $hasCategoryData = function($category) use ($keywords) {
-                    return $keywords->filter(function ($keyword) use ($category) {
+                $isCluster = $isCluster ?? false;
+                $hasCategoryData = function($category) use ($keywords, $isCluster) {
+                    return $keywords->filter(function ($keyword) use ($category, $isCluster) {
                         $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-                        return $keyword->merchant && $keywordCategory === $category
+                        $baseCondition = $keyword->merchant && $keywordCategory === $category
                             && $keyword->status === 'approve'
-                            && $keyword->is_active == 1
-                            && $keyword->merchant->is_active == 1;
+                            && $keyword->is_active == 1;
+                        // Skip validasi merchant->is_active jika di halaman cluster
+                        return $isCluster 
+                            ? $baseCondition 
+                            : ($baseCondition && $keyword->merchant->is_active == 1);
                     })->isNotEmpty();
                 };
             @endphp
