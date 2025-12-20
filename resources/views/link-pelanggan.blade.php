@@ -54,112 +54,59 @@
                 </div>
             </div>
 
-            <div class="mt-0 md:mt-1 -mb-6 md:-mb-8">
-                <style>
-                    main .special-promo-wrapper > div > section {
-                        margin-top: 0.5rem !important;
-                        margin-bottom: 1rem !important;
-                    }
-                    @media (min-width: 640px) {
-                        main .special-promo-wrapper > div > section {
-                            margin-top: 0.75rem !important;
-                            margin-bottom: 1.25rem !important;
-                        }
-                    }
-                </style>
-                <div class="special-promo-wrapper">
-                    @include('spesial-promo')
-                </div>
-            </div>
-
-            <!-- Category Cards Section -->
-            <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-0 md:pt-1" id="categorySection">
-                <!-- Mobile Version: 5 columns (4 categories + See All) -->
-                <div class="grid grid-cols-5 gap-2 md:hidden">
-                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
-                    </button>
-                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-indigo-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
-                    </button>
-                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
-                    </button>
-                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-pink-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
-                    </button>
-                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-orange-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
-                    </button>
-                </div>
-
-                <!-- Desktop Version: 6 columns (5 categories + See All) -->
-                <div class="hidden md:grid grid-cols-6 gap-4">
-                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
-                    </button>
-                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
-                    </button>
-                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
-                    </button>
-                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
-                    </button>
-                    <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/shop.png') }}" alt="Shop" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Belanja</span>
-                    </button>
-                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
-                    </button>
-                </div>
-            </div>
 
             <!-- Merchant Sections by Category -->
             <div class="mt-6 md:mt-8">
-                @include('merchant.shop')
-                @include('merchant.food')
-                @include('merchant.telkomsel')
-                @include('merchant.entertain')
-                @include('merchant.vacation')
-                @include('merchant.beautyncare')
-                @include('merchant.merchandise')
-                @include('merchant.paketvideo')
-                @include('merchant.paketgames')
+                @php
+                    // Helper function to check if category has data
+                    $hasCategoryData = function($category) use ($keywords, $isLinkPelanggan) {
+                        return $keywords->filter(function ($keyword) use ($category, $isLinkPelanggan) {
+                            $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+                            $baseCondition = $keyword->merchant && $keywordCategory === $category
+                                && $keyword->status === 'approve'
+                                && $keyword->is_active == 1;
+                            return $isLinkPelanggan 
+                                ? $baseCondition 
+                                : ($baseCondition && $keyword->merchant->is_active == 1);
+                        })->isNotEmpty();
+                    };
+                @endphp
+
+                @if($hasCategoryData('paket_video'))
+                    @include('merchant.paketvideo')
+                @endif
+
+                @if($hasCategoryData('paket_games'))
+                    @include('merchant.paketgames')
+                @endif
+
+                @if($hasCategoryData('belanja'))
+                    @include('merchant.shop')
+                @endif
+
+                @if($hasCategoryData('merchandise'))
+                    @include('merchant.merchandise')
+                @endif
+
+                @if($hasCategoryData('kuliner'))
+                    @include('merchant.food')
+                @endif
+
+                @if($hasCategoryData('telkomsel'))
+                    @include('merchant.telkomsel')
+                @endif
+
+                @if($hasCategoryData('hiburan'))
+                    @include('merchant.entertain')
+                @endif
+
+                @if($hasCategoryData('liburan'))
+                    @include('merchant.vacation')
+                @endif
+
+                @if($hasCategoryData('kecantikan'))
+                    @include('merchant.beautyncare')
+                @endif
             </div>
 
 
