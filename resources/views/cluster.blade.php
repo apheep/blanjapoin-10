@@ -71,200 +71,104 @@
                 </p>
             </div>
 
-            <!-- Keywords Grid -->
-            @if($keywords->count() > 0)
-            <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
-                @foreach($keywords as $keyword)
-                    @php
-                        $merchant = $keyword->merchant;
-                        $merchantName = optional($merchant)->nama_merchant ?? '';
-                        $productName = $keyword->nama_produk ?? '';
-                        $locationName = extractKabupatenKota(optional($merchant)->daerah ?? '');
-                        $searchName = strtolower(trim($merchantName . ' ' . $productName));
-                        $searchLocation = strtolower($locationName);
-                        $uniqueId = 'cluster-card-' . $keyword->id;
-                    @endphp
-                    
-                    <article 
-                        data-voucher-card="true"
-                        data-point="{{ (int) $keyword->redeem }}"
-                        data-search-name="{{ $searchName }}"
-                        data-search-location="{{ $searchLocation }}"
-                        class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]"
-                    >
-                        <!-- Mobile Layout -->
-                        <div class="lg:hidden flex flex-col h-full">
-                            <div class="relative">
-                                <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-                                    <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" 
-                                         alt="{{ $keyword->nama_produk }}" 
-                                         class="w-full h-full object-cover" 
-                                         loading="lazy">
-                                </div>
-                            </div>
-                            <div class="flex flex-col p-2.5 space-y-1 flex-1">
-                                <h3 class="text-base font-bold text-neutral-900 leading-tight truncate">
-                                    {{ $merchantName }}
-                                </h3>
-                                <div class="text-[9px] text-gray-500 -mt-0.5 -mb-0.5">
-                                    <span>Promo</span>
-                                </div>
-                                <div class="text-[10px] text-neutral-600 leading-snug">
-                                    @if(!is_null($keyword->diskon))
-                                    <div class="font-bold text-red-500 flex items-center gap-1.5 mb-0.5">
-                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-7 h-7 object-contain">
-                                        <span class="text-xl font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
-                                    </div>
-                                    @endif
-                                    @if($productName)
-                                    <div class="mb-0.5 font-semibold text-neutral-700 text-sm truncate">
-                                        {{ $productName }}
-                                    </div>
-                                    @endif
-                                    @if($keyword->skb)
-                                    <button onclick="event.stopPropagation(); openTerritorialDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-0.5 text-[9px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
-                                        Lihat Deskripsi
-                                    </button>
-                                    @endif
-                                </div>
-                                <div class="inline-flex items-center gap-1 bg-white rounded-full px-0.5 py-0.5 self-start">
-                                    <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[7px] font-bold shadow-sm">P</span>
-                                    <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
-                                </div>
-                                <div class="flex flex-col gap-0.5 pt-0.5 border-t border-neutral-100 mt-auto">
-                                    <div class="flex items-center gap-1 text-[9px] text-neutral-600">
-                                        <span class="font-medium">Stock:</span>
-                                        <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
-                                    </div>
-                                    @if($keyword->end_date)
-                                    <div class="flex items-center gap-1 text-[9px] text-neutral-600">
-                                        <span class="font-medium">Valid until:</span>
-                                        <span class="font-semibold text-neutral-800">
-                                            {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
-                                        </span>
-                                    </div>
-                                    @endif
-                                </div>
-                                @php
-                                    $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
-                                    $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-                                @endphp
-                                @if($canRedeem)
-                                <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
-                                    Redeem
-                                </button>
-                                @else
-                                <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
-                                    Open {{ $startDateFormatted }}
-                                </button>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Desktop Layout -->
-                        <div class="hidden lg:flex flex-col h-full">
-                            <!-- Header -->
-                            <div class="flex items-center justify-between p-3 md:p-4 border-b border-neutral-100 flex-shrink-0 min-h-[70px] md:min-h-[80px]">
-                                <div class="flex items-center gap-2.5 flex-1">
-                                    @if($merchant && $merchant->logo_merchant)
-                                    <div class="relative flex-shrink-0">
-                                        <div class="absolute inset-0 rounded-xl blur-sm "></div>
-                                        <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" alt="{{ $merchantName }}" class="relative w-11 h-11 md:w-14 md:h-14 object-contain rounded-xl  shadow-md">
-                                    </div>
-                                    @else
-                                    <div class="w-11 h-11 md:w-14 md:h-14 flex-shrink-0"></div>
-                                    @endif
-                                </div>
-                                @if($keyword->diskon)
-                                <div class="text-right flex-shrink-0 ml-2">
-                                    <div class="inline-flex items-center gap-1.5">
-                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-12 h-12 object-contain">
-                                        <span class="text-base md:text-xl font-black text-red-600">{{ formatDiskon($keyword->diskon) }}</span>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-
-                            <!-- Image with Stock Overlay -->
-                            <div class="relative px-3 md:px-4 pt-3 pb-2 flex-shrink-0">
-                                <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
-                                    <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" 
-                                         alt="{{ $productName }}" 
-                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                         loading="lazy">
-                                </div>
-                                <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
-                                    <span class="inline-flex items-center gap-1">
-                                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                                        <span>Stock: {{ $keyword->stock }}</span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Details -->
-                            <div class="flex flex-col px-3 md:px-4 pb-3 md:pb-4 flex-1 min-h-0">
-                                <h4 class="text-sm md:text-base font-black text-neutral-900 mb-1 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
-                                    {{ $merchantName }}
-                                </h4>
-                                @if($productName)
-                                <p class="text-base md:text-lg text-neutral-600 mb-1.5 leading-snug font-semibold truncate">
-                                    {{ $productName }}
-                                </p>
-                                @endif
-                                @if($keyword->skb)
-                                <button onclick="event.stopPropagation(); openTerritorialDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-1.5 text-[10px] md:text-xs font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
-                                    Lihat Deskripsi
-                                </button>
-                                @endif
-                                @if($keyword->end_date)
-                                <div class="flex items-center gap-1 text-[10px] text-neutral-500 mb-2">
-                                    <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <span class="truncate">Valid until: <span class="font-semibold text-neutral-700">{{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}</span></span>
-                                </div>
-                                @endif
-                                <div class="mt-auto pt-2 border-t border-neutral-100">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[7px] font-bold shadow-sm">P</span>
-                                            <span class="text-lg md:text-xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                                                {{ number_format($keyword->redeem, 0, ',', '.') }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    @php
-                                        $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
-                                        $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-                                    @endphp
-                                    @if($canRedeem)
-                                    <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
-                                        Redeem
-                                    </button>
-                                    @else
-                                    <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">
-                                        Open {{ $startDateFormatted }}
-                                    </button>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-                @endforeach
-            </div>
-            @else
-            <div class="text-center py-16">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-                    <i class="fas fa-store text-4xl text-gray-400"></i>
+            <!-- Category Cards Section -->
+            <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-1 md:pt-2 mb-8" id="categorySection">
+                <!-- Mobile Version: 5 columns (4 categories + See All) -->
+                <div class="grid grid-cols-5 gap-2 md:hidden">
+                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
+                    </button>
+                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-indigo-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
+                    </button>
+                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
+                    </button>
+                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-pink-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
+                    </button>
+                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-orange-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
+                    </button>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Belum ada merchant di Cluster {{ $locationName }}</h3>
-                <p class="text-gray-600 mb-6">Coba pilih teritorial lain atau kembali ke beranda</p>
-                <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
-                    <i class="fas fa-home"></i>
-                    Kembali ke Beranda
-                </a>
+
+                <!-- Desktop Version: 6 columns (5 categories + See All) -->
+                <div class="hidden md:grid grid-cols-6 gap-4">
+                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
+                    </button>
+                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
+                    </button>
+                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
+                    </button>
+                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
+                    </button>
+                    <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/shop.png') }}" alt="Shop" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Belanja</span>
+                    </button>
+                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
+                    </button>
+                </div>
             </div>
-            @endif
+
+            <!-- Category Sections -->
+            <!-- shop Section -->
+            @include('merchant.shop')
+
+            <!-- food Section -->
+            @include('merchant.food')
+
+            <!-- telkomsel Section -->
+            @include('merchant.telkomsel')
+
+            <!-- entertain Section -->
+            @include('merchant.entertain')
+
+            <!-- vacation Section -->
+            @include('merchant.vacation')
+
+            <!-- beauty Section -->
+            @include('merchant.beautyncare')
+
+            <!-- merchandise Section -->
+            @include('merchant.merchandise')
 
             <!-- Footer -->
             <footer class="mt-16 pb-12 text-center">
@@ -290,6 +194,27 @@
 
         // Animate cards on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Animate category section
+            const categorySection = document.getElementById('categorySection');
+            if (categorySection) {
+                const observerOptions = {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -20px 0px'
+                };
+                
+                const categoryObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                            categoryObserver.unobserve(entry.target);
+                        }
+                    });
+                }, observerOptions);
+                
+                categoryObserver.observe(categorySection);
+            }
+
             // Animate cards with intersection observer
             const cardObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -329,6 +254,63 @@
                 });
             }, 1000);
         });
+
+        // Filter Category - Scroll to section
+        function filterCategory(category) {
+            const selectedSection = document.getElementById('section-' + category);
+            if (selectedSection) {
+                // Get navbar height to calculate offset
+                const navbar = document.getElementById('navbar');
+                const navbarHeight = navbar ? navbar.offsetHeight : 0;
+                
+                // Calculate position with offset (navbar height + extra spacing)
+                const elementPosition = selectedSection.getBoundingClientRect().top + window.pageYOffset;
+                const offsetPosition = elementPosition - navbarHeight - 20; // 20px extra spacing
+                
+                // Smooth scroll to calculated position
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // Open Category Bottom Sheet
+        window.openCategorySheet = function() {
+            const baseAssetPath = '{{ asset("images/categories") }}';
+            const categories = [
+                { id: 'food', name: 'Kuliner', icon: 'food.png', color: 'rose' },
+                { id: 'entertain', name: 'Lifestyle', icon: 'entertain.png', color: 'indigo' },
+                { id: 'vacation', name: 'Liburan', icon: 'vacation.png', color: 'purple' },
+                { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
+                { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
+                { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' },
+                { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' }
+            ];
+            
+            const categoryHtml = `
+                <div class="grid grid-cols-3 gap-3 p-4">
+                    ${categories.map(cat => `
+                        <button onclick="selectCategoryFromSheet('${cat.id}')" class="group flex flex-col items-center gap-2 rounded-xl bg-white p-4 text-center shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-lg hover:scale-105 hover:ring-${cat.color}-300 active:scale-95">
+                            <span class="grid h-14 w-14 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                                <img src="${baseAssetPath}/${cat.icon}" alt="${cat.name}" class="${cat.id==='telkomsel' ? 'w-17 h-17' : 'w-full h-full'} object-contain">
+                            </span>
+                            <span class="text-[10px] font-bold text-neutral-700 group-hover:text-${cat.color}-600 transition-colors leading-tight text-center">${cat.name}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            openBottomSheet('Kategori Merchant', categoryHtml);
+        }
+
+        // Select category from bottom sheet
+        window.selectCategoryFromSheet = function(category) {
+            closeBottomSheet();
+            setTimeout(() => {
+                filterCategory(category);
+            }, 300);
+        }
 
         // Bottom Sheet / Modal (responsive)
         function openBottomSheet(title, contentHTML) {

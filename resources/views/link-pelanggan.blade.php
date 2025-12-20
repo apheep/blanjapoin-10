@@ -21,20 +21,31 @@
         </div>
     </div>
 
-    <!-- Navbar -->
-    <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full ">
-        <div class="mx-auto max-w-[1120px] px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6">
-            <div class="flex items-center">
-                <a href="{{ route('home') }}">
-                    <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-                </a>
-            </div>
+    <div class="w-full bg-white relative overflow-hidden">
+        <div class="absolute inset-y-0 left-0 w-full pointer-events-none block md:block"
+             style="background-image: url('{{ asset('dot_background.png') }}');
+                    background-repeat: repeat;
+                    background-size: 1750px 1750px;
+                    opacity: 0.8;
+                    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%);
+                    mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%);">
         </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="mx-auto max-w-[1120px]">
-        <main class="px-4 md:px-7 lg:px-8 pb-12 md:pb-16">
+        <!-- Navbar -->
+        <nav id="navbar" class="sticky top-0 z-50 bg-white/80 backdrop-blur-sm transition-shadow duration-300 w-full">
+            <div class="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-10 py-4 md:py-5 lg:py-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('home') }}">
+                            <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="mx-auto w-full max-w-[1400px] px-4 md:px-8 lg:px-10 pb-12 relative z-10">
             @include('partials.banner-carousel', ['iklans' => $iklans])
 
             <div class="flex flex-wrap items-start justify-between gap-4 pl-1 mt-10 md:mt-12">

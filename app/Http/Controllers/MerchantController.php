@@ -1517,7 +1517,9 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
+            ->where('is_active', 1)
             ->whereHas('merchant', function($query) {
+                $query->where('is_active', 1);
             })
             ->get();
         
