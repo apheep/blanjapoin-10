@@ -6,14 +6,19 @@
     @php
         $paketvideoCategory = 'paket_video';
         $isLinkPelanggan = $isLinkPelanggan ?? false;
-        $paketvideoKeywords = $keywords->filter(function ($keyword) use ($paketvideoCategory, $isLinkPelanggan) {
+        $isTerritorial = $isTerritorial ?? false;
+        $isRegional = $isRegional ?? false;
+        $isBranch = $isBranch ?? false;
+        $isCluster = $isCluster ?? false;
+        $skipMerchantValidation = $isLinkPelanggan || $isTerritorial || $isRegional || $isBranch || $isCluster;
+        $paketvideoKeywords = $keywords->filter(function ($keyword) use ($paketvideoCategory, $skipMerchantValidation) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
             $baseCondition = $keyword->merchant && strtolower($keywordCategory) === strtolower($paketvideoCategory)
                 && $keyword->status === 'approve'
                 && $keyword->is_active == 1;
-            // Skip validasi merchant->is_active jika di halaman link-pelanggan
-            return $isLinkPelanggan 
+            // Skip validasi merchant->is_active jika di halaman link-pelanggan atau location-based pages
+            return $skipMerchantValidation 
                 ? $baseCondition 
                 : ($baseCondition && $keyword->merchant->is_active == 1);
         })->values();
