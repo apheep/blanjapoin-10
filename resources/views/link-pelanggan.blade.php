@@ -54,23 +54,7 @@
                 </div>
             </div>
 
-            <div class="mt-0 md:mt-1 -mb-6 md:-mb-8">
-                <style>
-                    main .special-promo-wrapper > div > section {
-                        margin-top: 0.5rem !important;
-                        margin-bottom: 1rem !important;
-                    }
-                    @media (min-width: 640px) {
-                        main .special-promo-wrapper > div > section {
-                            margin-top: 0.75rem !important;
-                            margin-bottom: 1.25rem !important;
-                        }
-                    }
-                </style>
-                <div class="special-promo-wrapper">
-                    @include('spesial-promo')
-                </div>
-            </div>
+
 
             <!-- Category Cards Section -->
             <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-0 md:pt-1" id="categorySection">
@@ -151,15 +135,56 @@
 
             <!-- Merchant Sections by Category -->
             <div class="mt-6 md:mt-8">
-                @include('merchant.shop')
-                @include('merchant.food')
-                @include('merchant.telkomsel')
-                @include('merchant.entertain')
-                @include('merchant.vacation')
-                @include('merchant.beautyncare')
-                @include('merchant.merchandise')
-                @include('merchant.paketvideo')
-                @include('merchant.paketgames')
+                @php
+                    // Helper function to check if category has data
+                    $hasCategoryData = function($category) use ($keywords, $isLinkPelanggan) {
+                        return $keywords->filter(function ($keyword) use ($category, $isLinkPelanggan) {
+                            $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+                            $baseCondition = $keyword->merchant && $keywordCategory === $category
+                                && $keyword->status === 'approve'
+                                && $keyword->is_active == 1;
+                            return $isLinkPelanggan 
+                                ? $baseCondition 
+                                : ($baseCondition && $keyword->merchant->is_active == 1);
+                        })->isNotEmpty();
+                    };
+                @endphp
+
+                @if($hasCategoryData('paket_video'))
+                    @include('merchant.paketvideo')
+                @endif
+
+                @if($hasCategoryData('paket_games'))
+                    @include('merchant.paketgames')
+                @endif
+
+                @if($hasCategoryData('belanja'))
+                    @include('merchant.shop')
+                @endif
+
+                @if($hasCategoryData('merchandise'))
+                    @include('merchant.merchandise')
+                @endif
+
+                @if($hasCategoryData('kuliner'))
+                    @include('merchant.food')
+                @endif
+
+                @if($hasCategoryData('telkomsel'))
+                    @include('merchant.telkomsel')
+                @endif
+
+                @if($hasCategoryData('hiburan'))
+                    @include('merchant.entertain')
+                @endif
+
+                @if($hasCategoryData('liburan'))
+                    @include('merchant.vacation')
+                @endif
+
+                @if($hasCategoryData('kecantikan'))
+                    @include('merchant.beautyncare')
+                @endif
             </div>
 
 
