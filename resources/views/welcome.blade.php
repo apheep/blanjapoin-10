@@ -268,6 +268,16 @@
     <div id="merchandiseSection">
      @include('merchant.merchandise')
     </div>
+
+    <!-- paketvideo Section -->
+    <div id="paketvideoSection">
+     @include('merchant.paketvideo')
+    </div>
+
+    <!-- paketgames Section -->
+    <div id="paketgamesSection">
+     @include('merchant.paketgames')
+    </div>
    
 
     <footer class="mt-16 pb-12 text-center">
@@ -1017,7 +1027,9 @@
     { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
     { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
     { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' },
-    { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' }
+    { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' },
+    { id: 'paketvideo', name: 'Paket Video', icon: 'paketvideo.png', color: 'purple' },
+    { id: 'paketgames', name: 'Paket Games', icon: 'paketgames.png', color: 'green' }
    ];
    
    const categoryHtml = `
