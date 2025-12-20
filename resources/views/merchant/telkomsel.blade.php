@@ -5,13 +5,17 @@
 
  @php
   $telkomselCategory = 'telkomsel';
-  $telkomselKeywords = $keywords->filter(function ($keyword) use ($telkomselCategory) {
+  $isLinkPelanggan = $isLinkPelanggan ?? false;
+  $telkomselKeywords = $keywords->filter(function ($keyword) use ($telkomselCategory, $isLinkPelanggan) {
    // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
    $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-   return $keyword->merchant && $keywordCategory === $telkomselCategory
+   $baseCondition = $keyword->merchant && $keywordCategory === $telkomselCategory
     && $keyword->status === 'approve'
-    && $keyword->is_active == 1
-    && $keyword->merchant->is_active == 1;
+    && $keyword->is_active == 1;
+   // Skip validasi merchant->is_active jika di halaman link-pelanggan
+   return $isLinkPelanggan 
+       ? $baseCondition 
+       : ($baseCondition && $keyword->merchant->is_active == 1);
   })->values();
   @endphp
 

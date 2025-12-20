@@ -607,6 +607,7 @@ class MerchantController extends Controller
         // Cari merchant berdasarkan code dari link_blanjapoin
         // Format link_blanjapoin: "blanjapoin.id/dash/{code}"
         // Coba dengan code yang sudah di-decode dan juga dengan yang masih encoded
+        // Note: Tidak ada validasi is_active merchant, semua merchant bisa diakses
         $merchant = Merchant::where(function($query) use ($decodedCode, $code) {
                 // Cari dengan code yang sudah di-decode
                 $query->where('link_blanjapoin', 'like', '%/dash/' . $decodedCode)
@@ -616,6 +617,7 @@ class MerchantController extends Controller
                       ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '%');
             })
             ->whereNotNull('link_blanjapoin')
+            // Tidak ada filter is_active merchant - semua merchant bisa diakses
             ->first();
 
         if (!$merchant) {
@@ -623,22 +625,21 @@ class MerchantController extends Controller
         }
 
         // Ambil semua voucher/keyword yang approved untuk merchant ini
+        // Validasi hanya pada is_active keyword (bukan merchant)
         $merchantKeywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             ->where('status', 'approve')
-            ->where('is_active', 1)
+            ->where('is_active', 1) // Validasi is_active keyword
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Get iklans - prioritize merchant-specific banner, fallback to general
         // Ambil keywords dari merchant ini untuk section kategori (filter berdasarkan kategori keyword)
+        // Validasi hanya pada is_active keyword (bukan merchant)
         $keywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             ->where('status', 'approve')
-            ->where('is_active', 1)
-            ->whereHas('merchant', function ($query) {
-                $query->where('is_active', 1);
-            })
+            ->where('is_active', 1) // Validasi is_active keyword
             ->get();
 
         // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
@@ -679,6 +680,7 @@ class MerchantController extends Controller
             'keywords' => $keywords,
             'merchantKeywords' => $merchantKeywords,
             'iklans' => $iklans,
+            'isLinkPelanggan' => true, // Flag untuk skip validasi merchant->is_active di view
         ]);
     }
 
