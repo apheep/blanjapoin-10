@@ -21,11 +21,13 @@
     </div>
 
     <div class="w-full bg-white relative overflow-hidden">
-        <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none block md:block"
+        <div class="absolute inset-y-0 left-0 w-full pointer-events-none block md:block"
              style="background-image: url('{{ asset('dot_background.png') }}');
                     background-repeat: repeat;
-                    background-size: cover;
-                    opacity: 0.8;">
+                    background-size: 1750px 1750px;
+                    opacity: 0.8;
+                    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%);
+                    mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%);">
         </div>
 
         <!-- Navbar -->
@@ -72,7 +74,7 @@
                                 </p>
                             </div>
             
-            <!-- Spesial Promo Section -->
+            {{-- <!-- Spesial Promo Section -->
             <div class="mt-0 md:mt-1 -mb-6 md:-mb-8">
                 <style>
                     main .special-promo-wrapper > div > section {
@@ -89,112 +91,66 @@
                 <div class="special-promo-wrapper">
                     @include('partials.spesial_promo')
                 </div>
-            </div>
-
-            <!-- Category Cards Section -->
-            <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-1 md:pt-2 mb-8" id="categorySection">
-                <!-- Mobile Version: 5 columns (4 categories + See All) -->
-                <div class="grid grid-cols-5 gap-2 md:hidden">
-                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
-                    </button>
-                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-indigo-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
-                    </button>
-                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
-                    </button>
-                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-pink-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
-                    </button>
-                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-orange-300 active:scale-95">
-                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
-                    </button>
-                </div>
-
-                <!-- Desktop Version: 6 columns (5 categories + See All) -->
-                <div class="hidden md:grid grid-cols-6 gap-4">
-                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
-                    </button>
-                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
-                    </button>
-                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
-                    </button>
-                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
-                    </button>
-                    <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/shop.png') }}" alt="Shop" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Belanja</span>
-                    </button>
-                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
-                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
-                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
-                        </span>
-                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
-                    </button>
-                </div>
-            </div>
+            </div> --}}
 
             <!-- Category Sections -->
+            @php
+                // Helper function to check if category has data
+                $hasCategoryData = function($category) use ($keywords) {
+                    return $keywords->filter(function ($keyword) use ($category) {
+                        $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+                        return $keyword->merchant && $keywordCategory === $category
+                            && $keyword->status === 'approve'
+                            && $keyword->is_active == 1
+                            && $keyword->merchant->is_active == 1;
+                    })->isNotEmpty();
+                };
+            @endphp
+
             <!-- shop Section -->
-            @include('merchant.shop')
+            @if($hasCategoryData('belanja'))
+                @include('merchant.shop')
+            @endif
 
             <!-- food Section -->
-            @include('merchant.food')
+            @if($hasCategoryData('kuliner'))
+                @include('merchant.food')
+            @endif
 
             <!-- telkomsel Section -->
-            @include('merchant.telkomsel')
+            @if($hasCategoryData('telkomsel'))
+                @include('merchant.telkomsel')
+            @endif
 
             <!-- entertain Section -->
-            @include('merchant.entertain')
+            @if($hasCategoryData('hiburan'))
+                @include('merchant.entertain')
+            @endif
 
             <!-- vacation Section -->
-            @include('merchant.vacation')
+            @if($hasCategoryData('liburan'))
+                @include('merchant.vacation')
+            @endif
 
             <!-- beauty Section -->
-            @include('merchant.beautyncare')
+            @if($hasCategoryData('kecantikan'))
+                @include('merchant.beautyncare')
+            @endif
 
             <!-- merchandise Section -->
-            @include('merchant.merchandise')
+            @if($hasCategoryData('merchandise'))
+                @include('merchant.merchandise')
+            @endif
 
             <!-- paketvideo Section -->
-            @include('merchant.paketvideo')
+            @if($hasCategoryData('paket_video'))
+                @include('merchant.paketvideo')
+            @endif
 
             <!-- paketgames Section -->
-            @include('merchant.paketgames')
+            @if($hasCategoryData('paket_games'))
+                @include('merchant.paketgames')
+            @endif
 
             <!-- Footer -->
             <footer class="mt-16 pb-12 text-center">
@@ -220,27 +176,6 @@
 
         // Animate cards on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Animate category section
-            const categorySection = document.getElementById('categorySection');
-            if (categorySection) {
-                const observerOptions = {
-                    threshold: 0.1,
-                    rootMargin: '0px 0px -20px 0px'
-                };
-                
-                const categoryObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.style.opacity = '1';
-                            entry.target.style.transform = 'translateY(0)';
-                            categoryObserver.unobserve(entry.target);
-                        }
-                    });
-                }, observerOptions);
-                
-                categoryObserver.observe(categorySection);
-            }
-
             // Animate cards with intersection observer
             const cardObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -280,65 +215,6 @@
                 });
             }, 1000);
         });
-
-        // Filter Category - Scroll to section
-        function filterCategory(category) {
-            const selectedSection = document.getElementById('section-' + category);
-            if (selectedSection) {
-                // Get navbar height to calculate offset
-                const navbar = document.getElementById('navbar');
-                const navbarHeight = navbar ? navbar.offsetHeight : 0;
-                
-                // Calculate position with offset (navbar height + extra spacing)
-                const elementPosition = selectedSection.getBoundingClientRect().top + window.pageYOffset;
-                const offsetPosition = elementPosition - navbarHeight - 20; // 20px extra spacing
-                
-                // Smooth scroll to calculated position
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: 'smooth'
-                });
-            }
-        }
-
-        // Open Category Bottom Sheet
-        window.openCategorySheet = function() {
-            const baseAssetPath = '{{ asset("images/categories") }}';
-            const categories = [
-                { id: 'food', name: 'Kuliner', icon: 'food.png', color: 'rose' },
-                { id: 'entertain', name: 'Lifestyle', icon: 'entertain.png', color: 'indigo' },
-                { id: 'vacation', name: 'Liburan', icon: 'vacation.png', color: 'purple' },
-                { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
-                { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
-                { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' },
-                { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' },
-                { id: 'paketvideo', name: 'Paket Video', icon: 'paketvideo.png', color: 'purple' },
-                { id: 'paketgames', name: 'Paket Games', icon: 'paketgames.png', color: 'green' }
-            ];
-            
-            const categoryHtml = `
-                <div class="grid grid-cols-3 gap-3 p-4">
-                    ${categories.map(cat => `
-                        <button onclick="selectCategoryFromSheet('${cat.id}')" class="group flex flex-col items-center gap-2 rounded-xl bg-white p-4 text-center shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-lg hover:scale-105 hover:ring-${cat.color}-300 active:scale-95">
-                            <span class="grid h-14 w-14 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
-                                <img src="${baseAssetPath}/${cat.icon}" alt="${cat.name}" class="${cat.id==='telkomsel' ? 'w-17 h-17' : 'w-full h-full'} object-contain">
-                            </span>
-                            <span class="text-[10px] font-bold text-neutral-700 group-hover:text-${cat.color}-600 transition-colors leading-tight text-center">${cat.name}</span>
-                        </button>
-                    `).join('')}
-                </div>
-            `;
-            
-            openBottomSheet('Kategori Merchant', categoryHtml);
-        }
-
-        // Select category from bottom sheet
-        window.selectCategoryFromSheet = function(category) {
-            closeBottomSheet();
-            setTimeout(() => {
-                filterCategory(category);
-            }, 300);
-        }
 
         // Bottom Sheet / Modal (responsive)
         function openBottomSheet(title, contentHTML) {
