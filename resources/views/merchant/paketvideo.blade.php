@@ -4,7 +4,7 @@
     </div>
 
     @php
-        $paketvideoCategory = 'paket video';
+        $paketvideoCategory = 'paket_video';
         $paketvideoKeywords = $keywords->filter(function ($keyword) use ($paketvideoCategory) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);

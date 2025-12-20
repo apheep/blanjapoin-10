@@ -4,7 +4,7 @@
     </div>
 
     @php
-        $paketgamesCategory = 'paket games';
+        $paketgamesCategory = 'paket_games';
         $paketgamesKeywords = $keywords->filter(function ($keyword) use ($paketgamesCategory) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
