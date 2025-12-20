@@ -5,13 +5,17 @@
 
     @php
         $foodCategory = 'kuliner';
-        $foodKeywords = $keywords->filter(function ($keyword) use ($foodCategory) {
+        $isLinkPelanggan = $isLinkPelanggan ?? false;
+        $foodKeywords = $keywords->filter(function ($keyword) use ($foodCategory, $isLinkPelanggan) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-            return $keyword->merchant && $keywordCategory === $foodCategory
+            $baseCondition = $keyword->merchant && $keywordCategory === $foodCategory
                 && $keyword->status === 'approve'
-                && $keyword->is_active == 1
-                && $keyword->merchant->is_active == 1;
+                && $keyword->is_active == 1;
+            // Skip validasi merchant->is_active jika di halaman link-pelanggan
+            return $isLinkPelanggan 
+                ? $baseCondition 
+                : ($baseCondition && $keyword->merchant->is_active == 1);
         })->values();
     @endphp
 
