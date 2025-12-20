@@ -95,13 +95,17 @@
             <!-- Category Sections -->
             @php
                 // Helper function to check if category has data
-                $hasCategoryData = function($category) use ($keywords) {
-                    return $keywords->filter(function ($keyword) use ($category) {
+                $isTerritorial = $isTerritorial ?? false;
+                $hasCategoryData = function($category) use ($keywords, $isTerritorial) {
+                    return $keywords->filter(function ($keyword) use ($category, $isTerritorial) {
                         $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-                        return $keyword->merchant && $keywordCategory === $category
+                        $baseCondition = $keyword->merchant && $keywordCategory === $category
                             && $keyword->status === 'approve'
-                            && $keyword->is_active == 1
-                            && $keyword->merchant->is_active == 1;
+                            && $keyword->is_active == 1;
+                        // Skip validasi merchant->is_active jika di halaman territorial
+                        return $isTerritorial 
+                            ? $baseCondition 
+                            : ($baseCondition && $keyword->merchant->is_active == 1);
                     })->isNotEmpty();
                 };
             @endphp

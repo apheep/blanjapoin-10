@@ -1515,14 +1515,13 @@ class MerchantController extends Controller
         Keyword::autoDisableExpiredKeywords();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
             ->where('is_active', 1)
-            ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
-            })
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific territorial banner, fallback to general
@@ -1583,6 +1582,7 @@ class MerchantController extends Controller
             'keywords' => $keywords,
             'iklans' => $iklans,
             'territories' => $territories,
+            'isTerritorial' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 
@@ -1654,9 +1654,8 @@ class MerchantController extends Controller
         
         $displayName = $regionalData ? $regionalData->regional : $locationName;
         
-        // Get all active merchants
+        // Get all merchants (including inactive ones, karena keywords bisa aktif meski merchant tidak aktif)
         $allMerchants = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->get();
@@ -1692,14 +1691,13 @@ class MerchantController extends Controller
         })->values();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
             ->where('is_active', 1)
-            ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
-            })
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific regional banner, fallback to general
@@ -1736,6 +1734,7 @@ class MerchantController extends Controller
             'merchants' => $merchants,
             'keywords' => $keywords,
             'iklans' => $iklans,
+            'isRegional' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 
@@ -1799,9 +1798,8 @@ class MerchantController extends Controller
         
         $displayName = $branchData ? $branchData->branch : $locationName;
         
-        // Get all active merchants
+        // Get all merchants (including inactive ones, karena keywords bisa aktif meski merchant tidak aktif)
         $allMerchants = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->get();
@@ -1837,14 +1835,13 @@ class MerchantController extends Controller
         })->values();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
             ->where('is_active', 1)
-            ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
-            })
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific branch banner, fallback to general
@@ -1881,6 +1878,7 @@ class MerchantController extends Controller
             'merchants' => $merchants,
             'keywords' => $keywords,
             'iklans' => $iklans,
+            'isBranch' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 
@@ -1944,9 +1942,8 @@ class MerchantController extends Controller
         
         $displayName = $clusterData ? $clusterData->cluster : $locationName;
         
-        // Get all active merchants
+        // Get all merchants (including inactive ones, karena keywords bisa aktif meski merchant tidak aktif)
         $allMerchants = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->get();
@@ -1982,14 +1979,13 @@ class MerchantController extends Controller
         })->values();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
             ->where('is_active', 1)
-            ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
-            })
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific cluster banner, fallback to general
@@ -2026,6 +2022,7 @@ class MerchantController extends Controller
             'merchants' => $merchants,
             'keywords' => $keywords,
             'iklans' => $iklans,
+            'isCluster' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 }

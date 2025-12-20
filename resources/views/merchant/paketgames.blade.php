@@ -6,14 +6,19 @@
     @php
         $paketgamesCategory = 'paket_games';
         $isLinkPelanggan = $isLinkPelanggan ?? false;
-        $paketgamesKeywords = $keywords->filter(function ($keyword) use ($paketgamesCategory, $isLinkPelanggan) {
+        $isTerritorial = $isTerritorial ?? false;
+        $isRegional = $isRegional ?? false;
+        $isBranch = $isBranch ?? false;
+        $isCluster = $isCluster ?? false;
+        $skipMerchantValidation = $isLinkPelanggan || $isTerritorial || $isRegional || $isBranch || $isCluster;
+        $paketgamesKeywords = $keywords->filter(function ($keyword) use ($paketgamesCategory, $skipMerchantValidation) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
             $baseCondition = $keyword->merchant && strtolower($keywordCategory) === strtolower($paketgamesCategory)
                 && $keyword->status === 'approve'
                 && $keyword->is_active == 1;
-            // Skip validasi merchant->is_active jika di halaman link-pelanggan
-            return $isLinkPelanggan 
+            // Skip validasi merchant->is_active jika di halaman link-pelanggan atau location-based pages
+            return $skipMerchantValidation 
                 ? $baseCondition 
                 : ($baseCondition && $keyword->merchant->is_active == 1);
         })->values();
