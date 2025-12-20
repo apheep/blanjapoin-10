@@ -51,24 +51,44 @@
             <!-- Banner Carousel -->
             @include('partials.banner-carousel', ['iklans' => $iklans])
 
-            <!-- Header Section -->
-            <div class="mt-8 md:mt-12 mb-8">
-                <div class="flex items-center gap-2 mb-4">
-                    <a href="{{ route('home') }}" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
-                        <i class="fas fa-home"></i> Beranda
-                    </a>
-                    <span class="text-gray-400">/</span>
-                    <span class="text-sm font-semibold text-gray-700">Cluster</span>
-                    <span class="text-gray-400">/</span>
-                    <span class="text-sm font-semibold text-orange-600">{{ $locationName }}</span>
+
+                            <!-- Header Section -->
+                            <div class="mt-8 md:mt-12 mb-2">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <a href="{{ route('home') }}" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                                        <i class="fas fa-home"></i> Beranda
+                                    </a>
+                                    <span class="text-gray-400">/</span>
+                                    <span class="text-sm font-semibold text-gray-700">Cluster</span>
+                                    <span class="text-gray-400">/</span>
+                                    <span class="text-sm font-semibold text-orange-600">{{ $locationName }}</span>
+                                </div>
+                                
+                                <h1 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+                                    Merchant di {{ $locationName }}
+                                </h1>
+                                <p class="text-gray-600">
+                                    Temukan merchant dan promo menarik di {{ $locationName }}
+                                </p>
+                            </div>
+            
+            <!-- Spesial Promo Section -->
+            <div class="mt-0 md:mt-1 -mb-6 md:-mb-8">
+                <style>
+                    main .special-promo-wrapper > div > section {
+                        margin-top: 0.5rem !important;
+                        margin-bottom: 1rem !important;
+                    }
+                    @media (min-width: 640px) {
+                        main .special-promo-wrapper > div > section {
+                            margin-top: 0.75rem !important;
+                            margin-bottom: 1.25rem !important;
+                        }
+                    }
+                </style>
+                <div class="special-promo-wrapper">
+                    @include('partials.spesial_promo')
                 </div>
-                
-                <h1 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-                    Merchant di {{ $locationName }}
-                </h1>
-                <p class="text-gray-600">
-                    Temukan merchant dan promo menarik di {{ $locationName }}
-                </p>
             </div>
 
             <!-- Category Cards Section -->
@@ -169,6 +189,12 @@
 
             <!-- merchandise Section -->
             @include('merchant.merchandise')
+
+            <!-- paketvideo Section -->
+            @include('merchant.paketvideo')
+
+            <!-- paketgames Section -->
+            @include('merchant.paketgames')
 
             <!-- Footer -->
             <footer class="mt-16 pb-12 text-center">
@@ -285,7 +311,9 @@
                 { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
                 { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
                 { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' },
-                { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' }
+                { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' },
+                { id: 'paketvideo', name: 'Paket Video', icon: 'paketvideo.png', color: 'purple' },
+                { id: 'paketgames', name: 'Paket Games', icon: 'paketgames.png', color: 'green' }
             ];
             
             const categoryHtml = `

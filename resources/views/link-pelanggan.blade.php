@@ -158,6 +158,8 @@
                 @include('merchant.vacation')
                 @include('merchant.beautyncare')
                 @include('merchant.merchandise')
+                @include('merchant.paketvideo')
+                @include('merchant.paketgames')
             </div>
 
 
@@ -277,7 +279,9 @@
                 { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
                 { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
                 { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' },
-                { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' }
+                { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' },
+                { id: 'paketvideo', name: 'Paket Video', icon: 'paketvideo.png', color: 'purple' },
+                { id: 'paketgames', name: 'Paket Games', icon: 'paketgames.png', color: 'green' }
             ];
             
             const categoryHtml = `

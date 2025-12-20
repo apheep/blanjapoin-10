@@ -1,4 +1,4 @@
-<section class="relative z-20 mt-10 md:mt-24 mb-8 sm:mb-10">
+<section class="relative z-20 mt-5 md:mt-14 mb-8 sm:mb-10">
     <style>
         .special-promo-card {
             width: calc(50% - 6px);
@@ -12,7 +12,7 @@
         }
     </style>
     <div class="mx-auto w-full max-w-[1200px]">
-        <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-7">
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-orange-100/70 px-4 sm:px-6 md:px-8 py-5 sm:py-6 md:py-7">
             <div class="flex items-center justify-between gap-3 mb-4 sm:mb-5">
                 <div class="flex items-center gap-2 sm:gap-3">
                     <span class="text-lg sm:text-xl">🔥</span>
