@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -20,7 +21,18 @@ class KeywordController extends Controller
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
         
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        // Query keywords dengan menghitung jumlah redeem per keyword_id
+        $keywords = Keyword::with('merchant')
+            ->select('keywords.*')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
+            ->orderBy('id')
+            ->paginate(10);
+        
+        // Set trx untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywords as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+        }
+        
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
@@ -693,6 +705,8 @@ class KeywordController extends Controller
         $merchantId = $request->get('merchant_id');
 
         $keywordsQuery = Keyword::with('merchant')
+            ->select('keywords.*')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
             ->when($merchantId, function ($query) use ($merchantId) {
                 $query->where('merchant_key', $merchantId);
             })
@@ -727,6 +741,15 @@ class KeywordController extends Controller
         $keywords = $keywordsQuery
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
+        
+        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywords as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+            // Hitung sisa stock: stock - trx (minimal 0)
+            $stock = (int)($keyword->stock ?? 0);
+            $trx = (int)($keyword->trx ?? 0);
+            $keyword->sisa_stock = max(0, $stock - $trx);
+        }
 
         if ($request->ajax()) {
             try {

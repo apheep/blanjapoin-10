@@ -46,9 +46,20 @@ class MerchantController extends Controller
             
         // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
+            ->select('keywords.*')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
             ->orderBy('id')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
+        
+        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywords as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+            // Hitung sisa stock: stock - trx (minimal 0)
+            $stock = (int)($keyword->stock ?? 0);
+            $trx = (int)($keyword->trx ?? 0);
+            $keyword->sisa_stock = max(0, $stock - $trx);
+        }
             
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         
@@ -832,17 +843,46 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
         }
 
+        // Query untuk history transaksi: join tokodigi_tselpoin_redeem dengan keywords dan merchants
+        $historyQuery = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->join('merchants as m', 'k.merchant_key', '=', 'm.id')
+            ->where('m.id', $merchant->id)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->select(
+                'tr.created_date as tanggal',
+                'tr.msisdn',
+                'm.nama_merchant as merchant_name',
+                'tr.keyword_desc as product',
+                'tr.coupon as keywords',
+                'tr.poin_redeem as total_poin',
+                'm.daerah as merchant_city',
+                'k.status'
+            )
+            ->orderBy('tr.created_date', 'desc');
+
+        $historyPaginator = $historyQuery->paginate(12, ['*'], 'history_page')
+            ->withQueryString();
+
+        // Query untuk keyword history dengan menghitung TRX dan sisa stock
         $keywordQuery = Keyword::with('merchant')
+            ->select('keywords.*')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
             ->where('merchant_key', $merchant->id)
             ->orderBy('created_at', 'desc');
-
-        $historyPaginator = (clone $keywordQuery)
-            ->paginate(12, ['*'], 'history_page')
-            ->withQueryString();
 
         $keywordPaginator = (clone $keywordQuery)
             ->paginate(12, ['*'], 'keyword_page')
             ->withQueryString();
+        
+        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywordPaginator as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+            // Hitung sisa stock: stock - trx (minimal 0)
+            $stock = (int)($keyword->stock ?? 0);
+            $trx = (int)($keyword->trx ?? 0);
+            $keyword->sisa_stock = max(0, $stock - $trx);
+        }
 
         return view('history-all', [
             'merchant' => $merchant,
