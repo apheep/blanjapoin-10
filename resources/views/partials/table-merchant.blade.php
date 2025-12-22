@@ -56,6 +56,7 @@
                     </th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Radius (m)</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMaps</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Dashboard</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Pelanggan</th>
@@ -234,6 +235,14 @@
                             @endif
                         </td>
 
+                        {{-- Radius --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            @if($merchant->radius)
+                                <span class="text-xs">{{ number_format($merchant->radius, 0, ',', '.') }} m</span>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
                         {{-- Link Google Maps --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->link_gmap)
