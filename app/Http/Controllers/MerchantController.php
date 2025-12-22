@@ -118,7 +118,7 @@ class MerchantController extends Controller
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
         
-        $keywords = Keyword::with('merchant')
+        $keywords = Keyword::with(['merchant', 'creator'])
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
@@ -264,6 +264,11 @@ class MerchantController extends Controller
         // }, $merchantData));
         
         try {
+            // Set created_by to current user if authenticated
+            if (Auth::check()) {
+                $merchantData['created_by'] = Auth::id();
+            }
+            
             $merchant = Merchant::create($merchantData);
             Log::info('Merchant created successfully with ID:', ['id' => $merchant->id]);
         } catch (\Exception $e) {
@@ -331,8 +336,105 @@ class MerchantController extends Controller
         }
     }
 
+    /**
+     * Check if current user can view merchant
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): semua user bisa lihat
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa lihat
+     */
+    private function canViewMerchant(Merchant $merchant)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa lihat semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika merchant tidak punya creator, semua user bisa lihat (backward compatibility)
+        if (!$merchant->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa lihat
+        if ($merchant->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $merchant->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, semua user bisa lihat
+            return true;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa lihat
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
+    /**
+     * Check if current user can edit merchant
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): hanya user maha yang bisa edit
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa edit
+     */
+    private function canEditMerchant(Merchant $merchant)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa edit semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika merchant tidak punya creator, semua user bisa edit (backward compatibility)
+        if (!$merchant->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa edit
+        if ($merchant->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $merchant->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, hanya user maha yang bisa edit (user biasa tidak bisa edit merchant)
+            return false;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa edit
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
     public function update(Request $request, $id)
     {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengedit merchant ini.');
+        }
+
         $validated = $request->validate([
             'nama_merchant'  => 'required|string|max:255',
             'kategori'       => 'nullable|string|max:100',
