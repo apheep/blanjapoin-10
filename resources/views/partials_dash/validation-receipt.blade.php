@@ -22,8 +22,13 @@
             <!-- Confirmation Details -->
             <div class="space-y-3">
                 <div class="flex justify-between items-start py-2 border-b border-gray-100">
-                    <span class="text-sm font-medium text-gray-600">Nama</span>
+                    <span class="text-sm font-medium text-gray-600">Nama PIC</span>
                     <span class="text-sm font-semibold text-gray-900 text-right ml-4" id="validationName">-</span>
+                </div>
+                
+                <div class="flex justify-between items-start py-2 border-b border-gray-100">
+                    <span class="text-sm font-medium text-gray-600">Nama Merchant</span>
+                    <span class="text-sm font-semibold text-gray-900 text-right ml-4" id="validationMerchantName">-</span>
                 </div>
                 
                 <div class="flex justify-between items-start py-2 border-b border-gray-100">
