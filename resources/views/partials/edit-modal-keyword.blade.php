@@ -244,7 +244,7 @@ function previewEditKeywordImages(input) {
     }
 }
 
-function openEditKeyword(id, keywordData) {
+function openEditKeyword(id, keywordData, canEditFull = true, canEditStock = true) {
     try {
         currentEditKeywordId = id;
         const modal = document.getElementById('editModalKeyword');
@@ -270,6 +270,89 @@ function openEditKeyword(id, keywordData) {
         
         // Set form action
         form.action = `/keywords/${id}`;
+        
+        // Disable field selain stock jika hanya bisa edit stock
+        if (!canEditFull && canEditStock) {
+            // Disable semua field kecuali stock (editStock)
+            const fieldsToDisable = [
+                'editMerchantSelect',
+                'editKeywordKategoriBtn',
+                'editProductName',
+                'editKeywordId',
+                'editCtaLink',
+                'editRedeem',
+                'editDiskonTypePercent',
+                'editDiskonTypeRupiah',
+                'editDiskonTypeFree',
+                'editDiskonPercent',
+                'editDiskonRupiah',
+                'editSubsidyEnabledNo',
+                'editSubsidyEnabledYes',
+                'editSubsidyAmount',
+                'editSkb',
+                'editStartDate',
+                'editEndDate',
+                'editKeywordImagesInput'
+            ];
+            
+            fieldsToDisable.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.disabled = true;
+                    field.style.opacity = '0.6';
+                    field.style.cursor = 'not-allowed';
+                    // Tambahkan class untuk styling
+                    field.classList.add('bg-gray-100');
+                }
+            });
+            
+            // Disable button upload image
+            const uploadButton = document.querySelector('button[onclick*="editKeywordImagesInput"]');
+            if (uploadButton) {
+                uploadButton.disabled = true;
+                uploadButton.style.opacity = '0.6';
+                uploadButton.style.cursor = 'not-allowed';
+                uploadButton.classList.add('bg-gray-100');
+            }
+            
+            // Pastikan field stock TIDAK di-disable
+            const stockField = document.getElementById('editStock');
+            if (stockField) {
+                stockField.disabled = false;
+                stockField.style.opacity = '1';
+                stockField.style.cursor = '';
+                stockField.classList.remove('bg-gray-100');
+            }
+            
+            // Tampilkan pesan informasi
+            const existingInfo = document.getElementById('editKeywordInfoMessage');
+            if (existingInfo) {
+                existingInfo.remove();
+            }
+            const infoMessage = document.createElement('div');
+            infoMessage.id = 'editKeywordInfoMessage';
+            infoMessage.className = 'mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg';
+            infoMessage.innerHTML = '<p class="text-sm text-yellow-800"><i class="fas fa-info-circle mr-2"></i>Anda hanya dapat mengedit stock untuk keyword ini. Field lainnya tidak dapat diubah.</p>';
+            const formContent = form.querySelector('.p-4, .p-6');
+            if (formContent) {
+                formContent.insertBefore(infoMessage, formContent.firstChild);
+            }
+        } else {
+            // Enable semua field jika bisa edit full
+            const allFields = form.querySelectorAll('input, select, textarea, button');
+            allFields.forEach(field => {
+                field.disabled = false;
+                field.style.opacity = '1';
+                field.style.cursor = '';
+                field.classList.remove('bg-gray-100');
+            });
+            
+            // Hapus pesan informasi jika ada
+            const infoMessage = document.getElementById('editKeywordInfoMessage');
+            if (infoMessage) {
+                infoMessage.remove();
+            }
+        }
         
         // Set redirect URL - prioritize detail page, then keyword tab, then default
         if (redirectInput && window.detailRedirectUrl) {
@@ -503,7 +586,23 @@ function closeEditKeyword() {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
         const form = document.getElementById('formEditKeyword');
-        if (form) form.reset();
+        if (form) {
+            form.reset();
+            // Re-enable semua field saat modal ditutup
+            const allFields = form.querySelectorAll('input, select, textarea, button');
+            allFields.forEach(field => {
+                field.disabled = false;
+                field.style.opacity = '1';
+                field.style.cursor = '';
+                field.classList.remove('bg-gray-100');
+            });
+            
+            // Hapus pesan informasi jika ada
+            const infoMessage = document.getElementById('editKeywordInfoMessage');
+            if (infoMessage) {
+                infoMessage.remove();
+            }
+        }
         
         // Reset diskon type to default (percent)
         const diskonTypePercent = document.getElementById('editDiskonTypePercent');
