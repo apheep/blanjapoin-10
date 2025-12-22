@@ -249,7 +249,13 @@
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-900">
-                            <div class="font-medium">{{ $keyword->trx ?? '-' }}</div>
+                            <div class="font-medium">
+                                @if(isset($keyword->trx) && $keyword->trx !== null)
+                                    {{ $keyword->trx }}
+                                @else
+                                    -
+                                @endif
+                            </div>
                         </td>
                         <td class="px-4 py-4">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ $keyword->sisa_stock ?? 0 }}</span>
