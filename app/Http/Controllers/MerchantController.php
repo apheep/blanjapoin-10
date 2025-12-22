@@ -47,7 +47,7 @@ class MerchantController extends Controller
         // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
-            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
+            // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
             ->orderBy('id')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
