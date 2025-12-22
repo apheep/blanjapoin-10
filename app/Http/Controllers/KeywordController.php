@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -917,6 +918,15 @@ class KeywordController extends Controller
         $keywords = $keywordsQuery
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
+        
+        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywords as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+            // Hitung sisa stock: stock - trx (minimal 0)
+            $stock = (int)($keyword->stock ?? 0);
+            $trx = (int)($keyword->trx ?? 0);
+            $keyword->sisa_stock = max(0, $stock - $trx);
+        }
 
         if ($request->ajax()) {
             try {
