@@ -79,13 +79,13 @@
                 @if($hasCategoryData('paket_games'))
                     @include('merchant.paketgames')
                 @endif
+                
+                @if($hasCategoryData('merchandise'))
+                    @include('merchant.merchandise')
+                @endif
 
                 @if($hasCategoryData('belanja'))
                     @include('merchant.shop')
-                @endif
-
-                @if($hasCategoryData('merchandise'))
-                    @include('merchant.merchandise')
                 @endif
 
                 @if($hasCategoryData('kuliner'))
