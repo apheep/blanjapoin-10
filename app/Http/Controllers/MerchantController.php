@@ -156,11 +156,15 @@ class MerchantController extends Controller
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
+            'radius'         => 'nullable|integer|min:0|max:100000',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
             'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+            'radius.integer' => 'Radius harus berupa angka',
+            'radius.min' => 'Radius minimal 0 meter',
+            'radius.max' => 'Radius maksimal 100000 meter (100 km)',
         ]);
     
         // =====================
@@ -230,6 +234,9 @@ class MerchantController extends Controller
             //                     ? (string)$request->input('long')
             //                     : null,
             'link_gmap'      => $getValue($request->input('link_gmap', null)),
+            'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
+                                ? (int)$request->input('radius')
+                                : null,
             'logo_merchant'  => $logoPath,
             'ktp_pic'        => $ktpPath,
             'is_active'      => (int)$isActive,
@@ -457,6 +464,7 @@ class MerchantController extends Controller
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
+            'radius'         => 'nullable|integer|min:0|max:100000',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'start_date'     => 'nullable|date_format:Y-m-d',
@@ -464,6 +472,9 @@ class MerchantController extends Controller
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
             'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+            'radius.integer' => 'Radius harus berupa angka',
+            'radius.min' => 'Radius minimal 0 meter',
+            'radius.max' => 'Radius maksimal 100000 meter (100 km)',
             'end_date.after_or_equal' => 'Tanggal akhir periode tidak boleh sebelum tanggal mulai periode',
         ]);
     
@@ -534,6 +545,9 @@ class MerchantController extends Controller
                 'daerah'         => $getValue($request->input('daerah', null)),
                 'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
                 'link_gmap'      => $getValue($request->input('link_gmap', null)),
+                'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
+                                    ? (int)$request->input('radius')
+                                    : null,
                 'logo_merchant'  => $logoPath,
                 'ktp_pic'        => $ktpPath,
                 'start_date'     => $request->input('start_date') ?: null,

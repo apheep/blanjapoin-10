@@ -251,6 +251,46 @@
                                 </p>
                             </div>
                         </div>
+
+                        {{-- Lock Radius Toggle --}}
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                <i class="fas fa-lock mr-1.5 text-orange-500"></i>
+                                Lock Radius LongLat
+                            </label>
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Lock Radius">
+                                <input type="checkbox"
+                                       id="editLockRadiusCheckbox"
+                                       class="sr-only peer" />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500 hover:peer-checked:from-orange-600 hover:peer-checked:to-red-600"></div>
+                                <span class="ml-3 text-sm text-gray-700" id="editLockRadiusText">Tidak Aktif</span>
+                            </label>
+                            <p class="mt-1.5 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <span>Aktifkan untuk menampilkan field radius validasi lokasi</span>
+                            </p>
+                        </div>
+
+                        {{-- Radius untuk Validasi Lokasi --}}
+                        <div id="editRadiusFieldContainer" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                <i class="fas fa-map-marked-alt mr-1.5 text-orange-500"></i>
+                                Radius Validasi Lokasi (meter)
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number"
+                                   name="radius"
+                                   id="editMerchantRadius"
+                                   min="0"
+                                   max="100000"
+                                   step="1"
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                   placeholder="Contoh: 300 (meter)">
+                            <p class="mt-1.5 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <span>Atur radius dalam meter untuk validasi lokasi saat user redeem</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -425,6 +465,49 @@ function removeEditMerchantKtp() {
 }
 
 // ======================
+// Toggle Lock Radius (Edit Modal)
+// ======================
+document.addEventListener('DOMContentLoaded', function() {
+    const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
+    const lockRadiusText = document.getElementById('editLockRadiusText');
+    const radiusFieldContainer = document.getElementById('editRadiusFieldContainer');
+    const radiusInput = document.getElementById('editMerchantRadius');
+
+    function toggleEditLockRadius() {
+        const isLocked = lockRadiusCheckbox.checked;
+
+        // Update toggle text
+        if (lockRadiusText) {
+            lockRadiusText.textContent = isLocked ? 'Aktif' : 'Tidak Aktif';
+        }
+
+        // Toggle visibility of radius field
+        if (radiusFieldContainer) {
+            if (isLocked) {
+                radiusFieldContainer.classList.remove('hidden');
+                // Make radius required when visible
+                if (radiusInput) {
+                    radiusInput.setAttribute('required', 'required');
+                }
+            } else {
+                radiusFieldContainer.classList.add('hidden');
+                // Remove required when hidden
+                if (radiusInput) {
+                    radiusInput.removeAttribute('required');
+                    radiusInput.value = ''; // Clear value when hidden
+                }
+            }
+        }
+    }
+
+    if (lockRadiusCheckbox) {
+        lockRadiusCheckbox.addEventListener('change', toggleEditLockRadius);
+        // Initialize state (hidden by default)
+        toggleEditLockRadius();
+    }
+});
+
+// ======================
 // Toggle KTP Upload based on Email PIC
 // ======================
 function toggleEditKtpUpload() {
@@ -569,6 +652,25 @@ function openEditMerchant(id, merchantData) {
     
     document.getElementById('editMerchantDetailAlamat').value = merchantData.detail_daerah || '';
     document.getElementById('editMerchantLinkGmap').value = merchantData.link_gmap || '';
+
+    // Set lock radius checkbox and radius field
+    const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
+    const lockRadiusText = document.getElementById('editLockRadiusText');
+    const radiusValue = merchantData.radius || '';
+    if (lockRadiusCheckbox && radiusValue) {
+        lockRadiusCheckbox.checked = true;
+        if (lockRadiusText) lockRadiusText.textContent = 'Aktif';
+        // Trigger change event to show radius field
+        lockRadiusCheckbox.dispatchEvent(new Event('change'));
+        // Set radius value after field is shown
+        setTimeout(() => {
+            document.getElementById('editMerchantRadius').value = radiusValue;
+        }, 100);
+    } else {
+        lockRadiusCheckbox.checked = false;
+        if (lockRadiusText) lockRadiusText.textContent = 'Tidak Aktif';
+        lockRadiusCheckbox.dispatchEvent(new Event('change'));
+    }
     
     // Periode - set start_date dan end_date
     const startDateEl = document.getElementById('editMerchantStartDate');
@@ -713,6 +815,18 @@ function closeEditMerchant() {
                 ktpPreview.classList.add('hidden');
             }
             if (ktpText) ktpText.textContent = 'Click to upload KTP';
+
+            // Reset lock radius toggle
+            const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
+            const lockRadiusText = document.getElementById('editLockRadiusText');
+            if (lockRadiusCheckbox) {
+                lockRadiusCheckbox.checked = false;
+                // Trigger change event to hide radius field and reset text
+                lockRadiusCheckbox.dispatchEvent(new Event('change'));
+            }
+            if (lockRadiusText) {
+                lockRadiusText.textContent = 'Tidak Aktif';
+            }
         }
     }, 300);
 }
@@ -1045,9 +1159,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validate required fields
             const namaMerchant = form.querySelector('input[name="nama_merchant"]').value.trim();
             const kategori = form.querySelector('input[name="kategori"]').value.trim();
-            
+
             if (!namaMerchant || !kategori) {
                 alert('Mohon isi field yang diperlukan (Nama Merchant, Kategori)');
+                return false;
+            }
+
+            // Validate lock radius
+            const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
+            const isLockRadiusChecked = lockRadiusCheckbox && lockRadiusCheckbox.checked;
+            const radius = form.querySelector('input[name="radius"]').value.trim();
+
+            if (isLockRadiusChecked && !radius) {
+                alert('Radius wajib diisi karena fitur Lock Radius aktif');
+                document.getElementById('editMerchantRadius').focus();
                 return false;
             }
             
