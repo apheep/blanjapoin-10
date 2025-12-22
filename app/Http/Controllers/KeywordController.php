@@ -216,8 +216,10 @@ class KeywordController extends Controller
 
             // Determine status: if subsidy_enabled is 0 (no), auto-approve
             $status = $request->status ?? 'pending';
+            $wasAutoApproved = false;
             if ($request->subsidy_enabled == '0' || $request->subsidy_enabled === 0 || $subsidyAmount === null) {
                 $status = 'approve';
+                $wasAutoApproved = true;
             }
 
             // Ensure stock has default value if null or empty
@@ -255,11 +257,19 @@ class KeywordController extends Controller
             
             $keyword = Keyword::create($keywordData);
 
+            // Update diamond merchant jika keyword punya subsidy
+            // Diamond bertambah setiap keyword dengan subsidy ditambahkan ke history
+            if ($subsidyAmount && $subsidyAmount > 0 && $merchant) {
+                $merchant->diamond = ($merchant->diamond ?? 0) + $subsidyAmount;
+                $merchant->save();
+            }
+
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Keyword berhasil ditambahkan!',
-                    'keyword' => $keyword
+                    'keyword' => $keyword,
+                    'diamond_added' => ($wasAutoApproved && $subsidyAmount) ? $subsidyAmount : 0
                 ], 201);
             }
 
@@ -793,6 +803,9 @@ class KeywordController extends Controller
             }
 
             // Update keyword
+            // Simpan nilai lama untuk deteksi perubahan diamond
+            $oldSubsidy = $keyword->subsidy_amount ?? 0;
+            
             // Jika hanya bisa edit stock, hanya update stock
             if (!$canEditFull && $canEditStock) {
                 $keyword->update([
@@ -817,6 +830,17 @@ class KeywordController extends Controller
                     'stock'             => $request->stock,
                     'status'            => $status,
                 ]);
+                
+                // Update diamond merchant jika subsidy_amount berubah
+                if ($merchant && $canEditFull) {
+                    $newSubsidy = $subsidyAmount ?? 0;
+                    $subsidyDiff = $newSubsidy - $oldSubsidy;
+                    
+                    if ($subsidyDiff != 0) {
+                        $merchant->diamond = max(0, ($merchant->diamond ?? 0) + $subsidyDiff);
+                        $merchant->save();
+                    }
+                }
             }
 
             if ($request->wantsJson()) {
@@ -858,7 +882,14 @@ class KeywordController extends Controller
     public function destroy($id)
     {
         try {
-            $keyword = Keyword::findOrFail($id);
+            $keyword = Keyword::with('merchant')->findOrFail($id);
+
+            // Kurangi diamond merchant jika keyword punya subsidy
+            if ($keyword->subsidy_amount && $keyword->subsidy_amount > 0 && $keyword->merchant) {
+                $merchant = $keyword->merchant;
+                $merchant->diamond = max(0, ($merchant->diamond ?? 0) - $keyword->subsidy_amount);
+                $merchant->save();
+            }
 
             // Delete image file if exists
             if ($keyword->image && Storage::disk('public')->exists($keyword->image)) {
@@ -868,9 +899,14 @@ class KeywordController extends Controller
             // Delete keyword record
             $keyword->delete();
 
-            return response()->json(['success' => true, 'message' => 'Keyword berhasil dihapus'], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Keyword berhasil dihapus',
+                'diamond_reduced' => $keyword->subsidy_amount ?? 0
+            ], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Gagal menghapus keyword'], 500);
+            Log::error('Error deleting keyword: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus keyword: ' . $e->getMessage()], 500);
         }
     }
 
@@ -920,12 +956,11 @@ class KeywordController extends Controller
             ->appends($keywordQueryParams);
         
         // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        // Update ke database untuk setiap keyword
         foreach ($keywords as $keyword) {
-            $keyword->trx = $keyword->redeem_count ?? 0;
-            // Hitung sisa stock: stock - trx (minimal 0)
-            $stock = (int)($keyword->stock ?? 0);
-            $trx = (int)($keyword->trx ?? 0);
-            $keyword->sisa_stock = max(0, $stock - $trx);
+            $keyword->updateTrxAndSisaStock();
+            // Reload untuk mendapatkan nilai terbaru
+            $keyword->refresh();
         }
 
         if ($request->ajax()) {
@@ -1011,9 +1046,10 @@ class KeywordController extends Controller
                 'keyword' => $keyword
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Error approving keyword: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyetujui keyword'
+                'message' => 'Gagal menyetujui keyword: ' . $e->getMessage()
             ], 500);
         }
     }

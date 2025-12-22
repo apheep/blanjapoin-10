@@ -458,7 +458,7 @@
                                             <div class="flex items-center gap-2">
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }} inline-block w-fit transition-all duration-200 hover:scale-105">{{ $statusText }}</span>
                                                 @if($withdraw->status === 'rejected' && $withdraw->dec_reject)
-                                                    <button onclick="showRejectReasonModal('{{ addslashes($withdraw->dec_reject) }}', '{{ addslashes($withdraw->nama) }}')" 
+                                                    <button onclick="showRejectReasonModal('{{ addslashes($withdraw->dec_reject) }}', '{{ addslashes($withdraw->merchant->nama_pic ?? $withdraw->nama) }}')" 
                                                             class="btn-detail px-2 py-1 text-xs font-normal text-red-500 hover:text-red-600 transition-colors duration-150 flex items-center gap-1">
                                                         <i class="fas fa-info-circle text-[10px]"></i>
                                                         <span>Detail</span>
@@ -468,7 +468,7 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-900">
-                                        <div class="font-medium">{{ $withdraw->nama }}</div>
+                                        <div class="font-medium">{{ $withdraw->merchant->nama_pic ?? $withdraw->nama }}</div>
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-700">{{ $withdraw->merchant->nama_merchant ?? '-' }}</td>
                                     <td class="px-4 py-4 text-sm text-gray-700">{{ $withdraw->metode_penarikan_name }}</td>

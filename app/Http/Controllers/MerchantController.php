@@ -53,12 +53,11 @@ class MerchantController extends Controller
             ->appends($keywordQueryParams);
         
         // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        // Update ke database untuk setiap keyword
         foreach ($keywords as $keyword) {
-            $keyword->trx = $keyword->redeem_count ?? 0;
-            // Hitung sisa stock: stock - trx (minimal 0)
-            $stock = (int)($keyword->stock ?? 0);
-            $trx = (int)($keyword->trx ?? 0);
-            $keyword->sisa_stock = max(0, $stock - $trx);
+            $keyword->updateTrxAndSisaStock();
+            // Reload untuk mendapatkan nilai terbaru
+            $keyword->refresh();
         }
             
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
@@ -870,19 +869,35 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Hitung total diamond dari history transaksi
-        // Logic: Setiap transaksi (trx) pada keyword dengan subsidy_amount menghasilkan diamond
-        // Total diamond = sum(trx * subsidy_amount) untuk semua keywords
-        // 1 rupiah = 1 diamond
-        $totalDiamond = 0;
-        foreach ($keywords as $keyword) {
-            if ($keyword->subsidy_amount && $keyword->trx) {
-                // Parse trx menjadi integer (jika string, ambil nilai numeriknya)
-                $trxCount = is_numeric($keyword->trx) ? (int)$keyword->trx : 0;
-                // Hitung diamond = jumlah transaksi * nilai subsidi (rupiah)
-                $diamondFromKeyword = $trxCount * (float)$keyword->subsidy_amount;
-                $totalDiamond += $diamondFromKeyword;
-            }
+        // Hitung diamond dari transaksi yang benar-benar terjadi (dari tabel tokodigi_tselpoin_redeem)
+        // Diamond = SUM(jumlah_transaksi × subsidy_amount) untuk setiap keyword
+        $transactionData = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->where('k.merchant_key', $merchant->id)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->whereNotNull('k.subsidy_amount')
+            ->where('k.subsidy_amount', '>', 0)
+            ->select('k.keyword_id', 'k.subsidy_amount', DB::raw('COUNT(*) as trx_count'))
+            ->groupBy('k.keyword_id', 'k.subsidy_amount')
+            ->get();
+        
+        $totalSubsidi = 0;
+        foreach ($transactionData as $data) {
+            $totalSubsidi += $data->trx_count * $data->subsidy_amount;
+        }
+        
+        // Hitung total withdraw yang sudah approved
+        $totalWithdrawn = WithdrawRequest::where('merchant_id', $merchant->id)
+            ->where('status', 'approved')
+            ->sum('jumlah');
+        
+        // Diamond = Total Subsidi - Total Withdraw Approved
+        $totalDiamond = max(0, $totalSubsidi - $totalWithdrawn);
+        
+        // Update kolom diamond di database agar sinkron
+        if ($merchant->diamond != $totalDiamond) {
+            $merchant->diamond = $totalDiamond;
+            $merchant->save();
         }
 
         // Generate link history (trx-history)
@@ -934,15 +949,36 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
         }
 
-        // Ambil semua history keyword untuk merchant ini (semua status, diurutkan dari terbaru)
-        $keywords = Keyword::with('merchant')
-            ->where('merchant_key', $merchant->id)
-            ->orderBy('created_at', 'desc')
+        // Ambil transaksi dari tokodigi_tselpoin_redeem (transaksi customer yang redeem)
+        // Jika tidak ada data di tokodigi_tselpoin_redeem, maka history kosong
+        // Hanya tampilkan transaksi dari keyword yang sudah APPROVE
+        $histories = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->where('k.merchant_key', $merchant->id)
+            ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
+            ->where('tr.program', 'BLANJAPOIN')
+            ->select(
+                'tr.id',
+                'tr.created_date as created_at',
+                'tr.msisdn',
+                'tr.keyword_desc as nama_produk',
+                'tr.coupon as keyword_id',
+                'tr.poin_redeem as redeem',
+                'k.subsidy_amount',
+                'k.status',
+                DB::raw("'{$merchant->id}' as merchant_key")
+            )
+            ->orderBy('tr.created_date', 'desc')
             ->get();
+
+        // Add merchant relation manually
+        foreach ($histories as $history) {
+            $history->merchant = $merchant;
+        }
 
         return view('trx-history', [
             'merchant' => $merchant,
-            'histories' => $keywords,
+            'histories' => $histories,
         ]);
     }
 
@@ -974,10 +1010,12 @@ class MerchantController extends Controller
         }
 
         // Query untuk history transaksi: join tokodigi_tselpoin_redeem dengan keywords dan merchants
+        // Hanya tampilkan transaksi dari keyword yang sudah APPROVE
         $historyQuery = DB::table('tokodigi_tselpoin_redeem as tr')
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->join('merchants as m', 'k.merchant_key', '=', 'm.id')
             ->where('m.id', $merchant->id)
+            ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
                 'tr.created_date as tanggal',
@@ -1006,12 +1044,11 @@ class MerchantController extends Controller
             ->withQueryString();
         
         // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        // Update ke database untuk setiap keyword
         foreach ($keywordPaginator as $keyword) {
-            $keyword->trx = $keyword->redeem_count ?? 0;
-            // Hitung sisa stock: stock - trx (minimal 0)
-            $stock = (int)($keyword->stock ?? 0);
-            $trx = (int)($keyword->trx ?? 0);
-            $keyword->sisa_stock = max(0, $stock - $trx);
+            $keyword->updateTrxAndSisaStock();
+            // Reload untuk mendapatkan nilai terbaru
+            $keyword->refresh();
         }
 
         return view('history-all', [
@@ -1110,9 +1147,13 @@ class MerchantController extends Controller
             ->paginate(12)
             ->withQueryString();
 
+        // Ambil diamond merchant sebagai saldo (1 diamond = 1 rupiah)
+        $accountBalance = $merchant->diamond ?? 0;
+
         return view('partials_dash.reedem', [
             'merchant' => $merchant,
             'keywords' => $keywords,
+            'accountBalance' => $accountBalance,
         ]);
     }
 
@@ -1147,8 +1188,8 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
         }
 
-        // Build query with date filter
-        $query = WithdrawRequest::where('merchant_id', $merchant->id);
+        // Build query with date filter and merchant relationship
+        $query = WithdrawRequest::with('merchant')->where('merchant_id', $merchant->id);
         
         // Date filter (single date)
         $date = $request->get('date');
@@ -1194,6 +1235,11 @@ class MerchantController extends Controller
             }
         } elseif ($sortBy === 'nama') {
             $query->orderBy('nama', $sortOrder);
+        } elseif ($sortBy === 'merchant') {
+            // Sort by merchant name using join
+            $query->join('merchants', 'withdraw_requests.merchant_id', '=', 'merchants.id')
+                  ->orderBy('merchants.nama_merchant', $sortOrder)
+                  ->select('withdraw_requests.*'); // Ensure we only select withdraw_requests columns
         } elseif ($sortBy === 'metode') {
             // Custom sorting: Bank first (bca, bni, bri, mandiri) then E-Wallet (linkaja, dana)
             if ($sortOrder === 'asc') {
@@ -1212,6 +1258,8 @@ class MerchantController extends Controller
                 END")
                 ->orderBy('metode_penarikan', 'asc');
             }
+        } elseif ($sortBy === 'jumlah') {
+            $query->orderBy('jumlah', $sortOrder);
         } elseif ($sortBy === 'tanggal') {
             $query->orderBy('created_at', $sortOrder);
         } else {
@@ -1267,6 +1315,14 @@ class MerchantController extends Controller
             // Fetch merchant - this will throw 404 if merchant doesn't exist
             $merchant = Merchant::findOrFail($request->merchant_id);
             
+            // Validasi: cek apakah diamond mencukupi untuk withdraw (1 diamond = 1 rupiah)
+            if ($merchant->diamond < $request->amount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Saldo diamond tidak mencukupi. Saldo tersedia: Rp ' . number_format($merchant->diamond, 0, ',', '.'),
+                ], 400);
+            }
+            
             // SECURITY: Verify that the authenticated user is authorized to submit withdrawals for this merchant
             if ($isPortalUser) {
                 $portalUser = Auth::guard('portal')->user();
@@ -1311,18 +1367,8 @@ class MerchantController extends Controller
                 }
             }
             
-            // Tentukan nama: prioritaskan PortalUser name, kemudian nama_pic, terakhir nama_merchant
-            $nama = $merchant->nama_merchant; // Default fallback
-            if ($merchant->nama_pic) {
-                $nama = $merchant->nama_pic;
-            }
-            // Jika ada user yang login via portal, gunakan nama dari PortalUser
-            if (Auth::guard('portal')->check()) {
-                $portalUser = Auth::guard('portal')->user();
-                if ($portalUser && $portalUser->name) {
-                    $nama = $portalUser->name;
-                }
-            }
+            // Tentukan nama: prioritaskan nama_pic dari merchant, fallback ke nama_merchant
+            $nama = $merchant->nama_pic ?? $merchant->nama_merchant;
             
             // Format account number untuk e-wallet
             // Standardize format: store with +62 prefix to match merchant wa_pic format
@@ -1370,6 +1416,8 @@ class MerchantController extends Controller
                 'data' => [
                     'transaction_id' => $transactionId,
                     'withdraw_id' => $withdrawRequest->id,
+                    'nama_pic' => $nama,
+                    'nama_merchant' => $merchant->nama_merchant ?? '-',
                 ]
             ], 200);
 
@@ -1418,16 +1466,34 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
         }
 
-        // Ambil semua history keyword untuk merchant ini (semua status, diurutkan dari terbaru)
-        $keywords = Keyword::with('merchant')
-            ->where('merchant_key', $merchant->id)
-            ->orderBy('created_at', 'desc')
+        // Ambil transaksi dari tokodigi_tselpoin_redeem (transaksi customer yang redeem)
+        // Join dengan keywords untuk ambil info merchant & subsidy
+        // Hanya tampilkan transaksi dari keyword yang sudah APPROVE
+        $histories = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->where('k.merchant_key', $merchant->id)
+            ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
+            ->where('tr.program', 'BLANJAPOIN')
+            ->select(
+                'tr.id',
+                'tr.created_date as created_at',
+                'tr.msisdn',
+                'tr.keyword_desc as nama_produk',
+                'tr.coupon as keyword_id',
+                'tr.poin_redeem as redeem',
+                'k.subsidy_amount',
+                'k.status',
+                DB::raw("'{$merchant->id}' as merchant_key"),
+                DB::raw("'{$merchant->nama_merchant}' as nama_merchant"),
+                DB::raw("'{$merchant->daerah}' as merchant_city")
+            )
+            ->orderBy('tr.created_date', 'desc')
             ->paginate(12)
             ->withQueryString();
 
         return view('partials_dash.trx-history', [
             'merchant' => $merchant,
-            'histories' => $keywords,
+            'histories' => $histories,
         ]);
     }
 
@@ -1435,6 +1501,61 @@ class MerchantController extends Controller
     {
         $fileName = 'merchants_' . date('Y-m-d_His') . '.xlsx';
         return Excel::download(new MerchantsExport, $fileName);
+    }
+
+    /**
+     * Recalculate diamond untuk semua merchant
+     * Route: POST /merchants/recalculate-diamond
+     */
+    public function recalculateDiamond()
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            // Ambil semua merchant
+            $merchants = Merchant::all();
+            $updated = 0;
+            
+            foreach ($merchants as $merchant) {
+                // Hitung total diamond dari SEMUA keyword (riwayat transaksi) dengan subsidy
+                // Diamond bertambah setiap keyword dibuat, bukan saat di-approve
+                $totalDiamond = Keyword::where('merchant_key', $merchant->id)
+                    ->whereNotNull('subsidy_amount')
+                    ->where('subsidy_amount', '>', 0)
+                    ->sum('subsidy_amount');
+                
+                // Update diamond merchant
+                $merchant->diamond = $totalDiamond;
+                $merchant->save();
+                $updated++;
+            }
+            
+            // Hitung summary
+            $merchantsWithDiamond = Merchant::where('diamond', '>', 0)->count();
+            $totalAllDiamond = Merchant::sum('diamond');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Diamond berhasil di-recalculate',
+                'data' => [
+                    'merchants_updated' => $updated,
+                    'merchants_with_diamond' => $merchantsWithDiamond,
+                    'total_diamond' => number_format($totalAllDiamond, 0, ',', '.')
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error recalculating diamond: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat recalculate diamond: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function exportKeywordsExcel(Merchant $merchant)
@@ -1569,6 +1690,15 @@ class MerchantController extends Controller
         if ($withdrawRequest->status !== 'pending') {
             return redirect()->route('withdraw.approval')
                 ->with('error', 'Withdraw request sudah diproses sebelumnya.');
+        }
+
+        // Validasi diamond mencukupi
+        $merchant = $withdrawRequest->merchant;
+        if ($merchant) {
+            if ($merchant->diamond < $withdrawRequest->jumlah) {
+                return redirect()->route('withdraw.approval')
+                    ->with('error', 'Saldo diamond merchant tidak mencukupi. Saldo: Rp ' . number_format($merchant->diamond, 0, ',', '.'));
+            }
         }
 
         $withdrawRequest->update([
