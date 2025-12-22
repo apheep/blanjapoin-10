@@ -68,6 +68,12 @@
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-amber-100 hover:to-yellow-100 hover:text-amber-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('merchandise')">
                                             Merchandise
                                         </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-pink-100 hover:text-red-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_video')">
+                                            Paket Video
+                                        </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-violet-100 hover:to-purple-100 hover:text-violet-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_games')">
+                                            Paket games
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -238,7 +244,7 @@ function previewEditKeywordImages(input) {
     }
 }
 
-function openEditKeyword(id, keywordData) {
+function openEditKeyword(id, keywordData, canEditFull = true, canEditStock = true) {
     try {
         currentEditKeywordId = id;
         const modal = document.getElementById('editModalKeyword');
@@ -264,6 +270,89 @@ function openEditKeyword(id, keywordData) {
         
         // Set form action
         form.action = `/keywords/${id}`;
+        
+        // Disable field selain stock jika hanya bisa edit stock
+        if (!canEditFull && canEditStock) {
+            // Disable semua field kecuali stock (editStock)
+            const fieldsToDisable = [
+                'editMerchantSelect',
+                'editKeywordKategoriBtn',
+                'editProductName',
+                'editKeywordId',
+                'editCtaLink',
+                'editRedeem',
+                'editDiskonTypePercent',
+                'editDiskonTypeRupiah',
+                'editDiskonTypeFree',
+                'editDiskonPercent',
+                'editDiskonRupiah',
+                'editSubsidyEnabledNo',
+                'editSubsidyEnabledYes',
+                'editSubsidyAmount',
+                'editSkb',
+                'editStartDate',
+                'editEndDate',
+                'editKeywordImagesInput'
+            ];
+            
+            fieldsToDisable.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.disabled = true;
+                    field.style.opacity = '0.6';
+                    field.style.cursor = 'not-allowed';
+                    // Tambahkan class untuk styling
+                    field.classList.add('bg-gray-100');
+                }
+            });
+            
+            // Disable button upload image
+            const uploadButton = document.querySelector('button[onclick*="editKeywordImagesInput"]');
+            if (uploadButton) {
+                uploadButton.disabled = true;
+                uploadButton.style.opacity = '0.6';
+                uploadButton.style.cursor = 'not-allowed';
+                uploadButton.classList.add('bg-gray-100');
+            }
+            
+            // Pastikan field stock TIDAK di-disable
+            const stockField = document.getElementById('editStock');
+            if (stockField) {
+                stockField.disabled = false;
+                stockField.style.opacity = '1';
+                stockField.style.cursor = '';
+                stockField.classList.remove('bg-gray-100');
+            }
+            
+            // Tampilkan pesan informasi
+            const existingInfo = document.getElementById('editKeywordInfoMessage');
+            if (existingInfo) {
+                existingInfo.remove();
+            }
+            const infoMessage = document.createElement('div');
+            infoMessage.id = 'editKeywordInfoMessage';
+            infoMessage.className = 'mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg';
+            infoMessage.innerHTML = '<p class="text-sm text-yellow-800"><i class="fas fa-info-circle mr-2"></i>Anda hanya dapat mengedit stock untuk keyword ini. Field lainnya tidak dapat diubah.</p>';
+            const formContent = form.querySelector('.p-4, .p-6');
+            if (formContent) {
+                formContent.insertBefore(infoMessage, formContent.firstChild);
+            }
+        } else {
+            // Enable semua field jika bisa edit full
+            const allFields = form.querySelectorAll('input, select, textarea, button');
+            allFields.forEach(field => {
+                field.disabled = false;
+                field.style.opacity = '1';
+                field.style.cursor = '';
+                field.classList.remove('bg-gray-100');
+            });
+            
+            // Hapus pesan informasi jika ada
+            const infoMessage = document.getElementById('editKeywordInfoMessage');
+            if (infoMessage) {
+                infoMessage.remove();
+            }
+        }
         
         // Set redirect URL - prioritize detail page, then keyword tab, then default
         if (redirectInput && window.detailRedirectUrl) {
@@ -497,7 +586,23 @@ function closeEditKeyword() {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
         const form = document.getElementById('formEditKeyword');
-        if (form) form.reset();
+        if (form) {
+            form.reset();
+            // Re-enable semua field saat modal ditutup
+            const allFields = form.querySelectorAll('input, select, textarea, button');
+            allFields.forEach(field => {
+                field.disabled = false;
+                field.style.opacity = '1';
+                field.style.cursor = '';
+                field.classList.remove('bg-gray-100');
+            });
+            
+            // Hapus pesan informasi jika ada
+            const infoMessage = document.getElementById('editKeywordInfoMessage');
+            if (infoMessage) {
+                infoMessage.remove();
+            }
+        }
         
         // Reset diskon type to default (percent)
         const diskonTypePercent = document.getElementById('editDiskonTypePercent');
@@ -874,7 +979,9 @@ function selectEditKeywordKategori(value) {
             'belanja': 'Belanja',
             'kecantikan': 'Kecantikan',
             'telkomsel': 'Telkomsel Paket',
-            'merchandise': 'Merchandise'
+            'merchandise': 'Merchandise',
+            'paket_video': 'Paket Video',
+            'paket_games': 'Paket games'
         };
         labelSpan.textContent = labelMap[value] || value.charAt(0).toUpperCase() + value.slice(1);
     }
@@ -889,7 +996,9 @@ function selectEditKeywordKategori(value) {
             'belanja': ['border-green-300', 'text-green-800', 'from-green-100', 'to-emerald-100'],
             'kecantikan': ['border-pink-300', 'text-pink-800', 'from-pink-100', 'to-rose-100'],
             'telkomsel': ['border-indigo-300', 'text-indigo-800', 'from-indigo-100', 'to-blue-100'],
-            'merchandise': ['border-amber-300', 'text-amber-800', 'from-amber-100', 'to-yellow-100']
+            'merchandise': ['border-amber-300', 'text-amber-800', 'from-amber-100', 'to-yellow-100'],
+            'paket_video': ['border-red-300', 'text-red-800', 'from-red-100', 'to-pink-100'],
+            'paket_games': ['border-violet-300', 'text-violet-800', 'from-violet-100', 'to-purple-100']
         };
         
         const colors = colorMap[value] || ['border-gray-300', 'text-gray-700'];

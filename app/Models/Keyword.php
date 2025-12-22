@@ -32,11 +32,17 @@ class Keyword extends Model
         'status',
         'is_active',
         'is_special_promo',
+        'created_by',
     ];
 
     public function merchant()
     {
         return $this->belongsTo(Merchant::class, 'merchant_key', 'id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
     /**

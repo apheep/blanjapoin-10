@@ -234,35 +234,82 @@
 
     </section>
 
+    @php
+        // Helper function to check if category has data
+        $hasCategoryData = function($category) use ($keywords) {
+            return $keywords->filter(function ($keyword) use ($category) {
+                $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+                return $keyword->merchant 
+                    && $keywordCategory === $category
+                    && $keyword->status === 'approve'
+                    && $keyword->is_active == 1
+                    && $keyword->merchant->is_active == 1;
+            })->isNotEmpty();
+        };
+    @endphp
+
     <!-- shop Section -->
+    @if($hasCategoryData('belanja'))
     <div id="shopSection">
      @include('merchant.shop')
     </div>
+    @endif
  
     <!-- food Section -->
+    @if($hasCategoryData('kuliner'))
     <div id="foodSection">
      @include('merchant.food')
     </div>
+    @endif
  
     <!-- telkomsel Section -->
+    @if($hasCategoryData('telkomsel'))
     <div id="telkomselSection">
      @include('merchant.telkomsel')
     </div>
+    @endif
  
     <!-- entertain Section -->
+    @if($hasCategoryData('hiburan'))
     <div id="entertainSection">
      @include('merchant.entertain')
     </div>
+    @endif
  
     <!-- vacation Section -->
+    @if($hasCategoryData('liburan'))
     <div id="vacationSection">
      @include('merchant.vacation')
     </div>
+    @endif
  
     <!-- beauty Section -->
+    @if($hasCategoryData('kecantikan'))
     <div id="beautySection">
      @include('merchant.beautyncare')
     </div>
+    @endif
+
+    <!-- merchandise Section -->
+    @if($hasCategoryData('merchandise'))
+    <div id="merchandiseSection">
+     @include('merchant.merchandise')
+    </div>
+    @endif
+
+    <!-- paketvideo Section -->
+    @if($hasCategoryData('paket_video'))
+    <div id="paketvideoSection">
+     @include('merchant.paketvideo')
+    </div>
+    @endif
+
+    <!-- paketgames Section -->
+    @if($hasCategoryData('paket_games'))
+    <div id="paketgamesSection">
+     @include('merchant.paketgames')
+    </div>
+    @endif
    
 
     <footer class="mt-16 pb-12 text-center">
@@ -1011,7 +1058,10 @@
     { id: 'vacation', name: 'Liburan', icon: 'vacation.png', color: 'purple' },
     { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
     { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
-    { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' }
+    { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' },
+    { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' },
+    { id: 'paketvideo', name: 'Paket Video', icon: 'paketvideo.png', color: 'purple' },
+    { id: 'paketgames', name: 'Paket Games', icon: 'paketgames.png', color: 'green' }
    ];
    
    const categoryHtml = `

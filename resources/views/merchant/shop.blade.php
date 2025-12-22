@@ -4,11 +4,22 @@
      </div>
      @php
        $shopCategory = 'belanja';
-       $shopKeywords = $keywords->filter(function ($keyword) use ($shopCategory) {
-       return $keyword->merchant && $keyword->merchant->kategori === $shopCategory
+       $isLinkPelanggan = $isLinkPelanggan ?? false;
+       $isTerritorial = $isTerritorial ?? false;
+       $isRegional = $isRegional ?? false;
+       $isBranch = $isBranch ?? false;
+       $isCluster = $isCluster ?? false;
+       $skipMerchantValidation = $isLinkPelanggan || $isTerritorial || $isRegional || $isBranch || $isCluster;
+       $shopKeywords = $keywords->filter(function ($keyword) use ($shopCategory, $skipMerchantValidation) {
+       // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
+       $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+       $baseCondition = $keyword->merchant && $keywordCategory === $shopCategory
        && $keyword->status === 'approve'
-       && $keyword->is_active == 1
-       && $keyword->merchant->is_active == 1;
+       && $keyword->is_active == 1;
+       // Skip validasi merchant->is_active jika di halaman link-pelanggan atau location-based pages
+       return $skipMerchantValidation 
+           ? $baseCondition 
+           : ($baseCondition && $keyword->merchant->is_active == 1);
         })->values();
      @endphp
 
@@ -177,8 +188,8 @@
        </div>
       </article>
       @empty
-      <div class="col-span-3 text-center text-neutral-500 text-sm py-6">
-       Belum ada data promo untuk kategori ini.
+      <div class="col-span-10 text-center text-neutral-500 text-sm py-6">
+       Belum ada data promo untuk kategori Belanja.
       </div>
       @endforelse
      </div>

@@ -129,7 +129,7 @@ class MerchantController extends Controller
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
         
-        $keywords = Keyword::with('merchant')
+        $keywords = Keyword::with(['merchant', 'creator'])
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
@@ -275,6 +275,11 @@ class MerchantController extends Controller
         // }, $merchantData));
         
         try {
+            // Set created_by to current user if authenticated
+            if (Auth::check()) {
+                $merchantData['created_by'] = Auth::id();
+            }
+            
             $merchant = Merchant::create($merchantData);
             Log::info('Merchant created successfully with ID:', ['id' => $merchant->id]);
         } catch (\Exception $e) {
@@ -342,8 +347,105 @@ class MerchantController extends Controller
         }
     }
 
+    /**
+     * Check if current user can view merchant
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): semua user bisa lihat
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa lihat
+     */
+    private function canViewMerchant(Merchant $merchant)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa lihat semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika merchant tidak punya creator, semua user bisa lihat (backward compatibility)
+        if (!$merchant->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa lihat
+        if ($merchant->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $merchant->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, semua user bisa lihat
+            return true;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa lihat
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
+    /**
+     * Check if current user can edit merchant
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): hanya user maha yang bisa edit
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa edit
+     */
+    private function canEditMerchant(Merchant $merchant)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa edit semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika merchant tidak punya creator, semua user bisa edit (backward compatibility)
+        if (!$merchant->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa edit
+        if ($merchant->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $merchant->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, hanya user maha yang bisa edit (user biasa tidak bisa edit merchant)
+            return false;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa edit
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
     public function update(Request $request, $id)
     {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengedit merchant ini.');
+        }
+
         $validated = $request->validate([
             'nama_merchant'  => 'required|string|max:255',
             'kategori'       => 'nullable|string|max:100',
@@ -618,6 +720,7 @@ class MerchantController extends Controller
         // Cari merchant berdasarkan code dari link_blanjapoin
         // Format link_blanjapoin: "blanjapoin.id/dash/{code}"
         // Coba dengan code yang sudah di-decode dan juga dengan yang masih encoded
+        // Note: Tidak ada validasi is_active merchant, semua merchant bisa diakses
         $merchant = Merchant::where(function($query) use ($decodedCode, $code) {
                 // Cari dengan code yang sudah di-decode
                 $query->where('link_blanjapoin', 'like', '%/dash/' . $decodedCode)
@@ -627,6 +730,7 @@ class MerchantController extends Controller
                       ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '%');
             })
             ->whereNotNull('link_blanjapoin')
+            // Tidak ada filter is_active merchant - semua merchant bisa diakses
             ->first();
 
         if (!$merchant) {
@@ -634,14 +738,24 @@ class MerchantController extends Controller
         }
 
         // Ambil semua voucher/keyword yang approved untuk merchant ini
-        $keywords = Keyword::with('merchant')
+        // Validasi hanya pada is_active keyword (bukan merchant)
+        $merchantKeywords = Keyword::with('merchant')
             ->where('merchant_key', $merchant->id)
             ->where('status', 'approve')
-            ->where('is_active', 1)
+            ->where('is_active', 1) // Validasi is_active keyword
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Get iklans - prioritize merchant-specific banner, fallback to general
+        // Ambil keywords dari merchant ini untuk section kategori (filter berdasarkan kategori keyword)
+        // Validasi hanya pada is_active keyword (bukan merchant)
+        $keywords = Keyword::with('merchant')
+            ->where('merchant_key', $merchant->id)
+            ->where('status', 'approve')
+            ->where('is_active', 1) // Validasi is_active keyword
+            ->get();
+
+        // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
         // Use orderBy('order', 'asc') to respect admin-configured order
         // Check both merchant_key (legacy) and merchant_keys JSON array
         $specificIklans = Iklan::where(function($query) use ($merchant) {
@@ -677,7 +791,9 @@ class MerchantController extends Controller
         return view('link-pelanggan', [
             'merchant' => $merchant,
             'keywords' => $keywords,
+            'merchantKeywords' => $merchantKeywords,
             'iklans' => $iklans,
+            'isLinkPelanggan' => true, // Flag untuk skip validasi merchant->is_active di view
         ]);
     }
 
@@ -1541,12 +1657,13 @@ class MerchantController extends Controller
         Keyword::autoDisableExpiredKeywords();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
-            ->whereHas('merchant', function($query) {
-            })
+            ->where('is_active', 1)
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific territorial banner, fallback to general
@@ -1607,6 +1724,7 @@ class MerchantController extends Controller
             'keywords' => $keywords,
             'iklans' => $iklans,
             'territories' => $territories,
+            'isTerritorial' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 
@@ -1678,9 +1796,8 @@ class MerchantController extends Controller
         
         $displayName = $regionalData ? $regionalData->regional : $locationName;
         
-        // Get all active merchants
+        // Get all merchants (including inactive ones, karena keywords bisa aktif meski merchant tidak aktif)
         $allMerchants = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->get();
@@ -1716,14 +1833,13 @@ class MerchantController extends Controller
         })->values();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
             ->where('is_active', 1)
-            ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
-            })
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific regional banner, fallback to general
@@ -1760,6 +1876,7 @@ class MerchantController extends Controller
             'merchants' => $merchants,
             'keywords' => $keywords,
             'iklans' => $iklans,
+            'isRegional' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 
@@ -1823,9 +1940,8 @@ class MerchantController extends Controller
         
         $displayName = $branchData ? $branchData->branch : $locationName;
         
-        // Get all active merchants
+        // Get all merchants (including inactive ones, karena keywords bisa aktif meski merchant tidak aktif)
         $allMerchants = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->get();
@@ -1861,14 +1977,13 @@ class MerchantController extends Controller
         })->values();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
             ->where('is_active', 1)
-            ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
-            })
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific branch banner, fallback to general
@@ -1905,6 +2020,7 @@ class MerchantController extends Controller
             'merchants' => $merchants,
             'keywords' => $keywords,
             'iklans' => $iklans,
+            'isBranch' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 
@@ -1968,9 +2084,8 @@ class MerchantController extends Controller
         
         $displayName = $clusterData ? $clusterData->cluster : $locationName;
         
-        // Get all active merchants
+        // Get all merchants (including inactive ones, karena keywords bisa aktif meski merchant tidak aktif)
         $allMerchants = Merchant::query()
-            ->where('is_active', 1)
             ->whereNotNull('daerah')
             ->where('daerah', '!=', '')
             ->get();
@@ -2006,14 +2121,13 @@ class MerchantController extends Controller
         })->values();
         
         // Get keywords for these merchants
+        // Validasi hanya pada is_active keyword (bukan merchant), sesuai logic link-pelanggan
         $merchantIds = $merchants->pluck('id');
         $keywords = Keyword::with('merchant')
             ->whereIn('merchant_key', $merchantIds)
             ->where('status', 'approve')
             ->where('is_active', 1)
-            ->whereHas('merchant', function($query) {
-                $query->where('is_active', 1);
-            })
+            // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
         // Get iklans - prioritize specific cluster banner, fallback to general
@@ -2050,6 +2164,7 @@ class MerchantController extends Controller
             'merchants' => $merchants,
             'keywords' => $keywords,
             'iklans' => $iklans,
+            'isCluster' => true, // Flag untuk skip validasi merchant->is_active
         ]);
     }
 }

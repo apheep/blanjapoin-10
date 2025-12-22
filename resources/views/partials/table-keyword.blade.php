@@ -76,11 +76,46 @@
                         </td>
                         <td class="px-4 py-4">
                             <div class="flex justify-center items-center space-x-2">
+                                @php
+                                    $canEditFull = false;
+                                    $canEditStock = false;
+                                    if (Auth::check()) {
+                                        $currentUser = Auth::user();
+                                        $isUserMaha = $currentUser->can_approve == 1;
+                                        
+                                        if ($keyword->created_by) {
+                                            $creator = $keyword->creator;
+                                            if ($creator) {
+                                                if ($isUserMaha) {
+                                                    $canEditFull = true;
+                                                    $canEditStock = true;
+                                                } elseif ($keyword->created_by == $currentUser->id) {
+                                                    $canEditFull = true;
+                                                    $canEditStock = true;
+                                                } elseif ($creator->can_approve == 1) {
+                                                    // Dibuat oleh user maha, user biasa hanya bisa edit stock
+                                                    $canEditFull = false;
+                                                    $canEditStock = true;
+                                                } else {
+                                                    // Dibuat oleh user biasa, hanya creator dan user maha yang bisa edit
+                                                    $canEditFull = false;
+                                                    $canEditStock = false;
+                                                }
+                                            }
+                                        } else {
+                                            // Backward compatibility: jika tidak ada creator, semua bisa edit
+                                            $canEditFull = true;
+                                            $canEditStock = true;
+                                        }
+                                    }
+                                @endphp
                                 <button type="button"
                                         id="keyword-edit-btn-{{ $keyword->id }}"
                                         data-keyword-edit-id="{{ $keyword->id }}"
                                         data-keyword-data="{{ json_encode($keyword, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
-                                        onclick="openEditKeyword({{ $keyword->id }}, JSON.parse(this.getAttribute('data-keyword-data')))"
+                                        data-can-edit-full="{{ $canEditFull ? '1' : '0' }}"
+                                        data-can-edit-stock="{{ $canEditStock ? '1' : '0' }}"
+                                        onclick="openEditKeyword({{ $keyword->id }}, JSON.parse(this.getAttribute('data-keyword-data')), this.getAttribute('data-can-edit-full') === '1', this.getAttribute('data-can-edit-stock') === '1')"
                                         class="text-blue-600 hover:text-blue-900 transition-colors"
                                         title="Edit">
                                     <i class="fas fa-edit"></i>
@@ -157,7 +192,9 @@
                                         'belanja' => 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300',
                                         'kecantikan' => 'bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 border-pink-300',
                                         'telkomsel' => 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-800 border-indigo-300',
-                                        'merchandise' => 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-300'
+                                        'merchandise' => 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-300',
+                                        'paket_video' => 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300',
+                                        'paket_games' => 'bg-gradient-to-r from-violet-100 to-purple-100 text-violet-800 border-violet-300'
                                     ];
                                     $kategoriLabel = [
                                         'kuliner' => 'Kuliner',
@@ -166,7 +203,9 @@
                                         'belanja' => 'Belanja',
                                         'kecantikan' => 'Kecantikan',
                                         'telkomsel' => 'Telkomsel Paket',
-                                        'merchandise' => 'Merchandise'
+                                        'merchandise' => 'Merchandise',
+                                        'paket_video' => 'Paket Video',
+                                        'paket_games' => 'Paket games'
                                     ];
                                     $color = $kategoriColors[strtolower($keyword->kategori_keyword)] ?? 'bg-gray-100 text-gray-800 border-gray-300';
                                     $label = $kategoriLabel[strtolower($keyword->kategori_keyword)] ?? ucfirst($keyword->kategori_keyword);

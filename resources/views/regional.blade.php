@@ -21,11 +21,13 @@
     </div>
 
     <div class="w-full bg-white relative overflow-hidden">
-        <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none block md:block"
+        <div class="absolute inset-y-0 left-0 w-full pointer-events-none block md:block"
              style="background-image: url('{{ asset('dot_background.png') }}');
                     background-repeat: repeat;
-                    background-size: cover;
-                    opacity: 0.8;">
+                    background-size: 1750px 1750px;
+                    opacity: 0.8;
+                    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%);
+                    mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%);">
         </div>
 
         <!-- Navbar -->
@@ -52,7 +54,7 @@
             @include('partials.banner-carousel', ['iklans' => $iklans])
 
             <!-- Header Section -->
-            <div class="mt-8 md:mt-12 mb-8">
+            <div class="mt-8 md:mt-12 mb-2">
                 <div class="flex items-center gap-2 mb-4">
                     <a href="{{ route('home') }}" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
                         <i class="fas fa-home"></i> Beranda
@@ -62,7 +64,6 @@
                     <span class="text-gray-400">/</span>
                     <span class="text-sm font-semibold text-orange-600">{{ $locationName }}</span>
                 </div>
-                
                 <h1 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                     Merchant di {{ $locationName }}
                 </h1>
@@ -70,200 +71,87 @@
                     Temukan merchant dan promo menarik di {{ $locationName }}
                 </p>
             </div>
-
-            <!-- Keywords Grid -->
-            @if($keywords->count() > 0)
-            <div class="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
-                @foreach($keywords as $keyword)
-                    @php
-                        $merchant = $keyword->merchant;
-                        $merchantName = optional($merchant)->nama_merchant ?? '';
-                        $productName = $keyword->nama_produk ?? '';
-                        $locationName = extractKabupatenKota(optional($merchant)->daerah ?? '');
-                        $searchName = strtolower(trim($merchantName . ' ' . $productName));
-                        $searchLocation = strtolower($locationName);
-                        $uniqueId = 'regional-card-' . $keyword->id;
-                    @endphp
-                    
-                    <article 
-                        data-voucher-card="true"
-                        data-point="{{ (int) $keyword->redeem }}"
-                        data-search-name="{{ $searchName }}"
-                        data-search-location="{{ $searchLocation }}"
-                        class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]"
-                    >
-                        <!-- Mobile Layout -->
-                        <div class="lg:hidden flex flex-col h-full">
-                            <div class="relative">
-                                <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-                                    <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" 
-                                         alt="{{ $keyword->nama_produk }}" 
-                                         class="w-full h-full object-cover" 
-                                         loading="lazy">
-                                </div>
-                            </div>
-                            <div class="flex flex-col p-2.5 space-y-1 flex-1">
-                                <h3 class="text-base font-bold text-neutral-900 leading-tight truncate">
-                                    {{ $merchantName }}
-                                </h3>
-                                <div class="text-[9px] text-gray-500 -mt-0.5 -mb-0.5">
-                                    <span>Promo</span>
-                                </div>
-                                <div class="text-[10px] text-neutral-600 leading-snug">
-                                    @if(!is_null($keyword->diskon))
-                                    <div class="font-bold text-red-500 flex items-center gap-1.5 mb-0.5">
-                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-7 h-7 object-contain">
-                                        <span class="text-xl font-bold text-red-500">{{ formatDiskon($keyword->diskon) }}</span>
-                                    </div>
-                                    @endif
-                                    @if($productName)
-                                    <div class="mb-0.5 font-semibold text-neutral-700 text-sm truncate">
-                                        {{ $productName }}
-                                    </div>
-                                    @endif
-                                    @if($keyword->skb)
-                                    <button onclick="event.stopPropagation(); openTerritorialDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="mt-0.5 text-[9px] font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
-                                        Lihat Deskripsi
-                                    </button>
-                                    @endif
-                                </div>
-                                <div class="inline-flex items-center gap-1 bg-white rounded-full px-0.5 py-0.5 self-start">
-                                    <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[7px] font-bold shadow-sm">P</span>
-                                    <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
-                                </div>
-                                <div class="flex flex-col gap-0.5 pt-0.5 border-t border-neutral-100 mt-auto">
-                                    <div class="flex items-center gap-1 text-[9px] text-neutral-600">
-                                        <span class="font-medium">Stock:</span>
-                                        <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
-                                    </div>
-                                    @if($keyword->end_date)
-                                    <div class="flex items-center gap-1 text-[9px] text-neutral-600">
-                                        <span class="font-medium">Valid until:</span>
-                                        <span class="font-semibold text-neutral-800">
-                                            {{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}
-                                        </span>
-                                    </div>
-                                    @endif
-                                </div>
-                                @php
-                                    $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
-                                    $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-                                @endphp
-                                @if($canRedeem)
-                                <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
-                                    Redeem
-                                </button>
-                                @else
-                                <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
-                                    Open {{ $startDateFormatted }}
-                                </button>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Desktop Layout -->
-                        <div class="hidden lg:flex flex-col h-full">
-                            <!-- Header -->
-                            <div class="flex items-center justify-between p-3 md:p-4 border-b border-neutral-100 flex-shrink-0 min-h-[70px] md:min-h-[80px]">
-                                <div class="flex items-center gap-2.5 flex-1">
-                                    @if($merchant && $merchant->logo_merchant)
-                                    <div class="relative flex-shrink-0">
-                                        <div class="absolute inset-0 rounded-xl blur-sm "></div>
-                                        <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" alt="{{ $merchantName }}" class="relative w-11 h-11 md:w-14 md:h-14 object-contain rounded-xl  shadow-md">
-                                    </div>
-                                    @else
-                                    <div class="w-11 h-11 md:w-14 md:h-14 flex-shrink-0"></div>
-                                    @endif
-                                </div>
-                                @if($keyword->diskon)
-                                <div class="text-right flex-shrink-0 ml-2">
-                                    <div class="inline-flex items-center gap-1.5">
-                                        <img src="{{ asset('icon-diskon.png') }}" alt="Diskon" class="w-12 h-12 object-contain">
-                                        <span class="text-base md:text-xl font-black text-red-600">{{ formatDiskon($keyword->diskon) }}</span>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-
-                            <!-- Image with Stock Overlay -->
-                            <div class="relative px-3 md:px-4 pt-3 pb-2 flex-shrink-0">
-                                <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
-                                    <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" 
-                                         alt="{{ $productName }}" 
-                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                         loading="lazy">
-                                </div>
-                                <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
-                                    <span class="inline-flex items-center gap-1">
-                                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                                        <span>Stock: {{ $keyword->stock }}</span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Details -->
-                            <div class="flex flex-col px-3 md:px-4 pb-3 md:pb-4 flex-1 min-h-0">
-                                <h4 class="text-sm md:text-base font-black text-neutral-900 mb-1 leading-tight line-clamp-2 group-hover:text-orange-600 transition-colors">
-                                    {{ $merchantName }}
-                                </h4>
-                                @if($productName)
-                                <p class="text-base md:text-lg text-neutral-600 mb-1.5 leading-snug font-semibold truncate">
-                                    {{ $productName }}
-                                </p>
-                                @endif
-                                @if($keyword->skb)
-                                <button onclick="event.stopPropagation(); openTerritorialDescriptionSheet({{ $keyword->id }}, {{ json_encode($merchantName) }}, {{ json_encode($productName) }}, {{ json_encode($keyword->skb) }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : null) }})" class="self-start text-left mb-1.5 text-[10px] md:text-xs font-semibold text-orange-600 hover:text-orange-700 underline focus:outline-none">
-                                    Lihat Deskripsi
-                                </button>
-                                @endif
-                                @if($keyword->end_date)
-                                <div class="flex items-center gap-1 text-[10px] text-neutral-500 mb-2">
-                                    <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <span class="truncate">Valid until: <span class="font-semibold text-neutral-700">{{ \Carbon\Carbon::parse($keyword->end_date)->format('d M Y') }}</span></span>
-                                </div>
-                                @endif
-                                <div class="mt-auto pt-2 border-t border-neutral-100">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[7px] font-bold shadow-sm">P</span>
-                                            <span class="text-lg md:text-xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                                                {{ number_format($keyword->redeem, 0, ',', '.') }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    @php
-                                        $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
-                                        $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-                                    @endphp
-                                    @if($canRedeem)
-                                    <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
-                                        Redeem
-                                    </button>
-                                    @else
-                                    <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">
-                                        Open {{ $startDateFormatted }}
-                                    </button>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </article>
-                @endforeach
-            </div>
-            @else
-            <div class="text-center py-16">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-                    <i class="fas fa-store text-4xl text-gray-400"></i>
+            
+            {{-- <!-- Spesial Promo Section -->
+            <div class="mt-0 md:mt-1 -mb-6 md:-mb-8">
+                <style>
+                    main .special-promo-wrapper > div > section {
+                        margin-top: 0.5rem !important;
+                        margin-bottom: 1rem !important;
+                    }
+                    @media (min-width: 640px) {
+                        main .special-promo-wrapper > div > section {
+                            margin-top: 0.75rem !important;
+                            margin-bottom: 1.25rem !important;
+                        }
+                    }
+                </style>
+                <div class="special-promo-wrapper">
+                    @include('partials.spesial_promo')
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Belum ada merchant di Regional {{ $locationName }}</h3>
-                <p class="text-gray-600 mb-6">Coba pilih teritorial lain atau kembali ke beranda</p>
-                <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
-                    <i class="fas fa-home"></i>
-                    Kembali ke Beranda
-                </a>
-            </div>
+            </div> --}}
+
+            <!-- Category Sections -->
+            @php
+                // Helper function to check if category has data
+                $isRegional = $isRegional ?? false;
+                $hasCategoryData = function($category) use ($keywords, $isRegional) {
+                    return $keywords->filter(function ($keyword) use ($category, $isRegional) {
+                        $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
+                        $baseCondition = $keyword->merchant && $keywordCategory === $category
+                            && $keyword->status === 'approve'
+                            && $keyword->is_active == 1;
+                        // Skip validasi merchant->is_active jika di halaman regional
+                        return $isRegional 
+                            ? $baseCondition 
+                            : ($baseCondition && $keyword->merchant->is_active == 1);
+                    })->isNotEmpty();
+                };
+            @endphp
+
+            <!-- shop Section -->
+            @if($hasCategoryData('belanja'))
+                @include('merchant.shop')
+            @endif
+
+            <!-- food Section -->
+            @if($hasCategoryData('kuliner'))
+                @include('merchant.food')
+            @endif
+
+            <!-- telkomsel Section -->
+            @if($hasCategoryData('telkomsel'))
+                @include('merchant.telkomsel')
+            @endif
+
+            <!-- entertain Section -->
+            @if($hasCategoryData('hiburan'))
+                @include('merchant.entertain')
+            @endif
+
+            <!-- vacation Section -->
+            @if($hasCategoryData('liburan'))
+                @include('merchant.vacation')
+            @endif
+
+            <!-- beauty Section -->
+            @if($hasCategoryData('kecantikan'))
+                @include('merchant.beautyncare')
+            @endif
+
+            <!-- merchandise Section -->
+            @if($hasCategoryData('merchandise'))
+                @include('merchant.merchandise')
+            @endif
+
+            <!-- paketvideo Section -->
+            @if($hasCategoryData('paket_video'))
+                @include('merchant.paketvideo')
+            @endif
+
+            <!-- paketgames Section -->
+            @if($hasCategoryData('paket_games'))
+                @include('merchant.paketgames')
             @endif
 
             <!-- Footer -->
