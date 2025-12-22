@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class Keyword extends Model
 {
@@ -60,5 +61,55 @@ class Keyword extends Model
             ->update(['is_active' => 0]);
         
         return $updated;
+    }
+
+    /**
+     * Update trx dan sisa_stock untuk keyword ini berdasarkan data dari tokodigi_tselpoin_redeem
+     * 
+     * @return bool
+     */
+    public function updateTrxAndSisaStock()
+    {
+        if (!$this->keyword_id) {
+            return false;
+        }
+
+        // Hitung jumlah transaksi redeem dari tokodigi_tselpoin_redeem
+        $trxCount = DB::table('tokodigi_tselpoin_redeem')
+            ->where('coupon', $this->keyword_id)
+            ->where('program', 'BLANJAPOIN')
+            ->count();
+
+        // Hitung sisa stock: stock - trx (minimal 0)
+        $stock = (int)($this->stock ?? 0);
+        $trx = (int)$trxCount;
+        $sisaStock = max(0, $stock - $trx);
+
+        // Update ke database
+        // trx disimpan sebagai string karena kolom di database adalah string
+        $this->trx = (string)$trx;
+        $this->sisa_stock = $sisaStock;
+        $this->save();
+
+        return true;
+    }
+
+    /**
+     * Update trx dan sisa_stock untuk semua keyword berdasarkan data dari tokodigi_tselpoin_redeem
+     * 
+     * @return int Jumlah keyword yang diupdate
+     */
+    public static function updateAllTrxAndSisaStock()
+    {
+        $keywords = self::whereNotNull('keyword_id')->get();
+        $updatedCount = 0;
+
+        foreach ($keywords as $keyword) {
+            if ($keyword->updateTrxAndSisaStock()) {
+                $updatedCount++;
+            }
+        }
+
+        return $updatedCount;
     }
 }

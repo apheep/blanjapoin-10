@@ -132,20 +132,65 @@
                         </thead>
 
                         <tbody class="bg-white divide-y divide-gray-200">
-                            
-                                <tr>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
-                                    <td class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-900"></td>
+                            @forelse($historyPaginator as $index => $history)
+                                @php
+                                    $statusClass = match(strtolower($history->status ?? 'pending')) {
+                                        'approved', 'completed' => 'bg-green-100 text-green-800',
+                                        'pending', 'waiting' => 'bg-yellow-100 text-yellow-800',
+                                        'rejected' => 'bg-red-100 text-red-800',
+                                        default => 'bg-gray-100 text-gray-800'
+                                    };
+                                    $statusText = match(strtolower($history->status ?? 'pending')) {
+                                        'approved' => 'Disetujui',
+                                        'completed' => 'Selesai',
+                                        'pending' => 'Pending',
+                                        'waiting' => 'Menunggu',
+                                        'rejected' => 'Ditolak',
+                                        default => ucfirst($history->status ?? 'Pending')
+                                    };
+                                @endphp
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-3 sm:px-4 py-3 text-xs font-medium text-gray-900">
+                                        {{ $historyPaginator->firstItem() + $index }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3 text-xs text-gray-700">
+                                        {{ $history->created_at ? $history->created_at->format('d/m/Y H:i') : '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3 text-xs text-gray-700">
+                                        {{ $history->msisdn ?? '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3 text-xs font-medium text-gray-900">
+                                        {{ $history->merchant->nama_merchant ?? '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3 text-xs text-gray-700">
+                                        {{ $history->nama_produk ?? '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3 text-xs text-gray-700">
+                                        {{ $history->keyword_id ?? '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3 text-xs text-right font-semibold text-gray-900">
+                                        {{ number_format($history->redeem ?? 0, 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3 text-xs text-gray-700 hidden md:table-cell">
+                                        {{ $history->merchant->merchant_city ?? '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-3">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">
+                                            {{ $statusText }}
+                                        </span>
+                                    </td>
                                 </tr>
-                            
-
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="px-4 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                                            <p class="text-sm font-medium text-gray-500">Belum ada riwayat transaksi</p>
+                                            <p class="text-xs text-gray-400 mt-1">Riwayat transaksi akan muncul di sini</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                                         
                     </table>
