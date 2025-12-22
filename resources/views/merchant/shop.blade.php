@@ -1,6 +1,6 @@
 <section id="section-shop" class="mt-14 md:mt-24 mb-10 md:mb-14">
      <div class="mb-4 md:mb-6 flex items-center justify-between">
-      <h2 class="text-2xl md:text-3xl font-black text-neutral-900">🛍️​ Belanja</h2>
+      <h2 class="text-xl md:text-3xl font-black text-neutral-900">🛍️​ Belanja</h2>
      </div>
      @php
        $shopCategory = 'belanja';
@@ -90,7 +90,7 @@
             $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
          @endphp
          @if($canRedeem)
-         <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
+         <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
           Redeem
          </button>
          @else
@@ -175,7 +175,7 @@
             $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
           @endphp
           @if($canRedeem)
-          <button onclick="window.open('{{ $keyword->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
+          <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
            Redeem
           </button>
           @else
