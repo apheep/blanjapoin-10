@@ -30,6 +30,7 @@ class Merchant extends Model
         'ktp_pic',
         'detail_daerah',
         'link_gmap',
+        'radius',
         'is_active',
         'start_date',
         'end_date',

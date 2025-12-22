@@ -325,6 +325,14 @@
          return text;
         }
 
+        // Function for redeem button click (location-based pages - no location validation)
+        function handleRedeemClick(redeemUrl) {
+          if (redeemUrl && redeemUrl !== '#') {
+            // Direct redeem without location validation for location-based pages
+            window.open(redeemUrl, '_blank');
+          }
+        }
+
         // Territorial Description Bottom Sheet Function
         function openTerritorialDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
             const contentHTML = `
@@ -334,19 +342,19 @@
                             <span class="text-sm font-semibold text-neutral-700">Merchant :</span>
                             <span class="text-sm text-neutral-900 ml-2">${merchantName || '-'}</span>
                         </div>
-                        
+
                         ${productName ? `
                         <div>
                             <span class="text-sm font-semibold text-neutral-700">Produk :</span>
                             <span class="text-sm text-neutral-900 ml-2">${productName}</span>
                         </div>
                         ` : ''}
-                        
+
                         <div>
                             <span class="text-sm font-semibold text-neutral-700">Promo :</span>
                             <span class="text-sm text-neutral-900 ml-2">${diskon || '-'}</span>
                         </div>
-                        
+
                         ${skb ? `
                         <div>
                             <span class="text-sm font-semibold text-neutral-700">SKB :</span>
@@ -360,7 +368,7 @@
                     </div>
                 </div>
             `;
-            
+
             openBottomSheet('Deskripsi', contentHTML);
         }
     </script>

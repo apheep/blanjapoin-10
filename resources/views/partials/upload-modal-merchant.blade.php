@@ -264,6 +264,46 @@
                                 </p>
                             </div>
                         </div>
+
+                        {{-- Lock Radius Toggle --}}
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                <i class="fas fa-lock mr-1.5 text-orange-500"></i>
+                                Lock Radius LongLat
+                            </label>
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Lock Radius">
+                                <input type="checkbox"
+                                       id="lockRadiusCheckbox"
+                                       class="sr-only peer" />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500 hover:peer-checked:from-orange-600 hover:peer-checked:to-red-600"></div>
+                                <span class="ml-3 text-sm text-gray-700" id="lockRadiusText">Tidak Aktif</span>
+                            </label>
+                            <p class="mt-1.5 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <span>Aktifkan untuk menampilkan field radius validasi lokasi</span>
+                            </p>
+                        </div>
+
+                        {{-- Radius untuk Validasi Lokasi --}}
+                        <div id="radiusFieldContainer" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                <i class="fas fa-map-marked-alt mr-1.5 text-orange-500"></i>
+                                Radius Validasi Lokasi (meter)
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number"
+                                   name="radius"
+                                   id="merchantRadius"
+                                   min="0"
+                                   max="100000"
+                                   step="1"
+                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                   placeholder="Contoh: 300 (meter)">
+                            <p class="mt-1.5 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <span>Atur radius dalam meter untuk validasi lokasi saat user redeem</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -721,6 +761,18 @@ function closeUploadMerchant() {
             if (statusText) {
                 statusText.textContent = 'Tidak Aktif';
             }
+
+            // Reset lock radius toggle
+            const lockRadiusCheckbox = document.getElementById('lockRadiusCheckbox');
+            const lockRadiusText = document.getElementById('lockRadiusText');
+            if (lockRadiusCheckbox) {
+                lockRadiusCheckbox.checked = false;
+                // Trigger change event to hide radius field and reset text
+                lockRadiusCheckbox.dispatchEvent(new Event('change'));
+            }
+            if (lockRadiusText) {
+                lockRadiusText.textContent = 'Tidak Aktif';
+            }
         }
     }, 300);
 }
@@ -872,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusToggle = document.getElementById('uploadMerchantStatusToggle');
     const statusHidden = document.getElementById('uploadMerchantStatusHidden');
     const statusText = document.getElementById('uploadMerchantStatusText');
-    
+
     if (statusToggle && statusHidden) {
         statusToggle.addEventListener('change', function() {
             const isActive = this.checked ? 1 : 0;
@@ -881,6 +933,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusText.textContent = isActive ? 'Aktif' : 'Tidak Aktif';
             }
         });
+    }
+});
+
+// ======================
+// Toggle Lock Radius
+// ======================
+document.addEventListener('DOMContentLoaded', function() {
+    const lockRadiusCheckbox = document.getElementById('lockRadiusCheckbox');
+    const lockRadiusText = document.getElementById('lockRadiusText');
+    const radiusFieldContainer = document.getElementById('radiusFieldContainer');
+    const radiusInput = document.getElementById('merchantRadius');
+
+    function toggleLockRadius() {
+        const isLocked = lockRadiusCheckbox.checked;
+
+        // Update toggle text
+        if (lockRadiusText) {
+            lockRadiusText.textContent = isLocked ? 'Aktif' : 'Tidak Aktif';
+        }
+
+        // Toggle visibility of radius field
+        if (radiusFieldContainer) {
+            if (isLocked) {
+                radiusFieldContainer.classList.remove('hidden');
+                // Make radius required when visible
+                if (radiusInput) {
+                    radiusInput.setAttribute('required', 'required');
+                }
+            } else {
+                radiusFieldContainer.classList.add('hidden');
+                // Remove required when hidden
+                if (radiusInput) {
+                    radiusInput.removeAttribute('required');
+                    radiusInput.value = ''; // Clear value when hidden
+                }
+            }
+        }
+    }
+
+    if (lockRadiusCheckbox) {
+        lockRadiusCheckbox.addEventListener('change', toggleLockRadius);
+        // Initialize state (hidden by default)
+        toggleLockRadius();
     }
 });
 
@@ -1451,9 +1546,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validate required fields
             const namaMerchant = form.querySelector('input[name="nama_merchant"]').value.trim();
             const kategori = form.querySelector('input[name="kategori"]').value.trim();
-            
+
             if (!namaMerchant || !kategori) {
                 alert('Mohon isi field yang diperlukan (Nama Merchant, Kategori)');
+                return false;
+            }
+
+            // Validate lock radius
+            const lockRadiusCheckbox = document.getElementById('lockRadiusCheckbox');
+            const isLockRadiusChecked = lockRadiusCheckbox && lockRadiusCheckbox.checked;
+            const radius = form.querySelector('input[name="radius"]').value.trim();
+
+            if (isLockRadiusChecked && !radius) {
+                alert('Radius wajib diisi karena fitur Lock Radius aktif');
+                document.getElementById('merchantRadius').focus();
                 return false;
             }
             
