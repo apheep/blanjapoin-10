@@ -249,10 +249,53 @@
                             <input type="number" name="stock" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter stock">
                         </div>
 
-                        <!-- Row 6: SKB -->
+                        <!-- Row 6: SKB Dropdown -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">SKB <span class="text-red-500">*</span></label>
-                            <textarea name="skb" rows="5" class="w-full px-4 pt-3 h-[140px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm resize-none" placeholder="Enter SKB"></textarea>
+                            
+                            <!-- Custom Dropdown for SKB -->
+                            <div class="relative">
+                                <!-- Custom Dropdown Button -->
+                                <button type="button" 
+                                        id="customSkbDropdownBtn" 
+                                        onclick="toggleCustomSkbDropdown()"
+                                        class="w-full px-4 h-12 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-colors"
+                                        disabled>
+                                    <span id="customSkbSelectedText" class="text-sm text-gray-600">
+                                        Pilih merchant terlebih dahulu
+                                    </span>
+                                    <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" id="customSkbChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Custom Dropdown Menu -->
+                                <div id="customSkbDropdown" 
+                                     class="hidden absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden max-h-80 flex flex-col">
+                                    <!-- Search Box -->
+                                    <div class="p-2 border-b border-gray-100">
+                                        <input type="text" 
+                                               id="skbSearchInput" 
+                                               placeholder="Cari SKB..." 
+                                               onkeyup="filterSkbOptions(this.value)"
+                                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400">
+                                    </div>
+                                    
+                                    <!-- Options Container -->
+                                    <div id="skbOptionsContainer" class="overflow-y-auto max-h-64">
+                                        <!-- Options will be populated dynamically -->
+                                        <!-- Empty State -->
+                                        <div id="skbEmptyState" class="px-4 py-8 text-center">
+                                            <p class="text-sm text-gray-500">Pilih merchant terlebih dahulu</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- SKB Textarea (Hidden initially) -->
+                            <div id="skbTextareaContainer" class="mt-3 hidden">
+                                <textarea name="skb" id="skbTextarea" rows="5" class="w-full px-4 pt-3 h-[140px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm resize-none" placeholder="Enter SKB"></textarea>
+                            </div>
                         </div>
 
                         <!-- Row 7: Start Date | End Date -->
@@ -384,6 +427,9 @@ function applyFixedMerchantContext() {
         if (window.fixedMerchantStartDate || window.fixedMerchantEndDate) {
             fillKeywordDatesFromMerchant(window.fixedMerchantStartDate || '', window.fixedMerchantEndDate || '');
         }
+        
+        // Load SKB options from previous keywords of this merchant
+        loadSkbOptions(window.fixedMerchantId);
     } else {
         merchantSelect.disabled = false;
         
@@ -403,6 +449,9 @@ function applyFixedMerchantContext() {
         if (stayFlagInput) {
             stayFlagInput.value = '';
         }
+        
+        // Reset SKB dropdown
+        resetSkbDropdown();
     }
 }
 
@@ -572,6 +621,9 @@ function closeUploadKeyword() {
             kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
         }
         
+        // Reset SKB dropdown
+        resetSkbDropdown();
+        
         applyFixedMerchantContext();
     }, 300);
 }
@@ -635,6 +687,9 @@ function selectMerchant(merchantId, merchantName, merchantEmail = '', merchantSt
     toggleCustomMerchantDropdown();
     updateProductName();
     merchantSelect.dispatchEvent(new Event('change'));
+    
+    // Load SKB options from previous keywords of this merchant
+    loadSkbOptions(merchantId);
 }
 
 // Function to fill keyword dates from merchant dates
@@ -743,14 +798,275 @@ function filterMerchantOptions(searchTerm) {
     }
 }
 
+// ======================
+// SKB Dropdown Functions
+// ======================
+
+// Load SKB options from previous keywords of the selected merchant
+function loadSkbOptions(merchantId) {
+    if (!merchantId) {
+        resetSkbDropdown();
+        return;
+    }
+    
+    const skbButton = document.getElementById('customSkbDropdownBtn');
+    const skbSelectedText = document.getElementById('customSkbSelectedText');
+    const skbOptionsContainer = document.getElementById('skbOptionsContainer');
+    const skbEmptyState = document.getElementById('skbEmptyState');
+    
+    // Disable button while loading
+    skbButton.disabled = true;
+    skbSelectedText.textContent = 'Memuat SKB...';
+    skbSelectedText.classList.remove('text-gray-900', 'font-medium');
+    skbSelectedText.classList.add('text-gray-600');
+    
+    // Fetch keywords from API
+    fetch(`/api/keywords/by-merchant/${merchantId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.keywords && data.keywords.length > 0) {
+                // Clear existing options
+                skbOptionsContainer.innerHTML = '';
+                
+                // Add "Write new SKB" option first
+                const writeNewButton = document.createElement('button');
+                writeNewButton.type = 'button';
+                writeNewButton.className = 'skb-option w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-orange-50 transition-colors border-b border-gray-50 font-medium';
+                writeNewButton.innerHTML = '<i class="fas fa-plus text-orange-500 mr-2"></i>Tulis SKB baru';
+                writeNewButton.onclick = () => selectNewSkb();
+                skbOptionsContainer.appendChild(writeNewButton);
+                
+                // Add options from previous keywords
+                data.keywords.forEach(keyword => {
+                    if (keyword.skb && keyword.skb.trim() !== '') {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'skb-option w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0';
+                        button.dataset.id = keyword.id;
+                        button.dataset.skb = keyword.skb;
+                        button.innerHTML = `<div class="font-medium">${keyword.nama_produk || 'Keyword #' + keyword.id}</div><div class="text-xs text-gray-500 mt-1 line-clamp-2">${keyword.skb.substring(0, 100)}${keyword.skb.length > 100 ? '...' : ''}</div>`;
+                        button.onclick = () => selectSkb(keyword.id, keyword.skb, keyword.nama_produk);
+                        skbOptionsContainer.appendChild(button);
+                    }
+                });
+                
+                if (skbEmptyState) skbEmptyState.classList.add('hidden');
+                
+                // Enable button
+                skbButton.disabled = false;
+                skbSelectedText.textContent = '-- Pilih SKB --';
+            } else {
+                // No keywords found, but still allow writing new SKB
+                skbOptionsContainer.innerHTML = '';
+                const writeNewButton = document.createElement('button');
+                writeNewButton.type = 'button';
+                writeNewButton.className = 'skb-option w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-orange-50 transition-colors font-medium';
+                writeNewButton.innerHTML = '<i class="fas fa-plus text-orange-500 mr-2"></i>Tulis SKB baru';
+                writeNewButton.onclick = () => selectNewSkb();
+                skbOptionsContainer.appendChild(writeNewButton);
+                
+                if (skbEmptyState) skbEmptyState.classList.add('hidden');
+                
+                skbButton.disabled = false;
+                skbSelectedText.textContent = '-- Pilih SKB --';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading SKB options:', error);
+            skbOptionsContainer.innerHTML = '';
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'px-4 py-8 text-center';
+            errorDiv.innerHTML = '<p class="text-sm text-red-500">Gagal memuat SKB</p>';
+            skbOptionsContainer.appendChild(errorDiv);
+            
+            skbButton.disabled = false;
+            skbSelectedText.textContent = 'Gagal memuat SKB';
+        });
+}
+
+function toggleCustomSkbDropdown() {
+    const dropdown = document.getElementById('customSkbDropdown');
+    const chevron = document.getElementById('customSkbChevron');
+    const button = document.getElementById('customSkbDropdownBtn');
+    
+    if (!dropdown || button.disabled) return;
+    
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+        setTimeout(() => {
+            document.getElementById('skbSearchInput')?.focus();
+        }, 100);
+    } else {
+        dropdown.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+function selectSkb(keywordId, skbContent, keywordName) {
+    const skbSelectedText = document.getElementById('customSkbSelectedText');
+    const skbButton = document.getElementById('customSkbDropdownBtn');
+    const skbTextarea = document.getElementById('skbTextarea');
+    const skbTextareaContainer = document.getElementById('skbTextareaContainer');
+    
+    // Update selected text
+    skbSelectedText.textContent = keywordName || 'SKB dipilih';
+    skbSelectedText.classList.remove('text-gray-600');
+    skbSelectedText.classList.add('text-gray-900', 'font-medium');
+    
+    // Update button border
+    skbButton.classList.remove('border-gray-300');
+    skbButton.classList.add('border-gray-400');
+    
+    // Highlight selected option
+    const options = document.querySelectorAll('.skb-option');
+    options.forEach(opt => {
+        opt.classList.remove('bg-gray-100', 'bg-orange-100');
+        if (opt.dataset.id == keywordId) {
+            opt.classList.add('bg-gray-100');
+        }
+    });
+    
+    // Show textarea and populate with selected SKB
+    skbTextarea.value = skbContent;
+    skbTextareaContainer.classList.remove('hidden');
+    
+    // Close dropdown
+    toggleCustomSkbDropdown();
+}
+
+function selectNewSkb() {
+    const skbSelectedText = document.getElementById('customSkbSelectedText');
+    const skbButton = document.getElementById('customSkbDropdownBtn');
+    const skbTextarea = document.getElementById('skbTextarea');
+    const skbTextareaContainer = document.getElementById('skbTextareaContainer');
+    
+    // Update selected text
+    skbSelectedText.textContent = 'Tulis SKB baru';
+    skbSelectedText.classList.remove('text-gray-600');
+    skbSelectedText.classList.add('text-gray-900', 'font-medium');
+    
+    // Update button border
+    skbButton.classList.remove('border-gray-300');
+    skbButton.classList.add('border-gray-400');
+    
+    // Highlight selected option
+    const options = document.querySelectorAll('.skb-option');
+    options.forEach(opt => {
+        opt.classList.remove('bg-gray-100', 'bg-orange-100');
+        if (opt.innerHTML.includes('Tulis SKB baru')) {
+            opt.classList.add('bg-orange-100');
+        }
+    });
+    
+    // Show textarea with empty content
+    skbTextarea.value = '';
+    skbTextareaContainer.classList.remove('hidden');
+    skbTextarea.focus();
+    
+    // Close dropdown
+    toggleCustomSkbDropdown();
+}
+
+function filterSkbOptions(searchTerm) {
+    const options = document.querySelectorAll('.skb-option');
+    const emptyState = document.getElementById('skbEmptyState');
+    let visibleCount = 0;
+    
+    const term = searchTerm.toLowerCase().trim();
+    
+    options.forEach(option => {
+        const keywordName = option.querySelector('.font-medium')?.textContent.toLowerCase() || '';
+        const skbPreview = option.querySelector('.text-xs')?.textContent.toLowerCase() || '';
+        const optionText = option.textContent.toLowerCase();
+        
+        // Always show "Tulis SKB baru" option
+        if (optionText.includes('tulis skb baru')) {
+            option.style.display = '';
+            visibleCount++;
+        } else if (keywordName.includes(term) || skbPreview.includes(term) || optionText.includes(term)) {
+            option.style.display = '';
+            visibleCount++;
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    if (visibleCount === 0 && term !== '') {
+        if (emptyState) emptyState.classList.remove('hidden');
+    } else {
+        if (emptyState) emptyState.classList.add('hidden');
+    }
+}
+
+function resetSkbDropdown() {
+    const skbButton = document.getElementById('customSkbDropdownBtn');
+    const skbSelectedText = document.getElementById('customSkbSelectedText');
+    const skbDropdown = document.getElementById('customSkbDropdown');
+    const skbChevron = document.getElementById('customSkbChevron');
+    const skbSearchInput = document.getElementById('skbSearchInput');
+    const skbOptionsContainer = document.getElementById('skbOptionsContainer');
+    const skbTextareaContainer = document.getElementById('skbTextareaContainer');
+    const skbTextarea = document.getElementById('skbTextarea');
+    
+    // Reset button state
+    if (skbButton) {
+        skbButton.disabled = true;
+        skbButton.classList.remove('border-gray-400');
+        skbButton.classList.add('border-gray-300');
+    }
+    
+    // Reset selected text
+    if (skbSelectedText) {
+        skbSelectedText.textContent = 'Pilih merchant terlebih dahulu';
+        skbSelectedText.classList.remove('text-gray-900', 'font-medium');
+        skbSelectedText.classList.add('text-gray-600');
+    }
+    
+    // Close dropdown
+    if (skbDropdown) {
+        skbDropdown.classList.add('hidden');
+    }
+    if (skbChevron) {
+        skbChevron.style.transform = 'rotate(0deg)';
+    }
+    
+    // Clear search
+    if (skbSearchInput) {
+        skbSearchInput.value = '';
+    }
+    
+    // Reset options container
+    if (skbOptionsContainer) {
+        skbOptionsContainer.innerHTML = '<div id="skbEmptyState" class="px-4 py-8 text-center"><p class="text-sm text-gray-500">Pilih merchant terlebih dahulu</p></div>';
+    }
+    
+    // Hide textarea
+    if (skbTextareaContainer) {
+        skbTextareaContainer.classList.add('hidden');
+    }
+    if (skbTextarea) {
+        skbTextarea.value = '';
+    }
+}
+
 // Close dropdown when clicking outside
 document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('customMerchantDropdown');
-    const button = document.getElementById('customMerchantDropdownBtn');
+    const merchantDropdown = document.getElementById('customMerchantDropdown');
+    const merchantButton = document.getElementById('customMerchantDropdownBtn');
     
-    if (dropdown && button && !dropdown.contains(event.target) && !button.contains(event.target)) {
-        if (!dropdown.classList.contains('hidden')) {
+    if (merchantDropdown && merchantButton && !merchantDropdown.contains(event.target) && !merchantButton.contains(event.target)) {
+        if (!merchantDropdown.classList.contains('hidden')) {
             toggleCustomMerchantDropdown();
+        }
+    }
+    
+    const skbDropdown = document.getElementById('customSkbDropdown');
+    const skbButton = document.getElementById('customSkbDropdownBtn');
+    
+    if (skbDropdown && skbButton && !skbDropdown.contains(event.target) && !skbButton.contains(event.target)) {
+        if (!skbDropdown.classList.contains('hidden')) {
+            toggleCustomSkbDropdown();
         }
     }
 });
@@ -767,6 +1083,8 @@ function updateProductName() {
         if (selectedOption.dataset.kategori) {
             selectKeywordKategori(selectedOption.dataset.kategori);
         }
+        // Load SKB options from previous keywords of this merchant
+        loadSkbOptions(selectedOption.value);
     } else {
         productNameInput.value = '';
         // Reset kategori dropdown
@@ -778,6 +1096,8 @@ function updateProductName() {
         if (kategoriBtn) {
             kategoriBtn.className = 'w-full flex items-center justify-between px-4 h-12 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400';
         }
+        // Reset SKB dropdown
+        resetSkbDropdown();
     }
 }
 
