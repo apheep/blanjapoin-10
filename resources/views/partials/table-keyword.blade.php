@@ -76,11 +76,46 @@
                         </td>
                         <td class="px-4 py-4">
                             <div class="flex justify-center items-center space-x-2">
+                                @php
+                                    $canEditFull = false;
+                                    $canEditStock = false;
+                                    if (Auth::check()) {
+                                        $currentUser = Auth::user();
+                                        $isUserMaha = $currentUser->can_approve == 1;
+                                        
+                                        if ($keyword->created_by) {
+                                            $creator = $keyword->creator;
+                                            if ($creator) {
+                                                if ($isUserMaha) {
+                                                    $canEditFull = true;
+                                                    $canEditStock = true;
+                                                } elseif ($keyword->created_by == $currentUser->id) {
+                                                    $canEditFull = true;
+                                                    $canEditStock = true;
+                                                } elseif ($creator->can_approve == 1) {
+                                                    // Dibuat oleh user maha, user biasa hanya bisa edit stock
+                                                    $canEditFull = false;
+                                                    $canEditStock = true;
+                                                } else {
+                                                    // Dibuat oleh user biasa, hanya creator dan user maha yang bisa edit
+                                                    $canEditFull = false;
+                                                    $canEditStock = false;
+                                                }
+                                            }
+                                        } else {
+                                            // Backward compatibility: jika tidak ada creator, semua bisa edit
+                                            $canEditFull = true;
+                                            $canEditStock = true;
+                                        }
+                                    }
+                                @endphp
                                 <button type="button"
                                         id="keyword-edit-btn-{{ $keyword->id }}"
                                         data-keyword-edit-id="{{ $keyword->id }}"
                                         data-keyword-data="{{ json_encode($keyword, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
-                                        onclick="openEditKeyword({{ $keyword->id }}, JSON.parse(this.getAttribute('data-keyword-data')))"
+                                        data-can-edit-full="{{ $canEditFull ? '1' : '0' }}"
+                                        data-can-edit-stock="{{ $canEditStock ? '1' : '0' }}"
+                                        onclick="openEditKeyword({{ $keyword->id }}, JSON.parse(this.getAttribute('data-keyword-data')), this.getAttribute('data-can-edit-full') === '1', this.getAttribute('data-can-edit-stock') === '1')"
                                         class="text-blue-600 hover:text-blue-900 transition-colors"
                                         title="Edit">
                                     <i class="fas fa-edit"></i>
@@ -214,7 +249,13 @@
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
                         </td>
                         <td class="px-4 py-4 text-sm text-gray-900">
-                            <div class="font-medium">{{ $keyword->trx ?? '-' }}</div>
+                            <div class="font-medium">
+                                @if(isset($keyword->trx) && $keyword->trx !== null)
+                                    {{ $keyword->trx }}
+                                @else
+                                    -
+                                @endif
+                            </div>
                         </td>
                         <td class="px-4 py-4">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ $keyword->sisa_stock ?? 0 }}</span>

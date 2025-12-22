@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -20,7 +21,7 @@ class KeywordController extends Controller
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
         
-        $keywords = Keyword::with('merchant')->orderBy('id')->paginate(10);
+        $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id')->paginate(10);
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
@@ -229,7 +230,7 @@ class KeywordController extends Controller
             }
 
             // Create keyword
-            $keyword = Keyword::create([
+            $keywordData = [
                 'merchant_key'      => $request->merchant_key,
                 'kategori_keyword' => $kategoriKeyword,
                 'nama_produk'      => $request->nama_produk,
@@ -245,7 +246,14 @@ class KeywordController extends Controller
                 'image'            => $imagePath,
                 'stock'            => $stock,
                 'status'           => $status,
-            ]);
+            ];
+            
+            // Set created_by to current user if authenticated
+            if (Auth::check()) {
+                $keywordData['created_by'] = Auth::id();
+            }
+            
+            $keyword = Keyword::create($keywordData);
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -428,11 +436,186 @@ class KeywordController extends Controller
         }
     }
 
+    /**
+     * Check if current user can view keyword
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): semua user bisa lihat
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa lihat
+     */
+    private function canViewKeyword(Keyword $keyword)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa lihat semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika keyword tidak punya creator, semua user bisa lihat (backward compatibility)
+        if (!$keyword->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa lihat
+        if ($keyword->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $keyword->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, semua user bisa lihat
+            return true;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa lihat
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
+    /**
+     * Check if current user can edit keyword (full edit)
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): hanya user maha yang bisa edit semua
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa edit
+     */
+    private function canEditKeyword(Keyword $keyword)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa edit semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika keyword tidak punya creator, semua user bisa edit (backward compatibility)
+        if (!$keyword->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa edit
+        if ($keyword->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $keyword->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, hanya user maha yang bisa edit semua (user biasa tidak bisa edit keyword)
+            return false;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa edit
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
+    /**
+     * Check if current user can edit keyword stock only
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): semua user bisa edit stock
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa edit stock
+     */
+    private function canEditKeywordStock(Keyword $keyword)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa edit stock
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika keyword tidak punya creator, semua user bisa edit stock (backward compatibility)
+        if (!$keyword->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa edit stock
+        if ($keyword->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $keyword->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, semua user bisa edit stock
+            return true;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa edit stock
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
     public function update(Request $request, $id)
     {
         try {
             $keyword = Keyword::findOrFail($id);
 
+            // Check authorization
+            $canEditFull = $this->canEditKeyword($keyword);
+            $canEditStock = $this->canEditKeywordStock($keyword);
+
+            if (!$canEditFull && !$canEditStock) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki izin untuk mengedit keyword ini.'
+                    ], 403);
+                }
+                return back()->withErrors(['error' => 'Anda tidak memiliki izin untuk mengedit keyword ini.'])->withInput();
+            }
+
+            // Jika hanya bisa edit stock, hanya validasi stock
+            if (!$canEditFull && $canEditStock) {
+                $validated = $request->validate([
+                    'stock' => 'required|integer|min:0',
+                ], [
+                    'stock.required' => 'Stock wajib diisi',
+                    'stock.integer' => 'Stock harus berupa angka',
+                    'stock.min' => 'Stock tidak boleh negatif',
+                ]);
+
+                // Update hanya stock
+                $keyword->update([
+                    'stock' => $request->stock,
+                ]);
+
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Stock keyword berhasil diperbarui!',
+                        'keyword' => $keyword
+                    ], 200);
+                }
+
+                $redirect = $request->input('redirect_to');
+                if ($redirect) {
+                    return redirect()->to($redirect)->with('success', 'Stock keyword berhasil diperbarui!');
+                }
+                if ($request->boolean('stay_on_detail')) {
+                    return redirect()->back()->with('success', 'Stock keyword berhasil diperbarui!');
+                }
+
+                return redirect()->back()->with('success', 'Stock keyword berhasil diperbarui!');
+            }
+
+            // Validasi lengkap untuk user yang bisa edit semua
             $validated = $request->validate([
                 'merchant_key'      => 'required|exists:merchants,id',
                 'kategori_keyword'  => 'nullable|string|max:255',
@@ -610,23 +793,31 @@ class KeywordController extends Controller
             }
 
             // Update keyword
-            $keyword->update([
-                'merchant_key'      => $request->merchant_key,
-                'kategori_keyword'  => $kategoriKeyword,
-                'nama_produk'       => $request->nama_produk,
-                'keyword_id'        => $request->keyword_id,
-                'cta_link'          => $request->cta_link,
-                'redeem'            => $request->redeem,
-                'diskon'            => $diskon,
-                'subsidy_amount'    => $subsidyAmount,
-                'diamond_amount'    => $diamondAmount,
-                'skb'               => $request->skb,
-                'start_date'        => $startDate,
-                'end_date'          => $endDate,
-                'image'             => $imagePath,
-                'stock'             => $request->stock,
-                'status'            => $status,
-            ]);
+            // Jika hanya bisa edit stock, hanya update stock
+            if (!$canEditFull && $canEditStock) {
+                $keyword->update([
+                    'stock' => $request->stock,
+                ]);
+            } else {
+                // Update semua field jika memiliki permission full
+                $keyword->update([
+                    'merchant_key'      => $request->merchant_key,
+                    'kategori_keyword'  => $kategoriKeyword,
+                    'nama_produk'       => $request->nama_produk,
+                    'keyword_id'        => $request->keyword_id,
+                    'cta_link'          => $request->cta_link,
+                    'redeem'            => $request->redeem,
+                    'diskon'            => $diskon,
+                    'subsidy_amount'    => $subsidyAmount,
+                    'diamond_amount'    => $diamondAmount,
+                    'skb'               => $request->skb,
+                    'start_date'        => $startDate,
+                    'end_date'          => $endDate,
+                    'image'             => $imagePath,
+                    'stock'             => $request->stock,
+                    'status'            => $status,
+                ]);
+            }
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -692,7 +883,7 @@ class KeywordController extends Controller
         $status = $request->get('status');
         $merchantId = $request->get('merchant_id');
 
-        $keywordsQuery = Keyword::with('merchant')
+        $keywordsQuery = Keyword::with(['merchant', 'creator'])
             ->when($merchantId, function ($query) use ($merchantId) {
                 $query->where('merchant_key', $merchantId);
             })
@@ -727,6 +918,15 @@ class KeywordController extends Controller
         $keywords = $keywordsQuery
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
+        
+        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywords as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+            // Hitung sisa stock: stock - trx (minimal 0)
+            $stock = (int)($keyword->stock ?? 0);
+            $trx = (int)($keyword->trx ?? 0);
+            $keyword->sisa_stock = max(0, $stock - $trx);
+        }
 
         if ($request->ajax()) {
             try {

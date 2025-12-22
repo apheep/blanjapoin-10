@@ -46,9 +46,20 @@ class MerchantController extends Controller
             
         // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
+            ->select('keywords.*')
+            // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
             ->orderBy('id')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
+        
+        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywords as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+            // Hitung sisa stock: stock - trx (minimal 0)
+            $stock = (int)($keyword->stock ?? 0);
+            $trx = (int)($keyword->trx ?? 0);
+            $keyword->sisa_stock = max(0, $stock - $trx);
+        }
             
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         
@@ -118,7 +129,7 @@ class MerchantController extends Controller
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
         
-        $keywords = Keyword::with('merchant')
+        $keywords = Keyword::with(['merchant', 'creator'])
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
@@ -264,6 +275,11 @@ class MerchantController extends Controller
         // }, $merchantData));
         
         try {
+            // Set created_by to current user if authenticated
+            if (Auth::check()) {
+                $merchantData['created_by'] = Auth::id();
+            }
+            
             $merchant = Merchant::create($merchantData);
             Log::info('Merchant created successfully with ID:', ['id' => $merchant->id]);
         } catch (\Exception $e) {
@@ -331,8 +347,105 @@ class MerchantController extends Controller
         }
     }
 
+    /**
+     * Check if current user can view merchant
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): semua user bisa lihat
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa lihat
+     */
+    private function canViewMerchant(Merchant $merchant)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa lihat semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika merchant tidak punya creator, semua user bisa lihat (backward compatibility)
+        if (!$merchant->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa lihat
+        if ($merchant->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $merchant->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, semua user bisa lihat
+            return true;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa lihat
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
+    /**
+     * Check if current user can edit merchant
+     * Logic:
+     * - Jika dibuat oleh user maha (can_approve = 1): hanya user maha yang bisa edit
+     * - Jika dibuat oleh user biasa (can_approve = 0): hanya creator dan user maha yang bisa edit
+     */
+    private function canEditMerchant(Merchant $merchant)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $currentUser = Auth::user();
+        $isUserMaha = $currentUser->can_approve == 1;
+
+        // Jika user maha, bisa edit semua
+        if ($isUserMaha) {
+            return true;
+        }
+
+        // Jika merchant tidak punya creator, semua user bisa edit (backward compatibility)
+        if (!$merchant->created_by) {
+            return true;
+        }
+
+        // Jika user adalah creator, bisa edit
+        if ($merchant->created_by == $currentUser->id) {
+            return true;
+        }
+
+        // Cek apakah creator adalah user maha
+        $creator = $merchant->creator;
+        if ($creator && $creator->can_approve == 1) {
+            // Dibuat oleh user maha, hanya user maha yang bisa edit (user biasa tidak bisa edit merchant)
+            return false;
+        }
+
+        // Jika creator adalah user biasa (can_approve = 0), hanya creator dan user maha yang bisa edit
+        // Karena current user bukan creator dan bukan user maha, return false
+        return false;
+    }
+
     public function update(Request $request, $id)
     {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk mengedit merchant ini.');
+        }
+
         $validated = $request->validate([
             'nama_merchant'  => 'required|string|max:255',
             'kategori'       => 'nullable|string|max:100',
@@ -846,17 +959,46 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
         }
 
+        // Query untuk history transaksi: join tokodigi_tselpoin_redeem dengan keywords dan merchants
+        $historyQuery = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->join('merchants as m', 'k.merchant_key', '=', 'm.id')
+            ->where('m.id', $merchant->id)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->select(
+                'tr.created_date as tanggal',
+                'tr.msisdn',
+                'm.nama_merchant as merchant_name',
+                'tr.keyword_desc as product',
+                'tr.coupon as keywords',
+                'tr.poin_redeem as total_poin',
+                'm.daerah as merchant_city',
+                'k.status'
+            )
+            ->orderBy('tr.created_date', 'desc');
+
+        $historyPaginator = $historyQuery->paginate(12, ['*'], 'history_page')
+            ->withQueryString();
+
+        // Query untuk keyword history dengan menghitung TRX dan sisa stock
         $keywordQuery = Keyword::with('merchant')
+            ->select('keywords.*')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
             ->where('merchant_key', $merchant->id)
             ->orderBy('created_at', 'desc');
-
-        $historyPaginator = (clone $keywordQuery)
-            ->paginate(12, ['*'], 'history_page')
-            ->withQueryString();
 
         $keywordPaginator = (clone $keywordQuery)
             ->paginate(12, ['*'], 'keyword_page')
             ->withQueryString();
+        
+        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
+        foreach ($keywordPaginator as $keyword) {
+            $keyword->trx = $keyword->redeem_count ?? 0;
+            // Hitung sisa stock: stock - trx (minimal 0)
+            $stock = (int)($keyword->stock ?? 0);
+            $trx = (int)($keyword->trx ?? 0);
+            $keyword->sisa_stock = max(0, $stock - $trx);
+        }
 
         return view('history-all', [
             'merchant' => $merchant,

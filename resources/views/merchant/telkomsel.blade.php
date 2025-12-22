@@ -1,6 +1,6 @@
 <section id="section-telkomsel" class="mt-10 md:mt-14">
  <div class="mb-4 md:mb-6 flex items-center justify-between">
-  <h2 class="text-2xl md:text-3xl font-black text-neutral-900">📶 Telkomsel</h2>
+  <h2 class="text-xl md:text-3xl font-black text-neutral-900">📶 Telkomsel</h2>
  </div>
 
  @php
