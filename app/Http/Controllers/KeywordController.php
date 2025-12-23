@@ -22,6 +22,14 @@ class KeywordController extends Controller
         Keyword::autoDisableExpiredKeywords();
         
         $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id')->paginate(10);
+        
+        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
+        foreach ($keywords as $keyword) {
+            $keyword->updateTrxAndSisaStock();
+            // Reload untuk mendapatkan nilai terbaru
+            $keyword->refresh();
+        }
+        
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
