@@ -249,6 +249,35 @@
                             <input type="number" name="stock" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter stock">
                         </div>
 
+                        <!-- Row 5.5: Stock Management Type -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock Management Type</label>
+                            <div class="space-y-3">
+                                <label class="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50/50 transition-all cursor-pointer">
+                                    <input type="radio" name="stock_type" value="normal" checked onchange="toggleStockManagement()" class="mt-1 w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">Normal Stock</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">Stock akan berkurang setiap ada redeem dan tidak akan di-reset otomatis</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50/50 transition-all cursor-pointer">
+                                    <input type="radio" name="stock_type" value="daily_reset" onchange="toggleStockManagement()" class="mt-1 w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">Daily Reset Stock</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">Stock akan di-reset setiap hari ke nilai Daily Stock Limit</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Row 5.6: Daily Stock Limit (Conditional) -->
+                        <div id="dailyStockLimitContainer" class="md:col-span-2 hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Daily Stock Limit <span class="text-red-500">*</span></label>
+                            <input type="number" name="daily_stock_limit" id="dailyStockLimit" min="0" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter daily stock limit">
+                            <p class="text-xs text-gray-500 mt-1">Nilai stock yang akan di-reset setiap hari (jam 00:00)</p>
+                            <p id="dailyStockLimitError" class="text-red-500 text-xs mt-1 hidden">Daily Stock Limit wajib diisi jika Daily Reset Stock dipilih</p>
+                        </div>
+
                         <!-- Row 6: SKB -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">SKB <span class="text-red-500">*</span></label>
@@ -447,6 +476,13 @@ function openUploadKeyword() {
         endDate: null
     };
     
+    // Reset stock management type to normal
+    const stockTypeNormal = document.querySelector('input[name="stock_type"][value="normal"]');
+    if (stockTypeNormal) {
+        stockTypeNormal.checked = true;
+        toggleStockManagement();
+    }
+    
     // Clear date inputs first (will be auto-filled if fixed merchant has dates)
     const startInput = document.getElementById('startDateUpload');
     const endInput = document.getElementById('endDateUpload');
@@ -505,6 +541,26 @@ function closeUploadKeyword() {
         const diamondError = document.getElementById('diamondAmountError');
         if (diamondError) {
             diamondError.classList.add('hidden');
+        }
+        
+        // Reset stock management type
+        const stockTypeNormal = document.querySelector('input[name="stock_type"][value="normal"]');
+        if (stockTypeNormal) {
+            stockTypeNormal.checked = true;
+            toggleStockManagement();
+        }
+        const dailyStockLimitContainer = document.getElementById('dailyStockLimitContainer');
+        if (dailyStockLimitContainer) {
+            dailyStockLimitContainer.classList.add('hidden');
+        }
+        const dailyStockLimit = document.getElementById('dailyStockLimit');
+        if (dailyStockLimit) {
+            dailyStockLimit.value = '';
+            dailyStockLimit.required = false;
+        }
+        const dailyStockLimitError = document.getElementById('dailyStockLimitError');
+        if (dailyStockLimitError) {
+            dailyStockLimitError.classList.add('hidden');
         }
         
         // Reset subsidy container
@@ -967,12 +1023,35 @@ function toggleDiamond() {
     }
 }
 
+// Fungsi untuk toggle stock management type
+function toggleStockManagement() {
+    const stockType = document.querySelector('input[name="stock_type"]:checked');
+    const dailyStockLimitContainer = document.getElementById('dailyStockLimitContainer');
+    const dailyStockLimit = document.getElementById('dailyStockLimit');
+    const dailyStockLimitError = document.getElementById('dailyStockLimitError');
+    
+    if (stockType && stockType.value === 'daily_reset') {
+        dailyStockLimitContainer.classList.remove('hidden');
+        if (dailyStockLimit) dailyStockLimit.required = true;
+    } else {
+        dailyStockLimitContainer.classList.add('hidden');
+        if (dailyStockLimit) {
+            dailyStockLimit.required = false;
+            dailyStockLimit.value = '';
+        }
+        if (dailyStockLimitError) dailyStockLimitError.classList.add('hidden');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize diskon type display
     const diskonTypePercent = document.querySelector('input[name="diskon_type"][value="percent"]');
     if (diskonTypePercent && diskonTypePercent.checked) {
         toggleDiskonType();
     }
+    
+    // Initialize stock management type display
+    toggleStockManagement();
     
     const form = document.getElementById('formUploadKeyword');
     if (form) {
@@ -1049,6 +1128,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     return false;
                 } else {
                     if (diamondError) diamondError.classList.add('hidden');
+                }
+            }
+            
+            // Validasi daily stock limit jika daily reset stock dipilih
+            const stockType = document.querySelector('input[name="stock_type"]:checked');
+            if (stockType && stockType.value === 'daily_reset') {
+                const dailyStockLimit = document.getElementById('dailyStockLimit').value;
+                const dailyStockLimitError = document.getElementById('dailyStockLimitError');
+                if (!dailyStockLimit || dailyStockLimit <= 0) {
+                    if (dailyStockLimitError) dailyStockLimitError.classList.remove('hidden');
+                    return false;
+                } else {
+                    if (dailyStockLimitError) dailyStockLimitError.classList.add('hidden');
                 }
             }
             
