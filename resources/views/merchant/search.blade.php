@@ -128,8 +128,13 @@
                             @php
                                 $canRedeem = !$result->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($result->start_date)->startOfDay());
                                 $startDateFormatted = $result->start_date ? \Carbon\Carbon::parse($result->start_date)->format('d-M-y') : '';
+                                $isStockEmpty = ($result->stock ?? 0) <= 0;
                             @endphp
-                            @if($canRedeem)
+                            @if($isStockEmpty)
+                            <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
+                                Voucher Habis
+                            </button>
+                            @elseif($canRedeem)
                             <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
                                 Redeem
                             </button>
@@ -218,8 +223,13 @@
                                 @php
                                     $canRedeem = !$result->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($result->start_date)->startOfDay());
                                     $startDateFormatted = $result->start_date ? \Carbon\Carbon::parse($result->start_date)->format('d-M-y') : '';
+                                    $isStockEmpty = ($result->stock ?? 0) <= 0;
                                 @endphp
-                                @if($canRedeem)
+                                @if($isStockEmpty)
+                                <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">
+                                    Voucher Habis
+                                </button>
+                                @elseif($canRedeem)
                                 <button onclick="window.open('{{ $result->cta_link ?? '#' }}', '_blank')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
                                     Redeem
                                 </button>
