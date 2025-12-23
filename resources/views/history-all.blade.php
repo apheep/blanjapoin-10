@@ -11,6 +11,24 @@
     @vite(['resources/css/app.css','resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     @include('partials.head')
+    <style>
+        .search-input {
+            width: 100%;
+            border-radius: 9999px;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+            padding: 0.5rem 2.5rem;
+            font-size: 0.875rem;
+        }
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+        .search-input:focus {
+            border-color: #fb923c;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.1);
+        }
+    </style>
 </head>
 <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
     <nav id="navbar" class="sticky top-0 z-50 bg-white transition-shadow duration-300 w-full shadow-sm">
@@ -35,12 +53,12 @@
             <div class="flex flex-wrap gap-3 mt-6">
                 <button type="button"
                         data-tab-btn="transaksi"
-                        class="tab-trigger px-4 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-semibold shadow-lg shadow-orange-100">
+                        class="tab-trigger px-4 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-semibold shadow-lg shadow-orange-100 transition-all duration-300">
                     History Transaksi
                 </button>
                 <button type="button"
                         data-tab-btn="keywords"
-                        class="tab-trigger px-4 py-2 rounded-full bg-white text-gray-700 font-semibold shadow-sm hover:bg-orange-50">
+                        class="tab-trigger px-4 py-2 rounded-full bg-white text-gray-700 font-semibold shadow-sm hover:bg-orange-50 transition-all duration-300">
                     History Keywords
                 </button>
             </div>
@@ -69,7 +87,7 @@
             }
             @endphp
 
-            <section id="merchant-history" data-tab-panel="transaksi" class="mt-10 space-y-6">
+            <section id="merchant-history" data-tab-panel="transaksi" class="mt-10 space-y-6 opacity-0 transition-all duration-500 ease-in-out">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Merchant Section</p>
@@ -80,20 +98,100 @@
                     </div>
                 </div>
 
+                <!-- Search and Date Filter for Transaksi -->
+                <form method="GET" action="{{ url()->current() }}" id="transaksiSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <input type="hidden" name="tab" value="transaksi">
+                    <input type="hidden" name="sort_transaksi" id="sortTransaksiField" value="{{ request('sort_transaksi', 'tanggal') }}">
+                    <input type="hidden" name="sort_transaksi_dir" id="sortTransaksiDirField" value="{{ request('sort_transaksi_dir', 'desc') }}">
+                    <div class="relative w-full max-w-[280px] sm:max-w-[240px]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text"
+                               name="search_transaksi"
+                               id="transaksiSearchInput"
+                               value="{{ request('search_transaksi', '') }}"
+                               class="search-input"
+                               placeholder="Cari MSISDN, Product, Keyword..."
+                               onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('transaksiSearchForm').submit(); }" />
+                        @if(request()->has('search_transaksi'))
+                            <button type="button" onclick="clearTransaksiSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        @endif
+                    </div>
+                    <div class="flex-shrink-0">
+                        @include('partials.date-withdraw', ['filterId' => 'transaksiDateFilter'])
+                    </div>
+                    <input type="hidden" name="start_date" id="transaksiStartDate" value="{{ request('start_date') }}">
+                    <input type="hidden" name="end_date" id="transaksiEndDate" value="{{ request('end_date') }}">
+                    @if(request()->has('search_transaksi') || request()->has('start_date') || request()->has('end_date'))
+                        <a href="{{ url()->current() }}?tab=transaksi" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-times mr-1"></i>Clear
+                        </a>
+                    @endif
+                </form>
+
                 <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table id="transaksi-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tanggal</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">MSISDN</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant Name</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Product</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Keywords</th>
-                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Poin</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant City</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>No</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'tanggal')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Tanggal</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'tanggal' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'tanggal' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>MSISDN</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'merchant_name')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Merchant Name</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'merchant_name' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'merchant_name' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'product')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Product</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'product' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'product' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'keywords')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Keywords</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'keywords' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'keywords' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'total_poin')">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <span>Total Poin</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'total_poin' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'total_poin' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'merchant_city')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Merchant City</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'merchant_city' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'merchant_city' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>Status</span>
+                                    </th>
                                 </tr>
                             </thead>
 
@@ -169,17 +267,21 @@
                                 Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
                             </div>
                             <div class="flex items-center space-x-2">
+                                @php
+                                    $transaksiQueryParamsMobile = request()->except(['history_page']);
+                                    $transaksiQueryParamsMobile['tab'] = 'transaksi';
+                                @endphp
                                 @if ($historyPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                 @else
-                                    <a href="{{ $historyPaginator->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParamsMobile)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
                                 @endif
 
-                                @foreach ($historyPaginator->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
+                                @foreach ($historyPaginator->appends($transaksiQueryParamsMobile)->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
                                     @if ($page == $historyPaginator->currentPage())
                                         <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                                             {{ $page }}
@@ -192,7 +294,7 @@
                                 @endforeach
 
                                 @if ($historyPaginator->hasMorePages())
-                                    <a href="{{ $historyPaginator->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParamsMobile)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
                                 @else
@@ -269,16 +371,20 @@
                                 Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
                             </div>
                             <div class="flex items-center justify-center space-x-2">
+                                @php
+                                    $transaksiQueryParams = request()->except(['history_page']);
+                                    $transaksiQueryParams['tab'] = 'transaksi';
+                                @endphp
                                 @if ($historyPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                 @else
-                                    <a href="{{ $historyPaginator->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParams)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
                                 @endif
-                                @foreach ($historyPaginator->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
+                                @foreach ($historyPaginator->appends($transaksiQueryParams)->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
                                     @if ($page == $historyPaginator->currentPage())
                                         <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                                             {{ $page }}
@@ -290,7 +396,7 @@
                                     @endif
                                 @endforeach
                                 @if ($historyPaginator->hasMorePages())
-                                    <a href="{{ $historyPaginator->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParams)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
                                 @else
@@ -304,49 +410,102 @@
                 </div>
             </section>
 
-            <section id="keyword-history" data-tab-panel="keywords" class="mt-16 space-y-6 hidden">
+            <section id="keyword-history" data-tab-panel="keywords" class="mt-16 space-y-6 hidden opacity-0 transition-all duration-500 ease-in-out">
+                <!-- Search for Keywords -->
+                <form method="GET" action="{{ url()->current() }}" id="keywordSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <input type="hidden" name="tab" value="keywords">
+                    <input type="hidden" name="sort_keyword" id="sortKeywordField" value="{{ request('sort_keyword', 'created_at') }}">
+                    <input type="hidden" name="sort_keyword_dir" id="sortKeywordDirField" value="{{ request('sort_keyword_dir', 'desc') }}">
+                    <div class="relative w-full max-w-[280px] sm:max-w-[240px]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text"
+                               name="search_keyword"
+                               id="keywordSearchInput"
+                               value="{{ request('search_keyword', '') }}"
+                               class="search-input"
+                               placeholder="Cari Keyword ID, Produk..."
+                               onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('keywordSearchForm').submit(); }" />
+                        @if(request()->has('search_keyword'))
+                            <button type="button" onclick="clearKeywordSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        @endif
+                    </div>
+                    @if(request()->has('search_keyword'))
+                        <a href="{{ url()->current() }}?tab=keywords" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-times mr-1"></i>Clear
+                        </a>
+                    @endif
+                </form>
+
                 <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table id="keyword-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Keyword ID</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA LINK</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">SKB</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Periode</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Image</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>No</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'merchant')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Merchant</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'merchant' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'merchant' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'nama_produk')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Nama Produk</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'nama_produk' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'nama_produk' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'keyword_id')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Keyword ID</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'keyword_id' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'keyword_id' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'trx')">
+                                        <div class="flex items-center gap-1">
+                                            <span>TRX</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'trx' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'trx' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'stock')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Stock</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'stock' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'stock' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'sisa_stock')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Sisa Stock</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'sisa_stock' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'sisa_stock' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>Status</span>
+                                    </th>
                                 </tr>
                             </thead>
 
-                            <tbody class="bg-white divide-y divide-gray-200" id="keyword-table-body">
+                            <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($keywordPaginator as $keyword)
-                                    <tr id="keyword-row-{{ $keyword->id }}" class="hover:bg-gray-50 transition-colors keyword-row" data-category="{{ $keyword->merchant->kategori ?? 'All' }}" data-status="{{ $keyword->status }}" data-start="{{ ($keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('Y-m-d') : '') }}" data-end="{{ ($keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('Y-m-d') : '') }}">
+                                    <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-4 py-4 text-sm font-medium text-gray-900">
                                             {{ ($keywordPaginator->currentPage() - 1) * $keywordPaginator->perPage() + $loop->iteration }}
-                                        <!-- </td>
-
-                                            <td id="keyword-status-{{ $keyword->id }}" class="px-4 py-4">
-                                            <span class="status-badge px-2 py-1 text-xs font-semibold rounded-full
-                                                @if($keyword->status === 'approve')
-                                                    bg-green-100 text-green-800
-                                                @elseif($keyword->status === 'pending')
-                                                    bg-yellow-100 text-yellow-800
-                                                @elseif($keyword->status === 'reject')
-                                                    bg-red-100 text-red-800
-                                                @endif
-                                            ">
-                                                {{ ucfirst($keyword->status) }}
-                                            </span>
-                                        </td> -->
-                                    
-
-
+                                        </td>
                                         <td class="px-4 py-4 text-sm text-gray-900">
                                             <div class="font-medium">{{ $keyword->merchant->nama_merchant ?? '-' }}</div>
                                         </td>
@@ -356,52 +515,32 @@
                                         <td class="px-4 py-4 text-sm text-gray-900">
                                             <div class="font-medium">{{ $keyword->keyword_id ?? '-' }}</div>
                                         </td>
-                                        <td class="px-4 py-4 text-sm text-gray-900">
-                                            <a href="{{ $keyword->cta_link }}" target="_blank" class="text-blue-600 hover:underline">{{ $keyword->cta_link }}</a>
-                                        </td>   
-                                        <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->redeem ?? '-' }}</td>
-                                        <td class="px-4 py-4 text-sm text-gray-700">{{ $keyword->diskon ? formatDiskon($keyword->diskon) : '-' }}</td>
-                                        <td class="px-4 py-4 w-48">
-                                            @if($keyword->skb)
-                                                <div class="flex items-center gap-2">
-                                                    <span class="text-xs text-gray-500 truncate flex-1" title="{{ $keyword->skb }}">
-                                                        {{ Str::limit($keyword->skb, 20, '...') }}
-                                                    </span>
-                                                    <button type="button"
-                                                            onclick="showSKBDetail({{ json_encode($keyword->skb) }}, {{ json_encode($keyword->nama_produk) }}, {{ json_encode($keyword->merchant->nama_merchant ?? '-') }}, {{ json_encode($keyword->diskon ? formatDiskon($keyword->diskon) : '-') }})"
-                                                            class="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded transition-colors whitespace-nowrap flex-shrink-0"
-                                                            title="Lihat Detail SKB">
-                                                        Detail
-                                                    </button>
-                                                </div>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
+                                        <td class="px-4 py-4 text-sm text-gray-700">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->trx ?? 0 }}</span>
                                         </td>
                                         <td class="px-4 py-4">
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
-                                        </td>
-                                        <td class="px-4 py-4 text-xs text-gray-500">
-                                            @if($keyword->start_date || $keyword->end_date)
-                                                <div>{{ $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d/m/Y') : '-' }}</div>
-                                                <div>{{ $keyword->end_date ? \Carbon\Carbon::parse($keyword->end_date)->format('d/m/Y') : '-' }}</div>
-                                            @else
-                                                <div>-</div>
-                                            @endif
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $keyword->stock }}</span>
                                         </td>
                                         <td class="px-4 py-4">
-                                            @if($keyword->image)
-                                                <img src="{{ asset('storage/' . $keyword->image) }}" 
-                                                    alt="{{ $keyword->nama_produk }}" 
-                                                    class="h-10 w-16 object-cover rounded">
-                                            @else
-                                                <span class="text-gray-400">-</span>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">{{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                                @if($keyword->status === 'approve')
+                                                    bg-green-100 text-green-800
+                                                @elseif($keyword->status === 'pending')
+                                                    bg-yellow-100 text-yellow-800
+                                                @elseif($keyword->status === 'reject')
+                                                    bg-red-100 text-red-800
                                             @endif
+                                            ">
+                                                {{ ucfirst($keyword->status) }}
+                                            </span>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="12" class="px-4 py-4 text-center text-sm text-gray-500">
+                                        <td colspan="8" class="px-4 py-4 text-center text-sm text-gray-500">
                                             Belum ada data keyword.
                                         </td>
                                     </tr>
@@ -417,33 +556,34 @@
                             </div>
                             
                             <div class="flex items-center space-x-2">
-                                {{-- Previous Page Link --}}
+                                @php
+                                    $keywordQueryParams = request()->except(['keyword_page']);
+                                    $keywordQueryParams['tab'] = 'keywords';
+                                @endphp
                                 @if ($keywordPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                 @else
-                                    <a href="{{ $keywordPaginator->previousPageUrl() }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $keywordPaginator->appends($keywordQueryParams)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
                                 @endif
 
-                                {{-- Pagination Elements --}}
-                                @foreach ($keywordPaginator->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
+                                @foreach ($keywordPaginator->appends($keywordQueryParams)->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
                                     @if ($page == $keywordPaginator->currentPage())
                                         <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                                             {{ $page }}
                                         </button>
                                     @else
-                                        <a href="{{ $url }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                             {{ $page }}
                                         </a>
                                     @endif
                                 @endforeach
 
-                                {{-- Next Page Link --}}
                                 @if ($keywordPaginator->hasMorePages())
-                                    <a href="{{ $keywordPaginator->nextPageUrl() }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $keywordPaginator->appends($keywordQueryParams)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
                                 @else
@@ -466,6 +606,61 @@
         </main>
     </div>
     <script>
+    // Override applyWithdrawDateFilter for history page
+    window.applyHistoryDateFilter = function(filterId) {
+        const input = document.getElementById('dateInput' + filterId);
+        if (!input || !input.value.trim()) {
+            return;
+        }
+        
+        // Parse date from DD/MM/YYYY format
+        const dateValue = input.value.trim();
+        const parts = dateValue.split('/');
+        
+        if (parts.length !== 3) {
+            alert('Format tanggal tidak valid. Gunakan format DD/MM/YYYY');
+            return;
+        }
+        
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const year = parseInt(parts[2]);
+        
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+            alert('Format tanggal tidak valid. Gunakan format DD/MM/YYYY');
+            return;
+        }
+        
+        // Convert to YYYY-MM-DD format
+        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        // Update hidden inputs
+        document.getElementById('transaksiStartDate').value = formattedDate;
+        document.getElementById('transaksiEndDate').value = formattedDate;
+        
+        // Submit form
+        document.getElementById('transaksiSearchForm').submit();
+    };
+    
+    // Override the original function for this page
+    const originalApply = window.applyWithdrawDateFilter;
+    window.applyWithdrawDateFilter = function(filterId) {
+        if (filterId === 'transaksiDateFilter') {
+            applyHistoryDateFilter(filterId);
+        } else if (originalApply) {
+            originalApply(filterId);
+        }
+    };
+    
+    // Clear search functions
+    function clearTransaksiSearch() {
+        window.location.href = '{{ url()->current() }}?tab=transaksi';
+    }
+
+    function clearKeywordSearch() {
+        window.location.href = '{{ url()->current() }}?tab=keywords';
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const tabButtons = document.querySelectorAll('[data-tab-btn]');
         const tabPanels = document.querySelectorAll('[data-tab-panel]');
@@ -502,7 +697,19 @@
             });
 
             tabPanels.forEach(panel => {
-                panel.classList.toggle('hidden', panel.dataset.tabPanel !== target);
+                if (panel.dataset.tabPanel !== target) {
+                    // Hide with fade out
+                    panel.style.opacity = '0';
+                    setTimeout(() => {
+                        panel.classList.add('hidden');
+                    }, 300);
+                } else {
+                    // Show with fade in
+                    panel.classList.remove('hidden');
+                    setTimeout(() => {
+                        panel.style.opacity = '1';
+                    }, 10);
+                }
             });
         };
 
@@ -510,170 +717,106 @@
             button.addEventListener('click', () => showTab(button.dataset.tabBtn));
         });
 
-        const defaultTab = document.querySelector('[data-tab-btn]')?.dataset.tabBtn || 'transaksi';
+        // Check if there's a tab parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        const defaultTab = tabParam || 'transaksi';
         showTab(defaultTab);
     });
 
-    // Function to show SKB detail in modal
-    function showSKBDetail(skbText, productName, merchantName, promoText) {
-        // Create modal overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end md:items-center justify-center p-0 md:p-4';
-        overlay.id = 'skb-modal-overlay';
-        overlay.onclick = function(e) {
-            if (e.target === overlay) {
-                closeSKBModal();
-            }
-        };
-
-        // Create modal content - responsive: bottom sheet on mobile, centered on desktop
-        const modal = document.createElement('div');
-        modal.className = 'bg-white rounded-t-3xl md:rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col';
+    // Server-side sort function
+    function serverSort(tableType, column) {
+        let form, sortField, sortDirField;
         
-        // Set initial state for animation
-        const isMobile = window.innerWidth < 768;
-        if (isMobile) {
-            modal.style.transform = 'translateY(100%)';
-            modal.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        if (tableType === 'transaksi') {
+            form = document.getElementById('transaksiSearchForm');
+            sortField = document.getElementById('sortTransaksiField');
+            sortDirField = document.getElementById('sortTransaksiDirField');
+        } else if (tableType === 'keyword') {
+            form = document.getElementById('keywordSearchForm');
+            sortField = document.getElementById('sortKeywordField');
+            sortDirField = document.getElementById('sortKeywordDirField');
+        }
+        
+        if (!form || !sortField || !sortDirField) return;
+        
+        // Get current URL parameters to preserve search and date filters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Update sort parameters
+        if (sortField.value === column) {
+            // Toggle direction if same column
+            const currentDir = urlParams.get(tableType === 'transaksi' ? 'sort_transaksi_dir' : 'sort_keyword_dir') || 'desc';
+            sortDirField.value = currentDir === 'asc' ? 'desc' : 'asc';
         } else {
-            modal.style.transform = 'scale(0.95) translateY(-10px)';
-            modal.style.opacity = '0';
-            modal.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            // New column, default to asc
+            sortField.value = column;
+            sortDirField.value = 'asc';
         }
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         
-        // Drag handle for mobile (top bar)
-        const dragHandle = document.createElement('div');
-        dragHandle.className = 'md:hidden pt-3 pb-2 flex justify-center';
-        dragHandle.innerHTML = `
-            <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
-        `;
-        
-        // Modal header
-        const header = document.createElement('div');
-        header.className = 'px-6 py-4 border-b border-gray-200 flex items-center justify-between';
-        header.innerHTML = `
-            <h3 class="text-lg font-semibold text-gray-900">Deskripsi</h3>
-            <button onclick="closeSKBModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        `;
-
-        // Modal body
-        const body = document.createElement('div');
-        body.className = 'px-6 py-4 overflow-y-auto flex-1';
-        body.innerHTML = `
-            <div class="space-y-4">
-                <div>
-                    <p class="text-sm font-semibold text-gray-700 mb-1">Merchant:</p>
-                    <p class="text-sm text-gray-900">${merchantName}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-semibold text-gray-700 mb-1">Produk:</p>
-                    <p class="text-sm text-gray-900">${productName}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-semibold text-gray-700 mb-1">Promo:</p>
-                    <p class="text-sm text-gray-900">${promoText}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-semibold text-gray-700 mb-0">SKB:</p>
-                    <div class="bg-gray-50 rounded-lg p-2 border border-gray-200 mt-0">
-                        <p class="text-sm text-gray-700 leading-none whitespace-pre-wrap break-words" style="line-height: 1.2;">${skbText}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Modal footer
-        const footer = document.createElement('div');
-        footer.className = 'px-6 py-4 border-t border-gray-200 flex justify-end gap-2';
-        const copyButton = document.createElement('button');
-        copyButton.className = 'px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors';
-        copyButton.innerHTML = '<i class="fas fa-copy mr-2"></i>Copy';
-        copyButton.onclick = function() {
-            copySKBToClipboard(skbText, copyButton);
-        };
-        
-        const closeButton = document.createElement('button');
-        closeButton.className = 'px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors';
-        closeButton.textContent = 'Tutup';
-        closeButton.onclick = closeSKBModal;
-        
-        footer.appendChild(copyButton);
-        footer.appendChild(closeButton);
-
-        modal.appendChild(dragHandle);
-        modal.appendChild(header);
-        modal.appendChild(body);
-        modal.appendChild(footer);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-        
-        // Prevent body scroll
-        document.body.style.overflow = 'hidden';
-        
-        // Trigger animation
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                if (isMobile) {
-                    modal.style.transform = 'translateY(0)';
-                } else {
-                    modal.style.transform = 'scale(1) translateY(0)';
-                    modal.style.opacity = '1';
+        // Preserve search and date filter parameters
+        if (tableType === 'transaksi') {
+            const searchInput = document.getElementById('transaksiSearchInput');
+            const startDateInput = document.getElementById('transaksiStartDate');
+            const endDateInput = document.getElementById('transaksiEndDate');
+            
+            if (searchInput && !form.querySelector('input[name="search_transaksi"]')) {
+                const hiddenSearch = document.createElement('input');
+                hiddenSearch.type = 'hidden';
+                hiddenSearch.name = 'search_transaksi';
+                hiddenSearch.value = searchInput.value || urlParams.get('search_transaksi') || '';
+                form.appendChild(hiddenSearch);
+            }
+            
+            if (startDateInput && !form.querySelector('input[name="start_date"]')) {
+                const hiddenStartDate = document.createElement('input');
+                hiddenStartDate.type = 'hidden';
+                hiddenStartDate.name = 'start_date';
+                hiddenStartDate.value = startDateInput.value || urlParams.get('start_date') || '';
+                form.appendChild(hiddenStartDate);
+            }
+            
+            if (endDateInput && !form.querySelector('input[name="end_date"]')) {
+                const hiddenEndDate = document.createElement('input');
+                hiddenEndDate.type = 'hidden';
+                hiddenEndDate.name = 'end_date';
+                hiddenEndDate.value = endDateInput.value || urlParams.get('end_date') || '';
+                form.appendChild(hiddenEndDate);
                 }
-                overlay.style.opacity = '1';
-            });
-        });
-    }
-
-    function closeSKBModal() {
-        const overlay = document.getElementById('skb-modal-overlay');
-        if (overlay) {
-            const modal = overlay.querySelector('div[class*="rounded"]');
-            if (modal) {
-                const isMobile = window.innerWidth < 768;
-                
-                // Ensure transitions are set before animating
-                if (isMobile) {
-                    modal.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-                    modal.style.transform = 'translateY(100%)';
-                } else {
-                    modal.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
-                    modal.style.transform = 'scale(0.95) translateY(-10px)';
-                    modal.style.opacity = '0';
-                }
-                
-                overlay.style.transition = 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-                overlay.style.opacity = '0';
-                
-                // Remove after animation completes
-                setTimeout(() => {
-                    overlay.remove();
-                    document.body.style.overflow = '';
-                }, 300);
+        } else if (tableType === 'keyword') {
+            const searchInput = document.getElementById('keywordSearchInput');
+            
+            if (searchInput && !form.querySelector('input[name="search_keyword"]')) {
+                const hiddenSearch = document.createElement('input');
+                hiddenSearch.type = 'hidden';
+                hiddenSearch.name = 'search_keyword';
+                hiddenSearch.value = searchInput.value || urlParams.get('search_keyword') || '';
+                form.appendChild(hiddenSearch);
             }
         }
+        
+        // Submit form
+        form.submit();
     }
 
-    function copySKBToClipboard(text, button) {
-        navigator.clipboard.writeText(text).then(() => {
-            // Show success message
-            const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
-            button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            button.classList.add('bg-green-600', 'hover:bg-green-700');
-            
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.classList.remove('bg-green-600', 'hover:bg-green-700');
-                button.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy text: ', err);
-            alert('Gagal menyalin teks');
-        });
+    function parseDateString(dateStr) {
+        if (!dateStr || dateStr === '-') return 0;
+        // Format: dd/mm/yyyy hh:mm
+        const parts = dateStr.split(' ');
+        if (parts.length !== 2) return 0;
+        
+        const dateParts = parts[0].split('/');
+        const timeParts = parts[1].split(':');
+        
+        if (dateParts.length !== 3 || timeParts.length !== 2) return 0;
+        
+        return new Date(
+            parseInt(dateParts[2]), // year
+            parseInt(dateParts[1]) - 1, // month (0-indexed)
+            parseInt(dateParts[0]), // day
+            parseInt(timeParts[0]), // hour
+            parseInt(timeParts[1]) // minute
+        ).getTime();
     }
     </script>
 </body>

@@ -253,9 +253,8 @@
     @php
         $code = request()->route('code');
         $decodedCode = $code ? urldecode($code) : '';
-        // Placeholder balance - replace with actual balance from database
-        // For testing: set balance to 100000
-        $accountBalance = 100000; // TODO: Get from merchant/portal_user balance
+        // Saldo dari diamond merchant (1 diamond = 1 rupiah)
+        // $accountBalance sudah dikirim dari controller
         $merchantId = $merchant->id ?? null;
     @endphp
 
@@ -1378,11 +1377,22 @@
             // Get current date
             const currentDate = formatDate(new Date());
 
+            // Get merchant data from PHP
+            const merchantName = @json($merchant->nama_merchant ?? '-');
+            const merchantPic = @json($merchant->nama_pic ?? $merchant->nama_merchant ?? '-');
+
             // Fill validation data
-            document.getElementById('validationName').textContent = data.customerName || 'Alexander';
-            document.getElementById('validationAmount').textContent = 'Rp ' + formatReceiptNumber(data.amount || 0);
-            document.getElementById('validationMethod').textContent = data.methodName || '-';
-            document.getElementById('validationDate').textContent = currentDate;
+            const validationNameEl = document.getElementById('validationName');
+            const validationMerchantNameEl = document.getElementById('validationMerchantName');
+            const validationAmountEl = document.getElementById('validationAmount');
+            const validationMethodEl = document.getElementById('validationMethod');
+            const validationDateEl = document.getElementById('validationDate');
+
+            if (validationNameEl) validationNameEl.textContent = data.customerName || merchantPic;
+            if (validationMerchantNameEl) validationMerchantNameEl.textContent = data.merchantName || merchantName;
+            if (validationAmountEl) validationAmountEl.textContent = 'Rp ' + formatReceiptNumber(data.amount || 0);
+            if (validationMethodEl) validationMethodEl.textContent = data.methodName || '-';
+            if (validationDateEl) validationDateEl.textContent = currentDate;
             
             if (data.accountNumber) {
                 const isEWallet = ['linkaja', 'dana'].includes(data.paymentMethod || '');
@@ -1432,12 +1442,14 @@
             console.log('Confirming withdraw with data:', pendingWithdrawData); // Debug log
 
             // Save data to local variable BEFORE closing modal (to prevent null reference)
+            // Gunakan nama dari pendingWithdrawData yang sudah diisi sebelumnya
             const withdrawData = {
                 amount: pendingWithdrawData.amount,
                 methodName: pendingWithdrawData.methodName,
                 accountNumber: pendingWithdrawData.accountNumber,
                 paymentMethod: pendingWithdrawData.paymentMethod,
-                customerName: 'Alexander' // Always use hardcoded name
+                customerName: pendingWithdrawData.customerName || @json($merchant->nama_pic ?? $merchant->nama_merchant ?? '-'),
+                merchantName: pendingWithdrawData.merchantName || @json($merchant->nama_merchant ?? '-')
             };
 
             // Close validation modal (this will set pendingWithdrawData to null after 300ms)
@@ -1478,16 +1490,41 @@
                 hideLoading();
                 
                 if (data.success) {
+                    // Update saldo realtime setelah withdraw berhasil
+                    const withdrawAmount = withdrawData.amount;
+                    accountBalance = Math.max(0, accountBalance - withdrawAmount);
+                    
+                    // Update tampilan saldo
+                    const accountBalanceDisplay = document.getElementById('accountBalanceDisplay');
+                    if (accountBalanceDisplay) {
+                        accountBalanceDisplay.textContent = 'Rp ' + formatNumber(accountBalance);
+                    }
+                    
+                    // Update input amount jika toggle "Tarik Semua" aktif
+                    if (withdrawAllToggle && withdrawAllToggle.checked) {
+                        withdrawAmountInput.value = formatNumber(accountBalance);
+                    }
+                    
+                    // Update remaining balance jika ada
+                    if (remainingBalance) {
+                        updateRemainingBalance();
+                    }
+                    
                     // Get current date in format matching history (d M Y, H:i)
                     const currentDate = formatDate(new Date());
                     
-                    // Prepare receipt data - always use 'Alexander' as customer name
+                    // Get merchant data from PHP
+                    const merchantName = @json($merchant->nama_merchant ?? '-');
+                    const merchantPic = @json($merchant->nama_pic ?? $merchant->nama_merchant ?? '-');
+                    
+                    // Prepare receipt data - gunakan nama dari response atau merchant data
                     const receiptData = {
                         amount: withdrawData.amount,
                         methodName: withdrawData.methodName,
                         accountNumber: formattedAccountNumber,
                         paymentMethod: withdrawData.paymentMethod,
-                        customerName: 'Alexander', // Always use hardcoded name
+                        customerName: data.data.nama_pic || withdrawData.customerName || merchantPic,
+                        merchantName: data.data.nama_merchant || merchantName,
                         transferTime: currentDate, // Format: "15 Jan 2024, 10:30"
                         transactionId: data.data.transaction_id || 'WD' + Date.now()
                     };
@@ -1531,11 +1568,17 @@
 
             // Fill receipt data
             const nameEl = document.getElementById('receiptNameSuccess');
+            const merchantNameEl = document.getElementById('receiptMerchantNameSuccess');
             const amountEl = document.getElementById('receiptAmountSuccess');
             const methodEl = document.getElementById('receiptMethodSuccess');
             const timeEl = document.getElementById('receiptTimeSuccess');
             
-            if (nameEl) nameEl.textContent = data.customerName || 'Alexander';
+            // Gunakan nama dari data atau fallback ke merchant data
+            const merchantName = @json($merchant->nama_merchant ?? '-');
+            const merchantPic = @json($merchant->nama_pic ?? $merchant->nama_merchant ?? '-');
+            
+            if (nameEl) nameEl.textContent = data.customerName || merchantPic;
+            if (merchantNameEl) merchantNameEl.textContent = data.merchantName || merchantName;
             if (amountEl) amountEl.textContent = 'Rp ' + formatReceiptNumber(data.amount || 0);
             if (methodEl) methodEl.textContent = data.methodName || '-';
             if (timeEl) timeEl.textContent = data.transferTime || '-';
@@ -1616,9 +1659,9 @@
                 return;
             }
             
-            // Customer name (always hardcoded, never from dashboard)
-            // Always use 'Alexander' as customer name
-            const customerName = 'Alexander';
+            // Get merchant data from PHP
+            const merchantName = @json($merchant->nama_merchant ?? '-');
+            const merchantPic = @json($merchant->nama_pic ?? $merchant->nama_merchant ?? '-');
             
             // Store withdraw data for confirmation
             pendingWithdrawData = {
@@ -1626,7 +1669,8 @@
                 methodName: getMethodName(paymentMethodValue),
                 accountNumber: accountNumber,
                 paymentMethod: paymentMethodValue,
-                customerName: 'Alexander' // Always hardcoded, never from dashboard
+                customerName: merchantPic, // Gunakan nama PIC dari merchant
+                merchantName: merchantName // Tambahkan nama merchant
             };
             
             // Show validation/confirmation modal first

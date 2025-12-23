@@ -347,6 +347,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/withdraw-approval/{withdrawRequest}/approve', [MerchantController::class, 'approveWithdraw'])->name('withdraw.approve');
     Route::post('/withdraw-approval/{withdrawRequest}/reject', [MerchantController::class, 'rejectWithdraw'])->name('withdraw.reject');
 
+    // Recalculate Diamond
+    Route::post('/merchants/recalculate-diamond', [MerchantController::class, 'recalculateDiamond'])->name('merchants.recalculate-diamond');
+
     // Spesial Promo Form
     Route::get('/spesial-promo-form', [KeywordController::class, 'spesialPromoForm'])->name('spesial-promo.form');
 

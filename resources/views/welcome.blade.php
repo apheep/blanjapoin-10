@@ -1188,6 +1188,14 @@
    // Run immediately and also after a short delay to catch any dynamically loaded content
    initializeFiltersAndSorting();
    setTimeout(initializeFiltersAndSorting, 500);
+
+   // Function for redeem button click (welcome page - no location validation)
+   function handleRedeemClick(redeemUrl) {
+     if (redeemUrl && redeemUrl !== '#') {
+       // Direct redeem without location validation for welcome page
+       window.open(redeemUrl, '_blank');
+     }
+   }
   </script>
  </body>
 </html>
