@@ -532,7 +532,7 @@
                                                     bg-yellow-100 text-yellow-800
                                                 @elseif($keyword->status === 'reject')
                                                     bg-red-100 text-red-800
-                                                @endif
+                                            @endif
                                             ">
                                                 {{ ucfirst($keyword->status) }}
                                             </span>
@@ -782,7 +782,7 @@
                 hiddenEndDate.name = 'end_date';
                 hiddenEndDate.value = endDateInput.value || urlParams.get('end_date') || '';
                 form.appendChild(hiddenEndDate);
-            }
+                }
         } else if (tableType === 'keyword') {
             const searchInput = document.getElementById('keywordSearchInput');
             
