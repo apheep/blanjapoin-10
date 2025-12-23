@@ -136,6 +136,13 @@ class MerchantController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
+        foreach ($keywords as $keyword) {
+            $keyword->updateTrxAndSisaStock();
+            // Reload untuk mendapatkan nilai terbaru
+            $keyword->refresh();
+        }
+
         return view('merchant-detail', [
             'merchant' => $merchant,
             'keywords' => $keywords,
@@ -768,6 +775,13 @@ class MerchantController extends Controller
             ->where('is_active', 1) // Validasi is_active keyword
             ->get();
 
+        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
+        foreach ($keywords as $keyword) {
+            $keyword->updateTrxAndSisaStock();
+            // Reload untuk mendapatkan nilai terbaru
+            $keyword->refresh();
+        }
+
         // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
         // Use orderBy('order', 'asc') to respect admin-configured order
         // Check both merchant_key (legacy) and merchant_keys JSON array
@@ -982,7 +996,7 @@ class MerchantController extends Controller
         ]);
     }
 
-    public function linkHistoryAll($code)
+    public function linkHistoryAll(Request $request, $code)
     {
         $decodedCode = urldecode($code);
         $escapedDecodedCode = str_replace(['%', '_'], ['\%', '\_'], $decodedCode);
@@ -1009,6 +1023,12 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan untuk code: ' . $code);
         }
 
+        // Get filter params
+        $searchTransaksi = $request->get('search_transaksi');
+        $searchKeyword = $request->get('search_keyword');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
         // Query untuk history transaksi: join tokodigi_tselpoin_redeem dengan keywords dan merchants
         // Hanya tampilkan transaksi dari keyword yang sudah APPROVE
         $historyQuery = DB::table('tokodigi_tselpoin_redeem as tr')
@@ -1026,8 +1046,27 @@ class MerchantController extends Controller
                 'tr.poin_redeem as total_poin',
                 'm.daerah as merchant_city',
                 'k.status'
-            )
-            ->orderBy('tr.created_date', 'desc');
+            );
+
+        // Apply search filter for transaksi
+        if ($searchTransaksi) {
+            $historyQuery->where(function($query) use ($searchTransaksi) {
+                $query->where('tr.msisdn', 'like', '%' . $searchTransaksi . '%')
+                      ->orWhere('tr.keyword_desc', 'like', '%' . $searchTransaksi . '%')
+                      ->orWhere('tr.coupon', 'like', '%' . $searchTransaksi . '%')
+                      ->orWhere('m.nama_merchant', 'like', '%' . $searchTransaksi . '%');
+            });
+        }
+
+        // Apply date filter for transaksi (hanya tanggal, ignore jam)
+        if ($startDate) {
+            $historyQuery->whereRaw('DATE(tr.created_date) >= ?', [$startDate]);
+        }
+        if ($endDate) {
+            $historyQuery->whereRaw('DATE(tr.created_date) <= ?', [$endDate]);
+        }
+
+        $historyQuery->orderBy('tr.created_date', 'desc');
 
         $historyPaginator = $historyQuery->paginate(12, ['*'], 'history_page')
             ->withQueryString();
@@ -1036,8 +1075,20 @@ class MerchantController extends Controller
         $keywordQuery = Keyword::with('merchant')
             ->select('keywords.*')
             ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
-            ->where('merchant_key', $merchant->id)
-            ->orderBy('created_at', 'desc');
+            ->where('merchant_key', $merchant->id);
+
+        // Apply search filter for keywords
+        if ($searchKeyword) {
+            $keywordQuery->where(function($query) use ($searchKeyword) {
+                $query->where('keyword_id', 'like', '%' . $searchKeyword . '%')
+                      ->orWhere('nama_produk', 'like', '%' . $searchKeyword . '%')
+                      ->orWhereHas('merchant', function($q) use ($searchKeyword) {
+                          $q->where('nama_merchant', 'like', '%' . $searchKeyword . '%');
+                      });
+            });
+        }
+
+        $keywordQuery->orderBy('created_at', 'desc');
 
         $keywordPaginator = (clone $keywordQuery)
             ->paginate(12, ['*'], 'keyword_page')
@@ -1095,6 +1146,13 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10)
             ->withQueryString();
+
+        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
+        foreach ($keywords as $keyword) {
+            $keyword->updateTrxAndSisaStock();
+            // Reload untuk mendapatkan nilai terbaru
+            $keyword->refresh();
+        }
 
         return view('partials_dash.keywords-history', [
             'merchant' => $merchant,

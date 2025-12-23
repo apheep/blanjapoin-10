@@ -72,10 +72,10 @@
           <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
          </div>
          <div class="flex flex-col gap-0.5 pt-0.5 border-t border-neutral-100 mt-auto">
-          <div class="flex items-center gap-1 text-[9px] text-neutral-600">
-           <span class="font-medium">Stock:</span>
-           <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
-          </div>
+                            <div class="flex items-center gap-1 text-[9px] text-neutral-600">
+                                <span class="font-medium">Stock:</span>
+                                <span class="font-semibold text-neutral-800">{{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                            </div>
           @if($keyword->end_date)
           <div class="flex items-center gap-1 text-[9px] text-neutral-600">
            <span class="font-medium">Valid until:</span>
@@ -131,10 +131,10 @@
           <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
          </div>
          <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
-          <span class="inline-flex items-center gap-1">
-           <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-           <span>Stock: {{ $keyword->stock }}</span>
-          </span>
+                        <span class="inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                            <span>Stock: {{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                        </span>
          </div>
         </div>
 
