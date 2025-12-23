@@ -73,10 +73,10 @@
       <span class="text-[18px] font-bold text-red-600">{{ number_format($keyword->redeem, 0, ',', '.') }}</span>
      </div>
      <div class="flex flex-col gap-0.5 pt-0.5 border-t border-neutral-100 mt-auto">
-      <div class="flex items-center gap-1 text-[9px] text-neutral-600">
-       <span class="font-medium">Stock:</span>
-       <span class="font-semibold text-neutral-800">{{ $keyword->stock }}</span>
-      </div>
+                            <div class="flex items-center gap-1 text-[9px] text-neutral-600">
+                                <span class="font-medium">Stock:</span>
+                                <span class="font-semibold text-neutral-800">{{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                            </div>
       @if($keyword->end_date)
       <div class="flex items-center gap-1 text-[9px] text-neutral-600">
        <span class="font-medium">Valid until:</span>
@@ -86,19 +86,24 @@
       </div>
       @endif
      </div>
-     @php
-        $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
-        $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-     @endphp
-     @if($canRedeem)
-     <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
-      Redeem
-     </button>
-     @else
-     <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
-      Open {{ $startDateFormatted }}
-     </button>
-     @endif
+                        @php
+                        $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
+                        $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
+                        $isStockEmpty = ($keyword->stock ?? 0) <= 0;
+                        @endphp
+                        @if($isStockEmpty)
+                        <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
+                         Voucher Habis
+                        </button>
+                        @elseif($canRedeem)
+                        <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
+                         Redeem
+                        </button>
+                        @else
+                        <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
+                         Open {{ $startDateFormatted }}
+                        </button>
+                        @endif
     </div>
    </div>
 
@@ -131,12 +136,12 @@
      <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
       <img src="{{ $keyword->image ? asset('storage/' . $keyword->image) : asset('storage/promo/promo-default.jpg') }}" alt="{{ $productName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
      </div>
-     <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
-      <span class="inline-flex items-center gap-1">
-       <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-       <span>Stock: {{ $keyword->stock }}</span>
-      </span>
-     </div>
+                    <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
+                        <span class="inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                            <span>Stock: {{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                        </span>
+                    </div>
     </div>
 
     <!-- Details -->
@@ -174,8 +179,13 @@
       @php
         $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
         $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
+        $isStockEmpty = ($keyword->stock ?? 0) <= 0;
       @endphp
-      @if($canRedeem)
+      @if($isStockEmpty)
+      <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">
+       Voucher Habis
+      </button>
+      @elseif($canRedeem)
       <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
        Redeem
       </button>
