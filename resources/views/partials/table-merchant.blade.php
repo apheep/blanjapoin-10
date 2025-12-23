@@ -57,6 +57,30 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Radius (m)</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortMerchantColumn('total_trx', event)">
+                        <div class="flex items-center justify-center gap-1">
+                            <span>Total TRX</span>
+                            <span class="sort-icon text-gray-400 text-[10px]">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'total_trx' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'total_trx' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortMerchantColumn('total_keyword', event)">
+                        <div class="flex items-center justify-center gap-1">
+                            <span>Total Keyword</span>
+                            <span class="sort-icon text-gray-400 text-[10px]">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'total_keyword' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'total_keyword' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortMerchantColumn('keyword_aktif', event)">
+                        <div class="flex items-center justify-center gap-1">
+                            <span>Keyword Aktif</span>
+                            <span class="sort-icon text-gray-400 text-[10px]">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'keyword_aktif' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'keyword_aktif' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                            </span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMaps</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Dashboard</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Pelanggan</th>
@@ -243,6 +267,22 @@
                                 <span class="text-gray-400">-</span>
                             @endif
                         </td>
+
+                        {{-- Total TRX --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $merchant->total_trx ?? 0 }}</span>
+                        </td>
+
+                        {{-- Total Keyword --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $merchant->total_keyword ?? 0 }}</span>
+                        </td>
+
+                        {{-- Keyword Aktif --}}
+                        <td class="px-4 py-4 text-center text-sm text-gray-700">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ $merchant->keyword_aktif ?? 0 }}</span>
+                        </td>
+
                         {{-- Link Google Maps --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->link_gmap)
@@ -335,7 +375,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="17" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="20" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data merchant.
                         </td>
                     </tr>
@@ -437,6 +477,24 @@
                     <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Merchant</p>
                         <p class="text-base font-semibold text-gray-900">{{ $merchant->nama_merchant }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Total TRX</p>
+                        <p class="text-base font-semibold text-gray-900">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $merchant->total_trx ?? 0 }}</span>
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Total Keyword</p>
+                        <p class="text-base font-semibold text-gray-900">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $merchant->total_keyword ?? 0 }}</span>
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Keyword Aktif</p>
+                        <p class="text-base font-semibold text-gray-900">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ $merchant->keyword_aktif ?? 0 }}</span>
+                        </p>
                     </div>
                     <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Status</p>
@@ -830,6 +888,129 @@
 
     // Merchant table uses the same global sortTable function defined in table-keyword.blade.php
     // No additional code needed here as the function handles both tables
+    
+    // Update sort icons for merchant table
+    function updateMerchantSortIcons(column, order) {
+        // Reset all sort icons
+        document.querySelectorAll('[onclick*="sortMerchantColumn"] .sort-icon i').forEach(icon => {
+            icon.className = 'fas fa-sort text-gray-400';
+        });
+        
+        // Update icon for active column
+        const activeHeader = Array.from(document.querySelectorAll('[onclick*="sortMerchantColumn"]')).find(header => {
+            return header.getAttribute('onclick').includes(`'${column}'`);
+        });
+        
+        if (activeHeader && order) {
+            const icon = activeHeader.querySelector('.sort-icon i');
+            if (icon) {
+                icon.className = `fas fa-sort-${order === 'asc' ? 'up' : 'down'} text-orange-500`;
+            }
+        }
+    }
+    
+    // AJAX sort function for merchant calculated columns (like best offer)
+    function sortMerchantColumn(column, event) {
+        // Prevent default behavior if event is provided
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSort = urlParams.get('sort_merchant');
+        const currentOrder = urlParams.get('sort_merchant_dir') || 'asc';
+        
+        let newSort = column;
+        let newOrder = 'asc';
+        
+        if (currentSort === column) {
+            // Toggle between asc and desc
+            if (currentOrder === 'asc') {
+                newOrder = 'desc';
+            } else {
+                // Reset to default (no sort)
+                newSort = null;
+                newOrder = null;
+            }
+        }
+        
+        // Update icons immediately
+        updateMerchantSortIcons(column, newOrder);
+        
+        // Use existing fetchMerchantTable function with buildMerchantSearchRequestUrl
+        if (typeof fetchMerchantTable === 'function' && typeof buildMerchantSearchRequestUrl === 'function') {
+            // Temporarily store sort params in global scope so buildMerchantSearchRequestUrl can access them
+            window.currentMerchantSort = newSort;
+            window.currentMerchantSortDir = newOrder;
+            
+            // Update URL without reload first
+            const currentUrl = new URL(window.location.href);
+            if (newSort) {
+                currentUrl.searchParams.set('sort_merchant', newSort);
+                currentUrl.searchParams.set('sort_merchant_dir', newOrder);
+            } else {
+                currentUrl.searchParams.delete('sort_merchant');
+                currentUrl.searchParams.delete('sort_merchant_dir');
+            }
+            window.history.pushState({}, '', currentUrl.toString());
+            
+            // Build URL with sort params included (will use window.currentMerchantSort)
+            const searchUrl = buildMerchantSearchRequestUrl();
+            
+            // Fetch with AJAX (no page refresh)
+            fetchMerchantTable(searchUrl);
+            
+            // Clean up after a short delay to ensure buildMerchantSearchRequestUrl has access
+            setTimeout(() => {
+                delete window.currentMerchantSort;
+                delete window.currentMerchantSortDir;
+            }, 100);
+        } else {
+            // Fallback: direct fetch
+            const container = document.getElementById('merchant-table-container');
+            if (container) {
+                // Update URL params
+                if (newSort) {
+                    urlParams.set('sort_merchant', newSort);
+                    urlParams.set('sort_merchant_dir', newOrder);
+                } else {
+                    urlParams.delete('sort_merchant');
+                    urlParams.delete('sort_merchant_dir');
+                }
+                
+                // Update URL without reload
+                window.history.pushState({}, '', '?' + urlParams.toString());
+                
+                container.style.opacity = '0.5';
+                
+                fetch('/merchants/search?' + urlParams.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.html) {
+                        container.innerHTML = data.html;
+                        container.style.opacity = '1';
+                        // Re-attach event listeners
+                        if (typeof attachMerchantPaginationHandlers === 'function') {
+                            attachMerchantPaginationHandlers();
+                        }
+                        if (typeof reapplyMerchantCategoryFilter === 'function') {
+                            reapplyMerchantCategoryFilter();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Sort error:', error);
+                    container.style.opacity = '1';
+                });
+            }
+        }
+    }
 
     // QR Code Modal Functions
     function openQRCodeModal(linkUrl, merchantName) {

@@ -945,6 +945,15 @@
             if (activeCategory && activeCategory !== 'Semua') {
                 searchUrl.searchParams.set('category', activeCategory);
             }
+            // Sertakan sort parameters dari URL saat ini atau dari window.currentMerchantSort
+            const sortMerchant = window.currentMerchantSort || currentUrl.searchParams.get('sort_merchant');
+            const sortMerchantDir = window.currentMerchantSortDir || currentUrl.searchParams.get('sort_merchant_dir');
+            if (sortMerchant) {
+                searchUrl.searchParams.set('sort_merchant', sortMerchant);
+                if (sortMerchantDir) {
+                    searchUrl.searchParams.set('sort_merchant_dir', sortMerchantDir);
+                }
+            }
             return searchUrl.toString();
         }
 

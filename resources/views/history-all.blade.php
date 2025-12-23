@@ -522,7 +522,13 @@
                                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $keyword->stock }}</span>
                                         </td>
                                         <td class="px-4 py-4">
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">{{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                                                @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
+                                                    {{ $keyword->daily_stock_limit }}
+                                                @else
+                                                    {{ $keyword->sisa_stock ?? $keyword->stock }}
+                                                @endif
+                                            </span>
                                         </td>
                                         <td class="px-4 py-4">
                                             <span class="px-2 py-1 text-xs font-semibold rounded-full
@@ -532,7 +538,7 @@
                                                     bg-yellow-100 text-yellow-800
                                                 @elseif($keyword->status === 'reject')
                                                     bg-red-100 text-red-800
-                                                @endif
+                                            @endif
                                             ">
                                                 {{ ucfirst($keyword->status) }}
                                             </span>
@@ -782,7 +788,7 @@
                 hiddenEndDate.name = 'end_date';
                 hiddenEndDate.value = endDateInput.value || urlParams.get('end_date') || '';
                 form.appendChild(hiddenEndDate);
-            }
+                }
         } else if (tableType === 'keyword') {
             const searchInput = document.getElementById('keywordSearchInput');
             

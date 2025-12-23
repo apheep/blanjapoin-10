@@ -57,6 +57,8 @@ class KeywordController extends Controller
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp',
                 'stock'             => 'required|integer|min:0',
+                'stock_type'        => 'nullable|in:normal,daily_reset',
+                'daily_stock_limit' => 'nullable|integer|min:0',
 
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
@@ -67,6 +69,7 @@ class KeywordController extends Controller
                 'stock.required' => 'Stock wajib diisi',
                 'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
                 'diamond_amount.required_if' => 'Jumlah diamond wajib diisi jika Diamond dipilih Yes',
+                'daily_stock_limit.required_if' => 'Daily Stock Limit wajib diisi jika Daily Reset Stock dipilih',
             ]);
 
             // Validasi bahwa salah satu dari diskon harus diisi
@@ -239,6 +242,27 @@ class KeywordController extends Controller
                 $kategoriKeyword = $merchant->kategori;
             }
 
+            // Handle stock management type
+            $isDailyStock = false;
+            $dailyStockLimit = null;
+            if ($request->stock_type === 'daily_reset') {
+                $isDailyStock = true;
+                $dailyStockLimit = $request->daily_stock_limit !== null && $request->daily_stock_limit !== '' 
+                    ? (int)$request->daily_stock_limit 
+                    : null;
+                
+                // Validasi: jika daily_reset dipilih, daily_stock_limit wajib diisi
+                if ($dailyStockLimit === null || $dailyStockLimit <= 0) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Daily Stock Limit wajib diisi jika Daily Reset Stock dipilih'
+                        ], 422);
+                    }
+                    return back()->withErrors(['daily_stock_limit' => 'Daily Stock Limit wajib diisi jika Daily Reset Stock dipilih'])->withInput();
+                }
+            }
+
             // Create keyword
             $keywordData = [
                 'merchant_key'      => $request->merchant_key,
@@ -255,6 +279,8 @@ class KeywordController extends Controller
                 'end_date'         => $endDate,
                 'image'            => $imagePath,
                 'stock'            => $stock,
+                'is_daily_stock'   => $isDailyStock,
+                'daily_stock_limit' => $dailyStockLimit,
                 'status'           => $status,
             ];
             
@@ -653,6 +679,8 @@ class KeywordController extends Controller
                 'end_date'          => 'nullable|date_format:Y-m-d',
                 'image'             => 'nullable|image|mimes:jpg,jpeg,png,webp',
                 'stock'             => 'nullable|integer|min:0',
+                'stock_type'        => 'nullable|in:normal,daily_reset',
+                'daily_stock_limit' => 'nullable|integer|min:0',
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
                 'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
@@ -810,6 +838,27 @@ class KeywordController extends Controller
                 $kategoriKeyword = $keyword->kategori_keyword;
             }
 
+            // Handle stock management type
+            $isDailyStock = false;
+            $dailyStockLimit = null;
+            if ($request->stock_type === 'daily_reset') {
+                $isDailyStock = true;
+                $dailyStockLimit = $request->daily_stock_limit !== null && $request->daily_stock_limit !== '' 
+                    ? (int)$request->daily_stock_limit 
+                    : null;
+                
+                // Validasi: jika daily_reset dipilih, daily_stock_limit wajib diisi
+                if ($dailyStockLimit === null || $dailyStockLimit <= 0) {
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Daily Stock Limit wajib diisi jika Daily Reset Stock dipilih'
+                        ], 422);
+                    }
+                    return back()->withErrors(['daily_stock_limit' => 'Daily Stock Limit wajib diisi jika Daily Reset Stock dipilih'])->withInput();
+                }
+            }
+
             // Update keyword
             // Simpan nilai lama untuk deteksi perubahan diamond
             $oldSubsidy = $keyword->subsidy_amount ?? 0;
@@ -829,6 +878,8 @@ class KeywordController extends Controller
                     'cta_link'          => $request->cta_link,
                     'redeem'            => $request->redeem,
                     'diskon'            => $diskon,
+                    'is_daily_stock'    => $isDailyStock,
+                    'daily_stock_limit' => $dailyStockLimit,
                     'subsidy_amount'    => $subsidyAmount,
                     'diamond_amount'    => $diamondAmount,
                     'skb'               => $request->skb,

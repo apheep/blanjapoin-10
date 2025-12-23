@@ -75,7 +75,13 @@
      <div class="flex flex-col gap-0.5 pt-0.5 border-t border-neutral-100 mt-auto">
                             <div class="flex items-center gap-1 text-[9px] text-neutral-600">
                                 <span class="font-medium">Stock:</span>
-                                <span class="font-semibold text-neutral-800">{{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                                <span class="font-semibold text-neutral-800">
+                                    @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
+                                        {{ $keyword->daily_stock_limit }}
+                                    @else
+                                        {{ $keyword->sisa_stock ?? $keyword->stock }}
+                                    @endif
+                                </span>
                             </div>
       @if($keyword->end_date)
       <div class="flex items-center gap-1 text-[9px] text-neutral-600">
@@ -87,6 +93,9 @@
       @endif
      </div>
      @php
+        $displayStock = $keyword->is_daily_stock && $keyword->daily_stock_limit 
+            ? (int)$keyword->daily_stock_limit 
+            : (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
         $sisaStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
         $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $sisaStock > 0;
         $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
@@ -139,7 +148,13 @@
                     <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
                         <span class="inline-flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                            <span>Stock: {{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                            <span>Stock: 
+                                @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
+                                    {{ $keyword->daily_stock_limit }}
+                                @else
+                                    {{ $keyword->sisa_stock ?? $keyword->stock }}
+                                @endif
+                            </span>
                         </span>
                     </div>
     </div>
@@ -177,6 +192,9 @@
        </div>
       </div>
       @php
+        $displayStock = $keyword->is_daily_stock && $keyword->daily_stock_limit 
+            ? (int)$keyword->daily_stock_limit 
+            : (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
         $sisaStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
         $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $sisaStock > 0;
         $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
