@@ -86,24 +86,24 @@
       </div>
       @endif
      </div>
-                        @php
-                        $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
-                        $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-                        $isStockEmpty = ($keyword->stock ?? 0) <= 0;
-                        @endphp
-                        @if($isStockEmpty)
-                        <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
-                         Voucher Habis
-                        </button>
-                        @elseif($canRedeem)
-                        <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
-                         Redeem
-                        </button>
-                        @else
-                        <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
-                         Open {{ $startDateFormatted }}
-                        </button>
-                        @endif
+     @php
+        $sisaStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
+        $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $sisaStock > 0;
+        $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
+     @endphp
+     @if($canRedeem)
+     <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
+      Redeem
+     </button>
+     @elseif($sisaStock <= 0)
+     <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
+      Voucher Habis
+     </button>
+     @else
+     <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
+      Open {{ $startDateFormatted }}
+     </button>
+     @endif
     </div>
    </div>
 
@@ -177,7 +177,8 @@
        </div>
       </div>
       @php
-        $canRedeem = !$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay());
+        $sisaStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
+        $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $sisaStock > 0;
         $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
         $isStockEmpty = ($keyword->stock ?? 0) <= 0;
       @endphp
@@ -188,6 +189,10 @@
       @elseif($canRedeem)
       <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
        Redeem
+      </button>
+      @elseif($sisaStock <= 0)
+      <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">
+       Voucher Habis
       </button>
       @else
       <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">

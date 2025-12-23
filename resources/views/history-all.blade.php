@@ -101,6 +101,8 @@
                 <!-- Search and Date Filter for Transaksi -->
                 <form method="GET" action="{{ url()->current() }}" id="transaksiSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <input type="hidden" name="tab" value="transaksi">
+                    <input type="hidden" name="sort_transaksi" id="sortTransaksiField" value="{{ request('sort_transaksi', 'tanggal') }}">
+                    <input type="hidden" name="sort_transaksi_dir" id="sortTransaksiDirField" value="{{ request('sort_transaksi_dir', 'desc') }}">
                     <div class="relative w-full max-w-[280px] sm:max-w-[240px]">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text"
@@ -133,54 +135,62 @@
                         <table id="transaksi-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 1, 'date')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>No</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'tanggal')">
                                         <div class="flex items-center gap-1">
                                             <span>Tanggal</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'tanggal' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'tanggal' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 2, 'text')">
-                                        <div class="flex items-center gap-1">
-                                            <span>MSISDN</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
-                                        </div>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>MSISDN</span>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 3, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'merchant_name')">
                                         <div class="flex items-center gap-1">
                                             <span>Merchant Name</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'merchant_name' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'merchant_name' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 4, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'product')">
                                         <div class="flex items-center gap-1">
                                             <span>Product</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'product' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'product' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 5, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'keywords')">
                                         <div class="flex items-center gap-1">
                                             <span>Keywords</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'keywords' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'keywords' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 6, 'number')">
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'total_poin')">
                                         <div class="flex items-center justify-end gap-1">
                                             <span>Total Poin</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'total_poin' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'total_poin' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 7, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('transaksi', 'merchant_city')">
                                         <div class="flex items-center gap-1">
                                             <span>Merchant City</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_transaksi') === 'merchant_city' ? (request('sort_transaksi_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_transaksi') === 'merchant_city' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('transaksi-table', 8, 'text')">
-                                        <div class="flex items-center gap-1">
-                                            <span>Status</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
-                                        </div>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>Status</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -257,17 +267,21 @@
                                 Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
                             </div>
                             <div class="flex items-center space-x-2">
+                                @php
+                                    $transaksiQueryParamsMobile = request()->except(['history_page']);
+                                    $transaksiQueryParamsMobile['tab'] = 'transaksi';
+                                @endphp
                                 @if ($historyPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                 @else
-                                    <a href="{{ $historyPaginator->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParamsMobile)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
                                 @endif
 
-                                @foreach ($historyPaginator->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
+                                @foreach ($historyPaginator->appends($transaksiQueryParamsMobile)->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
                                     @if ($page == $historyPaginator->currentPage())
                                         <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                                             {{ $page }}
@@ -280,7 +294,7 @@
                                 @endforeach
 
                                 @if ($historyPaginator->hasMorePages())
-                                    <a href="{{ $historyPaginator->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParamsMobile)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
                                 @else
@@ -357,16 +371,20 @@
                                 Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
                             </div>
                             <div class="flex items-center justify-center space-x-2">
+                                @php
+                                    $transaksiQueryParams = request()->except(['history_page']);
+                                    $transaksiQueryParams['tab'] = 'transaksi';
+                                @endphp
                                 @if ($historyPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                 @else
-                                    <a href="{{ $historyPaginator->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParams)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
                                 @endif
-                                @foreach ($historyPaginator->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
+                                @foreach ($historyPaginator->appends($transaksiQueryParams)->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
                                     @if ($page == $historyPaginator->currentPage())
                                         <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                                             {{ $page }}
@@ -378,7 +396,7 @@
                                     @endif
                                 @endforeach
                                 @if ($historyPaginator->hasMorePages())
-                                    <a href="{{ $historyPaginator->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $historyPaginator->appends($transaksiQueryParams)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
                                 @else
@@ -396,6 +414,8 @@
                 <!-- Search for Keywords -->
                 <form method="GET" action="{{ url()->current() }}" id="keywordSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <input type="hidden" name="tab" value="keywords">
+                    <input type="hidden" name="sort_keyword" id="sortKeywordField" value="{{ request('sort_keyword', 'created_at') }}">
+                    <input type="hidden" name="sort_keyword_dir" id="sortKeywordDirField" value="{{ request('sort_keyword_dir', 'desc') }}">
                     <div class="relative w-full max-w-[280px] sm:max-w-[240px]">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text"
@@ -423,42 +443,59 @@
                         <table id="keyword-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table', 1, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>No</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'merchant')">
                                         <div class="flex items-center gap-1">
                                             <span>Merchant</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'merchant' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'merchant' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table', 2, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'nama_produk')">
                                         <div class="flex items-center gap-1">
                                             <span>Nama Produk</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'nama_produk' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'nama_produk' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table', 3, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'keyword_id')">
                                         <div class="flex items-center gap-1">
                                             <span>Keyword ID</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'keyword_id' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'keyword_id' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table', 4, 'number')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'trx')">
                                         <div class="flex items-center gap-1">
                                             <span>TRX</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'trx' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'trx' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table', 5, 'number')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'stock')">
                                         <div class="flex items-center gap-1">
                                             <span>Stock</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'stock' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'stock' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table', 6, 'text')">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('keyword', 'sisa_stock')">
                                         <div class="flex items-center gap-1">
-                                            <span>Status</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                            <span>Sisa Stock</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_keyword') === 'sisa_stock' ? (request('sort_keyword_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_keyword') === 'sisa_stock' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
                                         </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        <span>Status</span>
                                     </th>
                                 </tr>
                             </thead>
@@ -485,6 +522,9 @@
                                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $keyword->stock }}</span>
                                         </td>
                                         <td class="px-4 py-4">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">{{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                                        </td>
+                                        <td class="px-4 py-4">
                                             <span class="px-2 py-1 text-xs font-semibold rounded-full
                                                 @if($keyword->status === 'approve')
                                                     bg-green-100 text-green-800
@@ -500,7 +540,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-4 py-4 text-center text-sm text-gray-500">
+                                        <td colspan="8" class="px-4 py-4 text-center text-sm text-gray-500">
                                             Belum ada data keyword.
                                         </td>
                                     </tr>
@@ -516,17 +556,21 @@
                             </div>
                             
                             <div class="flex items-center space-x-2">
+                                @php
+                                    $keywordQueryParams = request()->except(['keyword_page']);
+                                    $keywordQueryParams['tab'] = 'keywords';
+                                @endphp
                                 @if ($keywordPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                 @else
-                                    <a href="{{ $keywordPaginator->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $keywordPaginator->appends($keywordQueryParams)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-left"></i>
                                     </a>
                                 @endif
 
-                                @foreach ($keywordPaginator->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
+                                @foreach ($keywordPaginator->appends($keywordQueryParams)->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
                                     @if ($page == $keywordPaginator->currentPage())
                                         <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
                                             {{ $page }}
@@ -539,7 +583,7 @@
                                 @endforeach
 
                                 @if ($keywordPaginator->hasMorePages())
-                                    <a href="{{ $keywordPaginator->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <a href="{{ $keywordPaginator->appends($keywordQueryParams)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-chevron-right"></i>
                                     </a>
                                 @else
@@ -562,6 +606,52 @@
         </main>
     </div>
     <script>
+    // Override applyWithdrawDateFilter for history page
+    window.applyHistoryDateFilter = function(filterId) {
+        const input = document.getElementById('dateInput' + filterId);
+        if (!input || !input.value.trim()) {
+            return;
+        }
+        
+        // Parse date from DD/MM/YYYY format
+        const dateValue = input.value.trim();
+        const parts = dateValue.split('/');
+        
+        if (parts.length !== 3) {
+            alert('Format tanggal tidak valid. Gunakan format DD/MM/YYYY');
+            return;
+        }
+        
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const year = parseInt(parts[2]);
+        
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+            alert('Format tanggal tidak valid. Gunakan format DD/MM/YYYY');
+            return;
+        }
+        
+        // Convert to YYYY-MM-DD format
+        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        // Update hidden inputs
+        document.getElementById('transaksiStartDate').value = formattedDate;
+        document.getElementById('transaksiEndDate').value = formattedDate;
+        
+        // Submit form
+        document.getElementById('transaksiSearchForm').submit();
+    };
+    
+    // Override the original function for this page
+    const originalApply = window.applyWithdrawDateFilter;
+    window.applyWithdrawDateFilter = function(filterId) {
+        if (filterId === 'transaksiDateFilter') {
+            applyHistoryDateFilter(filterId);
+        } else if (originalApply) {
+            originalApply(filterId);
+        }
+    };
+    
     // Clear search functions
     function clearTransaksiSearch() {
         window.location.href = '{{ url()->current() }}?tab=transaksi';
@@ -634,61 +724,79 @@
         showTab(defaultTab);
     });
 
-    // Sort table function
-    function sortTable(tableId, columnIndex, type) {
-        const table = document.getElementById(tableId);
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        const header = table.querySelector(`thead th:nth-child(${columnIndex + 1})`);
-        const allHeaders = table.querySelectorAll('thead th');
+    // Server-side sort function
+    function serverSort(tableType, column) {
+        let form, sortField, sortDirField;
         
-        // Remove sort icons from other headers
-        allHeaders.forEach((th, idx) => {
-            if (idx !== columnIndex) {
-                const icon = th.querySelector('.sort-icon i');
-                if (icon) {
-                    icon.className = 'fas fa-sort';
-                }
-            }
-        });
-
-        // Get current sort direction
-        const currentIcon = header.querySelector('.sort-icon i');
-        let isAscending = true;
-        
-        if (currentIcon.classList.contains('fa-sort-up')) {
-            isAscending = false;
-            currentIcon.className = 'fas fa-sort-down';
-        } else {
-            currentIcon.className = 'fas fa-sort-up';
+        if (tableType === 'transaksi') {
+            form = document.getElementById('transaksiSearchForm');
+            sortField = document.getElementById('sortTransaksiField');
+            sortDirField = document.getElementById('sortTransaksiDirField');
+        } else if (tableType === 'keyword') {
+            form = document.getElementById('keywordSearchForm');
+            sortField = document.getElementById('sortKeywordField');
+            sortDirField = document.getElementById('sortKeywordDirField');
         }
-
-        rows.sort((a, b) => {
-            let aValue = a.cells[columnIndex].textContent.trim();
-            let bValue = b.cells[columnIndex].textContent.trim();
-
-            if (type === 'number') {
-                // Remove thousand separators and parse as number
-                aValue = parseFloat(aValue.replace(/\./g, '').replace(/,/g, '.')) || 0;
-                bValue = parseFloat(bValue.replace(/\./g, '').replace(/,/g, '.')) || 0;
-                return isAscending ? aValue - bValue : bValue - aValue;
-            } else if (type === 'date') {
-                // Parse date in format dd/mm/yyyy hh:mm
-                aValue = parseDateString(aValue);
-                bValue = parseDateString(bValue);
-                return isAscending ? aValue - bValue : bValue - aValue;
-            } else {
-                // Text comparison
-                if (isAscending) {
-                    return aValue.localeCompare(bValue);
-                } else {
-                    return bValue.localeCompare(aValue);
-                }
+        
+        if (!form || !sortField || !sortDirField) return;
+        
+        // Get current URL parameters to preserve search and date filters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Update sort parameters
+        if (sortField.value === column) {
+            // Toggle direction if same column
+            const currentDir = urlParams.get(tableType === 'transaksi' ? 'sort_transaksi_dir' : 'sort_keyword_dir') || 'desc';
+            sortDirField.value = currentDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            // New column, default to asc
+            sortField.value = column;
+            sortDirField.value = 'asc';
+        }
+        
+        // Preserve search and date filter parameters
+        if (tableType === 'transaksi') {
+            const searchInput = document.getElementById('transaksiSearchInput');
+            const startDateInput = document.getElementById('transaksiStartDate');
+            const endDateInput = document.getElementById('transaksiEndDate');
+            
+            if (searchInput && !form.querySelector('input[name="search_transaksi"]')) {
+                const hiddenSearch = document.createElement('input');
+                hiddenSearch.type = 'hidden';
+                hiddenSearch.name = 'search_transaksi';
+                hiddenSearch.value = searchInput.value || urlParams.get('search_transaksi') || '';
+                form.appendChild(hiddenSearch);
             }
-        });
-
-        // Re-append sorted rows
-        rows.forEach(row => tbody.appendChild(row));
+            
+            if (startDateInput && !form.querySelector('input[name="start_date"]')) {
+                const hiddenStartDate = document.createElement('input');
+                hiddenStartDate.type = 'hidden';
+                hiddenStartDate.name = 'start_date';
+                hiddenStartDate.value = startDateInput.value || urlParams.get('start_date') || '';
+                form.appendChild(hiddenStartDate);
+            }
+            
+            if (endDateInput && !form.querySelector('input[name="end_date"]')) {
+                const hiddenEndDate = document.createElement('input');
+                hiddenEndDate.type = 'hidden';
+                hiddenEndDate.name = 'end_date';
+                hiddenEndDate.value = endDateInput.value || urlParams.get('end_date') || '';
+                form.appendChild(hiddenEndDate);
+            }
+        } else if (tableType === 'keyword') {
+            const searchInput = document.getElementById('keywordSearchInput');
+            
+            if (searchInput && !form.querySelector('input[name="search_keyword"]')) {
+                const hiddenSearch = document.createElement('input');
+                hiddenSearch.type = 'hidden';
+                hiddenSearch.name = 'search_keyword';
+                hiddenSearch.value = searchInput.value || urlParams.get('search_keyword') || '';
+                form.appendChild(hiddenSearch);
+            }
+        }
+        
+        // Submit form
+        form.submit();
     }
 
     function parseDateString(dateStr) {

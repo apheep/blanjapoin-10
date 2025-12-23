@@ -1028,6 +1028,10 @@ class MerchantController extends Controller
         $searchKeyword = $request->get('search_keyword');
         $startDate = $request->get('start_date');
         $endDate = $request->get('end_date');
+        $sortTransaksi = $request->get('sort_transaksi');
+        $sortTransaksiDir = $request->get('sort_transaksi_dir', 'desc');
+        $sortKeyword = $request->get('sort_keyword');
+        $sortKeywordDir = $request->get('sort_keyword_dir', 'desc');
 
         // Query untuk history transaksi: join tokodigi_tselpoin_redeem dengan keywords dan merchants
         // Hanya tampilkan transaksi dari keyword yang sudah APPROVE
@@ -1066,7 +1070,26 @@ class MerchantController extends Controller
             $historyQuery->whereRaw('DATE(tr.created_date) <= ?', [$endDate]);
         }
 
-        $historyQuery->orderBy('tr.created_date', 'desc');
+        // Apply sort for transaksi
+        $sortColumnMap = [
+            'tanggal' => 'tr.created_date',
+            'merchant_name' => 'm.nama_merchant',
+            'product' => 'tr.keyword_desc',
+            'keywords' => 'tr.coupon',
+            'total_poin' => 'tr.poin_redeem',
+            'merchant_city' => 'm.daerah',
+            'status' => 'k.status'
+        ];
+        
+        // Only apply sort if sort parameter is provided, otherwise use default
+        if ($sortTransaksi && isset($sortColumnMap[$sortTransaksi])) {
+            $sortColumn = $sortColumnMap[$sortTransaksi];
+            $sortDir = strtolower($sortTransaksiDir) === 'asc' ? 'asc' : 'desc';
+            $historyQuery->orderBy($sortColumn, $sortDir);
+        } else {
+            // Default sort by tanggal desc
+            $historyQuery->orderBy('tr.created_date', 'desc');
+        }
 
         $historyPaginator = $historyQuery->paginate(12, ['*'], 'history_page')
             ->withQueryString();
@@ -1088,7 +1111,35 @@ class MerchantController extends Controller
             });
         }
 
-        $keywordQuery->orderBy('created_at', 'desc');
+        // Apply sort for keywords
+        $sortKeywordMap = [
+            'merchant' => 'merchants.nama_merchant',
+            'nama_produk' => 'nama_produk',
+            'keyword_id' => 'keyword_id',
+            'trx' => 'trx',
+            'stock' => 'stock',
+            'sisa_stock' => 'sisa_stock',
+            'status' => 'status',
+            'created_at' => 'created_at'
+        ];
+        
+        // Only apply sort if sort parameter is provided, otherwise use default
+        if ($sortKeyword && isset($sortKeywordMap[$sortKeyword])) {
+            $sortKeywordColumn = $sortKeywordMap[$sortKeyword];
+            $sortKeywordDirValue = strtolower($sortKeywordDir) === 'asc' ? 'asc' : 'desc';
+            
+            // If sorting by merchant, need to join
+            if ($sortKeyword === 'merchant') {
+                $keywordQuery->join('merchants', 'keywords.merchant_key', '=', 'merchants.id')
+                             ->reorder('merchants.nama_merchant', $sortKeywordDirValue);
+            } else {
+                // Use reorder() to replace existing orderBy (for Eloquent)
+                $keywordQuery->reorder($sortKeywordColumn, $sortKeywordDirValue);
+            }
+        } else {
+            // Default sort by created_at desc
+            $keywordQuery->orderBy('created_at', 'desc');
+        }
 
         $keywordPaginator = (clone $keywordQuery)
             ->paginate(12, ['*'], 'keyword_page')
