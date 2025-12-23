@@ -494,12 +494,6 @@
                                             </span>
                                         </div>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table', 6, 'number')">
-                                        <div class="flex items-center gap-1">
-                                            <span>Sisa Stock</span>
-                                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
-                                        </div>
-                                    </th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         <span>Status</span>
                                     </th>
