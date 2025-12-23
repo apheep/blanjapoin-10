@@ -34,6 +34,7 @@ class Merchant extends Model
         'is_active',
         'start_date',
         'end_date',
+        'diamond',
         'created_by',
     ];
 

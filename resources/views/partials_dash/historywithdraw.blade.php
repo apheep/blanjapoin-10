@@ -191,8 +191,16 @@
                             </th>
                             <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                 <button onclick="handleHistorySort('nama')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
-                                    <span>Nama</span>
+                                    <span class="hidden sm:inline">Nama PIC</span>
+                                    <span class="sm:hidden">PIC</span>
                                     <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconNama"></i>
+                                </button>
+                            </th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleHistorySort('merchant')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span class="hidden sm:inline">Nama Merchant</span>
+                                    <span class="sm:hidden">Merchant</span>
+                                    <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconMerchant"></i>
                                 </button>
                             </th>
                             <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -200,6 +208,13 @@
                                     <span class="hidden sm:inline">Metode Penarikan</span>
                                     <span class="sm:hidden">Metode</span>
                                     <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconMetode"></i>
+                                </button>
+                            </th>
+                            <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                <button onclick="handleHistorySort('jumlah')" class="flex items-center gap-0.5 sm:gap-1 hover:text-gray-900 transition-colors focus:outline-none">
+                                    <span class="hidden sm:inline">Jumlah Withdraw</span>
+                                    <span class="sm:hidden">Jumlah</span>
+                                    <i class="fas fa-sort text-[8px] sm:text-[10px] text-gray-400" id="sortIconJumlah"></i>
                                 </button>
                             </th>
                             <th class="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -246,7 +261,7 @@
                                     <div class="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                                         <span class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold rounded-full {{ $statusClass }} transition-all duration-200 hover:scale-105 inline-block w-fit">{{ $statusText }}</span>
                                         @if($withdraw->status === 'rejected' && $withdraw->dec_reject)
-                                            <button onclick="showRejectReasonModal('{{ addslashes($withdraw->dec_reject) }}', '{{ addslashes($withdraw->nama) }}')" 
+                                            <button onclick="showRejectReasonModal('{{ addslashes($withdraw->dec_reject) }}', '{{ addslashes($withdraw->merchant->nama_pic ?? $withdraw->nama) }}')" 
                                                     class="btn-detail px-2 py-1 text-[10px] sm:text-xs font-normal text-red-500 hover:text-red-600 transition-colors duration-150 flex items-center gap-1 w-fit">
                                                 <i class="fas fa-info-circle text-[9px] sm:text-[10px]"></i>
                                                 <span>Detail</span>
@@ -255,15 +270,21 @@
                                     </div>
                                 </td>
                                     <td class="px-2 sm:px-4 py-2 sm:py-4 text-xs sm:text-sm text-gray-900">
-                                        <div class="font-medium">{{ $withdraw->nama }}</div>
+                                        <div class="font-medium">{{ $withdraw->merchant->nama_pic ?? $withdraw->nama }}</div>
+                                    </td>
+                                    <td class="px-2 sm:px-4 py-2 sm:py-4 text-xs sm:text-sm text-gray-700">
+                                        <div class="font-medium">{{ $withdraw->merchant->nama_merchant ?? '-' }}</div>
                                     </td>
                                     <td class="px-2 sm:px-4 py-2 sm:py-4 text-xs sm:text-sm text-gray-700">{{ $withdraw->metode_penarikan_name }}</td>
+                                    <td class="px-2 sm:px-4 py-2 sm:py-4 text-xs sm:text-sm text-gray-900 font-semibold">
+                                        <span class="text-orange-600">Rp {{ number_format($withdraw->jumlah, 0, ',', '.') }}</span>
+                                    </td>
                                     <td class="px-2 sm:px-4 py-2 sm:py-4 text-[10px] sm:text-sm text-gray-700 font-mono break-all">{{ $displayAccount }}</td>
                                     <td class="px-2 sm:px-4 py-2 sm:py-4 text-[10px] sm:text-xs text-gray-500">{{ $withdraw->created_at->format('d M Y') }}</td>
                             </tr>
                         @empty
                             <tr id="historyEmptyState">
-                                <td colspan="6" class="px-4 py-12 text-center">
+                                <td colspan="8" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center justify-center">
                                         <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
                                         <p class="text-sm font-medium text-gray-500">Belum ada riwayat penarikan</p>
@@ -551,7 +572,7 @@
         
         // Update sort icons for history (sama dengan withdraw approval)
         function updateHistorySortIcons(activeColumn, order) {
-            const columns = ['no', 'status', 'nama', 'metode', 'tanggal'];
+            const columns = ['no', 'status', 'nama', 'merchant', 'metode', 'jumlah', 'tanggal'];
             columns.forEach(col => {
                 const icon = document.getElementById('sortIcon' + col.charAt(0).toUpperCase() + col.slice(1));
                 if (icon) {
