@@ -20,6 +20,29 @@ class Kernel extends ConsoleKernel
                 ->whereDate('end_date', '<', Carbon::today())
                 ->delete();
         })->name('cleanup-expired-keywords')->everyMinute()->withoutOverlapping();
+
+        // Reset stock harian untuk keyword dengan daily stock reset
+        $schedule->call(function () {
+            $keywords = Keyword::where('is_daily_stock', true)
+                ->where('is_active', 1)
+                ->where('status', 'approve')
+                ->whereNotNull('daily_stock_limit')
+                ->where('daily_stock_limit', '>', 0)
+                ->get();
+
+            $resetCount = 0;
+            foreach ($keywords as $keyword) {
+                $keyword->stock = $keyword->daily_stock_limit;
+                $keyword->last_stock_reset = Carbon::now();
+                $keyword->save();
+                $resetCount++;
+            }
+
+            // Log hasil reset (optional, bisa dihapus jika tidak perlu)
+            if ($resetCount > 0) {
+                \Log::info("Daily stock reset completed. {$resetCount} keywords reset.");
+            }
+        })->name('reset-daily-stock')->dailyAt('00:00')->withoutOverlapping();
     }
 
     /**
