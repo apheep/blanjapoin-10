@@ -161,7 +161,7 @@
                         <div>
                             <p class="text-sm text-gray-600">Matched</p>
                             <p class="text-2xl font-bold text-green-600 mt-1">
-                                {{ $clickHistories->filter(fn($item) => !is_null($item->matched_redeem))->count() }}
+                                {{ $totalMatched ?? 0 }}
                             </p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -175,7 +175,7 @@
                         <div>
                             <p class="text-sm text-gray-600">Unmatched</p>
                             <p class="text-2xl font-bold text-gray-600 mt-1">
-                                {{ $clickHistories->filter(fn($item) => is_null($item->matched_redeem))->count() }}
+                                {{ $totalUnmatched ?? 0 }}
                             </p>
                         </div>
                         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
