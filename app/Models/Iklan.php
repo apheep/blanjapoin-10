@@ -23,6 +23,7 @@ class Iklan extends Model
         'cluster',
         'merchant_key',
         'merchant_keys',
+        'keyword_id',
         'order',
     ];
 
@@ -51,5 +52,21 @@ class Iklan extends Model
             return collect([]);
         }
         return Merchant::whereIn('id', $merchantIds)->get();
+    }
+
+    /**
+     * Get the keyword that this iklan is based on.
+     */
+    public function keyword()
+    {
+        return $this->belongsTo(Keyword::class, 'keyword_id', 'id');
+    }
+
+    /**
+     * Check if this iklan is keyword-based.
+     */
+    public function getIsKeywordBasedAttribute()
+    {
+        return !is_null($this->keyword_id);
     }
 }
