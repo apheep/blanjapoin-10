@@ -73,7 +73,7 @@
                     ? $historySource
                     : collect($historySource);
 
-                $perPage = 12;
+                $perPage = 10;
                 $currentPage = request()->integer('page', 1);
                 $items = $collection->forPage($currentPage, $perPage)->values();
 
@@ -87,7 +87,7 @@
             }
             @endphp
 
-            <section id="merchant-history" data-tab-panel="transaksi" class="mt-10 space-y-6 opacity-0 transition-all duration-500 ease-in-out">
+            <section id="merchant-history" data-tab-panel="transaksi" class="mt-10 space-y-6 transition-all duration-300 {{ request('tab', 'transaksi') === 'transaksi' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Merchant Section</p>
@@ -130,7 +130,13 @@
                     @endif
                 </form>
 
-                <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
+                <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden" style="position: relative; isolation: isolate;" id="transaksi-history-table-container">
+                    <div id="transaksiPaginationLoadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+                            <span class="text-xs text-gray-600"></span>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto">
                         <table id="transaksi-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
@@ -195,7 +201,7 @@
                                 </tr>
                             </thead>
 
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody id="transaksi-history-table-body" class="bg-white divide-y divide-gray-200">
                                 @forelse($historyPaginator as $history)
                                     @php
                                         // Tanggal dari created_date tokodigi_tselpoin_redeem
@@ -261,42 +267,88 @@
                         </table>
                     </div>
 
-                    @if($historyPaginator->hasPages())
+                    @if($historyPaginator && $historyPaginator->total() > 10)
                         <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
                             <div class="text-sm text-gray-600">
-                                Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
+                                Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() ?? 0 }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() ?? 0 }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
                             </div>
+                            
                             <div class="flex items-center space-x-2">
+                                <div class="flex items-center space-x-2">
                                 @php
-                                    $transaksiQueryParamsMobile = request()->except(['history_page']);
-                                    $transaksiQueryParamsMobile['tab'] = 'transaksi';
+                                    $transaksiQueryParamsDesktop = request()->except(['history_page']);
+                                    $transaksiQueryParamsDesktop['tab'] = 'transaksi';
+                                    $historyPaginatorWithParams = $historyPaginator->appends($transaksiQueryParamsDesktop);
                                 @endphp
+                                
+                                {{-- Previous Page Link --}}
                                 @if ($historyPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
-                                @else
-                                    <a href="{{ $historyPaginator->appends($transaksiQueryParamsMobile)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
-                                @endif
-
-                                @foreach ($historyPaginator->appends($transaksiQueryParamsMobile)->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
-                                    @if ($page == $historyPaginator->currentPage())
-                                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                                            {{ $page }}
-                                        </button>
                                     @else
-                                        <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                            {{ $page }}
+                                        <a href="{{ $historyPaginatorWithParams->previousPageUrl() }}" class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-chevron-left"></i>
                                         </a>
                                     @endif
-                                @endforeach
 
-                                @if ($historyPaginator->hasMorePages())
-                                    <a href="{{ $historyPaginator->appends($transaksiQueryParamsMobile)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
+                                    {{-- Pagination Elements --}}
+                                    @php
+                                        $current = $historyPaginator->currentPage();
+                                        $last    = $historyPaginator->lastPage();
+
+                                        $range = 2; // kiri/kanan dari current
+
+                                        $start = max(1, $current - $range);
+                                        $end   = min($last, $current + $range);
+                                    @endphp
+
+                                    {{-- First Page (muncul hanya kalau window tidak mulai dari 1) --}}
+                                    @if ($start > 1)
+                                        <a href="{{ $historyPaginatorWithParams->url(1) }}"
+                                        class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            1
+                                        </a>
+                                    @endif
+
+                                    {{-- Left Ellipsis --}}
+                                    @if ($start > 2)
+                                        <span class="px-2 text-gray-400">…</span>
+                                    @endif
+
+                                    {{-- Middle Pages --}}
+                                    @for ($page = $start; $page <= $end; $page++)
+                                        @if ($page == $current)
+                                            <button disabled
+                                                    class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                                                {{ $page }}
+                                            </button>
+                                        @else
+                                            <a href="{{ $historyPaginatorWithParams->url($page) }}"
+                                            class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                                {{ $page }}
+                                            </a>
+                                        @endif
+                                    @endfor
+
+                                    {{-- Right Ellipsis --}}
+                                    @if ($end < $last - 1)
+                                        <span class="px-2 text-gray-400">…</span>
+                                    @endif
+
+                                    {{-- Last Page (muncul hanya kalau window tidak berakhir di last) --}}
+                                    @if ($end < $last)
+                                        <a href="{{ $historyPaginatorWithParams->url($last) }}"
+                                        class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            {{ $last }}
+                                        </a>
+                                    @endif
+
+                                    {{-- Next Page Link --}}
+                                    @if ($historyPaginator->hasMorePages())
+                                        <a href="{{ $historyPaginatorWithParams->nextPageUrl() }}" class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
                                 @else
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-right"></i>
@@ -365,40 +417,86 @@
                         <p class="text-sm text-center text-gray-500">Belum ada data transaksi.</p>
                     @endforelse
 
-                    @if($historyPaginator->hasPages())
+                    @if($historyPaginator && $historyPaginator->total() > 10)
                         <div class="bg-white px-4 py-4 border border-gray-200 rounded-2xl text-center space-y-3">
                             <div class="text-sm text-gray-600">
-                                Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
+                                Menampilkan <span class="font-semibold">{{ $historyPaginator->firstItem() ?? 0 }}</span> hingga <span class="font-semibold">{{ $historyPaginator->lastItem() ?? 0 }}</span> dari <span class="font-semibold">{{ $historyPaginator->total() }}</span> data
                             </div>
                             <div class="flex items-center justify-center space-x-2">
                                 @php
                                     $transaksiQueryParams = request()->except(['history_page']);
                                     $transaksiQueryParams['tab'] = 'transaksi';
+                                    $historyPaginatorWithParamsMobile = $historyPaginator->appends($transaksiQueryParams);
                                 @endphp
+                                
+                                {{-- Previous Page Link --}}
                                 @if ($historyPaginator->onFirstPage())
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
-                                @else
-                                    <a href="{{ $historyPaginator->appends($transaksiQueryParams)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
-                                @endif
-                                @foreach ($historyPaginator->appends($transaksiQueryParams)->getUrlRange(1, $historyPaginator->lastPage()) as $page => $url)
-                                    @if ($page == $historyPaginator->currentPage())
-                                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                                            {{ $page }}
-                                        </button>
                                     @else
-                                        <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                            {{ $page }}
+                                        <a href="{{ $historyPaginatorWithParamsMobile->previousPageUrl() }}" class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-chevron-left"></i>
                                         </a>
                                     @endif
-                                @endforeach
-                                @if ($historyPaginator->hasMorePages())
-                                    <a href="{{ $historyPaginator->appends($transaksiQueryParams)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
+
+                                    {{-- Pagination Elements --}}
+                                    @php
+                                        $current = $historyPaginator->currentPage();
+                                        $last    = $historyPaginator->lastPage();
+
+                                        $range = 2; // kiri/kanan dari current
+
+                                        $start = max(1, $current - $range);
+                                        $end   = min($last, $current + $range);
+                                    @endphp
+
+                                    {{-- First Page (muncul hanya kalau window tidak mulai dari 1) --}}
+                                    @if ($start > 1)
+                                        <a href="{{ $historyPaginatorWithParamsMobile->url(1) }}"
+                                        class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            1
+                                        </a>
+                                    @endif
+
+                                    {{-- Left Ellipsis --}}
+                                    @if ($start > 2)
+                                        <span class="px-2 text-gray-400">…</span>
+                                    @endif
+
+                                    {{-- Middle Pages --}}
+                                    @for ($page = $start; $page <= $end; $page++)
+                                        @if ($page == $current)
+                                            <button disabled
+                                                    class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                                                {{ $page }}
+                                            </button>
+                                        @else
+                                            <a href="{{ $historyPaginatorWithParamsMobile->url($page) }}"
+                                            class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                                {{ $page }}
+                                            </a>
+                                        @endif
+                                    @endfor
+
+                                    {{-- Right Ellipsis --}}
+                                    @if ($end < $last - 1)
+                                        <span class="px-2 text-gray-400">…</span>
+                                    @endif
+
+                                    {{-- Last Page (muncul hanya kalau window tidak berakhir di last) --}}
+                                    @if ($end < $last)
+                                        <a href="{{ $historyPaginatorWithParamsMobile->url($last) }}"
+                                        class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            {{ $last }}
+                                        </a>
+                                    @endif
+
+                                    {{-- Next Page Link --}}
+                                    @if ($historyPaginator->hasMorePages())
+                                        <a href="{{ $historyPaginatorWithParamsMobile->nextPageUrl() }}" class="transaksi-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
                                 @else
                                     <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
                                         <i class="fas fa-chevron-right"></i>
@@ -410,7 +508,7 @@
                 </div>
             </section>
 
-            <section id="keyword-history" data-tab-panel="keywords" class="mt-16 space-y-6 hidden opacity-0 transition-all duration-500 ease-in-out">
+            <section id="keyword-history" data-tab-panel="keywords" class="mt-16 space-y-6 transition-all duration-300 {{ request('tab') === 'keywords' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
                 <!-- Search for Keywords -->
                 <form method="GET" action="{{ url()->current() }}" id="keywordSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <input type="hidden" name="tab" value="keywords">
@@ -438,7 +536,13 @@
                     @endif
                 </form>
 
-                <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden">
+                    <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden" style="position: relative; isolation: isolate;" id="keyword-history-table-container">
+                    <div id="keywordPaginationLoadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+                            <span class="text-xs text-gray-600"></span>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto">
                         <table id="keyword-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
@@ -500,7 +604,7 @@
                                 </tr>
                             </thead>
 
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody id="keyword-history-table-body" class="bg-white divide-y divide-gray-200">
                                 @forelse($keywordPaginator as $keyword)
                                     <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-4 py-4 text-sm font-medium text-gray-900">
@@ -549,46 +653,90 @@
                         </table>
                     </div>
                     
-                    @if($keywordPaginator->hasPages())
+                    @if($keywordPaginator && $keywordPaginator->total() > 10)
                         <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
                             <div class="text-sm text-gray-600">
-                                Menampilkan <span class="font-semibold">{{ $keywordPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywordPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $keywordPaginator->total() }}</span> data
+                                Menampilkan <span class="font-semibold">{{ $keywordPaginator->firstItem() ?? 0 }}</span> hingga <span class="font-semibold">{{ $keywordPaginator->lastItem() ?? 0 }}</span> dari <span class="font-semibold">{{ $keywordPaginator->total() }}</span> data
                             </div>
                             
                             <div class="flex items-center space-x-2">
-                                @php
-                                    $keywordQueryParams = request()->except(['keyword_page']);
-                                    $keywordQueryParams['tab'] = 'keywords';
-                                @endphp
-                                @if ($keywordPaginator->onFirstPage())
-                                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                @else
-                                    <a href="{{ $keywordPaginator->appends($keywordQueryParams)->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
-                                @endif
-
-                                @foreach ($keywordPaginator->appends($keywordQueryParams)->getUrlRange(1, $keywordPaginator->lastPage()) as $page => $url)
-                                    @if ($page == $keywordPaginator->currentPage())
-                                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                                            {{ $page }}
+                                    @php
+                                        $keywordQueryParams = request()->except(['keyword_page']);
+                                        $keywordQueryParams['tab'] = 'keywords';
+                                        $keywordPaginatorWithParams = $keywordPaginator->appends($keywordQueryParams);
+                                    @endphp
+                                    
+                                    {{-- Previous Page Link --}}
+                                    @if ($keywordPaginator->onFirstPage())
+                                        <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-chevron-left"></i>
                                         </button>
                                     @else
-                                        <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                            {{ $page }}
+                                        <a href="{{ $keywordPaginatorWithParams->previousPageUrl() }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-chevron-left"></i>
                                         </a>
                                     @endif
-                                @endforeach
 
-                                @if ($keywordPaginator->hasMorePages())
-                                    <a href="{{ $keywordPaginator->appends($keywordQueryParams)->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
-                                @else
-                                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                                        <i class="fas fa-chevron-right"></i>
+                                    {{-- Pagination Elements --}}
+                                    @php
+                                        $current = $keywordPaginator->currentPage();
+                                        $last    = $keywordPaginator->lastPage();
+
+                                        $range = 2; // kiri/kanan dari current
+
+                                        $start = max(1, $current - $range);
+                                        $end   = min($last, $current + $range);
+                                    @endphp
+
+                                    {{-- First Page (muncul hanya kalau window tidak mulai dari 1) --}}
+                                    @if ($start > 1)
+                                        <a href="{{ $keywordPaginatorWithParams->url(1) }}"
+                                        class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            1
+                                        </a>
+                                    @endif
+
+                                    {{-- Left Ellipsis --}}
+                                    @if ($start > 2)
+                                        <span class="px-2 text-gray-400">…</span>
+                                    @endif
+
+                                    {{-- Middle Pages --}}
+                                    @for ($page = $start; $page <= $end; $page++)
+                                        @if ($page == $current)
+                                            <button disabled
+                                                    class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                                                {{ $page }}
+                                            </button>
+                                        @else
+                                            <a href="{{ $keywordPaginatorWithParams->url($page) }}"
+                                            class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                                {{ $page }}
+                                            </a>
+                                        @endif
+                                    @endfor
+
+                                    {{-- Right Ellipsis --}}
+                                    @if ($end < $last - 1)
+                                        <span class="px-2 text-gray-400">…</span>
+                                    @endif
+
+                                    {{-- Last Page (muncul hanya kalau window tidak berakhir di last) --}}
+                                    @if ($end < $last)
+                                        <a href="{{ $keywordPaginatorWithParams->url($last) }}"
+                                        class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            {{ $last }}
+                                        </a>
+                                    @endif
+
+                                    {{-- Next Page Link --}}
+                                    @if ($keywordPaginator->hasMorePages())
+                                        <a href="{{ $keywordPaginatorWithParams->nextPageUrl() }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    @else
+                                        <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                            <i class="fas fa-chevron-right"></i>
                                     </button>
                                 @endif
                             </div>
@@ -698,30 +846,42 @@
 
             tabPanels.forEach(panel => {
                 if (panel.dataset.tabPanel !== target) {
-                    // Hide with fade out
-                    panel.style.opacity = '0';
-                    setTimeout(() => {
-                        panel.classList.add('hidden');
-                    }, 300);
-                } else {
-                    // Show with fade in
-                    panel.classList.remove('hidden');
-                    setTimeout(() => {
-                        panel.style.opacity = '1';
-                    }, 10);
+                    // Hide section - same as admin.blade.php
+                    panel.classList.remove('opacity-100', 'translate-y-0');
+                    panel.classList.add('opacity-0', 'translate-y-5', 'pointer-events-none', 'hidden');
                 }
             });
+
+            // Show active section - same as admin.blade.php
+            const activePanel = Array.from(tabPanels).find(panel => panel.dataset.tabPanel === target);
+            if (activePanel) {
+                activePanel.classList.remove('hidden', 'pointer-events-none');
+                requestAnimationFrame(() => {
+                    activePanel.classList.remove('opacity-0', 'translate-y-5');
+                    activePanel.classList.add('opacity-100', 'translate-y-0');
+                });
+            }
         };
 
         tabButtons.forEach(button => {
-            button.addEventListener('click', () => showTab(button.dataset.tabBtn));
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tabBtn;
+                // Update URL with tab parameter - same as admin.blade.php
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', targetTab);
+                window.history.replaceState({}, '', url);
+                showTab(targetTab);
+            });
         });
 
-        // Check if there's a tab parameter in URL
+        // Check if there's a tab parameter in URL - MUST run first before any fade in logic
         const urlParams = new URLSearchParams(window.location.search);
         const tabParam = urlParams.get('tab');
         const defaultTab = tabParam || 'transaksi';
         showTab(defaultTab);
+        
+        // Initialize pagination transitions after tab is set
+        initializePaginationTransitions();
     });
 
     // Server-side sort function
@@ -817,6 +977,145 @@
             parseInt(timeParts[0]), // hour
             parseInt(timeParts[1]) // minute
         ).getTime();
+    }
+
+    // Smooth pagination transition for both tables
+    function initializePaginationTransitions() {
+        // Function is kept for compatibility, but tab switching now handles section transitions
+        // using class-based transitions like admin.blade.php
+    }
+    
+    // Fetch and update table container via AJAX (like table-keyword.blade.php)
+    function fetchHistoryTable(requestUrl, containerId, loadingOverlayId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const loadingOverlay = loadingOverlayId ? document.getElementById(loadingOverlayId) : null;
+        
+        // Show loading overlay
+        if (loadingOverlay && container) {
+            const currentHeight = container.offsetHeight;
+            container.style.minHeight = currentHeight + 'px';
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        // Animasi keluar (fade + slight slide)
+        container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(8px)';
+
+        fetch(requestUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(html => {
+            // Parse HTML response
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContainer = doc.getElementById(containerId);
+            
+            if (newContainer) {
+                // Ganti konten setelah animasi keluar selesai
+                setTimeout(() => {
+                    container.innerHTML = newContainer.innerHTML;
+                    
+                    // Hide loading overlay
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                    
+                    // Remove min-height
+                    container.style.minHeight = '';
+                    
+                    // Trigger reflow sebelum animasi masuk
+                    void container.offsetWidth;
+
+                    // Animasi masuk (fade + slide up)
+                    container.style.opacity = '1';
+                    container.style.transform = 'translateY(0)';
+                    
+                    // Update URL tanpa reload
+                    const url = new URL(requestUrl, window.location.origin);
+                    window.history.pushState({}, '', url.toString());
+                }, 250);
+            } else {
+                // Hide loading overlay
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                }
+                container.style.minHeight = '';
+                // Restore visibility jika tidak ada data
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }
+        })
+        .catch(error => {
+            console.error('History table fetch error:', error);
+            // Hide loading overlay on error
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('hidden');
+            }
+            container.style.minHeight = '';
+            // Restore visibility on error
+            container.style.opacity = '1';
+            container.style.transform = 'translateY(0)';
+        });
+    }
+
+    // Event delegation for pagination links - only attach once
+    if (!window.paginationHandlersAttached) {
+        document.addEventListener('click', function(event) {
+            // Keyword pagination links
+            const keywordLink = event.target.closest('.keyword-pagination-link');
+            if (keywordLink) {
+                const keywordHistorySection = document.getElementById('keyword-history');
+                if (keywordHistorySection && keywordHistorySection.contains(keywordLink)) {
+                    event.preventDefault();
+                    
+                    const href = keywordLink.getAttribute('href');
+                    if (!href) return;
+                    
+                    // Ensure tab=keywords in URL
+                    const linkUrl = new URL(href, window.location.origin);
+                    linkUrl.searchParams.set('tab', 'keywords');
+                    
+                    // Fetch and update table via AJAX
+                    fetchHistoryTable(linkUrl.toString(), 'keyword-history-table-container', 'keywordPaginationLoadingOverlay');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+            
+            // Transaksi pagination links
+            const transaksiLink = event.target.closest('.transaksi-pagination-link');
+            if (transaksiLink) {
+                const transaksiHistorySection = document.getElementById('merchant-history');
+                if (transaksiHistorySection && transaksiHistorySection.contains(transaksiLink)) {
+                    event.preventDefault();
+                    
+                    const href = transaksiLink.getAttribute('href');
+                    if (!href) return;
+                    
+                    // Ensure tab=transaksi in URL
+                    const linkUrl = new URL(href, window.location.origin);
+                    linkUrl.searchParams.set('tab', 'transaksi');
+                    
+                    // Fetch and update table via AJAX
+                    fetchHistoryTable(linkUrl.toString(), 'transaksi-history-table-container', 'transaksiPaginationLoadingOverlay');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+        window.paginationHandlersAttached = true;
     }
     </script>
 </body>

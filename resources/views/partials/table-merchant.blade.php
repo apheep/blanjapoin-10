@@ -15,9 +15,16 @@
     }
     $merchantPaginator = $merchants->appends($merchantQueryParams);
 @endphp
-<div class="bg-white rounded-xl shadow overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+<div class="bg-white rounded-xl shadow overflow-hidden" style="overflow: visible; position: relative; isolation: isolate;">
+    <!-- Loading Overlay -->
+    <div id="merchant-table-loading" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+        <div class="flex flex-col items-center gap-2">
+            <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+            <span class="text-xs text-gray-600">Mengurutkan...</span>
+        </div>
+    </div>
+    <div class="overflow-x-auto" style="overflow-y: visible; position: relative;">
+        <table class="min-w-full divide-y divide-gray-200 transition-opacity duration-300" id="merchant-table">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
@@ -57,27 +64,30 @@
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Detail Alamat</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Lat/Long</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Radius (m)</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortMerchantColumn('total_trx', event)">
-                        <div class="flex items-center justify-center gap-1">
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="total_trx" onclick="sortMerchantColumn('total_trx', event)">
+                        <div class="flex items-center justify-center gap-1.5">
                             <span>Total TRX</span>
-                            <span class="sort-icon text-gray-400 text-[10px]">
-                                <i class="fas fa-sort{{ request('sort_merchant') === 'total_trx' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'total_trx' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'total_trx' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'total_trx' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
                             </span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortMerchantColumn('total_keyword', event)">
-                        <div class="flex items-center justify-center gap-1">
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="total_keyword" onclick="sortMerchantColumn('total_keyword', event)">
+                        <div class="flex items-center justify-center gap-1.5">
                             <span>Total Keyword</span>
-                            <span class="sort-icon text-gray-400 text-[10px]">
-                                <i class="fas fa-sort{{ request('sort_merchant') === 'total_keyword' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'total_keyword' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'total_keyword' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'total_keyword' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
                             </span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortMerchantColumn('keyword_aktif', event)">
-                        <div class="flex items-center justify-center gap-1">
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="keyword_aktif" onclick="sortMerchantColumn('keyword_aktif', event)">
+                        <div class="flex items-center justify-center gap-1.5">
                             <span>Keyword Aktif</span>
-                            <span class="sort-icon text-gray-400 text-[10px]">
-                                <i class="fas fa-sort{{ request('sort_merchant') === 'keyword_aktif' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'keyword_aktif' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'keyword_aktif' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'keyword_aktif' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
                             </span>
                         </div>
                     </th>
@@ -430,7 +440,14 @@
     </div>
     @endif
 </div><!-- ======================= MOBILE / CARD VIEW (DINAMIS) ======================= -->
-<div class="hidden space-y-4" id="merchant-cards-container">
+<div class="hidden space-y-4 relative" id="merchant-cards-container">
+    <!-- Loading Overlay for Mobile -->
+    <div id="merchant-cards-loading" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+        <div class="flex flex-col items-center gap-2">
+            <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+            <span class="text-xs text-gray-600">Mengurutkan...</span>
+        </div>
+    </div>
     @forelse($merchants as $merchant)
         @php
             $codeDashboardMobile = null;
@@ -891,21 +908,94 @@
     
     // Update sort icons for merchant table
     function updateMerchantSortIcons(column, order) {
-        // Reset all sort icons
-        document.querySelectorAll('[onclick*="sortMerchantColumn"] .sort-icon i').forEach(icon => {
-            icon.className = 'fas fa-sort text-gray-400';
+        // Reset all sort icons (except loading spinners)
+        document.querySelectorAll('.merchant-sort-header .sort-icon i:not(.sort-loading)').forEach(icon => {
+            icon.className = 'fas fa-sort text-gray-400 transition-all duration-200';
         });
         
         // Update icon for active column
-        const activeHeader = Array.from(document.querySelectorAll('[onclick*="sortMerchantColumn"]')).find(header => {
-            return header.getAttribute('onclick').includes(`'${column}'`);
-        });
+        const activeHeader = document.querySelector(`.merchant-sort-header[data-sort-column="${column}"]`);
         
         if (activeHeader && order) {
-            const icon = activeHeader.querySelector('.sort-icon i');
+            const icon = activeHeader.querySelector('.sort-icon i:not(.sort-loading)');
             if (icon) {
-                icon.className = `fas fa-sort-${order === 'asc' ? 'up' : 'down'} text-orange-500`;
+                icon.className = `fas fa-sort-${order === 'asc' ? 'up' : 'down'} text-orange-500 transition-all duration-200`;
             }
+        } else if (activeHeader && !order) {
+            const icon = activeHeader.querySelector('.sort-icon i:not(.sort-loading)');
+            if (icon) {
+                icon.className = 'fas fa-sort text-gray-400 transition-all duration-200';
+            }
+        }
+    }
+    
+    // Show loading state for sort column
+    function showSortLoading(column) {
+        const header = document.querySelector(`.merchant-sort-header[data-sort-column="${column}"]`);
+        if (header) {
+            const loadingIcon = header.querySelector('.sort-loading');
+            const sortIcon = header.querySelector('.sort-icon i:not(.sort-loading)');
+            if (loadingIcon && sortIcon) {
+                sortIcon.classList.add('opacity-30');
+                loadingIcon.classList.remove('hidden');
+                header.classList.add('opacity-75', 'cursor-wait');
+                header.style.pointerEvents = 'none';
+            }
+        }
+        
+        // Show table loading overlay (desktop)
+        const loadingOverlay = document.getElementById('merchant-table-loading');
+        const table = document.getElementById('merchant-table');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('hidden');
+        }
+        if (table) {
+            table.style.opacity = '0.6';
+        }
+        
+        // Show cards loading overlay (mobile)
+        const cardsLoadingOverlay = document.getElementById('merchant-cards-loading');
+        const cardsContainer = document.getElementById('merchant-cards-container');
+        if (cardsLoadingOverlay) {
+            cardsLoadingOverlay.classList.remove('hidden');
+        }
+        if (cardsContainer) {
+            cardsContainer.style.opacity = '0.6';
+        }
+    }
+    
+    // Hide loading state for sort column
+    function hideSortLoading(column) {
+        const header = document.querySelector(`.merchant-sort-header[data-sort-column="${column}"]`);
+        if (header) {
+            const loadingIcon = header.querySelector('.sort-loading');
+            const sortIcon = header.querySelector('.sort-icon i:not(.sort-loading)');
+            if (loadingIcon && sortIcon) {
+                sortIcon.classList.remove('opacity-30');
+                loadingIcon.classList.add('hidden');
+                header.classList.remove('opacity-75', 'cursor-wait');
+                header.style.pointerEvents = '';
+            }
+        }
+        
+        // Hide table loading overlay (desktop)
+        const loadingOverlay = document.getElementById('merchant-table-loading');
+        const table = document.getElementById('merchant-table');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
+        if (table) {
+            table.style.opacity = '1';
+        }
+        
+        // Hide cards loading overlay (mobile)
+        const cardsLoadingOverlay = document.getElementById('merchant-cards-loading');
+        const cardsContainer = document.getElementById('merchant-cards-container');
+        if (cardsLoadingOverlay) {
+            cardsLoadingOverlay.classList.add('hidden');
+        }
+        if (cardsContainer) {
+            cardsContainer.style.opacity = '1';
         }
     }
     
@@ -915,6 +1005,11 @@
         if (event) {
             event.preventDefault();
             event.stopPropagation();
+        }
+        
+        // Prevent multiple simultaneous sorts
+        if (window.merchantSortInProgress) {
+            return;
         }
         
         const urlParams = new URLSearchParams(window.location.search);
@@ -935,80 +1030,201 @@
             }
         }
         
+        // Update URL params
+        if (newSort) {
+            urlParams.set('sort_merchant', newSort);
+            urlParams.set('sort_merchant_dir', newOrder);
+        } else {
+            urlParams.delete('sort_merchant');
+            urlParams.delete('sort_merchant_dir');
+        }
+        
         // Update icons immediately
         updateMerchantSortIcons(column, newOrder);
         
-        // Use existing fetchMerchantTable function with buildMerchantSearchRequestUrl
-        if (typeof fetchMerchantTable === 'function' && typeof buildMerchantSearchRequestUrl === 'function') {
-            // Temporarily store sort params in global scope so buildMerchantSearchRequestUrl can access them
-            window.currentMerchantSort = newSort;
-            window.currentMerchantSortDir = newOrder;
+        // Update URL without reload
+        window.history.pushState({}, '', '?' + urlParams.toString());
+        
+        // Show loading state
+        showSortLoading(column);
+        window.merchantSortInProgress = true;
+        
+        // Get container elements
+        const container = document.getElementById('merchant-table-container');
+        const tableBody = container?.querySelector('#merchant-table-body') || container?.querySelector('tbody');
+        const cardsContainer = document.getElementById('merchant-cards-container');
+        // Get the overflow-x-auto div that contains the table (for horizontal scroll)
+        const tableScrollContainer = container?.querySelector('.overflow-x-auto');
+        
+        if (container) {
+            // Store current height to prevent layout shift (like best offer)
+            const currentHeight = container.offsetHeight;
+            container.style.minHeight = currentHeight + 'px';
             
-            // Update URL without reload first
-            const currentUrl = new URL(window.location.href);
-            if (newSort) {
-                currentUrl.searchParams.set('sort_merchant', newSort);
-                currentUrl.searchParams.set('sort_merchant_dir', newOrder);
+            // Store scroll positions BEFORE making request (to maintain after update)
+            const scrollX = window.scrollX || window.pageXOffset;
+            const scrollY = window.scrollY || window.pageYOffset;
+            const tableScrollX = tableScrollContainer ? tableScrollContainer.scrollLeft : 0;
+            
+            // Build request URL (like spesial-promo-form)
+            let requestUrl;
+            if (typeof buildMerchantSearchRequestUrl === 'function') {
+                // Temporarily store sort params in global scope
+                window.currentMerchantSort = newSort;
+                window.currentMerchantSortDir = newOrder;
+                requestUrl = buildMerchantSearchRequestUrl();
+                // Clean up after a short delay
+                setTimeout(() => {
+                    delete window.currentMerchantSort;
+                    delete window.currentMerchantSortDir;
+                }, 100);
             } else {
-                currentUrl.searchParams.delete('sort_merchant');
-                currentUrl.searchParams.delete('sort_merchant_dir');
+                // Fallback: build URL manually (like spesial-promo-form)
+                const baseUrl = '{{ route("merchants.search") }}';
+                requestUrl = baseUrl + '?' + urlParams.toString();
             }
-            window.history.pushState({}, '', currentUrl.toString());
             
-            // Build URL with sort params included (will use window.currentMerchantSort)
-            const searchUrl = buildMerchantSearchRequestUrl();
-            
-            // Fetch with AJAX (no page refresh)
-            fetchMerchantTable(searchUrl);
-            
-            // Clean up after a short delay to ensure buildMerchantSearchRequestUrl has access
-            setTimeout(() => {
-                delete window.currentMerchantSort;
-                delete window.currentMerchantSortDir;
-            }, 100);
-        } else {
-            // Fallback: direct fetch
-            const container = document.getElementById('merchant-table-container');
-            if (container) {
-                // Update URL params
-                if (newSort) {
-                    urlParams.set('sort_merchant', newSort);
-                    urlParams.set('sort_merchant_dir', newOrder);
-                } else {
-                    urlParams.delete('sort_merchant');
-                    urlParams.delete('sort_merchant_dir');
+            // Make AJAX request (like spesial-promo-form)
+            fetch(requestUrl, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
                 }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Parse HTML response (like spesial-promo-form)
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTableBody = doc.getElementById('merchant-table-body');
+                const newCardsContainer = doc.getElementById('merchant-cards-container');
+                // Find pagination container (like spesial-promo-form) - desktop pagination
+                const newPaginationContainer = doc.querySelector('.bg-white.px-4.py-4.border-t.flex.items-center.justify-between');
+                // Find mobile pagination container
+                const newMobilePaginationContainer = doc.querySelector('.bg-white.px-4.py-4.border-t.flex.flex-col.items-center.justify-center.space-y-3.rounded-xl');
                 
-                // Update URL without reload
-                window.history.pushState({}, '', '?' + urlParams.toString());
-                
-                container.style.opacity = '0.5';
-                
-                fetch('/merchants/search?' + urlParams.toString(), {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
+                if (newTableBody || newCardsContainer) {
+                    // Smooth transition (like spesial-promo-form)
+                    if (tableBody) {
+                        tableBody.style.opacity = '0';
+                        tableBody.style.transition = 'opacity 0.2s';
                     }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.html) {
-                        container.innerHTML = data.html;
-                        container.style.opacity = '1';
-                        // Re-attach event listeners
+                    if (cardsContainer) {
+                        cardsContainer.style.opacity = '0';
+                        cardsContainer.style.transition = 'opacity 0.2s';
+                    }
+                    
+                    setTimeout(() => {
+                        // Replace table body content (like spesial-promo-form)
+                        if (newTableBody && tableBody) {
+                            tableBody.innerHTML = newTableBody.innerHTML;
+                        }
+                        
+                        // Replace cards container if exists
+                        if (newCardsContainer && cardsContainer) {
+                            cardsContainer.innerHTML = newCardsContainer.innerHTML;
+                        }
+                        
+                        // Replace pagination container if exists (like spesial-promo-form)
+                        if (newPaginationContainer) {
+                            const currentPaginationContainer = container.querySelector('.bg-white.px-4.py-4.border-t.flex.items-center.justify-between');
+                            if (currentPaginationContainer) {
+                                currentPaginationContainer.outerHTML = newPaginationContainer.outerHTML;
+                            }
+                        }
+                        
+                        // Also handle mobile pagination if exists
+                        if (newMobilePaginationContainer && cardsContainer) {
+                            const currentMobilePagination = cardsContainer.parentElement?.querySelector('.bg-white.px-4.py-4.border-t.flex.flex-col.items-center.justify-center.space-y-3.rounded-xl');
+                            if (currentMobilePagination) {
+                                currentMobilePagination.outerHTML = newMobilePaginationContainer.outerHTML;
+                            }
+                        }
+                        
+                        // Restore scroll positions immediately (BEFORE re-attaching listeners)
+                        window.scrollTo(scrollX, scrollY);
+                        
+                        // Restore horizontal scroll position of table container
+                        const newTableScrollContainer = container.querySelector('.overflow-x-auto');
+                        if (newTableScrollContainer && tableScrollX > 0) {
+                            newTableScrollContainer.scrollLeft = tableScrollX;
+                        }
+                        
+                        // Re-attach event listeners (like spesial-promo-form)
                         if (typeof attachMerchantPaginationHandlers === 'function') {
                             attachMerchantPaginationHandlers();
+                        }
+                        if (typeof updateMerchantUrlState === 'function') {
+                            updateMerchantUrlState();
                         }
                         if (typeof reapplyMerchantCategoryFilter === 'function') {
                             reapplyMerchantCategoryFilter();
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('Sort error:', error);
-                    container.style.opacity = '1';
-                });
-            }
+                        
+                        // Re-attach toggle listeners for status checkboxes
+                        document.querySelectorAll('.toggle-merchant-status').forEach(toggle => {
+                            toggle.addEventListener('change', (e) => {
+                                const merchantId = e.target.dataset.merchantId;
+                                if (!merchantId) return;
+                                toggleMerchantStatus(merchantId);
+                            });
+                        });
+                        
+                        document.querySelectorAll('.toggle-merchant-status-mobile').forEach(toggle => {
+                            toggle.addEventListener('change', (e) => {
+                                const merchantId = e.target.dataset.merchantId;
+                                if (!merchantId) return;
+                                toggleMerchantStatus(merchantId);
+                            });
+                        });
+                        
+                        // Restore opacity
+                        const updatedTableBody = container.querySelector('#merchant-table-body') || container.querySelector('tbody');
+                        const updatedCardsContainer = document.getElementById('merchant-cards-container');
+                        if (updatedTableBody) {
+                            updatedTableBody.style.opacity = '1';
+                        }
+                        if (updatedCardsContainer) {
+                            updatedCardsContainer.style.opacity = '1';
+                        }
+                        
+                        // Remove min-height after transition (like spesial-promo-form)
+                        setTimeout(() => {
+                            container.style.minHeight = '';
+                            // Ensure scroll positions are maintained after all updates
+                            window.scrollTo(scrollX, scrollY);
+                            if (newTableScrollContainer && tableScrollX > 0) {
+                                newTableScrollContainer.scrollLeft = tableScrollX;
+                            }
+                        }, 300);
+                        
+                        // Hide loading and finalize icons
+                        hideSortLoading(column);
+                        window.merchantSortInProgress = false;
+                        updateMerchantSortIcons(column, newOrder);
+                    }, 200);
+                } else {
+                    // Fallback: reload if parsing fails (like spesial-promo-form)
+                    hideSortLoading(column);
+                    window.merchantSortInProgress = false;
+                    container.style.minHeight = '';
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hideSortLoading(column);
+                window.merchantSortInProgress = false;
+                if (container) {
+                    container.style.minHeight = '';
+                }
+                // Fallback: reload on error (like spesial-promo-form)
+                window.location.reload();
+            });
+        } else {
+            hideSortLoading(column);
+            window.merchantSortInProgress = false;
         }
     }
 
