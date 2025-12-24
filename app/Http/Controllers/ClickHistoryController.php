@@ -56,22 +56,60 @@ class ClickHistoryController extends Controller
             $query->orderBy('clicked_at', $sortDir);
         } elseif ($sortBy === 'status') {
             // Sort by status: use subquery to check if matched_redeem exists
-            // Matched = has redeem with matching click, Unmatched = no redeem
-            $query->leftJoin('tokodigi_tselpoin_redeem as tr', function($join) {
-                $join->on('click_history.keyword_id', '=', 'tr.coupon')
-                     ->where('tr.program', '=', 'BLANJAPOIN')
-                     ->whereColumn('tr.created_date', '>', 'click_history.clicked_at');
-            })
-            ->leftJoin('click_history as ch2', function($join) {
-                $join->on('ch2.keyword_id', '=', 'tr.coupon')
-                     ->whereColumn('ch2.clicked_at', '<', 'tr.created_date')
-                     ->whereColumn('ch2.merchant_id', '=', 'click_history.merchant_id');
-            })
-            ->selectRaw('click_history.*, CASE WHEN ch2.id IS NOT NULL THEN 1 ELSE 0 END as has_match')
+            // Matched = has redeem with matching keyword_id and created_date > clicked_at
+            // This matches the logic in findMatchingRedeem()
+            $query->selectRaw('click_history.*, 
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM tokodigi_tselpoin_redeem as tr 
+                    WHERE tr.coupon = click_history.keyword_id 
+                    AND tr.program = "BLANJAPOIN"
+                    AND tr.created_date > click_history.clicked_at
+                ) THEN 1 ELSE 0 END as has_match')
             ->orderBy('has_match', $sortDir)
             ->orderBy('click_history.clicked_at', 'desc'); // Secondary sort
         } else {
             $query->orderBy('clicked_at', 'desc');
+        }
+
+        // Calculate total Matched and Unmatched from ALL data (not just current page)
+        // Create a separate query for statistics (without pagination)
+        $statsQuery = ClickHistory::select('click_history.*');
+        
+        // Apply same filters to stats query
+        if ($searchKeyword) {
+            $statsQuery->where(function($q) use ($searchKeyword) {
+                $q->where('ip_address', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('device_id', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('keyword_id', 'like', '%' . $searchKeyword . '%');
+            });
+        }
+
+        if ($merchantId) {
+            $statsQuery->where('merchant_id', $merchantId);
+        }
+
+        if ($keywordId) {
+            $statsQuery->where('keyword_id', $keywordId);
+        }
+
+        if ($date) {
+            $statsQuery->whereDate('clicked_at', $date);
+        }
+
+        // Get all click histories for statistics (without pagination)
+        $allClickHistories = $statsQuery->get();
+        
+        // Calculate matched and unmatched counts from all data
+        $totalMatched = 0;
+        $totalUnmatched = 0;
+        
+        foreach ($allClickHistories as $clickHistory) {
+            $matchedRedeem = $this->findMatchingRedeem($clickHistory);
+            if ($matchedRedeem) {
+                $totalMatched++;
+            } else {
+                $totalUnmatched++;
+            }
         }
 
         // Paginate - sorting sudah dilakukan di query level untuk semua data
@@ -84,17 +122,8 @@ class ClickHistoryController extends Controller
             $clickHistory->matched_redeem = $matchedRedeem;
         }
         
-        // Handle status sorting after matched_redeem is set (for current page only)
-        // Note: For true "all data" status sorting, we'd need complex SQL subquery
-        // This approach sorts the current page by status
-        if ($sortBy === 'status') {
-            $collection = $clickHistories->getCollection();
-            $sorted = $collection->sortBy(function($item) use ($sortDir) {
-                $statusValue = $item->matched_redeem ? 1 : 0;
-                return $sortDir === 'asc' ? $statusValue : -$statusValue;
-            })->values();
-            $clickHistories->setCollection($sorted);
-        }
+        // Note: Status sorting is already done at query level for all data
+        // No need to sort again at collection level
 
         // Get all merchants and keywords for filter dropdowns (termasuk yang inactive)
         $merchants = Merchant::orderBy('nama_merchant')->get();
@@ -107,6 +136,8 @@ class ClickHistoryController extends Controller
             'clickHistories' => $clickHistories,
             'merchants' => $merchants,
             'keywords' => $keywords,
+            'totalMatched' => $totalMatched,
+            'totalUnmatched' => $totalUnmatched,
             'filters' => [
                 'search' => $searchKeyword,
                 'merchant_id' => $merchantId,
