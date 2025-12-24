@@ -278,13 +278,7 @@
                         <i class="fas fa-info-circle text-blue-600 text-2xl"></i>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-sm font-semibold text-blue-900">Cara Kerja Matching Click → Redeem</h3>
-                        <div class="mt-2 text-sm text-blue-800 space-y-1">
-                            <p><strong>1. Klik dulu → Redeem kemudian:</strong> Sistem mencatat klik sebelum redeem terjadi</p>
-                            <p><strong>2. Cocokkan keyword:</strong> Match berdasarkan keyword_id yang sama</p>
-                            <p><strong>3. Ambil selisih waktu paling dekat:</strong> Redeem yang paling dekat waktu klik dianggap sebagai pasangan</p>
-                            <p><strong>4. Merchant dari Click:</strong> Menunjukkan merchant mana yang "claim" transaksi ini berdasarkan click history (solusi untuk duplicate keyword_id)</p>
-                            <p class="mt-3"><strong>Confidence Level</strong> (dengan memperhitungkan processing time):</p>
+                        <p class="mt-3"><strong>Confidence Level</strong> (dengan memperhitungkan processing time):</p>
                             <ul class="list-disc ml-5 space-y-1">
                                 <li><span class="text-green-600 font-semibold">● High</span> - Time diff ≤5 menit (termasuk processing, sangat mungkin dari klik langsung)</li>
                                 <li><span class="text-yellow-600 font-semibold">● Medium</span> - Time diff ≤15 menit (kemungkinan besar dari klik)</li>
