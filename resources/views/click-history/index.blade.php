@@ -64,17 +64,17 @@
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">History Redeem</h1>
                     <p class="text-sm text-gray-600 mt-2">Track dan analisa klik sebelum redeem untuk mendeteksi potensi cheating</p>
                 </div>
-                <!-- <div class="flex gap-2">
-                    <a href="{{ route('click.history.analytics') }}" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold">
-                        <i class="fas fa-chart-bar mr-2"></i>Analytics
+                <div class="flex gap-2">
+                    <a href="{{ route('click.history.anonymous') }}" class="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Anonymous Redeems
                     </a>
-                </div> -->
+                </div>
             </div>
 
             <!-- Filters -->
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                 <form method="GET" action="{{ route('click.history.index') }}" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Search -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
@@ -86,27 +86,47 @@
                         <!-- Merchant Filter -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Merchant</label>
-                            <select name="merchant_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
-                                <option value="">Semua Merchant</option>
-                                @foreach($merchants as $merchant)
-                                    <option value="{{ $merchant->id }}" {{ ($filters['merchant_id'] ?? '') == $merchant->id ? 'selected' : '' }}>
-                                        {{ $merchant->nama_merchant }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="relative" id="merchant-dropdown-container">
+                                <input type="hidden" name="merchant_id" id="merchant_id_input" value="{{ $filters['merchant_id'] ?? '' }}">
+                                <input type="text" 
+                                       id="merchant_search_input"
+                                       value="{{ $merchants->where('id', $filters['merchant_id'] ?? '')->first()->nama_merchant ?? 'Semua Merchant' }}"
+                                       placeholder="Cari merchant..."
+                                       readonly
+                                       autocomplete="off"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm cursor-pointer bg-white">
+                                <div id="merchant_dropdown" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden hidden">
+                                    <div class="p-2 border-b border-gray-200 bg-white sticky top-0 z-10">
+                                        <input type="text" 
+                                               id="merchant_search_inner"
+                                               placeholder="Ketik untuk mencari merchant..."
+                                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50"
+                                               autocomplete="off">
+                                    </div>
+                                    <div class="py-1 overflow-y-auto max-h-52" id="merchant_options_list">
+                                        <div class="merchant-option px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm transition-colors" data-value="">Semua Merchant</div>
+                                        @foreach($merchants as $merchant)
+                                            <div class="merchant-option px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm transition-colors" data-value="{{ $merchant->id }}" data-name="{{ strtolower($merchant->nama_merchant) }}">{{ $merchant->nama_merchant }}</div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        <script>
+                            document.addEventListener('alpine:init', () => {
+                                Alpine.store('merchants', [
+                                    { id: '', name: 'Semua Merchant' },
+                                    @foreach($merchants as $merchant)
+                                    { id: '{{ $merchant->id }}', name: '{{ addslashes($merchant->nama_merchant) }}' },
+                                    @endforeach
+                                ]);
+                            });
+                        </script>
 
-                        <!-- Start Date -->
+                        <!-- Date Filter -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
-                            <input type="date" name="start_date" value="{{ $filters['start_date'] ?? '' }}" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
-                        </div>
-
-                        <!-- End Date -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
-                            <input type="date" name="end_date" value="{{ $filters['end_date'] ?? '' }}" 
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+                            <input type="date" name="date" value="{{ $filters['date'] ?? '' }}" 
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
                         </div>
                     </div>
@@ -171,12 +191,51 @@
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Merchant</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <a href="{{ route('click.history.index', array_merge(request()->query(), ['sort' => 'merchant', 'dir' => (request('sort') == 'merchant' && request('dir') == 'asc') ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-orange-500 transition-colors">
+                                        Merchant
+                                        @if(request('sort') == 'merchant')
+                                            @if(request('dir') == 'asc')
+                                                <i class="fas fa-sort-up text-orange-500"></i>
+                                            @else
+                                                <i class="fas fa-sort-down text-orange-500"></i>
+                                            @endif
+                                        @else
+                                            <i class="fas fa-sort text-gray-400"></i>
+                                        @endif
+                                    </a>
+                                </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keyword ID</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">IP Address</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Device ID</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Waktu Klik</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <a href="{{ route('click.history.index', array_merge(request()->query(), ['sort' => 'clicked_at', 'dir' => (request('sort') == 'clicked_at' && request('dir') == 'asc') ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-orange-500 transition-colors">
+                                        Waktu Klik
+                                        @if(request('sort') == 'clicked_at')
+                                            @if(request('dir') == 'asc')
+                                                <i class="fas fa-sort-up text-orange-500"></i>
+                                            @else
+                                                <i class="fas fa-sort-down text-orange-500"></i>
+                                            @endif
+                                        @else
+                                            <i class="fas fa-sort text-gray-400"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <a href="{{ route('click.history.index', array_merge(request()->query(), ['sort' => 'status', 'dir' => (request('sort') == 'status' && request('dir') == 'asc') ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-orange-500 transition-colors">
+                                        Status
+                                        @if(request('sort') == 'status')
+                                            @if(request('dir') == 'asc')
+                                                <i class="fas fa-sort-up text-orange-500"></i>
+                                            @else
+                                                <i class="fas fa-sort-down text-orange-500"></i>
+                                            @endif
+                                        @else
+                                            <i class="fas fa-sort text-gray-400"></i>
+                                        @endif
+                                    </a>
+                                </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Detail Match</th>
                             </tr>
                         </thead>
@@ -194,9 +253,18 @@
                                         <span class="text-sm font-mono text-gray-700">{{ $click->ip_address ?? '-' }}</span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="text-xs font-mono text-gray-600 block max-w-[150px] truncate" title="{{ $click->device_id }}">
-                                            {{ $click->device_id ? \Illuminate\Support\Str::limit($click->device_id, 20) : '-' }}
-                                        </span>
+                                        @if($click->device_id)
+                                            <div class="flex items-center gap-2 group">
+                                                <span class="text-xs font-mono text-gray-600 truncate flex-1 min-w-0" title="{{ $click->device_id }}">
+                                                    {{ $click->device_id }}
+                                                </span>
+                                                <button onclick="copyDeviceId('{{ addslashes($click->device_id) }}', this)" class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded flex-shrink-0" title="Copy Device ID">
+                                                    <i class="fas fa-copy text-xs"></i>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-gray-400">-</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900">{{ $click->clicked_at->format('d M Y') }}</div>
@@ -262,14 +330,82 @@
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Pagination -->
-                @if($clickHistories->hasPages())
-                    <div class="px-6 py-4 border-t border-gray-200">
-                        {{ $clickHistories->links() }}
-                    </div>
-                @endif
             </div>
+
+            <!-- Pagination -->
+            @if($clickHistories->hasPages())
+                <div class="mt-6 bg-white rounded-xl shadow-sm px-6 py-4 border-t border-gray-200">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <!-- Info -->
+                        <div class="text-sm text-gray-600">
+                            Menampilkan <span class="font-semibold">{{ $clickHistories->firstItem() ?? 0 }}</span> hingga <span class="font-semibold">{{ $clickHistories->lastItem() ?? 0 }}</span> dari <span class="font-semibold">{{ $clickHistories->total() }}</span> data
+                        </div>
+                        
+                        <!-- Pagination Links -->
+                        <div class="flex items-center space-x-2">
+                            {{-- Previous Page Link --}}
+                            @if ($clickHistories->onFirstPage())
+                                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                            @else
+                                <a href="{{ $clickHistories->previousPageUrl() }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            @endif
+
+                            {{-- Pagination Elements --}}
+                            @php
+                                $current = $clickHistories->currentPage();
+                                $last = $clickHistories->lastPage();
+                                $range = 2; // kiri/kanan dari current
+                                $start = max(1, $current - $range);
+                                $end = min($last, $current + $range);
+                            @endphp
+
+                            {{-- First Page --}}
+                            @if ($start > 1)
+                                <a href="{{ $clickHistories->url(1) }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</a>
+                                @if ($start > 2)
+                                    <span class="px-2 text-gray-400">...</span>
+                                @endif
+                            @endif
+
+                            {{-- Page Numbers --}}
+                            @for ($page = $start; $page <= $end; $page++)
+                                @if ($page == $current)
+                                    <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                                        {{ $page }}
+                                    </button>
+                                @else
+                                    <a href="{{ $clickHistories->url($page) }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endfor
+
+                            {{-- Last Page --}}
+                            @if ($end < $last)
+                                @if ($end < $last - 1)
+                                    <span class="px-2 text-gray-400">...</span>
+                                @endif
+                                <a href="{{ $clickHistories->url($last) }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $last }}</a>
+                            @endif
+
+                            {{-- Next Page Link --}}
+                            @if ($clickHistories->hasMorePages())
+                                <a href="{{ $clickHistories->nextPageUrl() }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            @else
+                                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Info Box -->
             <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
@@ -289,6 +425,243 @@
                 </div>
             </div>
         </main>
+
+    <script>
+        // Merchant searchable dropdown
+        (function() {
+            const container = document.getElementById('merchant-dropdown-container');
+            const input = document.getElementById('merchant_search_input');
+            const hiddenInput = document.getElementById('merchant_id_input');
+            const dropdown = document.getElementById('merchant_dropdown');
+            const searchInner = document.getElementById('merchant_search_inner');
+            const optionsList = document.getElementById('merchant_options_list');
+            
+            let selectedValue = hiddenInput.value;
+            let selectedName = input.value || 'Semua Merchant';
+            
+            // Show dropdown on input focus/click
+            input.addEventListener('click', function(e) {
+                e.preventDefault();
+                dropdown.classList.remove('hidden');
+                searchInner.value = ''; // Clear search when opening
+                filterMerchants();
+                setTimeout(() => {
+                    searchInner.focus();
+                }, 50);
+            });
+            
+            input.addEventListener('focus', function(e) {
+                e.preventDefault();
+                input.blur(); // Prevent keyboard from opening on mobile
+                dropdown.classList.remove('hidden');
+                searchInner.value = '';
+                filterMerchants();
+                setTimeout(() => {
+                    searchInner.focus();
+                }, 50);
+            });
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!container.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                    searchInner.value = ''; // Clear search when closing
+                }
+            });
+            
+            // Prevent dropdown from closing when clicking inside
+            dropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Filter merchants based on search
+            function filterMerchants() {
+                const searchTerm = searchInner.value.toLowerCase().trim();
+                const options = optionsList.querySelectorAll('.merchant-option');
+                
+                options.forEach(option => {
+                    const merchantName = option.getAttribute('data-name') || option.textContent.toLowerCase();
+                    if (searchTerm === '' || merchantName.includes(searchTerm)) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Search in inner input (real-time filtering)
+            searchInner.addEventListener('input', function() {
+                filterMerchants();
+            });
+            
+            // Allow Enter key to select first visible option
+            searchInner.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const visibleOptions = Array.from(optionsList.querySelectorAll('.merchant-option')).filter(
+                        opt => opt.style.display !== 'none'
+                    );
+                    if (visibleOptions.length > 0) {
+                        visibleOptions[0].click();
+                    }
+                }
+            });
+            
+            // Handle option click
+            optionsList.addEventListener('click', function(e) {
+                const option = e.target.closest('.merchant-option');
+                if (option) {
+                    selectedValue = option.getAttribute('data-value') || '';
+                    selectedName = option.textContent.trim();
+                    hiddenInput.value = selectedValue;
+                    input.value = selectedName;
+                    dropdown.classList.add('hidden');
+                    searchInner.value = '';
+                    
+                    // Highlight selected option
+                    optionsList.querySelectorAll('.merchant-option').forEach(opt => {
+                        opt.classList.remove('bg-orange-50', 'font-semibold');
+                        if (opt.getAttribute('data-value') === selectedValue) {
+                            opt.classList.add('bg-orange-50', 'font-semibold');
+                        }
+                    });
+                }
+            });
+            
+            // Highlight selected option on load
+            setTimeout(() => {
+                optionsList.querySelectorAll('.merchant-option').forEach(opt => {
+                    opt.classList.remove('bg-orange-50', 'font-semibold');
+                    if (opt.getAttribute('data-value') === selectedValue) {
+                        opt.classList.add('bg-orange-50', 'font-semibold');
+                    }
+                });
+            }, 100);
+        })();
+        
+        function copyDeviceId(deviceId, buttonElement) {
+            // Copy to clipboard
+            navigator.clipboard.writeText(deviceId).then(function() {
+                // Change icon to checkmark
+                const icon = buttonElement.querySelector('i');
+                icon.classList.remove('fa-copy');
+                icon.classList.add('fa-check');
+                buttonElement.classList.remove('text-gray-500', 'hover:text-orange-500');
+                buttonElement.classList.add('text-green-500');
+                buttonElement.title = 'Copied!';
+                
+                // Reset after 2 seconds
+                setTimeout(function() {
+                    icon.classList.remove('fa-check');
+                    icon.classList.add('fa-copy');
+                    buttonElement.classList.remove('text-green-500');
+                    buttonElement.classList.add('text-gray-500', 'hover:text-orange-500');
+                    buttonElement.title = 'Copy Device ID';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = deviceId;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    // Change icon to checkmark
+                    const icon = buttonElement.querySelector('i');
+                    icon.classList.remove('fa-copy');
+                    icon.classList.add('fa-check');
+                    buttonElement.classList.remove('text-gray-500', 'hover:text-orange-500');
+                    buttonElement.classList.add('text-green-500');
+                    buttonElement.title = 'Copied!';
+                    
+                    // Reset after 2 seconds
+                    setTimeout(function() {
+                        icon.classList.remove('fa-check');
+                        icon.classList.add('fa-copy');
+                        buttonElement.classList.remove('text-green-500');
+                        buttonElement.classList.add('text-gray-500', 'hover:text-orange-500');
+                        buttonElement.title = 'Copy Device ID';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy Device ID');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+        
+        // Auto-refresh table every 30 seconds (lazy load)
+        let autoRefreshInterval;
+        let isRefreshing = false;
+        
+        function refreshTable() {
+            if (isRefreshing) return;
+            
+            isRefreshing = true;
+            
+            // Get current URL with all query parameters
+            const currentUrl = window.location.href;
+            
+            // Make AJAX request
+            fetch(currentUrl, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html',
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Parse the response HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update table container
+                const tableContainer = document.querySelector('.bg-white.rounded-xl.shadow-sm.overflow-hidden');
+                const newTableContainer = doc.querySelector('.bg-white.rounded-xl.shadow-sm.overflow-hidden');
+                if (tableContainer && newTableContainer) {
+                    tableContainer.innerHTML = newTableContainer.innerHTML;
+                }
+                
+                // Update pagination
+                const paginationContainer = document.querySelector('.mt-6.bg-white.rounded-xl.shadow-sm.px-6.py-4');
+                const newPaginationContainer = doc.querySelector('.mt-6.bg-white.rounded-xl.shadow-sm.px-6.py-4');
+                if (paginationContainer && newPaginationContainer) {
+                    paginationContainer.innerHTML = newPaginationContainer.innerHTML;
+                } else if (!newPaginationContainer && paginationContainer) {
+                    // If no pagination in new response, remove it
+                    paginationContainer.remove();
+                } else if (newPaginationContainer && !paginationContainer) {
+                    // If pagination exists in new response but not in current DOM, add it
+                    const tableWrapper = document.querySelector('.bg-white.rounded-xl.shadow-sm.overflow-hidden')?.parentElement;
+                    if (tableWrapper) {
+                        tableWrapper.insertAdjacentElement('afterend', newPaginationContainer);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing table:', error);
+            })
+            .finally(() => {
+                isRefreshing = false;
+            });
+        }
+        
+        // Start auto-refresh on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-refresh every 30 seconds
+            autoRefreshInterval = setInterval(refreshTable, 30000);
+            
+            // Stop auto-refresh when user leaves page
+            window.addEventListener('beforeunload', function() {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
