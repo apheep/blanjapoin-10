@@ -17,9 +17,10 @@ class ClickHistoryController extends Controller
         $searchKeyword = $request->get('search');
         $merchantId = $request->get('merchant_id');
         $keywordId = $request->get('keyword_id');
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
+        $date = $request->get('date');
         $matchStatus = $request->get('match_status'); // 'matched', 'unmatched', 'all'
+        $sortBy = $request->get('sort', 'clicked_at');
+        $sortDir = $request->get('dir', 'desc');
         
         // Base query untuk click history dengan relasi
         $query = ClickHistory::with(['merchant', 'keyword'])
@@ -42,18 +43,39 @@ class ClickHistoryController extends Controller
             $query->where('keyword_id', $keywordId);
         }
 
-        if ($startDate) {
-            $query->whereDate('clicked_at', '>=', $startDate);
+        if ($date) {
+            $query->whereDate('clicked_at', $date);
         }
 
-        if ($endDate) {
-            $query->whereDate('clicked_at', '<=', $endDate);
+        // Apply sorting - All sorting done at query level for all data
+        if ($sortBy === 'merchant') {
+            $query->join('merchants', 'click_history.merchant_id', '=', 'merchants.id')
+                  ->select('click_history.*', 'merchants.nama_merchant') // Include nama_merchant in SELECT for DISTINCT compatibility
+                  ->orderBy('merchants.nama_merchant', $sortDir);
+        } elseif ($sortBy === 'clicked_at') {
+            $query->orderBy('clicked_at', $sortDir);
+        } elseif ($sortBy === 'status') {
+            // Sort by status: use subquery to check if matched_redeem exists
+            // Matched = has redeem with matching click, Unmatched = no redeem
+            $query->leftJoin('tokodigi_tselpoin_redeem as tr', function($join) {
+                $join->on('click_history.keyword_id', '=', 'tr.coupon')
+                     ->where('tr.program', '=', 'BLANJAPOIN')
+                     ->whereColumn('tr.created_date', '>', 'click_history.clicked_at');
+            })
+            ->leftJoin('click_history as ch2', function($join) {
+                $join->on('ch2.keyword_id', '=', 'tr.coupon')
+                     ->whereColumn('ch2.clicked_at', '<', 'tr.created_date')
+                     ->whereColumn('ch2.merchant_id', '=', 'click_history.merchant_id');
+            })
+            ->selectRaw('click_history.*, CASE WHEN ch2.id IS NOT NULL THEN 1 ELSE 0 END as has_match')
+            ->orderBy('has_match', $sortDir)
+            ->orderBy('click_history.clicked_at', 'desc'); // Secondary sort
+        } else {
+            $query->orderBy('clicked_at', 'desc');
         }
 
-        // Order by clicked_at desc
-        $query->orderBy('clicked_at', 'desc');
-
-        // Paginate
+        // Paginate - sorting sudah dilakukan di query level untuk semua data
+        // Remove distinct() as it's not needed and causes issues with ORDER BY
         $clickHistories = $query->paginate(20)->appends($request->query());
 
         // Untuk setiap click history, cari redeem yang paling cocok
@@ -61,22 +83,25 @@ class ClickHistoryController extends Controller
             $matchedRedeem = $this->findMatchingRedeem($clickHistory);
             $clickHistory->matched_redeem = $matchedRedeem;
         }
-
-        // Filter by match status if requested
-        if ($matchStatus && $matchStatus !== 'all') {
-            $clickHistories = $clickHistories->filter(function($item) use ($matchStatus) {
-                if ($matchStatus === 'matched') {
-                    return !is_null($item->matched_redeem);
-                } else if ($matchStatus === 'unmatched') {
-                    return is_null($item->matched_redeem);
-                }
-                return true;
-            });
+        
+        // Handle status sorting after matched_redeem is set (for current page only)
+        // Note: For true "all data" status sorting, we'd need complex SQL subquery
+        // This approach sorts the current page by status
+        if ($sortBy === 'status') {
+            $collection = $clickHistories->getCollection();
+            $sorted = $collection->sortBy(function($item) use ($sortDir) {
+                $statusValue = $item->matched_redeem ? 1 : 0;
+                return $sortDir === 'asc' ? $statusValue : -$statusValue;
+            })->values();
+            $clickHistories->setCollection($sorted);
         }
 
         // Get all merchants and keywords for filter dropdowns (termasuk yang inactive)
         $merchants = Merchant::orderBy('nama_merchant')->get();
         $keywords = Keyword::orderBy('keyword_id')->get();
+
+        // If AJAX request, return full page HTML (we'll extract table part in JS)
+        // This is simpler than creating separate partials
 
         return view('click-history.index', [
             'clickHistories' => $clickHistories,
@@ -86,9 +111,10 @@ class ClickHistoryController extends Controller
                 'search' => $searchKeyword,
                 'merchant_id' => $merchantId,
                 'keyword_id' => $keywordId,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
+                'date' => $date,
                 'match_status' => $matchStatus,
+                'sort' => $sortBy,
+                'dir' => $sortDir,
             ]
         ]);
     }
@@ -260,6 +286,78 @@ class ClickHistoryController extends Controller
             'clicksByKeyword' => $clicksByKeyword,
             'startDate' => $startDate,
             'endDate' => $endDate,
+        ]);
+    }
+
+    /**
+     * Show anonymous redeems (redemptions without matching click history)
+     * Anonymous = redeem yang tidak ada matching click (termasuk manual insert)
+     */
+    public function anonymousRedeems(Request $request)
+    {
+        // Get filter parameters
+        $searchKeyword = $request->get('search');
+        $keywordId = $request->get('keyword_id');
+        $date = $request->get('date');
+        $sortBy = $request->get('sort', 'created_date');
+        $sortDir = $request->get('dir', 'desc');
+
+        // Get all redemptions (no merchant join needed for anonymous)
+        $query = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->where('tr.program', 'BLANJAPOIN');
+
+        // Filter: Anonymous = redemptions yang TIDAK punya matching click history
+        // Anonymous = tidak ada click history dengan keyword_id yang sama dan clicked_at < created_date
+        $query->whereNotExists(function($subquery) {
+            $subquery->select(DB::raw(1))
+                ->from('click_history')
+                ->whereColumn('click_history.keyword_id', 'tr.coupon')
+                ->whereColumn('click_history.clicked_at', '<', 'tr.created_date');
+        });
+
+        // Apply filters
+        if ($searchKeyword) {
+            $query->where(function($q) use ($searchKeyword) {
+                $q->where('tr.msisdn', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('tr.coupon', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('tr.keyword_desc', 'like', '%' . $searchKeyword . '%');
+            });
+        }
+
+        if ($keywordId) {
+            $query->where('tr.coupon', $keywordId);
+        }
+
+        if ($date) {
+            $query->whereDate('tr.created_date', $date);
+        }
+
+        // Apply sorting (only columns from tokodigi_tselpoin_redeem)
+        if ($sortBy === 'created_date') {
+            $query->orderBy('tr.created_date', $sortDir);
+        } elseif ($sortBy === 'poin') {
+            $query->orderBy('tr.poin_redeem', $sortDir);
+        } elseif ($sortBy === 'coupon') {
+            $query->orderBy('tr.coupon', $sortDir);
+        } elseif ($sortBy === 'msisdn') {
+            $query->orderBy('tr.msisdn', $sortDir);
+        } else {
+            $query->orderBy('tr.created_date', 'desc');
+        }
+
+        // Paginate - select all columns from tokodigi_tselpoin_redeem
+        $anonymousRedeems = $query->select('tr.*')
+            ->paginate(20)->appends($request->query());
+
+        return view('click-history.anonymous-redeems', [
+            'anonymousRedeems' => $anonymousRedeems,
+            'filters' => [
+                'search' => $searchKeyword,
+                'keyword_id' => $keywordId,
+                'date' => $date,
+                'sort' => $sortBy,
+                'dir' => $sortDir,
+            ]
         ]);
     }
 

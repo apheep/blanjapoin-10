@@ -356,6 +356,7 @@ Route::middleware(['auth'])->group(function () {
     // Click History Routes
     Route::get('/click-history', [\App\Http\Controllers\ClickHistoryController::class, 'index'])->name('click.history.index');
     Route::get('/click-history/analytics', [\App\Http\Controllers\ClickHistoryController::class, 'analytics'])->name('click.history.analytics');
+    Route::get('/click-history/anonymous-redeems', [\App\Http\Controllers\ClickHistoryController::class, 'anonymousRedeems'])->name('click.history.anonymous');
 
     // Recalculate Diamond
     Route::post('/merchants/recalculate-diamond', [MerchantController::class, 'recalculateDiamond'])->name('merchants.recalculate-diamond');
