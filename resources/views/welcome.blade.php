@@ -1190,10 +1190,21 @@
    setTimeout(initializeFiltersAndSorting, 500);
 
    // Function for redeem button click (welcome page - no location validation)
-   function handleRedeemClick(redeemUrl) {
+   function handleRedeemClick(redeemUrl, merchantId = null, keywordId = null) {
      if (redeemUrl && redeemUrl !== '#') {
-       // Direct redeem without location validation for welcome page
-       window.open(redeemUrl, '_blank');
+       // Track click before redirect (if tracking function exists)
+       if (typeof trackClick === 'function' && merchantId) {
+         trackClick(merchantId, keywordId).then(() => {
+           // Open redeem page in new tab after tracking
+           window.open(redeemUrl, '_blank');
+         }).catch(() => {
+           // If tracking fails, still open the page
+           window.open(redeemUrl, '_blank');
+         });
+       } else {
+         // If no tracking, direct redeem
+         window.open(redeemUrl, '_blank');
+       }
      }
    }
   </script>

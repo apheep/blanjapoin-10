@@ -77,11 +77,32 @@ class Keyword extends Model
             return false;
         }
 
-        // Hitung jumlah transaksi redeem dari tokodigi_tselpoin_redeem
-        $trxCount = DB::table('tokodigi_tselpoin_redeem')
+        // Get all redemptions for this keyword_id
+        $redemptions = DB::table('tokodigi_tselpoin_redeem')
             ->where('coupon', $this->keyword_id)
             ->where('program', 'BLANJAPOIN')
-            ->count();
+            ->select('created_date', 'coupon as keyword_id')
+            ->get();
+
+        // Count only redemptions that match THIS merchant (via click_history)
+        $trxCount = 0;
+        foreach ($redemptions as $redemption) {
+            // Find matching click for this redemption
+            $matchingClick = DB::table('click_history')
+                ->where('keyword_id', $redemption->keyword_id)
+                ->where('clicked_at', '<', $redemption->created_date)
+                ->select(
+                    'merchant_id',
+                    DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")
+                )
+                ->orderBy('time_diff_seconds', 'asc')
+                ->first();
+
+            // If click found and merchant matches THIS keyword's merchant, count it
+            if ($matchingClick && $matchingClick->merchant_id == $this->merchant_key) {
+                $trxCount++;
+            }
+        }
 
         // Hitung sisa stock: stock - trx (minimal 0)
         $stock = (int)($this->stock ?? 0);
