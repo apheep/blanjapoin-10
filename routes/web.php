@@ -148,6 +148,12 @@ Route::get('/cluster/{location}', [MerchantController::class, 'showByCluster'])-
 // Route untuk link pelanggan (public, tidak perlu login)
 Route::get('/u/{code}', [MerchantController::class, 'linkPelanggan'])->name('link.pelanggan');
 
+// Route untuk tracking click dan redirect (NO JavaScript needed!)
+Route::get('/r/{merchantId}/{keywordId?}', [MerchantController::class, 'trackAndRedirect'])->name('track.redirect');
+
+// API untuk tracking click (public, dipanggil dari JavaScript) - OPTIONAL
+Route::post('/api/track-click', [\App\Http\Controllers\ClickHistoryController::class, 'trackClick'])->name('api.track.click');
+
 // Portal merchant authentication
 Route::middleware('guest:portal')->group(function () {
     Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
@@ -346,6 +352,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/withdraw-approval', [MerchantController::class, 'withdrawApproval'])->name('withdraw.approval');
     Route::post('/withdraw-approval/{withdrawRequest}/approve', [MerchantController::class, 'approveWithdraw'])->name('withdraw.approve');
     Route::post('/withdraw-approval/{withdrawRequest}/reject', [MerchantController::class, 'rejectWithdraw'])->name('withdraw.reject');
+
+    // Click History Routes
+    Route::get('/click-history', [\App\Http\Controllers\ClickHistoryController::class, 'index'])->name('click.history.index');
+    Route::get('/click-history/analytics', [\App\Http\Controllers\ClickHistoryController::class, 'analytics'])->name('click.history.analytics');
 
     // Recalculate Diamond
     Route::post('/merchants/recalculate-diamond', [MerchantController::class, 'recalculateDiamond'])->name('merchants.recalculate-diamond');
