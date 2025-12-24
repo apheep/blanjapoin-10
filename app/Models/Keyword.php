@@ -13,6 +13,20 @@ class Keyword extends Model
     use HasFactory;
     use SoftDeletes;
 
+    /**
+     * Boot method to handle model events.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When a keyword is being deleted (soft or hard), delete associated iklans
+        static::deleting(function ($keyword) {
+            // Delete all associated iklans
+            $keyword->iklans()->delete();
+        });
+    }
+
     protected $fillable = [
         'merchant_key',
         'kategori_keyword',
@@ -47,6 +61,14 @@ class Keyword extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    /**
+     * Get all iklans associated with this keyword.
+     */
+    public function iklans()
+    {
+        return $this->hasMany(Iklan::class, 'keyword_id', 'id');
     }
 
     /**
