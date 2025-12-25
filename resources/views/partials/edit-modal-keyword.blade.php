@@ -74,6 +74,9 @@
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-violet-100 hover:to-purple-100 hover:text-violet-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_games')">
                                             Paket games
                                         </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-teal-100 hover:to-cyan-100 hover:text-teal-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_internet')">
+                                            Paket Internet
+                                        </button>
                                     </div>
                                 </div>
                             </div>

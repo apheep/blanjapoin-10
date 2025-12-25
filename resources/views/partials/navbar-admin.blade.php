@@ -11,7 +11,8 @@
         <a href="{{ route('iklan.index') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Top Banner</a>
         <a href="{{ route('spesial-promo.form') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Best Offer</a>
         <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>           
-        <a href="{{ route('withdraw.approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Withdraw Approval</a>          
+        <a href="{{ route('withdraw.approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Withdraw Approval</a>  
+        <a href="{{ route('click.history.index') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Redeem History</a>        
          @endif
       </div>
 
@@ -94,6 +95,10 @@
         <a href="{{ route('spesial-promo.form') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="fa-solid fa-tags w-5 text-gray-500"></i>
           <span class="font-medium">Spesial Promo</span>
+        </a>
+        <a href="{{ route('click.history.index') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <i class="fa-solid fa-mouse-pointer w-5 text-gray-500"></i>
+          <span class="font-medium">Redeem History</span>
         </a>
       @endif
     </div>

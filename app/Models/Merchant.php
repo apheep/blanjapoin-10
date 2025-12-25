@@ -51,5 +51,45 @@ class Merchant extends Model
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
+    /**
+     * Calculate total valid transactions for this merchant
+     * Based on click history matching (anti-cheating system)
+     */
+    public function calculateTotalTrx()
+    {
+        // Get all keywords for this merchant
+        $keywords = $this->keywords()->where('is_active', 1)->get();
+        
+        $totalTrx = 0;
+        
+        foreach ($keywords as $keyword) {
+            if (!$keyword->keyword_id) {
+                continue;
+            }
+            
+            // Get all redemptions for this keyword_id
+            $redemptions = \DB::table('tokodigi_tselpoin_redeem')
+                ->where('coupon', $keyword->keyword_id)
+                ->where('program', 'BLANJAPOIN')
+                ->get();
+            
+            foreach ($redemptions as $redemption) {
+                // Find the closest click history entry for this redemption
+                $matchingClick = \DB::table('click_history')
+                    ->where('keyword_id', $redemption->coupon)
+                    ->where('clicked_at', '<', $redemption->created_date) // Click must be before redeem
+                    ->orderByRaw("ABS(TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}')) ASC") // Closest time difference
+                    ->first();
+                
+                // If a matching click is found and its merchant_id matches this merchant's id
+                if ($matchingClick && $matchingClick->merchant_id == $this->id) {
+                    $totalTrx++;
+                }
+            }
+        }
+        
+        return $totalTrx;
+    }
+
 }
 
