@@ -122,6 +122,7 @@ class ClickHistoryController extends Controller
         $allClickHistories = $statsQuery->get();
         
         // Calculate matched, unmatched, and not matched counts from all data
+        // Gunakan logika yang sama dengan yang digunakan untuk menentukan status di table
         $totalMatched = 0;
         $totalUnmatched = 0;
         $totalNotMatched = 0;
@@ -129,10 +130,12 @@ class ClickHistoryController extends Controller
         foreach ($allClickHistories as $clickHistory) {
             $matchedRedeem = $this->findMatchingRedeem($clickHistory);
             if ($matchedRedeem) {
-                $totalMatched++;
-                // Cek apakah ada not matched redeem
-                $notMatchedRedeem = $this->findNotMatchedRedeem($clickHistory, $matchedRedeem->msisdn);
-                if ($notMatchedRedeem) {
+                // Cek apakah benar-benar matched atau not matched menggunakan logika yang sama
+                $isActuallyMatched = $this->isActuallyMatched($clickHistory, $matchedRedeem);
+                
+                if ($isActuallyMatched) {
+                    $totalMatched++;
+                } else {
                     $totalNotMatched++;
                 }
             } else {
@@ -303,9 +306,9 @@ class ClickHistoryController extends Controller
 
     /**
      * Cek apakah click history ini benar-benar Matched (time diff terkecil untuk MSISDN + keyword)
-     * Logika: Untuk MSISDN + keyword yang sama, bandingkan time diff dari semua click history
+     * Logika: Untuk MSISDN + keyword yang sama, bandingkan time diff dari SEMUA click history
      * yang match dengan redemption yang sama. Yang time diff terkecil = Matched.
-     * Hanya berlaku jika ada perbedaan merchant (jika merchant sama, tetap Matched).
+     * Tidak peduli merchant-nya sama atau berbeda, yang penting time diff terkecil.
      */
     private function isActuallyMatched($clickHistory, $matchedRedeem)
     {
@@ -321,36 +324,41 @@ class ClickHistoryController extends Controller
         // Gunakan time_diff_microseconds untuk presisi lebih tinggi
         $allClickTimeDiffs = [];
         foreach ($allClicks as $ch) {
+            // Skip jika ini click history yang sedang dicek
+            if ($ch->id == $clickHistory->id) {
+                continue;
+            }
+            
             $redeem = $this->findMatchingRedeem($ch);
             if ($redeem && $redeem->msisdn == $matchedRedeem->msisdn) {
-                // Hanya bandingkan jika merchant berbeda (aturan hanya untuk perbedaan merchant)
-                if ($ch->merchant_id != $clickHistory->merchant_id) {
-                    // Gunakan microsecond untuk presisi lebih tinggi
-                    $timeDiffMicroseconds = $redeem->time_diff_microseconds ?? ($redeem->time_diff_seconds ?? 0) * 1000000;
-                    $allClickTimeDiffs[] = [
-                        'click_history_id' => $ch->id,
-                        'merchant_id' => $ch->merchant_id,
-                        'time_diff_seconds' => $redeem->time_diff_seconds ?? 0,
-                        'time_diff_microseconds' => $timeDiffMicroseconds
-                    ];
-                }
+                // Bandingkan SEMUA click, tidak peduli merchant-nya sama atau berbeda
+                // Gunakan microsecond untuk presisi lebih tinggi
+                $timeDiffMicroseconds = $redeem->time_diff_microseconds ?? ($redeem->time_diff_seconds ?? 0) * 1000000;
+                $allClickTimeDiffs[] = [
+                    'click_history_id' => $ch->id,
+                    'merchant_id' => $ch->merchant_id,
+                    'time_diff_seconds' => $redeem->time_diff_seconds ?? 0,
+                    'time_diff_microseconds' => $timeDiffMicroseconds
+                ];
             }
         }
 
-        // Jika tidak ada click dari merchant lain dengan MSISDN + keyword yang sama, maka ini pasti Matched
+        // Jika tidak ada click lain dengan MSISDN + keyword yang sama, maka ini pasti Matched
         if (count($allClickTimeDiffs) == 0) {
             return true;
         }
 
-        // Cari time diff terkecil dari semua click (dari merchant lain) menggunakan microsecond
+        // Cari time diff terkecil dari semua click lain menggunakan microsecond
         $minTimeDiffMicroseconds = min(array_column($allClickTimeDiffs, 'time_diff_microseconds'));
 
-        // Bandingkan time diff dari click history ini dengan yang terkecil dari merchant lain
+        // Bandingkan time diff dari click history ini dengan yang terkecil dari click lain
         // Gunakan microsecond untuk presisi lebih tinggi
         $currentTimeDiffMicroseconds = $matchedRedeem->time_diff_microseconds ?? (($matchedRedeem->time_diff_seconds ?? 0) * 1000000);
         
-        // Jika time diff dari click history ini lebih kecil (dengan presisi microsecond), maka ini benar-benar Matched
-        // Tidak perlu fallback ke merchant_id karena time diff tidak akan pernah benar-benar sama
+        // Jika time diff dari click history ini lebih kecil (dengan presisi microsecond), 
+        // maka ini benar-benar Matched
+        // Jika ada yang lebih kecil, berarti ini Not Matched
+        // Dengan microsecond precision, kemungkinan sama sangat kecil, jadi gunakan < saja
         return $currentTimeDiffMicroseconds < $minTimeDiffMicroseconds;
     }
 
