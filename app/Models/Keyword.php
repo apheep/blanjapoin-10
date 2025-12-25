@@ -91,6 +91,9 @@ class Keyword extends Model
     /**
      * Update trx dan sisa_stock untuk keyword ini berdasarkan data dari tokodigi_tselpoin_redeem
      * 
+     * Mencegah double counting: 1 MSISDN + 1 keyword_code hanya dihitung 1 kali
+     * Hanya merchant dengan time diff terkecil yang menghitung
+     * 
      * @return bool
      */
     public function updateTrxAndSisaStock()
@@ -99,17 +102,33 @@ class Keyword extends Model
             return false;
         }
 
-        // Get all redemptions for this keyword_id
+        // Get all redemptions for this keyword_id (include msisdn untuk prevent double counting)
+        // Group by MSISDN + keyword_code, ambil yang pertama (untuk mencegah duplicate entry)
         $redemptions = DB::table('tokodigi_tselpoin_redeem')
             ->where('coupon', $this->keyword_id)
             ->where('program', 'BLANJAPOIN')
-            ->select('created_date', 'coupon as keyword_id')
+            ->select('created_date', 'coupon as keyword_id', 'msisdn')
+            ->orderBy('created_date', 'asc') // Urutkan berdasarkan waktu untuk konsistensi
             ->get();
+
+        // Track kombinasi MSISDN + keyword_code yang sudah dihitung untuk merchant ini
+        // Ini mencegah double counting: 1 MSISDN + 1 keyword_code hanya dihitung 1 kali
+        $countedMsisdnKeyword = [];
 
         // Count only redemptions that match THIS merchant (via click_history)
         $trxCount = 0;
         foreach ($redemptions as $redemption) {
-            // Find matching click for this redemption
+            // Buat unique key untuk kombinasi MSISDN + keyword_code
+            $uniqueKey = $redemption->msisdn . '_' . $redemption->keyword_id;
+            
+            // Skip jika kombinasi MSISDN + keyword_code ini sudah dihitung sebelumnya
+            // Ini mencegah double counting jika ada duplicate entry di database
+            if (isset($countedMsisdnKeyword[$uniqueKey])) {
+                continue;
+            }
+
+            // Find ALL matching clicks for this redemption (dari semua merchant)
+            // Ambil yang time diff paling kecil (paling sesuai) - ini menentukan merchant mana yang "menang"
             $matchingClick = DB::table('click_history')
                 ->where('keyword_id', $redemption->keyword_id)
                 ->where('clicked_at', '<', $redemption->created_date)
@@ -117,12 +136,18 @@ class Keyword extends Model
                     'merchant_id',
                     DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")
                 )
-                ->orderBy('time_diff_seconds', 'asc')
+                ->orderBy('time_diff_seconds', 'asc') // Paling dekat waktu = paling sesuai
                 ->first();
 
-            // If click found and merchant matches THIS keyword's merchant, count it
+            // Hanya hitung jika:
+            // 1. Ada matching click
+            // 2. Merchant dari click (yang paling sesuai/time diff terkecil) match dengan merchant keyword ini
+            // Ini memastikan 1 MSISDN + keyword_code hanya dihitung untuk 1 merchant (yang paling sesuai)
+            // Jika ada 2 merchant dengan keyword sama, hanya yang time diff terkecil yang menghitung
             if ($matchingClick && $matchingClick->merchant_id == $this->merchant_key) {
                 $trxCount++;
+                // Mark kombinasi MSISDN + keyword_code ini sudah dihitung
+                $countedMsisdnKeyword[$uniqueKey] = true;
             }
         }
 

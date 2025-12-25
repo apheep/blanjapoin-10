@@ -45,4 +45,40 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    /**
+     * Render an exception into an HTTP response.
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Throwable  $e
+     * @return \Symfony\Component\HttpFoundation\Response
+     *
+     * @throws \Throwable
+     */
+    public function render($request, Throwable $e)
+    {
+        // Di production, sembunyikan detail error
+        if (config('app.env') === 'production' || !config('app.debug')) {
+            // Untuk MethodNotAllowedHttpException (405)
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
+                // Jika request ke login/send-otp, redirect ke login
+                if ($request->is('login/send-otp')) {
+                    return redirect()->route('login')->with('error', 'Silakan gunakan form untuk mengirim OTP.');
+                }
+                // Untuk route lain, tampilkan error page 405
+                return response()->view('errors.405', [], 405);
+            }
+
+            // Untuk 404 Not Found
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                return response()->view('errors.404', [], 404);
+            }
+
+            // Untuk error lainnya, tampilkan error page sederhana
+            return response()->view('errors.500', [], 500);
+        }
+
+        // Di development, tampilkan error detail seperti biasa
+        return parent::render($request, $e);
+    }
 }
