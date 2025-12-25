@@ -207,7 +207,17 @@
                                 </td>
                                 <td class="px-6 py-4 align-top bg-red-50/30">
                                     <div class="space-y-3">
-                                        @foreac
+                                        @foreach($comparison['not_matched'] as $notMatched)
+                                            <div class="bg-white rounded-lg p-3 border border-red-200 shadow-sm">
+                                                <div class="text-xs space-y-1.5">
+                                                    <div>
+                                                        <span class="font-semibold text-gray-700">Merchant:</span>
+                                                        <div class="text-gray-900 font-medium mt-0.5">{{ $notMatched['merchant']->nama_merchant ?? 'N/A' }}</div>
+                                                        @if($notMatched['merchant'])
+                                                            <div class="text-gray-500">ID: {{ $notMatched['merchant']->id }}</div>
+                                                        @endif
+                                                    </div>
+                                                    <div>
                                                         <span class="font-semibold text-gray-700">Time Diff:</span>
                                                         <span class="text-red-600 font-semibold">{{ $notMatched['redeem']->time_diff_human ?? 'N/A' }}</span>
                                                     </div>
