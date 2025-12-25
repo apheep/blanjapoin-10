@@ -1239,7 +1239,7 @@ class MerchantController extends Controller
             $historyQuery->orderBy('tr.created_date', 'desc');
         }
 
-        $historyPaginator = $historyQuery->paginate(12, ['*'], 'history_page')
+        $historyPaginator = $historyQuery->paginate(10, ['*'], 'history_page')
             ->withQueryString();
 
         // Query untuk keyword history dengan menghitung TRX dan sisa stock
@@ -1290,7 +1290,7 @@ class MerchantController extends Controller
         }
 
         $keywordPaginator = (clone $keywordQuery)
-            ->paginate(12, ['*'], 'keyword_page')
+            ->paginate(10, ['*'], 'keyword_page')
             ->withQueryString();
         
         // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
@@ -1401,7 +1401,7 @@ class MerchantController extends Controller
                 $query->where('is_active', 1);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(12)
+            ->paginate(10)
             ->withQueryString();
 
         // Ambil diamond merchant sebagai saldo (1 diamond = 1 rupiah)
@@ -1745,7 +1745,7 @@ class MerchantController extends Controller
                 DB::raw("'{$merchant->daerah}' as merchant_city")
             )
             ->orderBy('tr.created_date', 'desc')
-            ->paginate(12)
+            ->paginate(10)
             ->withQueryString();
 
         return view('partials_dash.trx-history', [

@@ -123,7 +123,8 @@ class ClickHistoryController extends Controller
         // Remove distinct() as it's not needed and causes issues with ORDER BY
         $clickHistories = $query->paginate(20)->appends($request->query());
 
-        // Untuk setiap click history, cari redeem yang paling cocok
+        // Untuk setiap click history, tentukan apakah Matched atau Not Matched
+        // Logika: Untuk MSISDN + keyword yang sama, hanya yang time diff terkecil yang Matched
         foreach ($clickHistories as $clickHistory) {
             $matchedRedeem = $this->findMatchingRedeem($clickHistory);
             $clickHistory->matched_redeem = $matchedRedeem;
@@ -201,9 +202,10 @@ class ClickHistoryController extends Controller
                 'tr.keyword_desc',
                 'tr.coupon as keyword_id',
                 'tr.poin_redeem',
-                DB::raw("TIMESTAMPDIFF(SECOND, '{$clickHistory->clicked_at}', tr.created_date) as time_diff_seconds")
+                DB::raw("TIMESTAMPDIFF(SECOND, '{$clickHistory->clicked_at}', tr.created_date) as time_diff_seconds"),
+                DB::raw("TIMESTAMPDIFF(MICROSECOND, '{$clickHistory->clicked_at}', tr.created_date) as time_diff_microseconds")
             )
-            ->orderBy('time_diff_seconds', 'asc')
+            ->orderBy('time_diff_microseconds', 'asc') // Lebih presisi dengan microsecond
             ->first();
 
         // Jika ditemukan, tambahkan informasi confidence berdasarkan time difference
