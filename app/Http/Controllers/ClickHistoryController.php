@@ -29,47 +29,59 @@ class ClickHistoryController extends Controller
         // Apply filters
         if ($searchKeyword) {
             $query->where(function($q) use ($searchKeyword) {
-                $q->where('ip_address', 'like', '%' . $searchKeyword . '%')
-                  ->orWhere('device_id', 'like', '%' . $searchKeyword . '%')
-                  ->orWhere('keyword_id', 'like', '%' . $searchKeyword . '%');
+                $q->where('click_history.ip_address', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('click_history.device_id', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('click_history.keyword_id', 'like', '%' . $searchKeyword . '%')
+                  // Search MSISDN dari matched/not matched redemption
+                  ->orWhereExists(function($subQuery) use ($searchKeyword) {
+                      $subQuery->select(DB::raw(1))
+                          ->from('tokodigi_tselpoin_redeem as tr')
+                          ->whereColumn('tr.coupon', 'click_history.keyword_id')
+                          ->where('tr.program', 'BLANJAPOIN')
+                          ->whereColumn('tr.created_date', '>', 'click_history.clicked_at')
+                          ->where('tr.msisdn', 'like', '%' . $searchKeyword . '%');
+                  });
             });
         }
 
         if ($merchantId) {
-            $query->where('merchant_id', $merchantId);
+            $query->where('click_history.merchant_id', $merchantId);
         }
 
         if ($keywordId) {
-            $query->where('keyword_id', $keywordId);
+            $query->where('click_history.keyword_id', $keywordId);
         }
 
         if ($date) {
-            $query->whereDate('clicked_at', $date);
+            $query->whereDate('click_history.clicked_at', $date);
         }
 
         // Apply sorting - All sorting done at query level for all data
+        // Note: Join hanya dilakukan saat sorting merchant untuk menghindari konflik dengan filter
         if ($sortBy === 'merchant') {
-            $query->join('merchants', 'click_history.merchant_id', '=', 'merchants.id')
-                  ->select('click_history.*', 'merchants.nama_merchant') // Include nama_merchant in SELECT for DISTINCT compatibility
-                  ->orderBy('merchants.nama_merchant', $sortDir);
+            // Join dengan merchants hanya untuk sorting
+            $query->leftJoin('merchants', 'click_history.merchant_id', '=', 'merchants.id')
+                  ->select('click_history.*', 'merchants.nama_merchant') // Include nama_merchant in SELECT
+                  ->orderBy('merchants.nama_merchant', $sortDir)
+                  ->groupBy('click_history.id'); // Group by untuk menghindari duplicate
         } elseif ($sortBy === 'clicked_at') {
-            $query->orderBy('clicked_at', $sortDir);
+            $query->orderBy('click_history.clicked_at', $sortDir);
         } elseif ($sortBy === 'status') {
-            // Sort by status: use subquery to check if matched_redeem exists
+            // Sort by status: hanya Matched dan Unmatched yang di-sort
+            // Not Matched tetap ditampilkan tapi tidak ikut sorting
             // Matched = has redeem with matching keyword_id and created_date > clicked_at
-            // This matches the logic in findMatchingRedeem()
-            // Note: Not Matched sorting will be done after data is loaded
+            // Unmatched = tidak ada redeem
             $query->selectRaw('click_history.*, 
                 CASE WHEN EXISTS (
                     SELECT 1 FROM tokodigi_tselpoin_redeem as tr 
                     WHERE tr.coupon = click_history.keyword_id 
                     AND tr.program = "BLANJAPOIN"
                     AND tr.created_date > click_history.clicked_at
-                ) THEN 1 ELSE 0 END as has_match')
-            ->orderBy('has_match', $sortDir)
+                ) THEN 2 ELSE 0 END as status_order')
+            ->orderBy('status_order', $sortDir)
             ->orderBy('click_history.clicked_at', 'desc'); // Secondary sort
         } else {
-            $query->orderBy('clicked_at', 'desc');
+            $query->orderBy('click_history.clicked_at', 'desc');
         }
 
         // Calculate total Matched and Unmatched from ALL data (not just current page)
@@ -79,22 +91,31 @@ class ClickHistoryController extends Controller
         // Apply same filters to stats query
         if ($searchKeyword) {
             $statsQuery->where(function($q) use ($searchKeyword) {
-                $q->where('ip_address', 'like', '%' . $searchKeyword . '%')
-                  ->orWhere('device_id', 'like', '%' . $searchKeyword . '%')
-                  ->orWhere('keyword_id', 'like', '%' . $searchKeyword . '%');
+                $q->where('click_history.ip_address', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('click_history.device_id', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('click_history.keyword_id', 'like', '%' . $searchKeyword . '%')
+                  // Search MSISDN dari matched/not matched redemption
+                  ->orWhereExists(function($subQuery) use ($searchKeyword) {
+                      $subQuery->select(DB::raw(1))
+                          ->from('tokodigi_tselpoin_redeem as tr')
+                          ->whereColumn('tr.coupon', 'click_history.keyword_id')
+                          ->where('tr.program', 'BLANJAPOIN')
+                          ->whereColumn('tr.created_date', '>', 'click_history.clicked_at')
+                          ->where('tr.msisdn', 'like', '%' . $searchKeyword . '%');
+                  });
             });
         }
 
         if ($merchantId) {
-            $statsQuery->where('merchant_id', $merchantId);
+            $statsQuery->where('click_history.merchant_id', $merchantId);
         }
 
         if ($keywordId) {
-            $statsQuery->where('keyword_id', $keywordId);
+            $statsQuery->where('click_history.keyword_id', $keywordId);
         }
 
         if ($date) {
-            $statsQuery->whereDate('clicked_at', $date);
+            $statsQuery->whereDate('click_history.clicked_at', $date);
         }
 
         // Get all click histories for statistics (without pagination)
@@ -173,8 +194,33 @@ class ClickHistoryController extends Controller
             }
         }
         
-        // Note: Status sorting dengan Not Matched akan dilakukan di view level
-        // karena perlu data not_matched_redeem yang baru diketahui setelah loop
+        // Untuk sorting status: jika sort by status, re-sort collection
+        // Hanya Matched (status_order = 2) dan Unmatched (status_order = 0) yang di-sort
+        // Not Matched (status_order = 1) tetap ditampilkan tapi tidak ikut sorting (selalu di akhir)
+        if ($sortBy === 'status') {
+            $sortedItems = $clickHistories->getCollection()->sort(function ($a, $b) use ($sortDir) {
+                // Not Matched (status_order = 1) selalu di akhir, tidak ikut sorting
+                if ($a->status_order == 1 && $b->status_order != 1) {
+                    return 1; // Not Matched selalu di bawah
+                }
+                if ($a->status_order != 1 && $b->status_order == 1) {
+                    return -1; // Not Matched selalu di bawah
+                }
+                if ($a->status_order == 1 && $b->status_order == 1) {
+                    // Jika keduanya Not Matched, sort by clicked_at desc
+                    return $b->clicked_at <=> $a->clicked_at;
+                }
+                // Matched dan Unmatched di-sort berdasarkan status_order
+                if ($sortDir === 'asc') {
+                    return $a->status_order <=> $b->status_order;
+                } else {
+                    return $b->status_order <=> $a->status_order;
+                }
+            });
+            
+            // Replace collection dengan yang sudah di-sort
+            $clickHistories->setCollection($sortedItems->values());
+        }
 
         // Get all merchants and keywords for filter dropdowns (termasuk yang inactive)
         $merchants = Merchant::orderBy('nama_merchant')->get();
