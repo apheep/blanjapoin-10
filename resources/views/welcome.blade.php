@@ -310,6 +310,13 @@
      @include('merchant.paketgames')
     </div>
     @endif
+
+    <!-- paketinternet Section -->
+    @if($hasCategoryData('paket_internet'))
+    <div id="paketinternetSection">
+     @include('merchant.paketinternet')
+    </div>
+    @endif
    
 
     <footer class="mt-16 pb-12 text-center">
