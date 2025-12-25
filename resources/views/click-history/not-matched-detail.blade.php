@@ -155,6 +155,45 @@
                                     @if($comparison['keyword_desc'])
                                         <div class="text-xs text-gray-500 mt-1">{{ $comparison['keyword_desc'] }}</div>
                                     @endif
+                                    
+                                    {{-- IP Address dan Device ID --}}
+                                    @php
+                                        // Ambil IP Address dan Device ID dari matched atau not_matched (prioritas matched)
+                                        $ipAddress = null;
+                                        $deviceId = null;
+                                        if (!empty($comparison['matched'])) {
+                                            $ipAddress = $comparison['matched'][0]['click_history']->ip_address ?? null;
+                                            $deviceId = $comparison['matched'][0]['click_history']->device_id ?? null;
+                                        } elseif (!empty($comparison['not_matched'])) {
+                                            $ipAddress = $comparison['not_matched'][0]['click_history']->ip_address ?? null;
+                                            $deviceId = $comparison['not_matched'][0]['click_history']->device_id ?? null;
+                                        }
+                                    @endphp
+                                    
+                                    @if($ipAddress || $deviceId)
+                                        <div class="mt-3 pt-3 border-t border-gray-200 space-y-1.5">
+                                            @if($ipAddress)
+                                                <div class="text-xs">
+                                                    <span class="text-gray-500">IP Address:</span>
+                                                    <span class="font-mono text-gray-700 ml-1">{{ $ipAddress }}</span>
+                                                </div>
+                                            @endif
+                                            @if($deviceId)
+                                                <div class="text-xs">
+                                                    <span class="text-gray-500">Device ID:</span>
+                                                    <div class="flex items-center gap-2 group mt-0.5">
+                                                        <span class="font-mono text-gray-700 truncate flex-1 min-w-0" title="{{ $deviceId }}">
+                                                            {{ $deviceId }}
+                                                        </span>
+                                                        <button onclick="copyDeviceId('{{ addslashes($deviceId) }}', this)" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded flex-shrink-0" title="Copy Device ID">
+                                                            <i class="fas fa-copy text-xs"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    
                                     <div class="mt-3 pt-3 border-t border-gray-200">
                                         <div class="flex gap-4 text-xs">
                                             <div>
@@ -175,10 +214,8 @@
                                                 <div class="text-xs space-y-1.5">
                                                     <div>
                                                         <span class="font-semibold text-gray-700">Merchant:</span>
-                                                        <div class="text-gray-900 font-medium mt-0.5">{{ isset($matched['merchant']) && $matched['merchant'] ? $matched['merchant']->nama_merchant : 'N/A' }}</div>
-                                                        @if(isset($matched['click_history']) && $matched['click_history'])
-                                                            <div class="text-gray-500">ID: {{ $matched['click_history']->merchant_id ?? 'N/A' }}</div>
-                                                        @endif
+                                                        <div class="text-gray-900 font-medium mt-0.5">{{ $matched['merchant']->nama_merchant ?? 'N/A' }}</div>
+                                                        <div class="text-gray-500">ID: {{ $matched['click_history']->merchant_id }}</div>
                                                     </div>
                                                     <div>
                                                         <span class="font-semibold text-gray-700">Time Diff:</span>
@@ -215,8 +252,8 @@
                                                     <div>
                                                         <span class="font-semibold text-gray-700">Merchant:</span>
                                                         <div class="text-gray-900 font-medium mt-0.5">{{ $notMatched['merchant']->nama_merchant ?? 'N/A' }}</div>
-                                                        @if(isset($notMatched['merchant']) && $notMatched['merchant'])
-                                                            <div class="text-gray-500">ID: {{ $notMatched['merchant']->id ?? 'N/A' }}</div>
+                                                        @if($notMatched['merchant'])
+                                                            <div class="text-gray-500">ID: {{ $notMatched['merchant']->id }}</div>
                                                         @endif
                                                     </div>
                                                     <div>
@@ -265,32 +302,97 @@
 
         <!-- Pagination -->
         @if($comparisons->hasPages())
-            <div class="mt-6 flex items-center justify-center">
-                <div class="bg-white rounded-xl shadow-sm p-4">
-                    {{ $comparisons->links() }}
+            <div class="mt-6 bg-white rounded-xl shadow-sm px-6 py-4 border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <!-- Info -->
+                    <div class="text-sm text-gray-600">
+                        Menampilkan <span class="font-semibold">{{ $comparisons->firstItem() ?? 0 }}</span> hingga <span class="font-semibold">{{ $comparisons->lastItem() ?? 0 }}</span> dari <span class="font-semibold">{{ $comparisons->total() }}</span> data
+                    </div>
+                    
+                    <!-- Pagination Links -->
+                    <div class="flex items-center space-x-2">
+                        {{-- Previous Page Link --}}
+                        @if ($comparisons->onFirstPage())
+                            <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                        @else
+                            <a href="{{ $comparisons->previousPageUrl() }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        @endif
+
+                        {{-- Pagination Elements --}}
+                        @php
+                            $current = $comparisons->currentPage();
+                            $last = $comparisons->lastPage();
+                            $range = 2; // kiri/kanan dari current
+                            $start = max(1, $current - $range);
+                            $end = min($last, $current + $range);
+                        @endphp
+
+                        {{-- First Page --}}
+                        @if ($start > 1)
+                            <a href="{{ $comparisons->url(1) }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</a>
+                            @if ($start > 2)
+                                <span class="px-2 text-gray-400">...</span>
+                            @endif
+                        @endif
+
+                        {{-- Page Numbers --}}
+                        @for ($page = $start; $page <= $end; $page++)
+                            @if ($page == $current)
+                                <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
+                                    {{ $page }}
+                                </button>
+                            @else
+                                <a href="{{ $comparisons->url($page) }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    {{ $page }}
+                                </a>
+                            @endif
+                        @endfor
+
+                        {{-- Last Page --}}
+                        @if ($end < $last)
+                            @if ($end < $last - 1)
+                                <span class="px-2 text-gray-400">...</span>
+                            @endif
+                            <a href="{{ $comparisons->url($last) }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $last }}</a>
+                        @endif
+
+                        {{-- Next Page Link --}}
+                        @if ($comparisons->hasMorePages())
+                            <a href="{{ $comparisons->nextPageUrl() }}" class="pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        @else
+                            <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
         @endif
 
         <!-- Summary -->
-        @if($comparisons->total() > 0)
+        @if(count($comparisons) > 0)
             <div class="mt-6 bg-white rounded-xl shadow-sm p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">Total Komparasi</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $comparisons->total() }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Menampilkan {{ $comparisons->count() }} dari {{ $comparisons->total() }} komparasi</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ count($comparisons) }}</p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-gray-600">Total Matched</p>
                         <p class="text-2xl font-bold text-green-600 mt-1">
-                            {{ $totalMatched }}
+                            {{ array_sum(array_map(fn($c) => count($c['matched']), $comparisons)) }}
                         </p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-gray-600">Total Not Matched</p>
                         <p class="text-2xl font-bold text-red-600 mt-1">
-                            {{ $totalNotMatched }}
+                            {{ array_sum(array_map(fn($c) => count($c['not_matched']), $comparisons)) }}
                         </p>
                     </div>
                 </div>
@@ -299,6 +401,60 @@
     </main>
 
     <script>
+        // Copy Device ID function
+        function copyDeviceId(deviceId, buttonElement) {
+            // Copy to clipboard
+            navigator.clipboard.writeText(deviceId).then(function() {
+                // Change icon to checkmark
+                const icon = buttonElement.querySelector('i');
+                icon.classList.remove('fa-copy');
+                icon.classList.add('fa-check');
+                buttonElement.classList.remove('text-gray-500', 'hover:text-orange-500');
+                buttonElement.classList.add('text-green-500');
+                buttonElement.title = 'Copied!';
+                
+                // Reset after 2 seconds
+                setTimeout(function() {
+                    icon.classList.remove('fa-check');
+                    icon.classList.add('fa-copy');
+                    buttonElement.classList.remove('text-green-500');
+                    buttonElement.classList.add('text-gray-500', 'hover:text-orange-500');
+                    buttonElement.title = 'Copy Device ID';
+                }, 2000);
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = deviceId;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    // Change icon to checkmark
+                    const icon = buttonElement.querySelector('i');
+                    icon.classList.remove('fa-copy');
+                    icon.classList.add('fa-check');
+                    buttonElement.classList.remove('text-gray-500', 'hover:text-orange-500');
+                    buttonElement.classList.add('text-green-500');
+                    buttonElement.title = 'Copied!';
+                    
+                    // Reset after 2 seconds
+                    setTimeout(function() {
+                        icon.classList.remove('fa-check');
+                        icon.classList.add('fa-copy');
+                        buttonElement.classList.remove('text-green-500');
+                        buttonElement.classList.add('text-gray-500', 'hover:text-orange-500');
+                        buttonElement.title = 'Copy Device ID';
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy Device ID');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+        
         // Merchant searchable dropdown
         (function() {
             const container = document.getElementById('merchant-dropdown-container');
