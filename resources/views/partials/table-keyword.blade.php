@@ -18,7 +18,13 @@
     $keywordPaginator = $keywords->appends($queryParams);
 @endphp
 
-<div class="bg-white rounded-xl shadow overflow-hidden mt-4">
+<div class="bg-white rounded-xl shadow overflow-hidden mt-4" style="position: relative; isolation: isolate;" id="keyword-table-container">
+    <div id="sortLoadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+        <div class="flex flex-col items-center gap-2">
+            <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+            <span class="text-xs text-gray-600">Mengurutkan...</span>
+        </div>
+    </div>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
@@ -60,9 +66,24 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">SKB</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">TRX</th> 
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Sisa Stock</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 12, 'number')" data-sortable="true" data-column-index="12">
+                        <div class="flex items-center gap-1">
+                            <span>Stock</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 13, 'number')" data-sortable="true" data-column-index="13">
+                        <div class="flex items-center gap-1">
+                            <span>TRX</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 14, 'number')" data-sortable="true" data-column-index="14">
+                        <div class="flex items-center gap-1">
+                            <span>Sisa Stock</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Periode</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Image</th>
                 </tr>
@@ -245,10 +266,10 @@
                                 <span class="text-gray-400">-</span>
                             @endif
                         </td>
-                        <td class="px-4 py-4">
+                        <td class="px-4 py-4" data-sort-value="{{ $keyword->stock ?? 0 }}">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{{ $keyword->stock }}</span>
                         </td>
-                        <td class="px-4 py-4 text-sm text-gray-900">
+                        <td class="px-4 py-4 text-sm text-gray-900" data-sort-value="{{ isset($keyword->trx) && $keyword->trx !== null ? $keyword->trx : 0 }}">
                             <div class="font-medium">
                                 @if(isset($keyword->trx) && $keyword->trx !== null)
                                     {{ $keyword->trx }}
@@ -257,7 +278,7 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="px-4 py-4">
+                        <td class="px-4 py-4" data-sort-value="{{ $keyword->sisa_stock ?? 0 }}">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ $keyword->sisa_stock ?? 0 }}</span>
                         </td>
                         <td class="px-4 py-4 text-xs text-gray-500">
@@ -660,73 +681,127 @@
         // Update sort state
         tableData.sortState[columnIndex] = newState;
 
-        // Reset all sort icons for this column in this table
+        // Reset all sort icons in this table first
         const table = tbody.closest('table');
         if (table) {
-            const headers = table.querySelectorAll(`thead [data-column-index="${columnIndex}"] .sort-icon`);
-            headers.forEach(icon => {
+            const allSortIcons = table.querySelectorAll('.sort-icon');
+            allSortIcons.forEach(icon => {
                 icon.innerHTML = '<i class="fas fa-sort"></i>';
                 icon.className = 'sort-icon text-gray-400 text-[10px]';
             });
         }
 
-        if (newState === null) {
-            // Reset to original order
-            tbody.innerHTML = '';
-            tableData.originalOrder.forEach(tr => tbody.appendChild(tr.cloneNode(true)));
-            tableData.originalOrder = null;
-            tableData.sortState = {};
-            return;
+        // Show loading overlay
+        const loadingOverlay = document.getElementById('sortLoadingOverlay');
+        const tableContainer = document.getElementById('keyword-table-container');
+        if (loadingOverlay && tableContainer) {
+            // Store current height to prevent layout shift
+            const currentHeight = tableContainer.offsetHeight;
+            tableContainer.style.minHeight = currentHeight + 'px';
+            loadingOverlay.classList.remove('hidden');
         }
 
-        // Update icon for current column
-        const tableForHeader = tbody.closest('table');
-        if (tableForHeader) {
-            const header = tableForHeader.querySelector(`thead [data-column-index="${columnIndex}"]`);
-            if (header) {
-                const icon = header.querySelector('.sort-icon');
-                if (icon) {
-                    if (newState === 'asc') {
-                        icon.innerHTML = '<i class="fas fa-sort-up"></i>';
-                        icon.className = 'sort-icon text-blue-600 text-[10px]';
-                    } else {
-                        icon.innerHTML = '<i class="fas fa-sort-down"></i>';
-                        icon.className = 'sort-icon text-blue-600 text-[10px]';
+        // Smooth transition: fade out
+        tbody.style.opacity = '0';
+        tbody.style.transition = 'opacity 0.2s';
+
+        // Perform sorting after fade out
+        setTimeout(() => {
+            if (newState === null) {
+                // Reset to original order
+                tbody.innerHTML = '';
+                tableData.originalOrder.forEach(tr => tbody.appendChild(tr.cloneNode(true)));
+                tableData.originalOrder = null;
+                tableData.sortState = {};
+                // Fade in
+                tbody.style.opacity = '1';
+                
+                // Hide loading overlay after transition completes
+                setTimeout(() => {
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                    if (tableContainer) {
+                        tableContainer.style.minHeight = '';
+                    }
+                }, 200);
+                return;
+            }
+
+            // Update icon for current column
+            const tableForHeader = tbody.closest('table');
+            if (tableForHeader) {
+                const header = tableForHeader.querySelector(`thead [data-column-index="${columnIndex}"]`);
+                if (header) {
+                    const icon = header.querySelector('.sort-icon');
+                    if (icon) {
+                        if (newState === 'asc') {
+                            icon.innerHTML = '<i class="fas fa-sort-up"></i>';
+                            icon.className = 'sort-icon text-blue-600 text-[10px]';
+                        } else {
+                            icon.innerHTML = '<i class="fas fa-sort-down"></i>';
+                            icon.className = 'sort-icon text-blue-600 text-[10px]';
+                        }
                     }
                 }
             }
-        }
 
-        // Sort rows
-        rows.sort((a, b) => {
-            const cellA = a.querySelector(`td:nth-child(${columnIndex + 1})`);
-            const cellB = b.querySelector(`td:nth-child(${columnIndex + 1})`);
+            // Sort rows
+            rows.sort((a, b) => {
+                const cellA = a.querySelector(`td:nth-child(${columnIndex + 1})`);
+                const cellB = b.querySelector(`td:nth-child(${columnIndex + 1})`);
+                
+                if (!cellA || !cellB) return 0;
+
+                let valueA, valueB;
+
+                if (dataType === 'text') {
+                    // Use data-sort-value if available, otherwise get text content
+                    valueA = (cellA.getAttribute('data-sort-value') || cellA.textContent.trim().toLowerCase()) || '';
+                    valueB = (cellB.getAttribute('data-sort-value') || cellB.textContent.trim().toLowerCase()) || '';
+                } else if (dataType === 'number') {
+                    // Use data-sort-value if available for numeric sorting
+                    const sortValueA = cellA.getAttribute('data-sort-value');
+                    const sortValueB = cellB.getAttribute('data-sort-value');
+                    if (sortValueA !== null && sortValueB !== null) {
+                        valueA = parseFloat(sortValueA) || 0;
+                        valueB = parseFloat(sortValueB) || 0;
+                    } else {
+                        // Fallback to parsing text content
+                        valueA = parseFloat(cellA.textContent.replace(/[^\d.-]/g, '')) || 0;
+                        valueB = parseFloat(cellB.textContent.replace(/[^\d.-]/g, '')) || 0;
+                    }
+                } else {
+                    valueA = parseFloat(cellA.textContent.replace(/[^\d.-]/g, '')) || 0;
+                    valueB = parseFloat(cellB.textContent.replace(/[^\d.-]/g, '')) || 0;
+                }
+
+                let comparison = 0;
+                if (valueA < valueB) {
+                    comparison = -1;
+                } else if (valueA > valueB) {
+                    comparison = 1;
+                }
+
+                return newState === 'asc' ? comparison : -comparison;
+            });
+
+            // Reorder rows in DOM
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Fade in after reordering
+            tbody.style.opacity = '1';
             
-            if (!cellA || !cellB) return 0;
-
-            let valueA, valueB;
-
-            if (dataType === 'text') {
-                // Use data-sort-value if available, otherwise get text content
-                valueA = (cellA.getAttribute('data-sort-value') || cellA.textContent.trim().toLowerCase()) || '';
-                valueB = (cellB.getAttribute('data-sort-value') || cellB.textContent.trim().toLowerCase()) || '';
-            } else {
-                valueA = parseFloat(cellA.textContent.replace(/[^\d.-]/g, '')) || 0;
-                valueB = parseFloat(cellB.textContent.replace(/[^\d.-]/g, '')) || 0;
-            }
-
-            let comparison = 0;
-            if (valueA < valueB) {
-                comparison = -1;
-            } else if (valueA > valueB) {
-                comparison = 1;
-            }
-
-            return newState === 'asc' ? comparison : -comparison;
-        });
-
-        // Reorder rows in DOM
-        rows.forEach(row => tbody.appendChild(row));
+            // Hide loading overlay after transition completes
+            setTimeout(() => {
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                }
+                if (tableContainer) {
+                    tableContainer.style.minHeight = '';
+                }
+            }, 200);
+        }, 200);
     }
 
     // Make function globally available

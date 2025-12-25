@@ -214,10 +214,8 @@
                                                 <div class="text-xs space-y-1.5">
                                                     <div>
                                                         <span class="font-semibold text-gray-700">Merchant:</span>
-                                                        <div class="text-gray-900 font-medium mt-0.5">{{ isset($matched['merchant']) && $matched['merchant'] ? $matched['merchant']->nama_merchant : 'N/A' }}</div>
-                                                        @if(isset($matched['click_history']) && $matched['click_history'])
-                                                            <div class="text-gray-500">ID: {{ $matched['click_history']->merchant_id ?? 'N/A' }}</div>
-                                                        @endif
+                                                        <div class="text-gray-900 font-medium mt-0.5">{{ $matched['merchant']->nama_merchant ?? 'N/A' }}</div>
+                                                        <div class="text-gray-500">ID: {{ $matched['click_history']->merchant_id }}</div>
                                                     </div>
                                                     <div>
                                                         <span class="font-semibold text-gray-700">Time Diff:</span>
@@ -254,8 +252,8 @@
                                                     <div>
                                                         <span class="font-semibold text-gray-700">Merchant:</span>
                                                         <div class="text-gray-900 font-medium mt-0.5">{{ $notMatched['merchant']->nama_merchant ?? 'N/A' }}</div>
-                                                        @if(isset($notMatched['merchant']) && $notMatched['merchant'])
-                                                            <div class="text-gray-500">ID: {{ $notMatched['merchant']->id ?? 'N/A' }}</div>
+                                                        @if($notMatched['merchant'])
+                                                            <div class="text-gray-500">ID: {{ $notMatched['merchant']->id }}</div>
                                                         @endif
                                                     </div>
                                                     <div>
@@ -378,24 +376,23 @@
         @endif
 
         <!-- Summary -->
-        @if($comparisons->total() > 0)
+        @if(count($comparisons) > 0)
             <div class="mt-6 bg-white rounded-xl shadow-sm p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">Total Komparasi</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $comparisons->total() }}</p>
-                        <p class="text-xs text-gray-500 mt-1">Menampilkan {{ $comparisons->count() }} dari {{ $comparisons->total() }} komparasi</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ count($comparisons) }}</p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-gray-600">Total Matched</p>
                         <p class="text-2xl font-bold text-green-600 mt-1">
-                            {{ $totalMatched }}
+                            {{ array_sum(array_map(fn($c) => count($c['matched']), $comparisons)) }}
                         </p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-gray-600">Total Not Matched</p>
                         <p class="text-2xl font-bold text-red-600 mt-1">
-                            {{ $totalNotMatched }}
+                            {{ array_sum(array_map(fn($c) => count($c['not_matched']), $comparisons)) }}
                         </p>
                     </div>
                 </div>

@@ -101,7 +101,7 @@ class EnsureMerchantEmailAuth
                     return redirect()->route('portal.login', [
                         'returnTo' => $request->fullUrl(),
                     ])->withErrors([
-                        'email' => 'Anda harus login dengan email: ' . $merchant->email_pic,
+                        'email' => 'Anda harus login dengan email sesuai email_pic merchant',
                     ]);
                 }
                 
