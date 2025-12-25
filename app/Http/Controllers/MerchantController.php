@@ -40,12 +40,21 @@ class MerchantController extends Controller
         
         // Apply sorting
         if ($sortBy === 'total_trx') {
+            // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
+            // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem as tr 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                    FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
                     AND k.is_active = 1 
-                    AND tr.program = "BLANJAPOIN") as total_trx_calc')
+                    AND tr.program = "BLANJAPOIN"
+                    AND EXISTS (
+                        SELECT 1 FROM click_history ch 
+                        WHERE ch.keyword_id = tr.coupon 
+                        AND ch.merchant_id = merchants.id
+                        AND ch.clicked_at < tr.created_date
+                    )) as total_trx_calc')
                 ->orderBy('total_trx_calc', $sortDir);
         } elseif ($sortBy === 'total_keyword') {
             $merchantsQuery->select('merchants.*')
@@ -76,13 +85,8 @@ class MerchantController extends Controller
             if (isset($merchant->total_trx_calc)) {
                 $merchant->total_trx = (int)$merchant->total_trx_calc;
             } else {
-                $totalTrx = DB::table('tokodigi_tselpoin_redeem as tr')
-                    ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
-                    ->where('k.merchant_key', $merchant->id)
-                    ->where('k.is_active', 1)
-                    ->where('tr.program', 'BLANJAPOIN')
-                    ->count();
-                $merchant->total_trx = $totalTrx;
+                // Use new click tracking based calculation (anti-cheating system)
+                $merchant->total_trx = $merchant->calculateTotalTrx();
             }
             
             if (isset($merchant->total_keyword_calc)) {
@@ -774,12 +778,21 @@ class MerchantController extends Controller
         
         // Apply sorting
         if ($sortBy === 'total_trx') {
+            // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
+            // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem as tr 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                    FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
                     AND k.is_active = 1 
-                    AND tr.program = "BLANJAPOIN") as total_trx_calc')
+                    AND tr.program = "BLANJAPOIN"
+                    AND EXISTS (
+                        SELECT 1 FROM click_history ch 
+                        WHERE ch.keyword_id = tr.coupon 
+                        AND ch.merchant_id = merchants.id
+                        AND ch.clicked_at < tr.created_date
+                    )) as total_trx_calc')
                 ->orderBy('total_trx_calc', $sortDir);
         } elseif ($sortBy === 'total_keyword') {
             $merchantsQuery->select('merchants.*')
@@ -809,13 +822,8 @@ class MerchantController extends Controller
             if (isset($merchant->total_trx_calc)) {
                 $merchant->total_trx = (int)$merchant->total_trx_calc;
             } else {
-                $totalTrx = DB::table('tokodigi_tselpoin_redeem as tr')
-                    ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
-                    ->where('k.merchant_key', $merchant->id)
-                    ->where('k.is_active', 1)
-                    ->where('tr.program', 'BLANJAPOIN')
-                    ->count();
-                $merchant->total_trx = $totalTrx;
+                // Use new click tracking based calculation (anti-cheating system)
+                $merchant->total_trx = $merchant->calculateTotalTrx();
             }
             
             if (isset($merchant->total_keyword_calc)) {
@@ -2559,5 +2567,32 @@ class MerchantController extends Controller
             'iklans' => $iklans,
             'isCluster' => true, // Flag untuk skip validasi merchant->is_active
         ]);
+    }
+
+    /**
+     * Track click dan redirect ke CTA link merchant
+     * Route: /r/{merchantId}/{keywordId?}
+     */
+    public function trackAndRedirect(Request $request, $merchantId, $keywordId = null)
+    {
+        // Track click menggunakan ClickHistoryController
+        \App\Http\Controllers\ClickHistoryController::recordClick($merchantId, $keywordId, $request);
+
+        // Get keyword untuk ambil CTA link
+        if ($keywordId) {
+            $keyword = Keyword::where('keyword_id', $keywordId)->first();
+            if ($keyword && $keyword->cta_link) {
+                return redirect()->away($keyword->cta_link);
+            }
+        }
+
+        // Fallback: redirect ke merchant page
+        $merchant = Merchant::find($merchantId);
+        if ($merchant && $merchant->link_blanjapoin) {
+            return redirect()->away($merchant->link_blanjapoin);
+        }
+
+        // Jika tidak ada link, redirect ke home
+        return redirect()->route('home')->with('error', 'Link tidak ditemukan');
     }
 }

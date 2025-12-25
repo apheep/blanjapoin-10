@@ -156,6 +156,13 @@
                 @include('merchant.paketgames')
             @endif
 
+            <!-- paketinternet Section -->
+            @if($hasCategoryData('paket_internet'))
+                @include('merchant.paketinternet')
+            @endif
+
+
+
             <!-- Footer -->
             <footer class="mt-16 pb-12 text-center">
                 <div class="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-50 to-rose-50 shadow-sm ring-1 ring-neutral-200/50 mb-4">

@@ -40,14 +40,100 @@
                 <p class="text-sm text-neutral-500 mb-5">Unggah file gambar dengan format 5:1 aspect ratio (JPG, PNG, maksimal 2 MB). </p>
                 <form id="uploadForm" action="{{ route('iklan.store') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
                     @csrf
+                    
+                    <!-- Upload Type Selection -->
+                    <input type="hidden" name="upload_type" id="uploadTypeInput" value="{{ old('upload_type', 'manual') }}">
+                    
                     <label class="block">
+                        <span class="text-sm font-semibold text-neutral-700">Tipe Upload</span>
+                        <div class="mt-2 grid grid-cols-2 gap-3">
+                            <button type="button" id="manualUploadBtn" class="upload-type-btn px-4 py-3 rounded-xl border-2 border-orange-500 bg-orange-50 text-orange-700 font-semibold text-sm hover:bg-orange-100 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-upload"></i>
+                                <span>Upload Manual</span>
+                            </button>
+                            <button type="button" id="keywordUploadBtn" class="upload-type-btn px-4 py-3 rounded-xl border-2 border-neutral-200 bg-white text-neutral-600 font-semibold text-sm hover:bg-neutral-50 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-tag"></i>
+                                <span>Dari Keyword</span>
+                            </button>
+                        </div>
+                    </label>
+
+                    <!-- Merchant Selection for Keyword Upload (shown first when keyword type selected) -->
+                    <label class="block hidden" id="keywordMerchantLabel">
+                        <span class="text-sm font-semibold text-neutral-700">Pilih Merchant/Program</span>
+                        <div class="mt-2 relative">
+                            <select id="keywordMerchantInput" class="hidden">
+                                <option value="">-- Pilih Merchant/Program --</option>
+                                @foreach($merchants as $merchant)
+                                    <option value="{{ $merchant['id'] }}">{{ $merchant['name'] }}</option>
+                                @endforeach
+                            </select>
+                            <button type="button" id="keywordMerchantBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="keywordMerchantText">-- Pilih Merchant/Program --</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="keywordMerchantDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="keywordMerchantSearch" placeholder="Cari merchant..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="keywordMerchantOptions" class="overflow-y-auto max-h-48">
+                                    <div class="keyword-merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="">-- Pilih Merchant/Program --</div>
+                                    @foreach($merchants as $merchant)
+                                        <div class="keyword-merchant-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $merchant['id'] }}">{{ $merchant['name'] }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-neutral-500 mt-1">Pilih merchant terlebih dahulu untuk melihat keyword yang tersedia.</p>
+                    </label>
+
+                    <!-- Keyword Selection (hidden by default, shown after merchant selected) -->
+                    <label class="block hidden" id="keywordSelectionLabel">
+                        <span class="text-sm font-semibold text-neutral-700">Pilih Keyword</span>
+                        <div class="mt-2 relative">
+                            <select id="keywordInput" name="keyword_id" class="hidden">
+                                <option value="">-- Pilih Keyword --</option>
+                            </select>
+                            <button type="button" id="keywordBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
+                                <span id="keywordText">-- Pilih Merchant Terlebih Dahulu --</span>
+                                <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
+                            </button>
+                            <div id="keywordDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                <div class="p-2 border-b border-neutral-100">
+                                    <input type="text" id="keywordSearch" placeholder="Cari keyword..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
+                                </div>
+                                <div id="keywordOptions" class="overflow-y-auto max-h-48">
+                                    <div class="keyword-option px-3 py-2 text-sm text-neutral-400 text-center">Pilih merchant terlebih dahulu</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-neutral-500 mt-1">Pilih keyword yang memiliki gambar. CTA akan otomatis terisi.</p>
+                    </label>
+
+                    <!-- Keyword Preview (hidden by default) -->
+                    <div id="keywordPreview" class="hidden">
+                        <div class="rounded-xl border border-neutral-200 p-4 bg-neutral-50">
+                            <p class="text-xs font-semibold text-neutral-600 mb-2">Preview Keyword:</p>
+                            <div class="flex items-center gap-3">
+                                <div class="w-20 h-16 rounded-lg overflow-hidden bg-neutral-100 flex-shrink-0">
+                                    <img id="keywordPreviewImage" src="" alt="Keyword Preview" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p id="keywordPreviewName" class="text-sm font-semibold text-neutral-800 truncate"></p>
+                                    <p id="keywordPreviewMerchant" class="text-xs text-neutral-500 truncate"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="block" id="manualImageLabel">
                         <span class="text-sm font-semibold text-neutral-700">Pilih Gambar</span>
                         <input id="imageInput" type="file" name="image" accept="image/*"
                                class="mt-2 block w-full text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer">
                         <span id="fileError" class="text-xs text-rose-500 mt-2 hidden">Silakan pilih gambar terlebih dahulu.</span>
                     </label>
                     <label class="block">
-                        <span class="text-sm font-semibold text-neutral-700">CTA Link </span>
+                        <span class="text-sm font-semibold text-neutral-700">CTA Link <span id="ctaAutoLabel" class="text-xs text-neutral-400 font-normal hidden">(Otomatis dari keyword)</span></span>
                         <input id="linkInput" type="url" name="link_iklan" value="{{ old('link_iklan') }}"
                                placeholder="https://contoh.com/promo"
                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
@@ -558,6 +644,8 @@
 // Script khusus halaman iklan
 // Merchant data for multiple selection
 window.merchantsData = {!! json_encode($merchants) !!};
+// Keyword data for keyword-based ads
+window.keywordsData = {!! json_encode($keywords) !!};
 
 document.addEventListener('DOMContentLoaded', function () {
     const page = document.getElementById('iklanPage');
@@ -591,6 +679,231 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const closeDeleteButtons = document.querySelectorAll('[data-close-delete]');
     let pendingDeleteForm = null;
+
+    // Upload type handling
+    const uploadTypeInput = document.getElementById('uploadTypeInput');
+    const manualUploadBtn = document.getElementById('manualUploadBtn');
+    const keywordUploadBtn = document.getElementById('keywordUploadBtn');
+    const keywordMerchantLabel = document.getElementById('keywordMerchantLabel');
+    const keywordSelectionLabel = document.getElementById('keywordSelectionLabel');
+    const keywordPreview = document.getElementById('keywordPreview');
+    const manualImageLabel = document.getElementById('manualImageLabel');
+    const linkInput = document.getElementById('linkInput');
+    const ctaAutoLabel = document.getElementById('ctaAutoLabel');
+    
+    let currentUploadType = uploadTypeInput.value || 'manual';
+    let selectedMerchantId = null;
+    
+    function setUploadType(type) {
+        currentUploadType = type;
+        uploadTypeInput.value = type;
+        
+        // Update button styles
+        if (type === 'manual') {
+            manualUploadBtn.classList.remove('border-neutral-200', 'bg-white', 'text-neutral-600');
+            manualUploadBtn.classList.add('border-orange-500', 'bg-orange-50', 'text-orange-700');
+            keywordUploadBtn.classList.remove('border-orange-500', 'bg-orange-50', 'text-orange-700');
+            keywordUploadBtn.classList.add('border-neutral-200', 'bg-white', 'text-neutral-600');
+            
+            // Show manual upload, hide keyword selection
+            manualImageLabel.classList.remove('hidden');
+            keywordMerchantLabel.classList.add('hidden');
+            keywordSelectionLabel.classList.add('hidden');
+            keywordPreview.classList.add('hidden');
+            ctaAutoLabel.classList.add('hidden');
+            linkInput.removeAttribute('readonly');
+            linkInput.classList.remove('bg-neutral-50');
+            
+            // Clear keyword and merchant selection
+            selectedMerchantId = null;
+            const keywordInput = document.getElementById('keywordInput');
+            if (keywordInput) keywordInput.value = '';
+            const keywordText = document.getElementById('keywordText');
+            if (keywordText) keywordText.textContent = '-- Pilih Merchant Terlebih Dahulu --';
+            const keywordMerchantInput = document.getElementById('keywordMerchantInput');
+            if (keywordMerchantInput) keywordMerchantInput.value = '';
+            const keywordMerchantText = document.getElementById('keywordMerchantText');
+            if (keywordMerchantText) keywordMerchantText.textContent = '-- Pilih Merchant/Program --';
+        } else {
+            keywordUploadBtn.classList.remove('border-neutral-200', 'bg-white', 'text-neutral-600');
+            keywordUploadBtn.classList.add('border-orange-500', 'bg-orange-50', 'text-orange-700');
+            manualUploadBtn.classList.remove('border-orange-500', 'bg-orange-50', 'text-orange-700');
+            manualUploadBtn.classList.add('border-neutral-200', 'bg-white', 'text-neutral-600');
+            
+            // Hide manual upload, show merchant selection first
+            manualImageLabel.classList.add('hidden');
+            keywordMerchantLabel.classList.remove('hidden');
+            ctaAutoLabel.classList.remove('hidden');
+            
+            // Clear manual image
+            if (imageInput) imageInput.value = '';
+        }
+    }
+    
+    if (manualUploadBtn) {
+        manualUploadBtn.addEventListener('click', () => setUploadType('manual'));
+    }
+    
+    if (keywordUploadBtn) {
+        keywordUploadBtn.addEventListener('click', () => setUploadType('keyword'));
+    }
+    
+    // Initialize upload type on page load
+    setUploadType(currentUploadType);
+    
+    // Merchant selection for keyword upload
+    const keywordMerchantInput = document.getElementById('keywordMerchantInput');
+    const keywordMerchantBtn = document.getElementById('keywordMerchantBtn');
+    const keywordMerchantText = document.getElementById('keywordMerchantText');
+    const keywordMerchantDropdown = document.getElementById('keywordMerchantDropdown');
+    const keywordMerchantSearch = document.getElementById('keywordMerchantSearch');
+    const keywordMerchantOptions = document.getElementById('keywordMerchantOptions');
+    
+    // Initialize merchant dropdown
+    initSearchableDropdown('keywordMerchantInput', 'keywordMerchantBtn', 'keywordMerchantText', 'keywordMerchantDropdown', 'keywordMerchantSearch', 'keywordMerchantOptions', 'keyword-merchant-option');
+    
+    // Handle merchant selection
+    if (keywordMerchantOptions) {
+        keywordMerchantOptions.addEventListener('click', (e) => {
+            const option = e.target.closest('.keyword-merchant-option');
+            if (!option) return;
+            
+            const merchantId = option.getAttribute('data-value');
+            const merchantName = option.textContent.trim();
+            
+            if (keywordMerchantInput) keywordMerchantInput.value = merchantId;
+            if (keywordMerchantText) keywordMerchantText.textContent = merchantName;
+            
+            selectedMerchantId = merchantId ? parseInt(merchantId) : null;
+            
+            // Show keyword selection and populate keywords for this merchant
+            if (selectedMerchantId) {
+                keywordSelectionLabel.classList.remove('hidden');
+                populateKeywordsForMerchant(selectedMerchantId);
+            } else {
+                keywordSelectionLabel.classList.add('hidden');
+                keywordPreview.classList.add('hidden');
+                // Clear keyword selection
+                const keywordInput = document.getElementById('keywordInput');
+                if (keywordInput) keywordInput.value = '';
+                const keywordText = document.getElementById('keywordText');
+                if (keywordText) keywordText.textContent = '-- Pilih Merchant Terlebih Dahulu --';
+            }
+            
+            // Close dropdown
+            if (keywordMerchantDropdown) keywordMerchantDropdown.classList.add('hidden');
+        });
+    }
+    
+    // Function to populate keywords based on selected merchant
+    function populateKeywordsForMerchant(merchantId) {
+        const keywordInput = document.getElementById('keywordInput');
+        const keywordOptions = document.getElementById('keywordOptions');
+        const keywordText = document.getElementById('keywordText');
+        
+        if (!keywordInput || !keywordOptions) return;
+        
+        // Filter keywords by merchant
+        const filteredKeywords = window.keywordsData.filter(k => k.merchant_key == merchantId);
+        
+        // Clear existing options
+        keywordInput.innerHTML = '<option value="">-- Pilih Keyword --</option>';
+        keywordOptions.innerHTML = '';
+        
+        if (filteredKeywords.length === 0) {
+            keywordOptions.innerHTML = '<div class="keyword-option px-3 py-2 text-sm text-neutral-400 text-center">Tidak ada keyword dengan gambar untuk merchant ini</div>';
+            if (keywordText) keywordText.textContent = '-- Tidak Ada Keyword --';
+            return;
+        }
+        
+        // Add filtered keywords
+        filteredKeywords.forEach(keyword => {
+            // Add to select
+            const option = document.createElement('option');
+            option.value = keyword.id;
+            option.setAttribute('data-image', keyword.image);
+            option.setAttribute('data-cta', keyword.cta_link || '');
+            option.setAttribute('data-merchant', keyword.merchant_key);
+            option.setAttribute('data-merchant-name', keyword.merchant_name || '');
+            option.textContent = keyword.nama_produk + (keyword.kategori_keyword ? ' (' + keyword.kategori_keyword + ')' : '');
+            keywordInput.appendChild(option);
+            
+            // Add to dropdown
+            const div = document.createElement('div');
+            div.className = 'keyword-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg';
+            div.setAttribute('data-value', keyword.id);
+            div.setAttribute('data-image', keyword.image);
+            div.setAttribute('data-cta', keyword.cta_link || '');
+            div.setAttribute('data-merchant', keyword.merchant_key);
+            div.setAttribute('data-merchant-name', keyword.merchant_name || '');
+            div.innerHTML = keyword.nama_produk + (keyword.kategori_keyword ? ' <span class="text-neutral-400">(' + keyword.kategori_keyword + ')</span>' : '');
+            keywordOptions.appendChild(div);
+        });
+        
+        if (keywordText) keywordText.textContent = '-- Pilih Keyword --';
+    }
+    
+    // Keyword selection handling
+    const keywordInput = document.getElementById('keywordInput');
+    const keywordBtn = document.getElementById('keywordBtn');
+    const keywordText = document.getElementById('keywordText');
+    const keywordDropdown = document.getElementById('keywordDropdown');
+    const keywordSearch = document.getElementById('keywordSearch');
+    const keywordOptions = document.getElementById('keywordOptions');
+    
+    function selectKeyword(keywordId, keywordName, keywordImage, keywordCta, keywordMerchant, keywordMerchantName) {
+        if (keywordInput) keywordInput.value = keywordId;
+        if (keywordText) keywordText.textContent = keywordName || '-- Pilih Keyword --';
+        
+        if (keywordId) {
+            // Show preview
+            keywordPreview.classList.remove('hidden');
+            const previewImage = document.getElementById('keywordPreviewImage');
+            const previewName = document.getElementById('keywordPreviewName');
+            const previewMerchant = document.getElementById('keywordPreviewMerchant');
+            
+            if (previewImage && keywordImage) {
+                previewImage.src = '/storage/' + keywordImage;
+            }
+            if (previewName) previewName.textContent = keywordName;
+            if (previewMerchant) previewMerchant.textContent = keywordMerchantName || 'Merchant tidak diketahui';
+            
+            // Auto-populate CTA
+            if (linkInput && keywordCta) {
+                linkInput.value = keywordCta;
+                linkInput.setAttribute('readonly', 'readonly');
+                linkInput.classList.add('bg-neutral-50');
+            }
+        } else {
+            // Hide preview
+            keywordPreview.classList.add('hidden');
+            if (linkInput) {
+                linkInput.value = '';
+                linkInput.removeAttribute('readonly');
+                linkInput.classList.remove('bg-neutral-50');
+            }
+        }
+    }
+    
+    // Initialize keyword dropdown
+    initSearchableDropdown('keywordInput', 'keywordBtn', 'keywordText', 'keywordDropdown', 'keywordSearch', 'keywordOptions', 'keyword-option');
+    
+    // Handle keyword selection with auto-population
+    if (keywordOptions) {
+        keywordOptions.addEventListener('click', (e) => {
+            const option = e.target.closest('.keyword-option');
+            if (!option) return;
+            
+            const keywordId = option.getAttribute('data-value');
+            const keywordName = option.textContent.trim();
+            const keywordImage = option.getAttribute('data-image');
+            const keywordCta = option.getAttribute('data-cta');
+            const keywordMerchant = option.getAttribute('data-merchant');
+            const keywordMerchantName = option.getAttribute('data-merchant-name');
+            
+            selectKeyword(keywordId, keywordName, keywordImage, keywordCta, keywordMerchant, keywordMerchantName);
+        });
+    }
 
     // Location type dropdown handler (mutually exclusive selection)
     const locationTypeInput = document.getElementById('locationTypeInput');
@@ -804,6 +1117,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const clusterBtn = document.getElementById('clusterBtn');
         const clusterDropdown = document.getElementById('clusterDropdown');
         
+        // Keyword upload dropdowns
+        const keywordMerchantBtn = document.getElementById('keywordMerchantBtn');
+        const keywordMerchantDropdown = document.getElementById('keywordMerchantDropdown');
+        const keywordBtn = document.getElementById('keywordBtn');
+        const keywordDropdown = document.getElementById('keywordDropdown');
+        
         let clickedInside = false;
         
         // Check location type dropdown
@@ -823,6 +1142,14 @@ document.addEventListener('DOMContentLoaded', function () {
             (branchDropdown && branchDropdown.contains(e.target)) ||
             (clusterBtn && clusterBtn.contains(e.target)) || 
             (clusterDropdown && clusterDropdown.contains(e.target))) {
+            clickedInside = true;
+        }
+        
+        // Check keyword upload dropdowns
+        if ((keywordMerchantBtn && keywordMerchantBtn.contains(e.target)) ||
+            (keywordMerchantDropdown && keywordMerchantDropdown.contains(e.target)) ||
+            (keywordBtn && keywordBtn.contains(e.target)) ||
+            (keywordDropdown && keywordDropdown.contains(e.target))) {
             clickedInside = true;
         }
         
@@ -892,7 +1219,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function closeAllDropdowns() {
-        ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown'].forEach(id => {
+        ['locationTypeDropdown', 'territorialDropdown', 'regionalDropdown', 'branchDropdown', 'clusterDropdown', 'keywordMerchantDropdown', 'keywordDropdown'].forEach(id => {
             const dropdown = document.getElementById(id);
             if (dropdown) dropdown.classList.add('hidden');
         });
@@ -1135,11 +1462,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (openConfirmBtn) {
         openConfirmBtn.addEventListener('click', () => {
-            if (!imageInput || !imageInput.files.length) {
-                fileError.classList.remove('hidden');
-                return;
+            // Check validation based on upload type
+            if (currentUploadType === 'manual') {
+                // Manual upload requires image file
+                if (!imageInput || !imageInput.files.length) {
+                    fileError.classList.remove('hidden');
+                    return;
+                }
+                fileError.classList.add('hidden');
+            } else if (currentUploadType === 'keyword') {
+                // Keyword upload requires keyword selection
+                const keywordInput = document.getElementById('keywordInput');
+                if (!keywordInput || !keywordInput.value) {
+                    alert('Silakan pilih keyword terlebih dahulu.');
+                    return;
+                }
             }
-            fileError.classList.add('hidden');
+            
             openModal(uploadModal, uploadModalContent);
         });
     }

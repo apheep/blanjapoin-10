@@ -74,6 +74,9 @@
                                         <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-violet-100 hover:to-purple-100 hover:text-violet-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_games')">
                                             Paket games
                                         </button>
+                                        <button type="button" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gradient-to-r hover:from-teal-100 hover:to-cyan-100 hover:text-teal-800 rounded-lg transition-all" onclick="selectEditKeywordKategori('paket_internet')">
+                                            Paket Internet
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -170,6 +173,35 @@
                         <div class="md:col-span-2">
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Stock</label>
                             <input type="number" name="stock" id="editStock" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-orange-400 text-[15px] transition-all duration-300 ease-out transform translate-y-2 opacity-0" placeholder="Enter stock">
+                        </div>
+
+                        <!-- Row 5.5: Stock Management Type -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Stock Management Type</label>
+                            <div class="space-y-3">
+                                <label class="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50/50 transition-all cursor-pointer">
+                                    <input type="radio" name="stock_type" value="normal" id="editStockTypeNormal" checked onclick="toggleEditStockManagement()" onchange="toggleEditStockManagement()" class="mt-1 w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">Normal Stock</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">Stock akan berkurang setiap ada redeem dan tidak akan di-reset otomatis</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50/50 transition-all cursor-pointer">
+                                    <input type="radio" name="stock_type" value="daily_reset" id="editStockTypeDailyReset" onclick="toggleEditStockManagement()" onchange="toggleEditStockManagement()" class="mt-1 w-4 h-4 text-orange-600 focus:ring-orange-500">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-900">Daily Reset Stock</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">Stock akan di-reset setiap hari ke nilai Daily Stock Limit</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Row 5.6: Daily Stock Limit (Conditional) -->
+                        <div id="editDailyStockLimitContainer" class="md:col-span-2 hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Daily Stock Limit <span class="text-red-500">*</span></label>
+                            <input type="number" name="daily_stock_limit" id="editDailyStockLimit" min="0" class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm" placeholder="Enter daily stock limit">
+                            <p class="text-xs text-gray-500 mt-1">Nilai stock yang akan di-reset setiap hari (jam 00:00)</p>
+                            <p id="editDailyStockLimitError" class="text-red-500 text-xs mt-1 hidden">Daily Stock Limit wajib diisi jika Daily Reset Stock dipilih</p>
                         </div>
 
                         <!-- Row 6: SKB -->
@@ -400,6 +432,20 @@ function openEditKeyword(id, keywordData, canEditFull = true, canEditStock = tru
         if (editStartDate) editStartDate.value = keywordData.start_date || '';
         if (editEndDate) editEndDate.value = keywordData.end_date || '';
         
+        // Set stock management type
+        const editStockTypeNormal = document.getElementById('editStockTypeNormal');
+        const editStockTypeDailyReset = document.getElementById('editStockTypeDailyReset');
+        const editDailyStockLimit = document.getElementById('editDailyStockLimit');
+        
+        if (keywordData.is_daily_stock == 1 || keywordData.is_daily_stock === true) {
+            if (editStockTypeDailyReset) editStockTypeDailyReset.checked = true;
+            if (editDailyStockLimit) editDailyStockLimit.value = keywordData.daily_stock_limit || '';
+        } else {
+            if (editStockTypeNormal) editStockTypeNormal.checked = true;
+            if (editDailyStockLimit) editDailyStockLimit.value = '';
+        }
+        toggleEditStockManagement();
+        
         // Set kategori_keyword jika ada
         if (keywordData.kategori_keyword) {
             selectEditKeywordKategori(keywordData.kategori_keyword);
@@ -609,6 +655,26 @@ function closeEditKeyword() {
         if (diskonTypePercent) {
             diskonTypePercent.checked = true;
             toggleEditDiskonType();
+        }
+        
+        // Reset stock management type to normal
+        const stockTypeNormal = document.getElementById('editStockTypeNormal');
+        if (stockTypeNormal) {
+            stockTypeNormal.checked = true;
+            toggleEditStockManagement();
+        }
+        const dailyStockLimitContainer = document.getElementById('editDailyStockLimitContainer');
+        if (dailyStockLimitContainer) {
+            dailyStockLimitContainer.classList.add('hidden');
+        }
+        const dailyStockLimit = document.getElementById('editDailyStockLimit');
+        if (dailyStockLimit) {
+            dailyStockLimit.value = '';
+            dailyStockLimit.required = false;
+        }
+        const dailyStockLimitError = document.getElementById('editDailyStockLimitError');
+        if (dailyStockLimitError) {
+            dailyStockLimitError.classList.add('hidden');
         }
         const diskonError = document.getElementById('editDiskonError');
         if (diskonError) {
@@ -838,6 +904,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize subsidy display
     toggleEditSubsidyAmount();
     
+    // Initialize stock management type display
+    toggleEditStockManagement();
+    
     const form = document.getElementById('formEditKeyword');
     if (form) {
         form.addEventListener('submit', function(e) {
@@ -915,6 +984,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
+            // Validasi daily stock limit jika daily reset stock dipilih
+            const stockType = form.querySelector('input[name="stock_type"]:checked');
+            if (stockType && stockType.value === 'daily_reset') {
+                const dailyStockLimit = document.getElementById('editDailyStockLimit').value;
+                const dailyStockLimitError = document.getElementById('editDailyStockLimitError');
+                if (!dailyStockLimit || dailyStockLimit <= 0) {
+                    if (dailyStockLimitError) dailyStockLimitError.classList.remove('hidden');
+                    return false;
+                } else {
+                    if (dailyStockLimitError) dailyStockLimitError.classList.add('hidden');
+                }
+            }
             
             // Kumpulkan data untuk ditampilkan di modal verifikasi (opsional)
             const formData = new FormData(form);
@@ -936,6 +1017,48 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('editModalKeyword');
     if (modal) { modal.addEventListener('click', function(event) { if (event.target === this) closeEditKeyword(); }); }
 });
+
+// ======================
+// Stock Management Type (Edit)
+// ======================
+function toggleEditStockManagement() {
+    const form = document.getElementById('formEditKeyword');
+    if (!form) {
+        console.error('formEditKeyword not found');
+        return;
+    }
+    
+    const stockType = form.querySelector('input[name="stock_type"]:checked');
+    const dailyStockLimitContainer = document.getElementById('editDailyStockLimitContainer');
+    const dailyStockLimit = document.getElementById('editDailyStockLimit');
+    const dailyStockLimitError = document.getElementById('editDailyStockLimitError');
+    
+    if (!dailyStockLimitContainer) {
+        console.error('editDailyStockLimitContainer not found');
+        return;
+    }
+    
+    if (stockType && stockType.value === 'daily_reset') {
+        // Show daily stock limit field
+        dailyStockLimitContainer.classList.remove('hidden');
+        dailyStockLimitContainer.style.display = 'block';
+        if (dailyStockLimit) {
+            dailyStockLimit.required = true;
+            dailyStockLimit.style.display = 'block';
+        }
+    } else {
+        // Hide daily stock limit field
+        dailyStockLimitContainer.classList.add('hidden');
+        dailyStockLimitContainer.style.display = 'none';
+        if (dailyStockLimit) {
+            dailyStockLimit.required = false;
+            dailyStockLimit.value = '';
+        }
+        if (dailyStockLimitError) {
+            dailyStockLimitError.classList.add('hidden');
+        }
+    }
+}
 
 // ======================
 // Dropdown kategori keyword (Edit)

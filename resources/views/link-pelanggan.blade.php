@@ -79,6 +79,10 @@
                 @if($hasCategoryData('paket_games'))
                     @include('merchant.paketgames')
                 @endif
+
+                @if($hasCategoryData('paket_internet'))
+                    @include('merchant.paketinternet')
+                @endif
                 
                 @if($hasCategoryData('merchandise'))
                     @include('merchant.merchandise')

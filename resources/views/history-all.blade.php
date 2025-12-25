@@ -626,7 +626,13 @@
                                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $keyword->stock }}</span>
                                         </td>
                                         <td class="px-4 py-4">
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">{{ $keyword->sisa_stock ?? $keyword->stock }}</span>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                                                @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
+                                                    {{ $keyword->daily_stock_limit }}
+                                                @else
+                                                    {{ $keyword->sisa_stock ?? $keyword->stock }}
+                                                @endif
+                                            </span>
                                         </td>
                                         <td class="px-4 py-4">
                                             <span class="px-2 py-1 text-xs font-semibold rounded-full

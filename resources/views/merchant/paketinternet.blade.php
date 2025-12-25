@@ -1,20 +1,20 @@
-<section id="section-paketvideo" class="mt-10 md:mt-14 mb-10 md:mb-14">
+<section id="section-paketinternet" class="mt-10 md:mt-14 mb-10 md:mb-14">
     <div class="mb-4 md:mb-6 flex items-center justify-between">
-        <h2 class="text-xl md:text-3xl font-black text-neutral-900">📺 Paket Video</h2>
+        <h2 class="text-xl md:text-3xl font-black text-neutral-900">🌐 Paket Internet</h2>
     </div>
 
     @php
-        $paketvideoCategory = 'paket_video';
+        $paketinternetCategory = 'paket_internet';
         $isLinkPelanggan = $isLinkPelanggan ?? false;
         $isTerritorial = $isTerritorial ?? false;
         $isRegional = $isRegional ?? false;
         $isBranch = $isBranch ?? false;
         $isCluster = $isCluster ?? false;
         $skipMerchantValidation = $isLinkPelanggan || $isTerritorial || $isRegional || $isBranch || $isCluster;
-        $paketvideoKeywords = $keywords->filter(function ($keyword) use ($paketvideoCategory, $skipMerchantValidation) {
+        $paketinternetKeywords = $keywords->filter(function ($keyword) use ($paketinternetCategory, $skipMerchantValidation) {
             // Prioritaskan kategori dari keyword, jika tidak ada gunakan kategori dari merchant
             $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-            $baseCondition = $keyword->merchant && strtolower($keywordCategory) === strtolower($paketvideoCategory)
+            $baseCondition = $keyword->merchant && strtolower($keywordCategory) === strtolower($paketinternetCategory)
                 && $keyword->status === 'approve'
                 && $keyword->is_active == 1;
             // Skip validasi merchant->is_active jika di halaman link-pelanggan atau location-based pages
@@ -25,15 +25,15 @@
     @endphp
 
     <!-- All Cards -->
-    <div id="paketvideoCardContainer" data-voucher-container="true" data-voucher-section="paketvideo" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
-        @forelse($paketvideoKeywords as $keyword)
+    <div id="paketinternetCardContainer" data-voucher-container="true" data-voucher-section="paketinternet" data-container-type="primary" class="card-container grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-5 items-stretch px-1">
+        @forelse($paketinternetKeywords as $keyword)
             @php
                 $merchantName = optional($keyword->merchant)->nama_merchant ?? '';
                 $productName = $keyword->nama_produk ?? '';
                 $locationName = extractKabupatenKota(optional($keyword->merchant)->daerah ?? '');
                 $searchName = strtolower(trim($merchantName . ' ' . $productName));
                 $searchLocation = strtolower($locationName);
-                $uniqueId = 'paketvideo-card-' . $keyword->id;
+                $uniqueId = 'paketinternet-card-' . $keyword->id;
             @endphp
             <article id="{{ $uniqueId }}" data-voucher-card="true" data-point="{{ (int) $keyword->redeem }}" data-search-name="{{ $searchName }}" data-search-location="{{ $searchLocation }}" class="group voucher-card overflow-hidden rounded-xl md:rounded-2xl border border-neutral-200/80 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:border-orange-300 hover:-translate-y-1 opacity-0 translate-y-2 duration-200 ease-out h-full min-h-[280px]">
                 <!-- Mobile Layout -->
@@ -215,7 +215,7 @@
             </article>
         @empty
             <div class="col-span-10 text-center text-neutral-500 text-sm py-6">
-                Belum ada data promo untuk kategori Paket Video.
+                Belum ada data promo untuk kategori Paket Internet.
             </div>
         @endforelse
     </div>
