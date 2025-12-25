@@ -158,4 +158,32 @@ class Keyword extends Model
 
         return $updatedCount;
     }
+
+    /**
+     * Hitung sisa stock harian untuk daily stock
+     * Menghitung: daily_stock_limit - jumlah redeem hari ini dari tokodigi_tselpoin_redeem
+     * 
+     * @return int Sisa stock harian
+     */
+    public function getDailyStockRemaining()
+    {
+        if (!$this->is_daily_stock || !$this->daily_stock_limit || !$this->keyword_id) {
+            return 0;
+        }
+
+        // Hitung jumlah redeem hari ini untuk keyword ini
+        $todayStart = Carbon::today()->startOfDay();
+        $todayEnd = Carbon::today()->endOfDay();
+
+        $todayRedemptions = DB::table('tokodigi_tselpoin_redeem')
+            ->where('coupon', $this->keyword_id)
+            ->where('program', 'BLANJAPOIN')
+            ->whereBetween('created_date', [$todayStart, $todayEnd])
+            ->count();
+
+        // Sisa stock = daily_stock_limit - redeem hari ini
+        $remaining = max(0, (int)$this->daily_stock_limit - (int)$todayRedemptions);
+
+        return $remaining;
+    }
 }

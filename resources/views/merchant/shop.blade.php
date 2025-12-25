@@ -76,7 +76,7 @@
                                 <span class="font-medium">Stock:</span>
                                 <span class="font-semibold text-neutral-800">
                                     @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
-                                        {{ $keyword->daily_stock_limit }}
+                                        {{ $keyword->getDailyStockRemaining() }}
                                     @else
                                         {{ $keyword->sisa_stock ?? $keyword->stock }}
                                     @endif
@@ -92,10 +92,15 @@
           @endif
          </div>
          @php
-            $sisaStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
+            // Untuk daily stock, gunakan sisa stock harian, untuk normal stock gunakan sisa_stock
+            if ($keyword->is_daily_stock && $keyword->daily_stock_limit) {
+                $sisaStock = $keyword->getDailyStockRemaining();
+            } else {
+                $sisaStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
+            }
             $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $sisaStock > 0;
             $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-            $isStockEmpty = ($keyword->stock ?? 0) <= 0;
+            $isStockEmpty = $sisaStock <= 0;
          @endphp
          @if($isStockEmpty)
          <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
