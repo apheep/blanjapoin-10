@@ -161,11 +161,7 @@
                         <span class="inline-flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
                             <span>Stock: 
-                                @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
-                                    {{ $keyword->daily_stock_limit }}
-                                @else
-                                    {{ $keyword->sisa_stock ?? $keyword->stock }}
-                                @endif
+                                {{ $keyword->sisa_stock ?? 0 }}
                             </span>
                         </span>
                     </div>
