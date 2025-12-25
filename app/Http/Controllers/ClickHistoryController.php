@@ -805,22 +805,24 @@ class ClickHistoryController extends Controller
      */
     public function notMatchedDetail(Request $request)
     {
-        // Get filter parameters
-        $searchKeyword = $request->get('search');
-        $merchantId = $request->get('merchant_id');
-        $date = $request->get('date');
+        try {
+            // Get filter parameters
+            $searchKeyword = $request->get('search');
+            $merchantId = $request->get('merchant_id');
+            $date = $request->get('date');
 
-        // Get all click histories yang memiliki matched_redeem dan not_matched_redeem
-        $clickHistories = ClickHistory::with(['merchant', 'keyword'])
-            ->select('click_history.*')
-            ->get();
+            // Get all click histories yang memiliki matched_redeem dan not_matched_redeem
+            // Gunakan chunk untuk menghindari memory issue jika data banyak
+            $clickHistories = ClickHistory::with(['merchant', 'keyword'])
+                ->select('click_history.*')
+                ->get();
 
-        // Process untuk mendapatkan data komparasi dengan logika yang benar
-        // Group by MSISDN + keyword_id, lalu tentukan matched dan not matched
-        $comparisons = [];
-        $processedKeys = [];
-        
-        foreach ($clickHistories as $clickHistory) {
+                // Process untuk mendapatkan data komparasi dengan logika yang benar
+            // Group by MSISDN + keyword_id, lalu tentukan matched dan not matched
+            $comparisons = [];
+            $processedKeys = [];
+            
+            foreach ($clickHistories as $clickHistory) {
             $matchedRedeem = $this->findMatchingRedeem($clickHistory);
             
             if ($matchedRedeem) {
@@ -865,13 +867,13 @@ class ClickHistoryController extends Controller
                     $notMatchedList = array_slice($clickRedeemPairs, 1);
                     
                     $comparisons[$key] = [
-                        'msisdn' => $matchedRedeem->msisdn,
-                        'keyword_id' => $clickHistory->keyword_id,
-                        'keyword_desc' => $matchedRedeem->keyword_desc ?? $clickHistory->keyword_id,
+                        'msisdn' => $matchedRedeem->msisdn ?? '',
+                        'keyword_id' => $clickHistory->keyword_id ?? '',
+                        'keyword_desc' => $matchedRedeem->keyword_desc ?? $clickHistory->keyword_id ?? '',
                         'matched' => [[
                             'click_history' => $matched['click_history'],
                             'redeem' => $matched['redeem'],
-                            'merchant' => $matched['click_history']->merchant
+                            'merchant' => $matched['click_history']->merchant ?? null
                         ]],
                         'not_matched' => []
                     ];
@@ -909,97 +911,109 @@ class ClickHistoryController extends Controller
                     $processedKeys[] = $key;
                 }
             }
-        }
+            }
 
-        // Apply filters to comparisons
-        if ($searchKeyword) {
-            $comparisons = array_filter($comparisons, function($comparison) use ($searchKeyword) {
-                return stripos($comparison['msisdn'], $searchKeyword) !== false 
-                    || stripos($comparison['keyword_id'], $searchKeyword) !== false
-                    || stripos($comparison['keyword_desc'], $searchKeyword) !== false;
-            });
-        }
+                // Apply filters to comparisons
+            if ($searchKeyword) {
+                $comparisons = array_filter($comparisons, function($comparison) use ($searchKeyword) {
+                    return stripos($comparison['msisdn'] ?? '', $searchKeyword) !== false 
+                        || stripos($comparison['keyword_id'] ?? '', $searchKeyword) !== false
+                        || stripos($comparison['keyword_desc'] ?? '', $searchKeyword) !== false;
+                });
+            }
 
-        if ($merchantId) {
-            $comparisons = array_filter($comparisons, function($comparison) use ($merchantId) {
-                // Check if any matched or not_matched has this merchant_id
-                foreach ($comparison['matched'] as $matched) {
-                    if ($matched['click_history']->merchant_id == $merchantId) {
-                        return true;
+            if ($merchantId) {
+                $comparisons = array_filter($comparisons, function($comparison) use ($merchantId) {
+                    // Check if any matched or not_matched has this merchant_id
+                    foreach ($comparison['matched'] ?? [] as $matched) {
+                        if (isset($matched['click_history']) && $matched['click_history']->merchant_id == $merchantId) {
+                            return true;
+                        }
                     }
-                }
-                foreach ($comparison['not_matched'] as $notMatched) {
-                    if (isset($notMatched['merchant']) && $notMatched['merchant']->id == $merchantId) {
-                        return true;
+                    foreach ($comparison['not_matched'] ?? [] as $notMatched) {
+                        if (isset($notMatched['merchant']) && $notMatched['merchant'] && $notMatched['merchant']->id == $merchantId) {
+                            return true;
+                        }
                     }
-                }
-                return false;
-            });
-        }
+                    return false;
+                });
+            }
 
-        if ($date) {
-            $comparisons = array_filter($comparisons, function($comparison) use ($date) {
-                // Check if any matched or not_matched has this date
-                foreach ($comparison['matched'] as $matched) {
-                    if ($matched['click_history']->clicked_at->format('Y-m-d') == $date) {
-                        return true;
+            if ($date) {
+                $comparisons = array_filter($comparisons, function($comparison) use ($date) {
+                    // Check if any matched or not_matched has this date
+                    foreach ($comparison['matched'] ?? [] as $matched) {
+                        if (isset($matched['click_history']) && $matched['click_history']->clicked_at && $matched['click_history']->clicked_at->format('Y-m-d') == $date) {
+                            return true;
+                        }
                     }
-                }
-                foreach ($comparison['not_matched'] as $notMatched) {
-                    if ($notMatched['click_history']->clicked_at->format('Y-m-d') == $date) {
-                        return true;
+                    foreach ($comparison['not_matched'] ?? [] as $notMatched) {
+                        if (isset($notMatched['click_history']) && $notMatched['click_history']->clicked_at && $notMatched['click_history']->clicked_at->format('Y-m-d') == $date) {
+                            return true;
+                        }
                     }
-                }
-                return false;
-            });
+                    return false;
+                });
+            }
+
+            // Re-index array after filtering (filter diterapkan pada SEMUA data sebelum pagination)
+            $comparisons = array_values($comparisons);
+
+            // Calculate totals from all filtered comparisons (before pagination)
+            // Ini memastikan total dihitung dari semua data yang sudah di-filter, bukan hanya halaman saat ini
+            $totalMatched = 0;
+            $totalNotMatched = 0;
+            foreach ($comparisons as $comparison) {
+                $totalMatched += count($comparison['matched'] ?? []);
+                $totalNotMatched += count($comparison['not_matched'] ?? []);
+            }
+
+            // Pagination: 5 MSISDN (comparisons) per page
+            // Filter/search sudah diterapkan pada semua data di atas, jadi pagination hanya membagi hasil filter
+            $perPage = 5;
+            $currentPage = $request->get('page', 1);
+            $total = count($comparisons); // Total dari semua data yang sudah di-filter
+            $offset = ($currentPage - 1) * $perPage;
+            $paginatedComparisons = array_slice($comparisons, $offset, $perPage);
+
+            // Create paginator manually
+            $comparisonsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $paginatedComparisons,
+                $total,
+                $perPage,
+                $currentPage,
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query() // Preserve filter parameters in pagination links
+                ]
+            );
+
+            // Get all merchants for filter dropdown
+            $merchants = Merchant::orderBy('nama_merchant')->get();
+
+            return view('click-history.not-matched-detail', [
+                'comparisons' => $comparisonsPaginator,
+                'merchants' => $merchants,
+                'totalMatched' => $totalMatched,
+                'totalNotMatched' => $totalNotMatched,
+                'filters' => [
+                    'search' => $searchKeyword,
+                    'merchant_id' => $merchantId,
+                    'date' => $date
+                ]
+            ]);
+        } catch (\Exception $e) {
+            // Log error untuk debugging
+            Log::error('Error in notMatchedDetail: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            // Return error page atau redirect dengan error message
+            return redirect()->route('click.history.index')
+                ->with('error', 'Terjadi kesalahan saat memuat data. Silakan coba lagi.');
         }
-
-        // Re-index array after filtering (filter diterapkan pada SEMUA data sebelum pagination)
-        $comparisons = array_values($comparisons);
-
-        // Calculate totals from all filtered comparisons (before pagination)
-        // Ini memastikan total dihitung dari semua data yang sudah di-filter, bukan hanya halaman saat ini
-        $totalMatched = 0;
-        $totalNotMatched = 0;
-        foreach ($comparisons as $comparison) {
-            $totalMatched += count($comparison['matched']);
-            $totalNotMatched += count($comparison['not_matched']);
-        }
-
-        // Pagination: 5 MSISDN (comparisons) per page
-        // Filter/search sudah diterapkan pada semua data di atas, jadi pagination hanya membagi hasil filter
-        $perPage = 5;
-        $currentPage = $request->get('page', 1);
-        $total = count($comparisons); // Total dari semua data yang sudah di-filter
-        $offset = ($currentPage - 1) * $perPage;
-        $paginatedComparisons = array_slice($comparisons, $offset, $perPage);
-
-        // Create paginator manually
-        $comparisonsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginatedComparisons,
-            $total,
-            $perPage,
-            $currentPage,
-            [
-                'path' => $request->url(),
-                'query' => $request->query() // Preserve filter parameters in pagination links
-            ]
-        );
-
-        // Get all merchants for filter dropdown
-        $merchants = Merchant::orderBy('nama_merchant')->get();
-
-        return view('click-history.not-matched-detail', [
-            'comparisons' => $comparisonsPaginator,
-            'merchants' => $merchants,
-            'totalMatched' => $totalMatched,
-            'totalNotMatched' => $totalNotMatched,
-            'filters' => [
-                'search' => $searchKeyword,
-                'merchant_id' => $merchantId,
-                'date' => $date
-            ]
-        ]);
     }
 
     /**
