@@ -32,10 +32,86 @@ class MerchantController extends Controller
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Get sort parameters
+        $sortBy = $request->get('sort_merchant', 'id');
+        $sortDir = $request->get('sort_merchant_dir', 'asc');
+        
+        $merchantsQuery = Merchant::query();
+        
+        // Apply sorting
+        if ($sortBy === 'total_trx') {
+            // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
+            // Hanya count redemptions yang ada matching click dari merchant ini
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                    FROM tokodigi_tselpoin_redeem as tr 
+                    JOIN keywords as k ON tr.coupon = k.keyword_id 
+                    WHERE k.merchant_key = merchants.id 
+                    AND k.is_active = 1 
+                    AND tr.program = "BLANJAPOIN"
+                    AND EXISTS (
+                        SELECT 1 FROM click_history ch 
+                        WHERE ch.keyword_id = tr.coupon 
+                        AND ch.merchant_id = merchants.id
+                        AND ch.clicked_at < tr.created_date
+                    )) as total_trx_calc')
+                ->orderBy('total_trx_calc', $sortDir);
+        } elseif ($sortBy === 'total_keyword') {
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('(SELECT COUNT(*) FROM keywords 
+                    WHERE merchant_key = merchants.id 
+                    AND is_active = 1) as total_keyword_calc')
+                ->orderBy('total_keyword_calc', $sortDir);
+        } elseif ($sortBy === 'keyword_aktif') {
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('(SELECT COUNT(DISTINCT k.id) FROM keywords as k 
+                    JOIN tokodigi_tselpoin_redeem as tr ON k.keyword_id = tr.coupon 
+                    WHERE k.merchant_key = merchants.id 
+                    AND tr.program = "BLANJAPOIN" 
+                    AND k.is_active = 1) as keyword_aktif_calc')
+                ->orderBy('keyword_aktif_calc', $sortDir);
+        } else {
+            // For other columns, use standard orderBy
+            $merchantsQuery->orderBy($sortBy, $sortDir);
+        }
+        
         // Let Laravel automatically read the page number from the request using the page name
-        $merchants = Merchant::orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page')
+        $merchants = $merchantsQuery->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
+        
+        // Hitung total TRX, total keyword (toggle on), dan keyword aktif untuk setiap merchant
+        foreach ($merchants as $merchant) {
+            // Gunakan nilai dari subquery jika tersedia (untuk sorting), jika tidak hitung manual
+            if (isset($merchant->total_trx_calc)) {
+                $merchant->total_trx = (int)$merchant->total_trx_calc;
+            } else {
+                // Use new click tracking based calculation (anti-cheating system)
+                $merchant->total_trx = $merchant->calculateTotalTrx();
+            }
+            
+            if (isset($merchant->total_keyword_calc)) {
+                $merchant->total_keyword = (int)$merchant->total_keyword_calc;
+            } else {
+                $totalKeyword = DB::table('keywords')
+                    ->where('merchant_key', $merchant->id)
+                    ->where('is_active', 1)
+                    ->count();
+                $merchant->total_keyword = $totalKeyword;
+            }
+            
+            if (isset($merchant->keyword_aktif_calc)) {
+                $merchant->keyword_aktif = (int)$merchant->keyword_aktif_calc;
+            } else {
+                $keywordAktif = DB::table('keywords as k')
+                    ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
+                    ->where('k.merchant_key', $merchant->id)
+                    ->where('tr.program', 'BLANJAPOIN')
+                    ->where('k.is_active', 1)
+                    ->distinct('k.id')
+                    ->count('k.id');
+                $merchant->keyword_aktif = $keywordAktif;
+            }
+        }
             
         // Buat query params untuk appends, pastikan merchant_page tetap ada
         $keywordQueryParams = $request->query();
@@ -696,11 +772,83 @@ class MerchantController extends Controller
             $merchantQueryParams['keyword_page'] = $request->get('keyword_page');
         }
         
+        // Get sort parameters
+        $sortBy = $request->get('sort_merchant', 'id');
+        $sortDir = $request->get('sort_merchant_dir', 'asc');
+        
+        // Apply sorting
+        if ($sortBy === 'total_trx') {
+            // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
+            // Hanya count redemptions yang ada matching click dari merchant ini
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                    FROM tokodigi_tselpoin_redeem as tr 
+                    JOIN keywords as k ON tr.coupon = k.keyword_id 
+                    WHERE k.merchant_key = merchants.id 
+                    AND k.is_active = 1 
+                    AND tr.program = "BLANJAPOIN"
+                    AND EXISTS (
+                        SELECT 1 FROM click_history ch 
+                        WHERE ch.keyword_id = tr.coupon 
+                        AND ch.merchant_id = merchants.id
+                        AND ch.clicked_at < tr.created_date
+                    )) as total_trx_calc')
+                ->orderBy('total_trx_calc', $sortDir);
+        } elseif ($sortBy === 'total_keyword') {
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('(SELECT COUNT(*) FROM keywords 
+                    WHERE merchant_key = merchants.id 
+                    AND is_active = 1) as total_keyword_calc')
+                ->orderBy('total_keyword_calc', $sortDir);
+        } elseif ($sortBy === 'keyword_aktif') {
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('(SELECT COUNT(DISTINCT k.id) FROM keywords as k 
+                    JOIN tokodigi_tselpoin_redeem as tr ON k.keyword_id = tr.coupon 
+                    WHERE k.merchant_key = merchants.id 
+                    AND tr.program = "BLANJAPOIN" 
+                    AND k.is_active = 1) as keyword_aktif_calc')
+                ->orderBy('keyword_aktif_calc', $sortDir);
+        } else {
+            $merchantsQuery->orderBy($sortBy, $sortDir);
+        }
+        
         // Let Laravel automatically read the page number from the request using the page name
-        $merchants = $merchantsQuery
-            ->orderBy('id')
-            ->paginate(10, ['*'], 'merchant_page')
+        $merchants = $merchantsQuery->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
+        
+        // Hitung total TRX, total keyword (toggle on), dan keyword aktif untuk setiap merchant
+        foreach ($merchants as $merchant) {
+            // Gunakan nilai dari subquery jika tersedia (untuk sorting), jika tidak hitung manual
+            if (isset($merchant->total_trx_calc)) {
+                $merchant->total_trx = (int)$merchant->total_trx_calc;
+            } else {
+                // Use new click tracking based calculation (anti-cheating system)
+                $merchant->total_trx = $merchant->calculateTotalTrx();
+            }
+            
+            if (isset($merchant->total_keyword_calc)) {
+                $merchant->total_keyword = (int)$merchant->total_keyword_calc;
+            } else {
+                $totalKeyword = DB::table('keywords')
+                    ->where('merchant_key', $merchant->id)
+                    ->where('is_active', 1)
+                    ->count();
+                $merchant->total_keyword = $totalKeyword;
+            }
+            
+            if (isset($merchant->keyword_aktif_calc)) {
+                $merchant->keyword_aktif = (int)$merchant->keyword_aktif_calc;
+            } else {
+                $keywordAktif = DB::table('keywords as k')
+                    ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
+                    ->where('k.merchant_key', $merchant->id)
+                    ->where('tr.program', 'BLANJAPOIN')
+                    ->where('k.is_active', 1)
+                    ->distinct('k.id')
+                    ->count('k.id');
+                $merchant->keyword_aktif = $keywordAktif;
+            }
+        }
         
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -2419,5 +2567,32 @@ class MerchantController extends Controller
             'iklans' => $iklans,
             'isCluster' => true, // Flag untuk skip validasi merchant->is_active
         ]);
+    }
+
+    /**
+     * Track click dan redirect ke CTA link merchant
+     * Route: /r/{merchantId}/{keywordId?}
+     */
+    public function trackAndRedirect(Request $request, $merchantId, $keywordId = null)
+    {
+        // Track click menggunakan ClickHistoryController
+        \App\Http\Controllers\ClickHistoryController::recordClick($merchantId, $keywordId, $request);
+
+        // Get keyword untuk ambil CTA link
+        if ($keywordId) {
+            $keyword = Keyword::where('keyword_id', $keywordId)->first();
+            if ($keyword && $keyword->cta_link) {
+                return redirect()->away($keyword->cta_link);
+            }
+        }
+
+        // Fallback: redirect ke merchant page
+        $merchant = Merchant::find($merchantId);
+        if ($merchant && $merchant->link_blanjapoin) {
+            return redirect()->away($merchant->link_blanjapoin);
+        }
+
+        // Jika tidak ada link, redirect ke home
+        return redirect()->route('home')->with('error', 'Link tidak ditemukan');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Iklan;
 use App\Models\Merchant;
+use App\Models\Keyword;
 use App\Models\DimTeritorialNational;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -197,7 +198,26 @@ class IklanController extends Controller
             })
             ->values();
 
-        return view('iklan', compact('iklans', 'territories', 'regions', 'branches', 'clusters', 'allLocations', 'hasGeneral', 'merchants'));
+        // Get all keywords with images for keyword-based ad creation
+        $keywords = Keyword::with('merchant')
+            ->whereNotNull('image')
+            ->where('image', '!=', '')
+            ->orderBy('nama_produk')
+            ->get()
+            ->map(function($keyword) {
+                return [
+                    'id' => $keyword->id,
+                    'nama_produk' => $keyword->nama_produk,
+                    'kategori_keyword' => $keyword->kategori_keyword,
+                    'image' => $keyword->image,
+                    'cta_link' => $keyword->cta_link,
+                    'merchant_key' => $keyword->merchant_key,
+                    'merchant_name' => $keyword->merchant ? $keyword->merchant->nama_merchant : null,
+                ];
+            })
+            ->values();
+
+        return view('iklan', compact('iklans', 'territories', 'regions', 'branches', 'clusters', 'allLocations', 'hasGeneral', 'merchants', 'keywords'));
     }
 
     /**
@@ -206,7 +226,9 @@ class IklanController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'image' => ['required', 'image', 'max:2048'],
+            'upload_type' => ['required', 'in:manual,keyword'],
+            'keyword_id' => ['required_if:upload_type,keyword', 'nullable', 'exists:keywords,id'],
+            'image' => ['required_if:upload_type,manual', 'nullable', 'image', 'max:2048'],
             'link_iklan' => ['nullable', 'url'],
             'territorial' => ['nullable', 'string'],
             'regional' => ['nullable', 'string'],
@@ -216,12 +238,55 @@ class IklanController extends Controller
             'merchant_keys.*' => ['integer', 'exists:merchants,id'],
         ]);
 
-        $path = $request->file('image')->store('iklan', 'public');
+        $uploadType = $request->input('upload_type', 'manual');
+        $keywordId = null;
+        $path = null;
+        $link = null;
+        $merchantKeys = [];
 
-        $link = $request->input('link_iklan');
-        $link = is_string($link) ? trim($link) : null;
-        if ($link === '') {
-            $link = null;
+        if ($uploadType === 'keyword') {
+            // Keyword-based ad
+            $keywordId = $request->input('keyword_id');
+            $keyword = Keyword::findOrFail($keywordId);
+
+            // Use keyword's image (copy it to iklan directory)
+            if ($keyword->image && Storage::disk('public')->exists($keyword->image)) {
+                $extension = pathinfo($keyword->image, PATHINFO_EXTENSION);
+                $filename = 'iklan_keyword_' . $keyword->id . '_' . time() . '.' . $extension;
+                $path = 'iklan/' . $filename;
+                Storage::disk('public')->copy($keyword->image, $path);
+            } else {
+                return redirect()
+                    ->back()
+                    ->withErrors(['keyword_id' => 'Keyword tidak memiliki gambar yang valid.'])
+                    ->withInput();
+            }
+
+            // Use keyword's CTA link
+            $link = $keyword->cta_link;
+
+            // Use keyword's merchant
+            if ($keyword->merchant_key) {
+                $merchantKeys = [$keyword->merchant_key];
+            }
+        } else {
+            // Manual upload
+            $path = $request->file('image')->store('iklan', 'public');
+
+            $link = $request->input('link_iklan');
+            $link = is_string($link) ? trim($link) : null;
+            if ($link === '') {
+                $link = null;
+            }
+
+            // Get merchant keys from request for manual upload
+            $merchantInputs = $request->input('merchant_keys', []);
+            if (!empty($merchantInputs) && is_array($merchantInputs)) {
+                $merchantKeys = array_filter(array_map('intval', $merchantInputs), function($id) {
+                    return $id > 0;
+                });
+                $merchantKeys = array_values($merchantKeys);
+            }
         }
 
         // Only one location type can be selected (mutually exclusive)
@@ -229,14 +294,12 @@ class IklanController extends Controller
         $regional = null;
         $branch = null;
         $cluster = null;
-        $merchantKeys = [];
 
         // Check which location type is selected (priority: territorial > regional > branch > cluster > merchant)
         $territorialInput = $request->input('territorial');
         $regionalInput = $request->input('regional');
         $branchInput = $request->input('branch');
         $clusterInput = $request->input('cluster');
-        $merchantInputs = $request->input('merchant_keys', []);
 
         if (!empty($territorialInput) && trim($territorialInput) !== '') {
             $territorial = territorialSlug(trim($territorialInput));
@@ -246,12 +309,6 @@ class IklanController extends Controller
             $branch = territorialSlugGeneric(trim($branchInput));
         } elseif (!empty($clusterInput) && trim($clusterInput) !== '') {
             $cluster = territorialSlugGeneric(trim($clusterInput));
-        } elseif (!empty($merchantInputs) && is_array($merchantInputs)) {
-            // Filter out empty values and convert to integers
-            $merchantKeys = array_filter(array_map('intval', $merchantInputs), function($id) {
-                return $id > 0;
-            });
-            $merchantKeys = array_values($merchantKeys); // Re-index array
         }
 
         // Get the minimum order value and subtract 1 to place new items at the top
@@ -273,6 +330,7 @@ class IklanController extends Controller
             'cluster' => $cluster,
             'merchant_key' => !empty($merchantKeys) ? $merchantKeys[0] : null, // Keep first merchant for backward compatibility
             'merchant_keys' => !empty($merchantKeys) ? $merchantKeys : null, // Store as JSON array
+            'keyword_id' => $keywordId,
             'order' => $newOrder,
         ]);
 

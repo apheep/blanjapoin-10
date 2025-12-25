@@ -13,6 +13,20 @@ class Keyword extends Model
     use HasFactory;
     use SoftDeletes;
 
+    /**
+     * Boot method to handle model events.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When a keyword is being deleted (soft or hard), delete associated iklans
+        static::deleting(function ($keyword) {
+            // Delete all associated iklans
+            $keyword->iklans()->delete();
+        });
+    }
+
     protected $fillable = [
         'merchant_key',
         'kategori_keyword',
@@ -50,6 +64,14 @@ class Keyword extends Model
     }
 
     /**
+     * Get all iklans associated with this keyword.
+     */
+    public function iklans()
+    {
+        return $this->hasMany(Iklan::class, 'keyword_id', 'id');
+    }
+
+    /**
      * Auto-disable keywords that have passed their end_date
      * This method should be called periodically or in controllers
      */
@@ -77,11 +99,32 @@ class Keyword extends Model
             return false;
         }
 
-        // Hitung jumlah transaksi redeem dari tokodigi_tselpoin_redeem
-        $trxCount = DB::table('tokodigi_tselpoin_redeem')
+        // Get all redemptions for this keyword_id
+        $redemptions = DB::table('tokodigi_tselpoin_redeem')
             ->where('coupon', $this->keyword_id)
             ->where('program', 'BLANJAPOIN')
-            ->count();
+            ->select('created_date', 'coupon as keyword_id')
+            ->get();
+
+        // Count only redemptions that match THIS merchant (via click_history)
+        $trxCount = 0;
+        foreach ($redemptions as $redemption) {
+            // Find matching click for this redemption
+            $matchingClick = DB::table('click_history')
+                ->where('keyword_id', $redemption->keyword_id)
+                ->where('clicked_at', '<', $redemption->created_date)
+                ->select(
+                    'merchant_id',
+                    DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")
+                )
+                ->orderBy('time_diff_seconds', 'asc')
+                ->first();
+
+            // If click found and merchant matches THIS keyword's merchant, count it
+            if ($matchingClick && $matchingClick->merchant_id == $this->merchant_key) {
+                $trxCount++;
+            }
+        }
 
         // Hitung sisa stock: stock - trx (minimal 0)
         $stock = (int)($this->stock ?? 0);
@@ -114,5 +157,35 @@ class Keyword extends Model
         }
 
         return $updatedCount;
+    }
+
+    /**
+     * Hitung sisa stock harian untuk daily stock
+     * Menghitung: daily_stock_limit - jumlah redeem hari ini dari tokodigi_tselpoin_redeem
+     * Menghitung SEMUA redeem hari ini, termasuk data yang sudah ada sebelumnya
+     * 
+     * @return int Sisa stock harian
+     */
+    public function getDailyStockRemaining()
+    {
+        if (!$this->is_daily_stock || !$this->daily_stock_limit || !$this->keyword_id) {
+            return 0;
+        }
+
+        // Hitung jumlah redeem hari ini untuk keyword ini
+        // Gunakan DATE() function untuk memastikan semua data hari ini terhitung
+        // Termasuk data yang sudah ada sebelumnya di tabel
+        $today = Carbon::today()->format('Y-m-d');
+
+        $todayRedemptions = DB::table('tokodigi_tselpoin_redeem')
+            ->where('coupon', $this->keyword_id)
+            ->where('program', 'BLANJAPOIN')
+            ->whereRaw("DATE(created_date) = ?", [$today])
+            ->count();
+
+        // Sisa stock = daily_stock_limit - redeem hari ini
+        $remaining = max(0, (int)$this->daily_stock_limit - (int)$todayRedemptions);
+
+        return $remaining;
     }
 }

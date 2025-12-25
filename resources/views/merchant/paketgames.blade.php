@@ -76,11 +76,7 @@
                             <div class="flex items-center gap-1 text-[9px] text-neutral-600">
                                 <span class="font-medium">Stock:</span>
                                 <span class="font-semibold text-neutral-800">
-                                    @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
-                                        {{ $keyword->daily_stock_limit }}
-                                    @else
-                                        {{ $keyword->sisa_stock ?? $keyword->stock }}
-                                    @endif
+                                    {{ $keyword->sisa_stock ?? 0 }}
                                 </span>
                             </div>
                             @if($keyword->end_date)
@@ -93,19 +89,20 @@
                             @endif
                         </div>
                         @php
-                            $sisaStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
+                            // Gunakan sisa_stock untuk semua jenis stock (normal dan daily)
+                            $sisaStock = (int)($keyword->sisa_stock ?? 0);
                             $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $sisaStock > 0;
                             $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
-                            $isStockEmpty = ($keyword->stock ?? 0) <= 0;
+                            $isStockEmpty = $sisaStock <= 0;
                         @endphp
                         @if($isStockEmpty)
                         <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
                             Voucher Habis
                         </button>
                         @elseif($canRedeem)
-                        <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
+                        <a href="{{ route('track.redirect', ['merchantId' => $keyword->merchant_key, 'keywordId' => $keyword->keyword_id]) }}" target="_blank" data-redeem-btn class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
                             Redeem
-                        </button>
+                        </a>
                         @elseif($sisaStock <= 0)
                         <button disabled class="mt-1.5 w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-1 px-2.5 rounded-lg cursor-not-allowed text-[9px]">
                             Voucher Habis
@@ -151,11 +148,7 @@
                         <span class="inline-flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
                             <span>Stock: 
-                                @if($keyword->is_daily_stock && $keyword->daily_stock_limit)
-                                    {{ $keyword->daily_stock_limit }}
-                                @else
-                                    {{ $keyword->sisa_stock ?? $keyword->stock }}
-                                @endif
+                                {{ $keyword->sisa_stock ?? 0 }}
                             </span>
                         </span>
                     </div>
@@ -204,9 +197,9 @@
                                 Voucher Habis
                             </button>
                             @elseif($canRedeem)
-                            <button data-redeem-btn onclick="event.preventDefault(); event.stopPropagation(); handleRedeemClick('{{ $keyword->cta_link ?? '#' }}')" class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
+                            <a href="{{ route('track.redirect', ['merchantId' => $keyword->merchant_key, 'keywordId' => $keyword->keyword_id]) }}" target="_blank" data-redeem-btn class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
                                 Redeem
-                            </button>
+                            </a>
                             @elseif($sisaStock <= 0)
                             <button disabled class="w-auto inline-flex items-center justify-center bg-gray-400 text-white font-bold py-2 px-3.5 rounded-lg cursor-not-allowed text-xs md:text-sm">
                                 Voucher Habis
