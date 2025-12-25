@@ -156,7 +156,7 @@ class ClickHistoryController extends Controller
                 
                 if ($isActuallyMatched) {
                     // Ini benar-benar Matched (time diff terkecil untuk MSISDN + keyword ini)
-                    $clickHistory->matched_redeem = $matchedRedeem;
+            $clickHistory->matched_redeem = $matchedRedeem;
                     $clickHistory->not_matched_redeem = null;
                     $clickHistory->status_order = 2; // Matched
                 } else {
@@ -913,7 +913,7 @@ class ClickHistoryController extends Controller
             }
             }
 
-                // Apply filters to comparisons
+            // Apply filters to comparisons
             if ($searchKeyword) {
                 $comparisons = array_filter($comparisons, function($comparison) use ($searchKeyword) {
                     return stripos($comparison['msisdn'] ?? '', $searchKeyword) !== false 
