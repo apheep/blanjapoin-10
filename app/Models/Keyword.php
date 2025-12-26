@@ -186,31 +186,97 @@ class Keyword extends Model
 
     /**
      * Hitung sisa stock harian untuk daily stock
-     * Menghitung: daily_stock_limit - jumlah redeem hari ini dari tokodigi_tselpoin_redeem
-     * Menghitung SEMUA redeem hari ini, termasuk data yang sudah ada sebelumnya
+     * Menghitung: min(daily_stock_limit, sisa_stock) - trx_hari_ini
+     * Jika sisa_stock < daily_stock_limit, maka daily stock limit = sisa_stock - trx_hari_ini
      * 
-     * @return int Sisa stock harian
+     * @return int Sisa stock harian (daily stock limit yang tersisa hari ini)
      */
     public function getDailyStockRemaining()
     {
-        if (!$this->is_daily_stock || !$this->daily_stock_limit || !$this->keyword_id) {
+        // Cek apakah is_daily_stock aktif (bisa boolean true atau integer 1)
+        $isDailyStock = (bool)$this->is_daily_stock;
+        if (!$isDailyStock || !$this->daily_stock_limit || !$this->keyword_id) {
             return 0;
         }
 
-        // Hitung jumlah redeem hari ini untuk keyword ini
-        // Gunakan DATE() function untuk memastikan semua data hari ini terhitung
-        // Termasuk data yang sudah ada sebelumnya di tabel
-        $today = Carbon::today()->format('Y-m-d');
+        // Ambil sisa_stock saat ini (stock - total_trx)
+        $sisaStock = (int)($this->sisa_stock ?? 0);
+        
+        // Jika sisa_stock sudah 0, maka daily stock limit juga 0
+        if ($sisaStock <= 0) {
+            return 0;
+        }
 
+        // Hitung jumlah trx hari ini untuk keyword ini yang sesuai dengan merchant ini
+        // Menggunakan logika yang sama dengan updateTrxAndSisaStock untuk mencegah double counting
+        $today = Carbon::today()->format('Y-m-d');
+        
         $todayRedemptions = DB::table('tokodigi_tselpoin_redeem')
             ->where('coupon', $this->keyword_id)
             ->where('program', 'BLANJAPOIN')
             ->whereRaw("DATE(created_date) = ?", [$today])
-            ->count();
+            ->select('created_date', 'coupon as keyword_id', 'msisdn')
+            ->orderBy('created_date', 'asc')
+            ->get();
 
-        // Sisa stock = daily_stock_limit - redeem hari ini
-        $remaining = max(0, (int)$this->daily_stock_limit - (int)$todayRedemptions);
+        // Track kombinasi MSISDN + keyword_code yang sudah dihitung untuk merchant ini
+        $countedMsisdnKeyword = [];
+        $todayTrxCount = 0;
+
+        foreach ($todayRedemptions as $redemption) {
+            // Buat unique key untuk kombinasi MSISDN + keyword_code
+            $uniqueKey = $redemption->msisdn . '_' . $redemption->keyword_id;
+            
+            // Skip jika kombinasi MSISDN + keyword_code ini sudah dihitung sebelumnya
+            if (isset($countedMsisdnKeyword[$uniqueKey])) {
+                continue;
+            }
+
+            // Find ALL matching clicks for this redemption (dari semua merchant)
+            // Ambil yang time diff paling kecil (paling sesuai) - ini menentukan merchant mana yang "menang"
+            $matchingClick = DB::table('click_history')
+                ->where('keyword_id', $redemption->keyword_id)
+                ->where('clicked_at', '<', $redemption->created_date)
+                ->select(
+                    'merchant_id',
+                    DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")
+                )
+                ->orderBy('time_diff_seconds', 'asc') // Paling dekat waktu = paling sesuai
+                ->first();
+
+            // Hanya hitung jika:
+            // 1. Ada matching click
+            // 2. Merchant dari click (yang paling sesuai/time diff terkecil) match dengan merchant keyword ini
+            if ($matchingClick && $matchingClick->merchant_id == $this->merchant_key) {
+                $todayTrxCount++;
+                // Mark kombinasi MSISDN + keyword_code ini sudah dihitung
+                $countedMsisdnKeyword[$uniqueKey] = true;
+            }
+        }
+
+        // Daily stock limit = min(daily_stock_limit, sisa_stock) - trx_hari_ini
+        // Jika sisa_stock < daily_stock_limit, maka gunakan sisa_stock sebagai batas
+        $dailyStockLimit = min((int)$this->daily_stock_limit, $sisaStock);
+        $remaining = max(0, $dailyStockLimit - $todayTrxCount);
 
         return $remaining;
+    }
+
+    /**
+     * Get display stock untuk ditampilkan di view
+     * Jika daily stock, return daily stock limit, jika tidak return sisa_stock
+     * 
+     * @return int Stock yang ditampilkan di view
+     */
+    public function getDisplayStock()
+    {
+        // Cek is_daily_stock (bisa boolean true atau integer 1)
+        $isDailyStock = (bool)($this->is_daily_stock ?? false);
+        
+        if ($isDailyStock && $this->daily_stock_limit) {
+            return $this->getDailyStockRemaining();
+        }
+        
+        return (int)($this->sisa_stock ?? 0);
     }
 }
