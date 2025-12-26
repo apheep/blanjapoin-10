@@ -76,15 +76,7 @@
                             <div class="flex items-center gap-1 text-[9px] text-neutral-600">
                                 <span class="font-medium">Stock:</span>
                                 <span class="font-semibold text-neutral-800">
-                                    @php
-                                        // Jika daily stock, tampilkan daily stock limit, jika tidak tampilkan sisa_stock
-                                        if ($keyword->is_daily_stock && $keyword->daily_stock_limit) {
-                                            $displayStock = $keyword->getDailyStockRemaining();
-                                        } else {
-                                            $displayStock = (int)($keyword->sisa_stock ?? 0);
-                                        }
-                                    @endphp
-                                    {{ $displayStock }}
+                                    {{ $keyword->getDisplayStock() }}
                                 </span>
                             </div>
                             @if($keyword->end_date)
@@ -97,12 +89,8 @@
                             @endif
                         </div>
                         @php
-                            // Jika daily stock, gunakan daily stock limit untuk pengecekan, jika tidak gunakan sisa_stock
-                            if ($keyword->is_daily_stock && $keyword->daily_stock_limit) {
-                                $displayStock = $keyword->getDailyStockRemaining();
-                            } else {
-                                $displayStock = (int)($keyword->sisa_stock ?? 0);
-                            }
+                            // Gunakan getDisplayStock() untuk mendapatkan stock yang ditampilkan
+                            $displayStock = $keyword->getDisplayStock();
                             $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $displayStock > 0;
                             $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
                             $isStockEmpty = $displayStock <= 0;
@@ -164,13 +152,7 @@
                             <span>Stock: 
                                 @php
                                     // Jika daily stock, tampilkan daily stock limit, jika tidak tampilkan sisa_stock
-                                    if ($keyword->is_daily_stock && $keyword->daily_stock_limit) {
-                                        $displayStock = $keyword->getDailyStockRemaining();
-                                    } else {
-                                        $displayStock = (int)($keyword->sisa_stock ?? 0);
-                                    }
-                                @endphp
-                                {{ $displayStock }}
+                                    {{ $keyword->getDisplayStock() }}
                             </span>
                         </span>
                     </div>
@@ -209,12 +191,8 @@
                                 </div>
                             </div>
                             @php
-                                // Jika daily stock, gunakan daily stock limit untuk pengecekan, jika tidak gunakan sisa_stock
-                                if ($keyword->is_daily_stock && $keyword->daily_stock_limit) {
-                                    $displayStock = $keyword->getDailyStockRemaining();
-                                } else {
-                                    $displayStock = (int)($keyword->sisa_stock ?? $keyword->stock ?? 0);
-                                }
+                                // Gunakan getDisplayStock() untuk mendapatkan stock yang ditampilkan
+                                $displayStock = $keyword->getDisplayStock();
                                 $canRedeem = (!$keyword->start_date || \Carbon\Carbon::now()->startOfDay()->gte(\Carbon\Carbon::parse($keyword->start_date)->startOfDay())) && $displayStock > 0;
                                 $startDateFormatted = $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d-M-y') : '';
                                 $isStockEmpty = $displayStock <= 0;

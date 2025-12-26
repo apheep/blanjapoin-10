@@ -193,7 +193,9 @@ class Keyword extends Model
      */
     public function getDailyStockRemaining()
     {
-        if (!$this->is_daily_stock || !$this->daily_stock_limit || !$this->keyword_id) {
+        // Cek apakah is_daily_stock aktif (bisa boolean true atau integer 1)
+        $isDailyStock = (bool)$this->is_daily_stock;
+        if (!$isDailyStock || !$this->daily_stock_limit || !$this->keyword_id) {
             return 0;
         }
 
@@ -258,5 +260,23 @@ class Keyword extends Model
         $remaining = max(0, $dailyStockLimit - $todayTrxCount);
 
         return $remaining;
+    }
+
+    /**
+     * Get display stock untuk ditampilkan di view
+     * Jika daily stock, return daily stock limit, jika tidak return sisa_stock
+     * 
+     * @return int Stock yang ditampilkan di view
+     */
+    public function getDisplayStock()
+    {
+        // Cek is_daily_stock (bisa boolean true atau integer 1)
+        $isDailyStock = (bool)($this->is_daily_stock ?? false);
+        
+        if ($isDailyStock && $this->daily_stock_limit) {
+            return $this->getDailyStockRemaining();
+        }
+        
+        return (int)($this->sisa_stock ?? 0);
     }
 }
