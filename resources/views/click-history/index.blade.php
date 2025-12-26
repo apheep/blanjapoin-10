@@ -79,7 +79,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
                             <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" 
-                                   placeholder="IP, Device ID, Keyword ID..." 
+                                   placeholder="IP, Device ID, Keyword ID, MSISDN..." 
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
                         </div>
 
