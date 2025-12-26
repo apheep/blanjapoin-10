@@ -60,6 +60,12 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $e)
     {
+        // Handle AuthenticationException FIRST (sebelum production error handling)
+        // Ini penting agar redirect ke login tidak tertangkap sebagai error 500
+        if ($e instanceof AuthenticationException) {
+            return $this->unauthenticated($request, $e);
+        }
+
         // Handle TokenMismatchException (CSRF token expired)
         if ($e instanceof TokenMismatchException) {
             // Redirect ke halaman login biasa dengan pesan error
