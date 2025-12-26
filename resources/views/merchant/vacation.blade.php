@@ -145,9 +145,7 @@
                         <span class="inline-flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
                             <span>Stock: 
-                                @php
-                                    // Jika daily stock, tampilkan daily stock limit, jika tidak tampilkan sisa_stock
-                                    {{ $keyword->getDisplayStock() }}
+                                {{ $keyword->getDisplayStock() }}
                             </span>
                         </span>
                     </div>
