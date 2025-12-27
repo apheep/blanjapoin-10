@@ -153,6 +153,9 @@ Route::get('/r/{merchantId}/{keywordId?}', [MerchantController::class, 'trackAnd
 
 // API untuk tracking click (public, dipanggil dari JavaScript) - OPTIONAL
 Route::post('/api/track-click', [\App\Http\Controllers\ClickHistoryController::class, 'trackClick'])->name('api.track.click');
+Route::get('/api/resolve-gmap-url', [\App\Http\Controllers\MerchantController::class, 'resolveGmapUrl'])->name('api.resolve.gmap.url');
+Route::get('/api/geocode', [\App\Http\Controllers\MerchantController::class, 'geocode'])->name('api.geocode');
+Route::get('/api/place-details', [\App\Http\Controllers\MerchantController::class, 'placeDetails'])->name('api.place.details');
 
 // Portal merchant authentication
 Route::middleware('guest:portal')->group(function () {
