@@ -129,9 +129,11 @@ class Keyword extends Model
 
             // Find ALL matching clicks for this redemption (dari semua merchant)
             // Ambil yang time diff paling kecil (paling sesuai) - ini menentukan merchant mana yang "menang"
+            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
             $matchingClick = DB::table('click_history')
                 ->where('keyword_id', $redemption->keyword_id)
                 ->where('clicked_at', '<', $redemption->created_date)
+                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
                 ->select(
                     'merchant_id',
                     DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")
@@ -234,9 +236,11 @@ class Keyword extends Model
 
             // Find ALL matching clicks for this redemption (dari semua merchant)
             // Ambil yang time diff paling kecil (paling sesuai) - ini menentukan merchant mana yang "menang"
+            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
             $matchingClick = DB::table('click_history')
                 ->where('keyword_id', $redemption->keyword_id)
                 ->where('clicked_at', '<', $redemption->created_date)
+                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
                 ->select(
                     'merchant_id',
                     DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")

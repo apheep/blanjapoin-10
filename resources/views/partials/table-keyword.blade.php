@@ -32,12 +32,27 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     @if(Auth::check() && Auth::user()->can_approve == 1)
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Approval</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 2, 'text')" data-sortable="true" data-column-index="2">
+                            <div class="flex items-center gap-1">
+                                <span>Approval</span>
+                                <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            </div>
+                        </th>
                     @endif
                     @if(Auth::check() && Auth::user()->can_approve == 0)
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 2, 'text')" data-sortable="true" data-column-index="2">
+                            <div class="flex items-center gap-1">
+                                <span>Status</span>
+                                <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            </div>
+                        </th>
                     @endif
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 3, 'text')" data-sortable="true" data-column-index="3">
+                        <div class="flex items-center gap-1">
+                            <span>Status</span>
+                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 4, 'text')" data-sortable="true" data-column-index="4">
                         <div class="flex items-center gap-1">
                             <span>Merchant</span>
@@ -152,7 +167,10 @@
                         </td>
 
                         @if(Auth::check() && Auth::user()->can_approve == 1)
-                            <td id="keyword-action-{{ $keyword->id }}" class="px-4 py-4">
+                            @php
+                                $statusSortValue = $keyword->status === 'approve' ? '1-approve' : ($keyword->status === 'pending' ? '2-pending' : ($keyword->status === 'reject' ? '3-reject' : '2-pending'));
+                            @endphp
+                            <td id="keyword-action-{{ $keyword->id }}" class="px-4 py-4" data-sort-value="{{ $statusSortValue }}">
                                 {{-- Cek status terlebih dahulu, bukan subsidy_amount --}}
                                 @if($keyword->status === 'approve')
                                     <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 font-medium text-sm shadow-sm">
@@ -174,7 +192,10 @@
                             </td>
                         @endif
                         @if(Auth::check() && Auth::user()->can_approve == 0)
-                            <td id="keyword-status-{{ $keyword->id }}" class="px-4 py-4">
+                            @php
+                                $statusSortValue = $keyword->status === 'approve' ? '1-approve' : ($keyword->status === 'pending' ? '2-pending' : ($keyword->status === 'reject' ? '3-reject' : '2-pending'));
+                            @endphp
+                            <td id="keyword-status-{{ $keyword->id }}" class="px-4 py-4" data-sort-value="{{ $statusSortValue }}">
                             <span class="status-badge px-2 py-1 text-xs font-semibold rounded-full
                                 @if($keyword->status === 'approve')
                                     bg-green-100 text-green-800
@@ -190,7 +211,7 @@
                         @endif
 
                         {{-- Status Toggle --}}
-                        <td class="px-4 py-4">
+                        <td class="px-4 py-4" data-sort-value="{{ $keyword->is_active ? '1-active' : '0-inactive' }}">
                             <label class="relative inline-flex items-center cursor-pointer" title="Toggle Status">
                                 <input type="checkbox" 
                                        data-keyword-id="{{ $keyword->id }}" 

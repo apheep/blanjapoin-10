@@ -124,7 +124,7 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
             // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
@@ -208,7 +208,7 @@ class MerchantController extends Controller
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 

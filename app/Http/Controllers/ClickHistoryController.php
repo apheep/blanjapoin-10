@@ -265,13 +265,15 @@ class ClickHistoryController extends Controller
         // Cari redeem yang:
         // 1. Keyword ID sama
         // 2. Redeem terjadi SETELAH click (created_date > clicked_at)
-        // 3. Ambil yang selisih waktunya paling kecil
-        // 4. Optional: IP address atau device_id sama (untuk validasi lebih ketat)
+        // 3. Selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
+        // 4. Ambil yang selisih waktunya paling kecil
+        // 5. Optional: IP address atau device_id sama (untuk validasi lebih ketat)
         
         $redeem = DB::table('tokodigi_tselpoin_redeem as tr')
             ->where('tr.coupon', $clickHistory->keyword_id)
             ->where('tr.program', 'BLANJAPOIN')
             ->where('tr.created_date', '>', $clickHistory->clicked_at)
+            ->whereRaw("TIMESTAMPDIFF(SECOND, '{$clickHistory->clicked_at}', tr.created_date) > 3") // Hanya selisih > 3 detik yang dianggap match
             ->select(
                 'tr.created_date',
                 'tr.msisdn',
@@ -372,9 +374,11 @@ class ClickHistoryController extends Controller
         }
 
         // Cari semua click dengan keyword yang sama sebelum redeem
+        // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
         $allClicks = DB::table('click_history')
             ->where('keyword_id', $redeem->keyword_id)
             ->where('clicked_at', '<', $redeem->created_date)
+            ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
             ->select(
                 'id',
                 'merchant_id',
@@ -454,9 +458,11 @@ class ClickHistoryController extends Controller
         $notMatchedRedeem = null;
         foreach ($allRedeems as $redeem) {
             // Cari merchant dari click yang paling sesuai dengan redemption ini (time diff terkecil)
+            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
             $matchingClick = DB::table('click_history')
                 ->where('keyword_id', $redeem->keyword_id)
                 ->where('clicked_at', '<', $redeem->created_date)
+                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
                 ->select(
                     'merchant_id',
                     DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') as time_diff_seconds")
@@ -486,9 +492,11 @@ class ClickHistoryController extends Controller
             }
             
             // Cari merchant dari click yang paling sesuai dengan redemption ini
+            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
             $matchingClick = DB::table('click_history')
                 ->where('keyword_id', $notMatchedRedeem->keyword_id)
                 ->where('clicked_at', '<', $notMatchedRedeem->created_date)
+                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$notMatchedRedeem->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
                 ->select(
                     'merchant_id',
                     DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$notMatchedRedeem->created_date}') as time_diff_seconds")
@@ -540,11 +548,13 @@ class ClickHistoryController extends Controller
         // Cari click yang:
         // 1. Keyword ID sama
         // 2. Click terjadi SEBELUM redeem (clicked_at < created_date)
-        // 3. Ambil yang selisih waktunya paling kecil
+        // 3. Selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
+        // 4. Ambil yang selisih waktunya paling kecil
         
         $click = DB::table('click_history')
             ->where('keyword_id', $redemption->keyword_id)
             ->where('clicked_at', '<', $redemption->created_date)
+            ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
             ->select(
                 'id',
                 'merchant_id',
