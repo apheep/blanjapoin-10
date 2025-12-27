@@ -21,7 +21,7 @@ class KeywordController extends Controller
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
         
-        $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id')->paginate(10);
+        $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id', 'desc')->paginate(10);
         
         // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
         foreach ($keywords as $keyword) {
@@ -999,7 +999,7 @@ class KeywordController extends Controller
                         });
                 });
             })
-            ->orderBy('id');
+            ->orderBy('id', 'desc');
 
         // Paginate dengan parameter keyword_page yang terpisah
         // Let Laravel automatically read the page number from the request using the page name
