@@ -262,6 +262,10 @@
                                     <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung</span>
                                     <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps</span>
                                 </p>
+                                <p class="mt-1 text-xs text-orange-600 font-medium">
+                                    <i class="fas fa-magic mr-1"></i>
+                                    *Auto konvert koordinat maps
+                                </p>
                             </div>
                         </div>
 
@@ -1063,19 +1067,136 @@ let selectedLocationData = null;
 let mapPickerMode = 'upload'; // 'upload' or 'edit'
 
 // Validate URL (accepts any URL now, not just Google Maps)
-function validateGmapLink(url) {
+async function validateGmapLink(url) {
     if (!url || url.trim() === '') {
         return true;
     }
-    
+
     // Basic URL validation
     try {
         new URL(url);
-        return true;
     } catch (e) {
         return false;
     }
+
+    // If it's a Google Maps URL, try to convert it to coordinate format
+    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl') ||
+        url.includes('google.com/maps')) {
+        try {
+            const convertedUrl = await convertGmapUrl(url);
+            if (convertedUrl && convertedUrl !== url) {
+                // Update the input field with the converted URL
+                const inputField = document.getElementById('merchantLinkGmap');
+                if (inputField) {
+                    inputField.value = convertedUrl;
+                    // Silently update the field without showing message
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to convert Google Maps URL:', error);
+        }
+    }
+
+    return true;
 }
+
+// Convert Google Maps URL to coordinate format using Google Maps Embed API
+async function convertGmapUrl(url) {
+    try {
+        // For goo.gl URLs, we need to resolve them first
+        let finalUrl = url;
+        if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+            // Try to resolve the short URL
+            const response = await fetch('/api/resolve-gmap-url?url=' + encodeURIComponent(url));
+            if (response.ok) {
+                const data = await response.json();
+                finalUrl = data.final_url || url;
+            }
+        }
+
+        // Try to extract coordinates from the URL
+        const coords = extractCoordinatesFromUrl(finalUrl);
+        if (coords) {
+            return `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
+        }
+
+        // If no coordinates found, try to geocode the place using Google Maps Geocoding API
+        // This requires API key to be configured
+        const geocodedCoords = await geocodeGmapUrl(finalUrl);
+        if (geocodedCoords) {
+            return `https://www.google.com/maps?q=${geocodedCoords.lat},${geocodedCoords.lng}`;
+        }
+
+        return url; // Return original if conversion fails
+    } catch (error) {
+        console.warn('Error converting URL:', error);
+        return url;
+    }
+}
+
+// Extract coordinates from Google Maps URL
+function extractCoordinatesFromUrl(url) {
+    // Pattern 1: maps?q=lat,lng
+    const qMatch = url.match(/maps\?q=([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/);
+    if (qMatch) {
+        return { lat: qMatch[1], lng: qMatch[2] };
+    }
+
+    // Pattern 2: maps/@lat,lng
+    const atMatch = url.match(/maps\/@([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/);
+    if (atMatch) {
+        return { lat: atMatch[1], lng: atMatch[2] };
+    }
+
+    // Pattern 3: !3d(lat)!4d(lng) in data parameter
+    const dataMatch = url.match(/!3d([-+]?\d+\.?\d*)!4d([-+]?\d+\.?\d*)/);
+    if (dataMatch) {
+        return { lat: dataMatch[1], lng: dataMatch[2] };
+    }
+
+    return null;
+}
+
+// Geocode Google Maps URL using Google Maps API
+async function geocodeGmapUrl(url) {
+    try {
+        // Extract address from place URL
+        const addressMatch = url.match(/\/place\/([^\/]+)\//);
+        if (addressMatch) {
+            const address = decodeURIComponent(addressMatch[1].replace(/\+/g, ' '));
+
+            // Use Google Maps Geocoding API
+            const response = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'OK' && data.results && data.results.length > 0) {
+                    const location = data.results[0].geometry.location;
+                    return { lat: location.lat, lng: location.lng };
+                }
+            }
+        }
+
+        // Extract place ID and use Places API
+        const placeIdMatch = url.match(/!1s([^!]+)/);
+        if (placeIdMatch) {
+            const placeId = placeIdMatch[1];
+
+            const response = await fetch(`/api/place-details?place_id=${placeId}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'OK' && data.result && data.result.geometry) {
+                    const location = data.result.geometry.location;
+                    return { lat: location.lat, lng: location.lng };
+                }
+            }
+        }
+    } catch (error) {
+        console.warn('Geocoding failed:', error);
+    }
+
+    return null;
+}
+
 
 // Open map picker modal
 function openMapPicker(mode) {
