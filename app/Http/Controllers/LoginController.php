@@ -511,7 +511,8 @@ class LoginController extends Controller
         }
 
         // OTP is valid, login user (using potentially updated user object)
-        Auth::login($user);
+        // Set remember to true so session persists for 24 hours even after browser close
+        Auth::login($user, true);
         $request->session()->regenerate();
 
         // Generate JWT token using Sanctum (or you can use custom JWT)
