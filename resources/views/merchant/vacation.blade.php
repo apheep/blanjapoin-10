@@ -96,7 +96,7 @@
      @endphp
      @if($canRedeem)
      <a href="{{ route('track.redirect', ['merchantId' => $keyword->merchant_key, 'keywordId' => $keyword->keyword_id]) }}" 
-        target="_blank"
+        target="_blank" data-redeem-btn
         class="mt-1.5 w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-1 px-2.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-[9px]">
       Redeem
      </a>
@@ -196,7 +196,7 @@
       </button>
                             @elseif($canRedeem)
                             <a href="{{ route('track.redirect', ['merchantId' => $keyword->merchant_key, 'keywordId' => $keyword->keyword_id]) }}" 
-                               target="_blank"
+                               target="_blank" data-redeem-btn
                                class="w-auto inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-2 px-3.5 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg text-xs md:text-sm">
                                 Redeem
                             </a>
