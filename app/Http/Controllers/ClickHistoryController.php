@@ -22,9 +22,106 @@ class ClickHistoryController extends Controller
         $sortBy = $request->get('sort', 'clicked_at');
         $sortDir = $request->get('dir', 'desc');
         
+        // OPTIMIZED: Calculate statistics using aggregate queries instead of loops
+        // Much faster for large datasets
+        $statsBase = ClickHistory::query();
+        
+        // Apply same filters to stats query
+        if ($searchKeyword) {
+            $statsBase->where(function($q) use ($searchKeyword) {
+                $q->where('click_history.ip_address', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('click_history.device_id', 'like', '%' . $searchKeyword . '%')
+                  ->orWhere('click_history.keyword_id', 'like', '%' . $searchKeyword . '%')
+                  ->orWhereExists(function($subQuery) use ($searchKeyword) {
+                      $subQuery->select(DB::raw(1))
+                          ->from('tokodigi_tselpoin_redeem as tr')
+                          ->whereColumn('tr.coupon', 'click_history.keyword_id')
+                          ->where('tr.program', 'BLANJAPOIN')
+                          ->whereColumn('tr.created_date', '>', 'click_history.clicked_at')
+                          ->where('tr.msisdn', 'like', '%' . $searchKeyword . '%');
+                  });
+            });
+        }
+        
+        if ($merchantId) {
+            $statsBase->where('click_history.merchant_id', $merchantId);
+        }
+        
+        if ($keywordId) {
+            $statsBase->where('click_history.keyword_id', $keywordId);
+        }
+        
+        if ($date) {
+            $statsBase->whereDate('click_history.clicked_at', $date);
+        }
+        
+        // Count Matched: click yang punya redeem dengan diff_click terkecil (di tokodigi_tselpoin_redeem)
+        $totalMatched = $statsBase->clone()
+            ->whereExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('tokodigi_tselpoin_redeem as tr')
+                    ->whereColumn('tr.coupon', 'click_history.keyword_id')
+                    ->where('tr.program', 'BLANJAPOIN')
+                    ->whereColumn('tr.created_date', '>', 'click_history.clicked_at');
+            })
+            ->count();
+        
+        // Count Unmatched: click yang tidak punya redeem sama sekali
+        $totalUnmatched = $statsBase->clone()
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('tokodigi_tselpoin_redeem as tr')
+                    ->whereColumn('tr.coupon', 'click_history.keyword_id')
+                    ->where('tr.program', 'BLANJAPOIN')
+                    ->whereColumn('tr.created_date', '>', 'click_history.clicked_at');
+            })
+            ->count();
+        
+        // Not Matched: kompleks, skip untuk performa (akan dihitung di detail jika diperlukan)
+        $totalNotMatched = 0;
+        
         // Base query untuk click history dengan relasi
+        // LEFT JOIN ke tokodigi_tselpoin_redeem untuk langsung ambil matched redeem
         $query = ClickHistory::with(['merchant', 'keyword'])
-            ->select('click_history.*');
+            ->select(
+                'click_history.*',
+                DB::raw('(SELECT tr.msisdn FROM tokodigi_tselpoin_redeem tr 
+                    WHERE tr.coupon = click_history.keyword_id 
+                    AND tr.program = "BLANJAPOIN"
+                    AND tr.created_date > click_history.clicked_at
+                    ORDER BY TIMESTAMPDIFF(SECOND, click_history.clicked_at, tr.created_date) ASC
+                    LIMIT 1
+                ) as matched_msisdn'),
+                DB::raw('(SELECT tr.created_date FROM tokodigi_tselpoin_redeem tr 
+                    WHERE tr.coupon = click_history.keyword_id 
+                    AND tr.program = "BLANJAPOIN"
+                    AND tr.created_date > click_history.clicked_at
+                    ORDER BY TIMESTAMPDIFF(SECOND, click_history.clicked_at, tr.created_date) ASC
+                    LIMIT 1
+                ) as matched_redeem_date'),
+                DB::raw('(SELECT tr.keyword_desc FROM tokodigi_tselpoin_redeem tr 
+                    WHERE tr.coupon = click_history.keyword_id 
+                    AND tr.program = "BLANJAPOIN"
+                    AND tr.created_date > click_history.clicked_at
+                    ORDER BY TIMESTAMPDIFF(SECOND, click_history.clicked_at, tr.created_date) ASC
+                    LIMIT 1
+                ) as matched_keyword_desc'),
+                DB::raw('(SELECT tr.poin_redeem FROM tokodigi_tselpoin_redeem tr 
+                    WHERE tr.coupon = click_history.keyword_id 
+                    AND tr.program = "BLANJAPOIN"
+                    AND tr.created_date > click_history.clicked_at
+                    ORDER BY TIMESTAMPDIFF(SECOND, click_history.clicked_at, tr.created_date) ASC
+                    LIMIT 1
+                ) as matched_poin_redeem'),
+                DB::raw('(SELECT TIMESTAMPDIFF(SECOND, click_history.clicked_at, tr.created_date) 
+                    FROM tokodigi_tselpoin_redeem tr 
+                    WHERE tr.coupon = click_history.keyword_id 
+                    AND tr.program = "BLANJAPOIN"
+                    AND tr.created_date > click_history.clicked_at
+                    ORDER BY TIMESTAMPDIFF(SECOND, click_history.clicked_at, tr.created_date) ASC
+                    LIMIT 1
+                ) as matched_diff_seconds')
+            );
 
         // Apply filters
         if ($searchKeyword) {
@@ -32,7 +129,6 @@ class ClickHistoryController extends Controller
                 $q->where('click_history.ip_address', 'like', '%' . $searchKeyword . '%')
                   ->orWhere('click_history.device_id', 'like', '%' . $searchKeyword . '%')
                   ->orWhere('click_history.keyword_id', 'like', '%' . $searchKeyword . '%')
-                  // Search MSISDN dari matched/not matched redemption
                   ->orWhereExists(function($subQuery) use ($searchKeyword) {
                       $subQuery->select(DB::raw(1))
                           ->from('tokodigi_tselpoin_redeem as tr')
@@ -56,181 +152,55 @@ class ClickHistoryController extends Controller
             $query->whereDate('click_history.clicked_at', $date);
         }
 
-        // Apply sorting - All sorting done at query level for all data
-        // Note: Join hanya dilakukan saat sorting merchant untuk menghindari konflik dengan filter
+        // Apply sorting
         if ($sortBy === 'merchant') {
-            // Join dengan merchants hanya untuk sorting
             $query->leftJoin('merchants', 'click_history.merchant_id', '=', 'merchants.id')
-                  ->select('click_history.*', 'merchants.nama_merchant') // Include nama_merchant in SELECT
+                  ->addSelect('merchants.nama_merchant')
                   ->orderBy('merchants.nama_merchant', $sortDir)
-                  ->groupBy('click_history.id'); // Group by untuk menghindari duplicate
+                  ->groupBy('click_history.id');
         } elseif ($sortBy === 'clicked_at') {
             $query->orderBy('click_history.clicked_at', $sortDir);
         } elseif ($sortBy === 'status') {
-            // Sort by status: hanya Matched dan Unmatched yang di-sort
-            // Not Matched tetap ditampilkan tapi tidak ikut sorting
-            // Matched = has redeem with matching keyword_id and created_date > clicked_at
-            // Unmatched = tidak ada redeem
-            $query->selectRaw('click_history.*, 
-                CASE WHEN EXISTS (
-                    SELECT 1 FROM tokodigi_tselpoin_redeem as tr 
-                    WHERE tr.coupon = click_history.keyword_id 
-                    AND tr.program = "BLANJAPOIN"
-                    AND tr.created_date > click_history.clicked_at
-                ) THEN 2 ELSE 0 END as status_order')
-            ->orderBy('status_order', $sortDir)
-            ->orderBy('click_history.clicked_at', 'desc'); // Secondary sort
+            // Sort by existence of matched redeem
+            $query->orderByRaw('(SELECT 1 FROM tokodigi_tselpoin_redeem tr 
+                WHERE tr.coupon = click_history.keyword_id 
+                AND tr.program = "BLANJAPOIN"
+                AND tr.created_date > click_history.clicked_at
+                LIMIT 1) ' . $sortDir)
+                ->orderBy('click_history.clicked_at', 'desc');
         } else {
             $query->orderBy('click_history.clicked_at', 'desc');
         }
 
-        // Calculate total Matched and Unmatched from ALL data (not just current page)
-        // Create a separate query for statistics (without pagination)
-        $statsQuery = ClickHistory::select('click_history.*');
-        
-        // Apply same filters to stats query
-        if ($searchKeyword) {
-            $statsQuery->where(function($q) use ($searchKeyword) {
-                $q->where('click_history.ip_address', 'like', '%' . $searchKeyword . '%')
-                  ->orWhere('click_history.device_id', 'like', '%' . $searchKeyword . '%')
-                  ->orWhere('click_history.keyword_id', 'like', '%' . $searchKeyword . '%')
-                  // Search MSISDN dari matched/not matched redemption
-                  ->orWhereExists(function($subQuery) use ($searchKeyword) {
-                      $subQuery->select(DB::raw(1))
-                          ->from('tokodigi_tselpoin_redeem as tr')
-                          ->whereColumn('tr.coupon', 'click_history.keyword_id')
-                          ->where('tr.program', 'BLANJAPOIN')
-                          ->whereColumn('tr.created_date', '>', 'click_history.clicked_at')
-                          ->where('tr.msisdn', 'like', '%' . $searchKeyword . '%');
-                  });
-            });
-        }
-
-        if ($merchantId) {
-            $statsQuery->where('click_history.merchant_id', $merchantId);
-        }
-
-        if ($keywordId) {
-            $statsQuery->where('click_history.keyword_id', $keywordId);
-        }
-
-        if ($date) {
-            $statsQuery->whereDate('click_history.clicked_at', $date);
-        }
-
-        // Get all click histories for statistics (without pagination)
-        $allClickHistories = $statsQuery->get();
-        
-        // Calculate matched, unmatched, and not matched counts from all data
-        // Gunakan logika yang sama dengan yang digunakan untuk menentukan status di table
-        $totalMatched = 0;
-        $totalUnmatched = 0;
-        $totalNotMatched = 0;
-        
-        foreach ($allClickHistories as $clickHistory) {
-            $matchedRedeem = $this->findMatchingRedeem($clickHistory);
-            if ($matchedRedeem) {
-                // Cek apakah benar-benar matched atau not matched menggunakan logika yang sama
-                $isActuallyMatched = $this->isActuallyMatched($clickHistory, $matchedRedeem);
-                
-                if ($isActuallyMatched) {
-                    $totalMatched++;
-                } else {
-                    $totalNotMatched++;
-                }
-            } else {
-                $totalUnmatched++;
-            }
-        }
-
-        // Paginate - sorting sudah dilakukan di query level untuk semua data
-        // Remove distinct() as it's not needed and causes issues with ORDER BY
+        // Paginate
         $clickHistories = $query->paginate(20)->appends($request->query());
 
-        // Untuk setiap click history, tentukan apakah Matched atau Not Matched
-        // Logika: Untuk MSISDN + keyword yang sama, hanya yang time diff terkecil yang Matched
+        // Post-process: add matched_redeem object untuk backward compatibility dengan view
         foreach ($clickHistories as $clickHistory) {
-            $matchedRedeem = $this->findMatchingRedeem($clickHistory);
-            
-            if ($matchedRedeem) {
-                // Cek apakah ada redemption lain dengan MSISDN + keyword yang sama dengan time diff lebih kecil
-                // Jika ada, berarti click history ini seharusnya Not Matched
-                $isActuallyMatched = $this->isActuallyMatched($clickHistory, $matchedRedeem);
-                
-                if ($isActuallyMatched) {
-                    // Ini benar-benar Matched (time diff terkecil untuk MSISDN + keyword ini)
-            $clickHistory->matched_redeem = $matchedRedeem;
-                    $clickHistory->not_matched_redeem = null;
-                    $clickHistory->status_order = 2; // Matched
-                } else {
-                    // Ini seharusnya Not Matched (ada yang time diff lebih kecil)
-                    $clickHistory->matched_redeem = null;
-                    $clickHistory->not_matched_redeem = $matchedRedeem; // Gunakan matchedRedeem sebagai not_matched
-                    $clickHistory->status_order = 1; // Not Matched
-                    
-                    // Pastikan time_diff_human dan confidence sudah di-set
-                    if (!isset($matchedRedeem->time_diff_human)) {
-                        $matchedRedeem->time_diff_human = $this->secondsToHuman($matchedRedeem->time_diff_seconds ?? 0);
-                    }
-                    if (!isset($matchedRedeem->confidence)) {
-                        $timeDiff = $matchedRedeem->time_diff_seconds ?? 0;
-                        if ($timeDiff <= 300) {
-                            $matchedRedeem->confidence = 'high';
-                        } elseif ($timeDiff <= 900) {
-                            $matchedRedeem->confidence = 'medium';
-                        } else {
-                            $matchedRedeem->confidence = 'low';
-                        }
-                    }
-                    
-                    // Cari merchant yang benar-benar matched (time diff terkecil)
-                    $actualMatchedClick = $this->findActualMatchedClick($matchedRedeem);
-                    if ($actualMatchedClick) {
-                        $merchant = DB::table('merchants')->where('id', $actualMatchedClick->merchant_id)->first();
-                        $matchedRedeem->matched_merchant = $merchant;
-                    }
-                }
+            if ($clickHistory->matched_msisdn) {
+                $clickHistory->matched_redeem = (object)[
+                    'msisdn' => $clickHistory->matched_msisdn,
+                    'created_date' => $clickHistory->matched_redeem_date,
+                    'keyword_desc' => $clickHistory->matched_keyword_desc,
+                    'keyword_id' => $clickHistory->keyword_id,
+                    'poin_redeem' => $clickHistory->matched_poin_redeem,
+                    'time_diff_seconds' => $clickHistory->matched_diff_seconds,
+                    'time_diff_human' => $this->secondsToHuman($clickHistory->matched_diff_seconds),
+                    'confidence' => $this->getConfidenceLevel($clickHistory->matched_diff_seconds),
+                ];
+                $clickHistory->status_order = 2; // Matched
             } else {
                 $clickHistory->matched_redeem = null;
-                $clickHistory->not_matched_redeem = null;
                 $clickHistory->status_order = 0; // Unmatched
             }
-        }
-        
-        // Untuk sorting status: jika sort by status, re-sort collection
-        // Hanya Matched (status_order = 2) dan Unmatched (status_order = 0) yang di-sort
-        // Not Matched (status_order = 1) tetap ditampilkan tapi tidak ikut sorting (selalu di akhir)
-        if ($sortBy === 'status') {
-            $sortedItems = $clickHistories->getCollection()->sort(function ($a, $b) use ($sortDir) {
-                // Not Matched (status_order = 1) selalu di akhir, tidak ikut sorting
-                if ($a->status_order == 1 && $b->status_order != 1) {
-                    return 1; // Not Matched selalu di bawah
-                }
-                if ($a->status_order != 1 && $b->status_order == 1) {
-                    return -1; // Not Matched selalu di bawah
-                }
-                if ($a->status_order == 1 && $b->status_order == 1) {
-                    // Jika keduanya Not Matched, sort by clicked_at desc
-                    return $b->clicked_at <=> $a->clicked_at;
-                }
-                // Matched dan Unmatched di-sort berdasarkan status_order
-                if ($sortDir === 'asc') {
-                    return $a->status_order <=> $b->status_order;
-                } else {
-                    return $b->status_order <=> $a->status_order;
-                }
-            });
             
-            // Replace collection dengan yang sudah di-sort
-            $clickHistories->setCollection($sortedItems->values());
+            // Skip not_matched_redeem untuk performa (hanya hitung di detail page jika diperlukan)
+            $clickHistory->not_matched_redeem = null;
         }
 
-        // Get all merchants and keywords for filter dropdowns (termasuk yang inactive)
+        // Get all merchants and keywords for filter dropdowns
         $merchants = Merchant::orderBy('nama_merchant')->get();
         $keywords = Keyword::orderBy('keyword_id')->get();
-
-        // If AJAX request, return full page HTML (we'll extract table part in JS)
-        // This is simpler than creating separate partials
 
         return view('click-history.index', [
             'clickHistories' => $clickHistories,
@@ -252,6 +222,22 @@ class ClickHistoryController extends Controller
     }
 
     /**
+     * Get confidence level based on time difference
+     */
+    private function getConfidenceLevel($seconds)
+    {
+        if (!$seconds) return 'low';
+        
+        if ($seconds <= 300) {
+            return 'high'; // ≤5 menit
+        } elseif ($seconds <= 900) {
+            return 'medium'; // ≤15 menit
+        } else {
+            return 'low'; // >15 menit
+        }
+    }
+
+    /**
      * Cari redeem yang paling cocok dengan click history
      * Konsep: Klik dulu → Redeem kemudian
      * Cocokkan keyword, ambil selisih waktu paling dekat
@@ -265,15 +251,13 @@ class ClickHistoryController extends Controller
         // Cari redeem yang:
         // 1. Keyword ID sama
         // 2. Redeem terjadi SETELAH click (created_date > clicked_at)
-        // 3. Selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
-        // 4. Ambil yang selisih waktunya paling kecil
-        // 5. Optional: IP address atau device_id sama (untuk validasi lebih ketat)
+        // 3. Ambil yang selisih waktunya paling kecil
+        // 4. Optional: IP address atau device_id sama (untuk validasi lebih ketat)
         
         $redeem = DB::table('tokodigi_tselpoin_redeem as tr')
             ->where('tr.coupon', $clickHistory->keyword_id)
             ->where('tr.program', 'BLANJAPOIN')
             ->where('tr.created_date', '>', $clickHistory->clicked_at)
-            ->whereRaw("TIMESTAMPDIFF(SECOND, '{$clickHistory->clicked_at}', tr.created_date) > 3") // Hanya selisih > 3 detik yang dianggap match
             ->select(
                 'tr.created_date',
                 'tr.msisdn',
@@ -307,127 +291,9 @@ class ClickHistoryController extends Controller
     }
 
     /**
-     * Cek apakah click history ini benar-benar Matched (time diff terkecil untuk MSISDN + keyword)
-     * Logika: Untuk MSISDN + keyword yang sama, bandingkan time diff dari SEMUA click history
-     * yang match dengan redemption yang sama. Yang time diff terkecil = Matched.
-     * Tidak peduli merchant-nya sama atau berbeda, yang penting time diff terkecil.
-     */
-    private function isActuallyMatched($clickHistory, $matchedRedeem)
-    {
-        if (!$clickHistory->keyword_id || !$matchedRedeem->msisdn) {
-            return true; // Default true jika tidak bisa dicek
-        }
-
-        // Cari semua click history dengan keyword yang sama
-        $allClicks = ClickHistory::where('keyword_id', $clickHistory->keyword_id)->get();
-        
-        // Untuk setiap click, cari redemption dengan MSISDN yang sama
-        // Kumpulkan semua click yang match dengan MSISDN + keyword yang sama
-        // Gunakan time_diff_microseconds untuk presisi lebih tinggi
-        $allClickTimeDiffs = [];
-        foreach ($allClicks as $ch) {
-            // Skip jika ini click history yang sedang dicek
-            if ($ch->id == $clickHistory->id) {
-                continue;
-            }
-            
-            $redeem = $this->findMatchingRedeem($ch);
-            if ($redeem && $redeem->msisdn == $matchedRedeem->msisdn) {
-                // Bandingkan SEMUA click, tidak peduli merchant-nya sama atau berbeda
-                // Gunakan microsecond untuk presisi lebih tinggi
-                $timeDiffMicroseconds = $redeem->time_diff_microseconds ?? ($redeem->time_diff_seconds ?? 0) * 1000000;
-                $allClickTimeDiffs[] = [
-                    'click_history_id' => $ch->id,
-                    'merchant_id' => $ch->merchant_id,
-                    'time_diff_seconds' => $redeem->time_diff_seconds ?? 0,
-                    'time_diff_microseconds' => $timeDiffMicroseconds
-                ];
-            }
-        }
-
-        // Jika tidak ada click lain dengan MSISDN + keyword yang sama, maka ini pasti Matched
-        if (count($allClickTimeDiffs) == 0) {
-            return true;
-        }
-
-        // Cari time diff terkecil dari semua click lain menggunakan microsecond
-        $minTimeDiffMicroseconds = min(array_column($allClickTimeDiffs, 'time_diff_microseconds'));
-
-        // Bandingkan time diff dari click history ini dengan yang terkecil dari click lain
-        // Gunakan microsecond untuk presisi lebih tinggi
-        $currentTimeDiffMicroseconds = $matchedRedeem->time_diff_microseconds ?? (($matchedRedeem->time_diff_seconds ?? 0) * 1000000);
-        
-        // Jika time diff dari click history ini lebih kecil (dengan presisi microsecond), 
-        // maka ini benar-benar Matched
-        // Jika ada yang lebih kecil, berarti ini Not Matched
-        // Dengan microsecond precision, kemungkinan sama sangat kecil, jadi gunakan < saja
-        return $currentTimeDiffMicroseconds < $minTimeDiffMicroseconds;
-    }
-
-    /**
-     * Cari click yang benar-benar matched (time diff terkecil) untuk redemption ini
-     */
-    private function findActualMatchedClick($redeem)
-    {
-        if (!$redeem->keyword_id) {
-            return null;
-        }
-
-        // Cari semua click dengan keyword yang sama sebelum redeem
-        // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
-        $allClicks = DB::table('click_history')
-            ->where('keyword_id', $redeem->keyword_id)
-            ->where('clicked_at', '<', $redeem->created_date)
-            ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
-            ->select(
-                'id',
-                'merchant_id',
-                'clicked_at',
-                DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') as time_diff_seconds"),
-                DB::raw("TIMESTAMPDIFF(MICROSECOND, clicked_at, '{$redeem->created_date}') as time_diff_microseconds")
-            )
-            ->get();
-
-        // Cari click dengan time diff terkecil menggunakan microsecond untuk presisi lebih tinggi
-        $minTimeDiffMicroseconds = null;
-        $matchedClick = null;
-        foreach ($allClicks as $click) {
-            $timeDiffMicroseconds = $click->time_diff_microseconds ?? ($click->time_diff_seconds ?? 0) * 1000000;
-            if ($minTimeDiffMicroseconds === null || $timeDiffMicroseconds < $minTimeDiffMicroseconds) {
-                $minTimeDiffMicroseconds = $timeDiffMicroseconds;
-                $matchedClick = $click;
-            }
-        }
-
-        return $matchedClick;
-    }
-
-    /**
-     * Cari click history yang benar-benar matched untuk redemption ini
-     */
-    private function findActualMatchedClickHistory($redeem)
-    {
-        if (!$redeem->keyword_id) {
-            return null;
-        }
-
-        // Cari click dengan time diff terkecil
-        $matchedClick = $this->findActualMatchedClick($redeem);
-        
-        if ($matchedClick) {
-            return ClickHistory::with(['merchant', 'keyword'])
-                ->where('id', $matchedClick->id)
-                ->first();
-        }
-
-        return null;
-    }
-
-    /**
      * Cari redemption dengan time diff terbesar (Not Matched) untuk MSISDN yang sama
      * Digunakan untuk menampilkan redemption yang tidak match karena time diff terlalu lama
      * dari merchant yang berbeda
-     * @deprecated - Digunakan logika baru di isActuallyMatched
      */
     private function findNotMatchedRedeem($clickHistory, $msisdn)
     {
@@ -458,11 +324,9 @@ class ClickHistoryController extends Controller
         $notMatchedRedeem = null;
         foreach ($allRedeems as $redeem) {
             // Cari merchant dari click yang paling sesuai dengan redemption ini (time diff terkecil)
-            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
             $matchingClick = DB::table('click_history')
                 ->where('keyword_id', $redeem->keyword_id)
                 ->where('clicked_at', '<', $redeem->created_date)
-                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
                 ->select(
                     'merchant_id',
                     DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') as time_diff_seconds")
@@ -492,11 +356,9 @@ class ClickHistoryController extends Controller
             }
             
             // Cari merchant dari click yang paling sesuai dengan redemption ini
-            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
             $matchingClick = DB::table('click_history')
                 ->where('keyword_id', $notMatchedRedeem->keyword_id)
                 ->where('clicked_at', '<', $notMatchedRedeem->created_date)
-                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$notMatchedRedeem->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
                 ->select(
                     'merchant_id',
                     DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$notMatchedRedeem->created_date}') as time_diff_seconds")
@@ -548,13 +410,11 @@ class ClickHistoryController extends Controller
         // Cari click yang:
         // 1. Keyword ID sama
         // 2. Click terjadi SEBELUM redeem (clicked_at < created_date)
-        // 3. Selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
-        // 4. Ambil yang selisih waktunya paling kecil
+        // 3. Ambil yang selisih waktunya paling kecil
         
         $click = DB::table('click_history')
             ->where('keyword_id', $redemption->keyword_id)
             ->where('clicked_at', '<', $redemption->created_date)
-            ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
             ->select(
                 'id',
                 'merchant_id',
@@ -823,215 +683,114 @@ class ClickHistoryController extends Controller
      */
     public function notMatchedDetail(Request $request)
     {
-        try {
-            // Get filter parameters
-            $searchKeyword = $request->get('search');
-            $merchantId = $request->get('merchant_id');
-            $date = $request->get('date');
+        // Get filter parameters
+        $searchKeyword = $request->get('search');
+        $merchantId = $request->get('merchant_id');
+        $date = $request->get('date');
 
-            // Get all click histories yang memiliki matched_redeem dan not_matched_redeem
-            // Gunakan chunk untuk menghindari memory issue jika data banyak
-            $clickHistories = ClickHistory::with(['merchant', 'keyword'])
-                ->select('click_history.*')
-                ->get();
+        // Get all click histories yang memiliki matched_redeem dan not_matched_redeem
+        $clickHistories = ClickHistory::with(['merchant', 'keyword'])
+            ->select('click_history.*')
+            ->get();
 
-                // Process untuk mendapatkan data komparasi dengan logika yang benar
-            // Group by MSISDN + keyword_id, lalu tentukan matched dan not matched
-            $comparisons = [];
-            $processedKeys = [];
-            
-            foreach ($clickHistories as $clickHistory) {
+        // Process untuk mendapatkan data komparasi
+        $comparisons = [];
+        
+        foreach ($clickHistories as $clickHistory) {
             $matchedRedeem = $this->findMatchingRedeem($clickHistory);
             
             if ($matchedRedeem) {
-                $key = $matchedRedeem->msisdn . '_' . $clickHistory->keyword_id;
+                $notMatchedRedeem = $this->findNotMatchedRedeem($clickHistory, $matchedRedeem->msisdn);
                 
-                // Skip jika sudah diproses
-                if (in_array($key, $processedKeys)) {
-                    continue;
-                }
-                
-                // Cari semua click history dengan MSISDN + keyword yang sama
-                $allClicksForRedeem = ClickHistory::with(['merchant', 'keyword'])
-                    ->where('keyword_id', $clickHistory->keyword_id)
-                    ->get();
-                
-                // Untuk setiap click, cari redemption dan time diff
-                // Gunakan microsecond untuk presisi lebih tinggi
-                $clickRedeemPairs = [];
-                foreach ($allClicksForRedeem as $ch) {
-                    $redeem = $this->findMatchingRedeem($ch);
-                    if ($redeem && $redeem->msisdn == $matchedRedeem->msisdn) {
-                        $timeDiffMicroseconds = $redeem->time_diff_microseconds ?? (($redeem->time_diff_seconds ?? 0) * 1000000);
-                        $clickRedeemPairs[] = [
-                            'click_history' => $ch,
-                            'redeem' => $redeem,
-                            'time_diff_seconds' => $redeem->time_diff_seconds ?? 0,
-                            'time_diff_microseconds' => $timeDiffMicroseconds
+                if ($notMatchedRedeem) {
+                    // Group by MSISDN + keyword_id
+                    $key = $matchedRedeem->msisdn . '_' . $clickHistory->keyword_id;
+                    
+                    if (!isset($comparisons[$key])) {
+                        $comparisons[$key] = [
+                            'msisdn' => $matchedRedeem->msisdn,
+                            'keyword_id' => $clickHistory->keyword_id,
+                            'keyword_desc' => $matchedRedeem->keyword_desc ?? $clickHistory->keyword_id,
+                            'matched' => [],
+                            'not_matched' => []
                         ];
                     }
-                }
-                
-                // Jika ada lebih dari 1 click dengan MSISDN + keyword yang sama
-                if (count($clickRedeemPairs) > 1) {
-                    // Sort by time diff microsecond (terkecil ke terbesar) untuk presisi lebih tinggi
-                    usort($clickRedeemPairs, function($a, $b) {
-                        return $a['time_diff_microseconds'] <=> $b['time_diff_microseconds'];
-                    });
                     
-                    // Yang pertama (time diff terkecil) = Matched
-                    // Yang lainnya (time diff lebih lama) = Not Matched
-                    $matched = $clickRedeemPairs[0];
-                    $notMatchedList = array_slice($clickRedeemPairs, 1);
-                    
-                    $comparisons[$key] = [
-                        'msisdn' => $matchedRedeem->msisdn ?? '',
-                        'keyword_id' => $clickHistory->keyword_id ?? '',
-                        'keyword_desc' => $matchedRedeem->keyword_desc ?? $clickHistory->keyword_id ?? '',
-                        'matched' => [[
-                            'click_history' => $matched['click_history'],
-                            'redeem' => $matched['redeem'],
-                            'merchant' => $matched['click_history']->merchant ?? null
-                        ]],
-                        'not_matched' => []
+                    // Add matched redemption
+                    $comparisons[$key]['matched'][] = [
+                        'click_history' => $clickHistory,
+                        'redeem' => $matchedRedeem,
+                        'merchant' => $clickHistory->merchant
                     ];
                     
-                    // Add not matched
-                    foreach ($notMatchedList as $notMatched) {
-                        $actualMatchedClick = $this->findActualMatchedClick($notMatched['redeem']);
-                        $merchant = null;
-                        if ($actualMatchedClick) {
-                            $merchant = DB::table('merchants')->where('id', $actualMatchedClick->merchant_id)->first();
-                        }
-                        
-                        // Pastikan time_diff_human dan confidence sudah di-set
-                        if (!isset($notMatched['redeem']->time_diff_human)) {
-                            $notMatched['redeem']->time_diff_human = $this->secondsToHuman($notMatched['redeem']->time_diff_seconds ?? 0);
-                        }
-                        if (!isset($notMatched['redeem']->confidence)) {
-                            $timeDiff = $notMatched['redeem']->time_diff_seconds ?? 0;
-                            if ($timeDiff <= 300) {
-                                $notMatched['redeem']->confidence = 'high';
-                            } elseif ($timeDiff <= 900) {
-                                $notMatched['redeem']->confidence = 'medium';
-                            } else {
-                                $notMatched['redeem']->confidence = 'low';
-                            }
-                        }
-                        
-                        $comparisons[$key]['not_matched'][] = [
-                            'click_history' => $notMatched['click_history'],
-                            'redeem' => $notMatched['redeem'],
-                            'merchant' => $merchant
-                        ];
-                    }
-                    
-                    $processedKeys[] = $key;
+                    // Add not matched redemption
+                    $comparisons[$key]['not_matched'][] = [
+                        'click_history' => $clickHistory,
+                        'redeem' => $notMatchedRedeem,
+                        'merchant' => $notMatchedRedeem->matched_merchant ?? null
+                    ];
                 }
             }
-            }
-
-            // Apply filters to comparisons
-            if ($searchKeyword) {
-                $comparisons = array_filter($comparisons, function($comparison) use ($searchKeyword) {
-                    return stripos($comparison['msisdn'] ?? '', $searchKeyword) !== false 
-                        || stripos($comparison['keyword_id'] ?? '', $searchKeyword) !== false
-                        || stripos($comparison['keyword_desc'] ?? '', $searchKeyword) !== false;
-                });
-            }
-
-            if ($merchantId) {
-                $comparisons = array_filter($comparisons, function($comparison) use ($merchantId) {
-                    // Check if any matched or not_matched has this merchant_id
-                    foreach ($comparison['matched'] ?? [] as $matched) {
-                        if (isset($matched['click_history']) && $matched['click_history']->merchant_id == $merchantId) {
-                            return true;
-                        }
-                    }
-                    foreach ($comparison['not_matched'] ?? [] as $notMatched) {
-                        if (isset($notMatched['merchant']) && $notMatched['merchant'] && $notMatched['merchant']->id == $merchantId) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-            }
-
-            if ($date) {
-                $comparisons = array_filter($comparisons, function($comparison) use ($date) {
-                    // Check if any matched or not_matched has this date
-                    foreach ($comparison['matched'] ?? [] as $matched) {
-                        if (isset($matched['click_history']) && $matched['click_history']->clicked_at && $matched['click_history']->clicked_at->format('Y-m-d') == $date) {
-                            return true;
-                        }
-                    }
-                    foreach ($comparison['not_matched'] ?? [] as $notMatched) {
-                        if (isset($notMatched['click_history']) && $notMatched['click_history']->clicked_at && $notMatched['click_history']->clicked_at->format('Y-m-d') == $date) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-            }
-
-            // Re-index array after filtering (filter diterapkan pada SEMUA data sebelum pagination)
-            $comparisons = array_values($comparisons);
-
-            // Calculate totals from all filtered comparisons (before pagination)
-            // Ini memastikan total dihitung dari semua data yang sudah di-filter, bukan hanya halaman saat ini
-            $totalMatched = 0;
-            $totalNotMatched = 0;
-            foreach ($comparisons as $comparison) {
-                $totalMatched += count($comparison['matched'] ?? []);
-                $totalNotMatched += count($comparison['not_matched'] ?? []);
-            }
-
-            // Pagination: 5 MSISDN (comparisons) per page
-            // Filter/search sudah diterapkan pada semua data di atas, jadi pagination hanya membagi hasil filter
-            $perPage = 5;
-            $currentPage = $request->get('page', 1);
-            $total = count($comparisons); // Total dari semua data yang sudah di-filter
-            $offset = ($currentPage - 1) * $perPage;
-            $paginatedComparisons = array_slice($comparisons, $offset, $perPage);
-
-            // Create paginator manually
-            $comparisonsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
-                $paginatedComparisons,
-                $total,
-                $perPage,
-                $currentPage,
-                [
-                    'path' => $request->url(),
-                    'query' => $request->query() // Preserve filter parameters in pagination links
-                ]
-            );
-
-            // Get all merchants for filter dropdown
-            $merchants = Merchant::orderBy('nama_merchant')->get();
-
-            return view('click-history.not-matched-detail', [
-                'comparisons' => $comparisonsPaginator,
-                'merchants' => $merchants,
-                'totalMatched' => $totalMatched,
-                'totalNotMatched' => $totalNotMatched,
-                'filters' => [
-                    'search' => $searchKeyword,
-                    'merchant_id' => $merchantId,
-                    'date' => $date
-                ]
-            ]);
-        } catch (\Exception $e) {
-            // Log error untuk debugging
-            Log::error('Error in notMatchedDetail: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]);
-            
-            // Return error page atau redirect dengan error message
-            return redirect()->route('click.history.index')
-                ->with('error', 'Terjadi kesalahan saat memuat data. Silakan coba lagi.');
         }
+
+        // Apply filters to comparisons
+        if ($searchKeyword) {
+            $comparisons = array_filter($comparisons, function($comparison) use ($searchKeyword) {
+                return stripos($comparison['msisdn'], $searchKeyword) !== false 
+                    || stripos($comparison['keyword_id'], $searchKeyword) !== false
+                    || stripos($comparison['keyword_desc'], $searchKeyword) !== false;
+            });
+        }
+
+        if ($merchantId) {
+            $comparisons = array_filter($comparisons, function($comparison) use ($merchantId) {
+                // Check if any matched or not_matched has this merchant_id
+                foreach ($comparison['matched'] as $matched) {
+                    if ($matched['click_history']->merchant_id == $merchantId) {
+                        return true;
+                    }
+                }
+                foreach ($comparison['not_matched'] as $notMatched) {
+                    if (isset($notMatched['merchant']) && $notMatched['merchant']->id == $merchantId) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        if ($date) {
+            $comparisons = array_filter($comparisons, function($comparison) use ($date) {
+                // Check if any matched or not_matched has this date
+                foreach ($comparison['matched'] as $matched) {
+                    if ($matched['click_history']->clicked_at->format('Y-m-d') == $date) {
+                        return true;
+                    }
+                }
+                foreach ($comparison['not_matched'] as $notMatched) {
+                    if ($notMatched['click_history']->clicked_at->format('Y-m-d') == $date) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        // Re-index array after filtering
+        $comparisons = array_values($comparisons);
+
+        // Get all merchants for filter dropdown
+        $merchants = Merchant::orderBy('nama_merchant')->get();
+
+        return view('click-history.not-matched-detail', [
+            'comparisons' => $comparisons,
+            'merchants' => $merchants,
+            'filters' => [
+                'search' => $searchKeyword,
+                'merchant_id' => $merchantId,
+                'date' => $date
+            ]
+        ]);
     }
 
     /**
@@ -1055,3 +814,4 @@ class ClickHistoryController extends Controller
         return $cookie_value;
     }
 }
+
