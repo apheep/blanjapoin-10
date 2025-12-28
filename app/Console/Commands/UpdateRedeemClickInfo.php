@@ -30,6 +30,7 @@ class UpdateRedeemClickInfo extends Command
         $limit = $this->option('limit');
         $updated = 0;
         $skipped = 0;
+        $noClick = 0;
         
         // Get redeems yang belum punya merchant_id (NULL)
         $redeems = \DB::table('tokodigi_tselpoin_redeem')
@@ -42,40 +43,66 @@ class UpdateRedeemClickInfo extends Command
         $total = $redeems->count();
         $this->info("Found {$total} redeems to process");
         
+        if ($total == 0) {
+            $this->info("No records to process");
+            return 0;
+        }
+        
         $bar = $this->output->createProgressBar($total);
         $bar->start();
         
         foreach ($redeems as $redeem) {
-            // Cari click history yang matching:
-            // 1. Keyword ID sama (coupon = keyword_id)
-            // 2. Click terjadi SEBELUM redeem (clicked_at < created_date)
-            // 3. Ambil yang selisih waktunya paling kecil
-            
-            $matchingClick = \DB::table('click_history')
-                ->where('keyword_id', $redeem->coupon)
-                ->where('clicked_at', '<', $redeem->created_date)
-                ->selectRaw('
-                    id,
-                    merchant_id,
-                    keyword_id,
-                    clicked_at,
-                    TIMESTAMPDIFF(SECOND, clicked_at, ?) as diff_seconds
-                ', [$redeem->created_date])
-                ->orderBy('diff_seconds', 'asc')
-                ->first();
-            
-            if ($matchingClick) {
-                // Update redeem dengan info dari matching click
-                \DB::table('tokodigi_tselpoin_redeem')
-                    ->where('id', $redeem->id)
-                    ->update([
-                        'merchant_id' => $matchingClick->merchant_id,
-                        'click_date' => $matchingClick->clicked_at,
-                        'diff_click' => $matchingClick->diff_seconds,
-                    ]);
+            try {
+                // Cari click history yang matching:
+                // 1. Keyword ID sama (coupon = keyword_id)
+                // 2. Click terjadi SEBELUM redeem (clicked_at < created_date)
+                // 3. Ambil yang selisih waktunya paling kecil
                 
-                $updated++;
-            } else {
+                // Debug: Cek apakah ada click untuk keyword ini
+                $clickCount = \DB::table('click_history')
+                    ->where('keyword_id', $redeem->coupon)
+                    ->count();
+                
+                if ($clickCount == 0) {
+                    $noClick++;
+                    $bar->advance();
+                    continue;
+                }
+                
+                // Cari click yang sebelum redeem
+                $matchingClick = \DB::table('click_history')
+                    ->where('keyword_id', $redeem->coupon)
+                    ->where('clicked_at', '<', $redeem->created_date)
+                    ->select(
+                        'id',
+                        'merchant_id',
+                        'keyword_id',
+                        'clicked_at',
+                        \DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') as diff_seconds")
+                    )
+                    ->orderByRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redeem->created_date}') ASC")
+                    ->first();
+                
+                if ($matchingClick && $matchingClick->diff_seconds >= 0) {
+                    // Update redeem dengan info dari matching click
+                    // Update by coupon, msisdn, and created_date (composite key)
+                    \DB::table('tokodigi_tselpoin_redeem')
+                        ->where('program', 'BLANJAPOIN')
+                        ->where('coupon', $redeem->coupon)
+                        ->where('msisdn', $redeem->msisdn)
+                        ->where('created_date', $redeem->created_date)
+                        ->update([
+                            'merchant_id' => $matchingClick->merchant_id,
+                            'click_date' => $matchingClick->clicked_at,
+                            'diff_click' => $matchingClick->diff_seconds,
+                        ]);
+                    
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+            } catch (\Exception $e) {
+                $this->error("Error processing redeem ID {$redeem->id}: " . $e->getMessage());
                 $skipped++;
             }
             
@@ -87,7 +114,8 @@ class UpdateRedeemClickInfo extends Command
         
         $this->info("Update completed!");
         $this->info("Updated: {$updated}");
-        $this->info("Skipped (no matching click): {$skipped}");
+        $this->info("Skipped (click after redeem or invalid): {$skipped}");
+        $this->info("No click history found: {$noClick}");
         
         // Show summary of remaining NULL records
         $remaining = \DB::table('tokodigi_tselpoin_redeem')

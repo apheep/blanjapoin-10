@@ -43,6 +43,12 @@ class Kernel extends ConsoleKernel
                 \Log::info("Daily stock reset completed. {$resetCount} keywords reset.");
             }
         })->name('reset-daily-stock')->dailyAt('00:00')->withoutOverlapping();
+
+        // Auto-update redeem click info untuk redeem baru setiap 5 menit
+        $schedule->command('redeem:update-click-info --limit=100')
+            ->name('auto-update-redeem-click-info')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
     }
 
     /**
