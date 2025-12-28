@@ -265,41 +265,41 @@
                             @forelse($clickHistories as $click)
                                 {{-- Baris untuk Matched --}}
                                 @if($click->matched_redeem)
-                                    <tr class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ $click->merchant->nama_merchant ?? 'N/A' }}</div>
-                                            <div class="text-xs text-gray-500">ID: {{ $click->merchant_id }}</div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <span class="text-sm font-mono text-gray-900">{{ $click->keyword_id ?? '-' }}</span>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <span class="text-sm font-mono text-gray-700">{{ $click->ip_address ?? '-' }}</span>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            @if($click->device_id)
-                                                <div class="flex items-center gap-2 group">
-                                                    <span class="text-xs font-mono text-gray-600 truncate flex-1 min-w-0" title="{{ $click->device_id }}">
-                                                        {{ $click->device_id }}
-                                                    </span>
-                                                    <button onclick="copyDeviceId('{{ addslashes($click->device_id) }}', this)" class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded flex-shrink-0" title="Copy Device ID">
-                                                        <i class="fas fa-copy text-xs"></i>
-                                                    </button>
-                                                </div>
-                                            @else
-                                                <span class="text-xs text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm text-gray-900">{{ $click->clicked_at->format('d M Y') }}</div>
-                                            <div class="text-xs text-gray-500">{{ $click->clicked_at->format('H:i:s') }}</div>
-                                        </td>
-                                        <td class="px-6 py-4">
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ $click->merchant->nama_merchant ?? 'N/A' }}</div>
+                                        <div class="text-xs text-gray-500">ID: {{ $click->merchant_id }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-mono text-gray-900">{{ $click->keyword_id ?? '-' }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-mono text-gray-700">{{ $click->ip_address ?? '-' }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if($click->device_id)
+                                            <div class="flex items-center gap-2 group">
+                                                <span class="text-xs font-mono text-gray-600 truncate flex-1 min-w-0" title="{{ $click->device_id }}">
+                                                    {{ $click->device_id }}
+                                                </span>
+                                                <button onclick="copyDeviceId('{{ addslashes($click->device_id) }}', this)" class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded flex-shrink-0" title="Copy Device ID">
+                                                    <i class="fas fa-copy text-xs"></i>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ $click->clicked_at->format('d M Y') }}</div>
+                                        <div class="text-xs text-gray-500">{{ $click->clicked_at->format('H:i:s') }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
                                             <span class="badge badge-success">
                                                 <i class="fas fa-check-circle mr-1"></i>Matched
                                             </span>
-                                        </td>
-                                        <td class="px-6 py-4">
+                                    </td>
+                                    <td class="px-6 py-4">
                                             <div class="space-y-1">
                                                 <div class="text-xs">
                                                     <span class="font-semibold text-gray-700">MSISDN:</span> 
@@ -319,7 +319,7 @@
                                                         <span class="text-red-600 font-semibold">● Low</span> <span class="text-gray-500">(>15 menit)</span>
                                                     @endif
                                                 </div>
-                                                <div class="text-xs">
+                                                 <div class="text-xs">
                                                     <span class="font-semibold text-gray-700">Poin:</span> 
                                                     <span class="text-orange-600 font-semibold">{{ number_format($click->matched_redeem->poin_redeem ?? 0) }}</span>
                                                 </div>
@@ -425,8 +425,8 @@
                                                     <button onclick="copyDeviceId('{{ addslashes($click->device_id) }}', this)" class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded flex-shrink-0" title="Copy Device ID">
                                                         <i class="fas fa-copy text-xs"></i>
                                                     </button>
-                                                </div>
-                                            @else
+                                            </div>
+                                        @else
                                                 <span class="text-xs text-gray-400">-</span>
                                             @endif
                                         </td>
@@ -441,8 +441,8 @@
                                         </td>
                                         <td class="px-6 py-4">
                                             <span class="text-xs text-gray-400">Belum ada redeem setelah klik ini</span>
-                                        </td>
-                                    </tr>
+                                    </td>
+                                </tr>
                                 @endif
                             @empty
                                 <tr>

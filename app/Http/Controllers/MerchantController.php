@@ -23,6 +23,210 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class MerchantController extends Controller
 {
+    /**
+     * Convert Google Maps URL to coordinate format
+     * Handles goo.gl short URLs and converts them to coordinate format
+     */
+    private function convertGmapUrl($url)
+    {
+        if (!$url || trim($url) === '') {
+            return null;
+        }
+
+        $url = trim($url);
+
+        // If it's already a coordinate format URL, return as-is
+        if (strpos($url, 'maps?q=') !== false && strpos($url, ',') !== false) {
+            // Check if it contains coordinates (numbers with decimal points)
+            if (preg_match('/maps\?q=([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/', $url, $matches)) {
+                return $url;
+            }
+        }
+
+        // Handle goo.gl short URLs and other Google Maps URLs
+        if (strpos($url, 'goo.gl') !== false || strpos($url, 'maps.app.goo.gl') !== false ||
+            strpos($url, 'maps/place') !== false || strpos($url, 'maps/@') !== false) {
+            try {
+                // Follow redirects to get the final URL
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => $url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_MAXREDIRS => 5,
+                    CURLOPT_TIMEOUT => 10,
+                    CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                ]);
+
+                $response = curl_exec($ch);
+                $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && $finalUrl) {
+                    // Try different patterns to extract coordinates
+
+                    // Pattern 1: /maps?q=lat,lng
+                    if (preg_match('/maps\?q=([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/', $finalUrl, $matches)) {
+                        return 'https://www.google.com/maps?q=' . $matches[1] . ',' . $matches[2];
+                    }
+
+                    // Pattern 2: /maps/@lat,lng,
+                    if (preg_match('/maps\/@([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/', $finalUrl, $matches)) {
+                        return 'https://www.google.com/maps?q=' . $matches[1] . ',' . $matches[2];
+                    }
+
+                    // Pattern 3: Extract from place URL with data parameter
+                    // Look for coordinates in the data parameter: !3d(lat)!4d(lng) or similar
+                    if (preg_match('/!3d([-+]?\d+\.?\d*)!4d([-+]?\d+\.?\d*)/', $finalUrl, $matches)) {
+                        return 'https://www.google.com/maps?q=' . $matches[1] . ',' . $matches[2];
+                    }
+
+                    // If we can't extract coordinates but it's a Google Maps URL,
+                    // try to get coordinates using Google Maps Geocoding API
+                    if (strpos($finalUrl, 'google.com/maps') !== false) {
+                        // Try to get coordinates from Google Maps Geocoding API
+                        // Extract address from place URL
+                        if (preg_match('/\/place\/([^\/]+)\//', $finalUrl, $addressMatch)) {
+                            $address = urldecode($addressMatch[1]);
+                            $coordinates = $this->geocodeAddress($address);
+                            if ($coordinates) {
+                                return 'https://www.google.com/maps?q=' . $coordinates['lat'] . ',' . $coordinates['lng'];
+                            }
+                        }
+
+                        // For place URLs with data parameter, try to extract place ID and geocode it
+                        if (preg_match('/!1s([^!]+)/', $finalUrl, $placeIdMatch)) {
+                            $placeId = $placeIdMatch[1];
+                            $coordinates = $this->geocodePlaceId($placeId);
+                            if ($coordinates) {
+                                return 'https://www.google.com/maps?q=' . $coordinates['lat'] . ',' . $coordinates['lng'];
+                            }
+                        }
+
+                        // Return the final URL as fallback
+                        return $finalUrl;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to convert Google Maps URL: ' . $url . ' - ' . $e->getMessage());
+            }
+        }
+
+        // Return original URL if conversion failed
+        return $url;
+    }
+
+    /**
+     * Geocode address using Google Maps Geocoding API
+     */
+    private function geocodeAddress($address)
+    {
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return null;
+        }
+
+        try {
+            $encodedAddress = urlencode($address);
+            $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encodedAddress}&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                $data = json_decode($response, true);
+                if ($data && $data['status'] === 'OK' && !empty($data['results'])) {
+                    $location = $data['results'][0]['geometry']['location'];
+                    return [
+                        'lat' => $location['lat'],
+                        'lng' => $location['lng']
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to geocode address: ' . $address . ' - ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Geocode place ID using Google Maps Places API
+     */
+    private function geocodePlaceId($placeId)
+    {
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return null;
+        }
+
+        try {
+            $url = "https://maps.googleapis.com/maps/api/place/details/json?place_id={$placeId}&fields=geometry&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                $data = json_decode($response, true);
+                if ($data && $data['status'] === 'OK' && isset($data['result']['geometry']['location'])) {
+                    $location = $data['result']['geometry']['location'];
+                    return [
+                        'lat' => $location['lat'],
+                        'lng' => $location['lng']
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to geocode place ID: ' . $placeId . ' - ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract latitude and longitude from Google Maps URL
+     * Returns array with 'lat' and 'lng' keys, or null if not found
+     */
+    public function extractCoordinatesFromGmapUrl($url)
+    {
+        if (!$url) {
+            return null;
+        }
+
+        // Look for coordinate pattern in URL: maps?q=lat,lng
+        if (preg_match('/maps\?q=([-+]?\d*\.?\d+),([-+]?\d*\.?\d+)/', $url, $matches)) {
+            return [
+                'lat' => (float) $matches[1],
+                'lng' => (float) $matches[2]
+            ];
+        }
+
+        return null;
+    }
+
     public function index(Request $request)
     {
         // Buat query params untuk appends, pastikan keyword_page tetap ada
@@ -124,7 +328,7 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
             // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
@@ -208,7 +412,7 @@ class MerchantController extends Controller
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
@@ -315,7 +519,7 @@ class MerchantController extends Controller
             // 'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
             //                     ? (string)$request->input('long')
             //                     : null,
-            'link_gmap'      => $getValue($request->input('link_gmap', null)),
+            'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
             'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
                                 ? (int)$request->input('radius')
                                 : null,
@@ -626,7 +830,7 @@ class MerchantController extends Controller
                 'email_pic'      => $getValue($request->input('email_pic', null)),
                 'daerah'         => $getValue($request->input('daerah', null)),
                 'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
-                'link_gmap'      => $getValue($request->input('link_gmap', null)),
+                'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
                 'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
                                     ? (int)$request->input('radius')
                                     : null,
@@ -2594,5 +2798,126 @@ class MerchantController extends Controller
 
         // Jika tidak ada link, redirect ke home
         return redirect()->route('home')->with('error', 'Link tidak ditemukan');
+    }
+
+    /**
+     * API endpoint to resolve Google Maps URL
+     */
+    public function resolveGmapUrl(Request $request)
+    {
+        $url = $request->query('url');
+        if (!$url) {
+            return response()->json(['error' => 'URL required'], 400);
+        }
+
+        try {
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS => 5,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            curl_exec($ch);
+            $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200 && $finalUrl) {
+                return response()->json(['final_url' => $finalUrl]);
+            }
+
+            return response()->json(['error' => 'Failed to resolve URL'], 400);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to resolve URL'], 500);
+        }
+    }
+
+    /**
+     * API endpoint for Google Maps Geocoding
+     */
+    public function geocode(Request $request)
+    {
+        $address = $request->query('address');
+        if (!$address) {
+            return response()->json(['error' => 'Address required'], 400);
+        }
+
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return response()->json(['error' => 'Google Maps API key not configured'], 500);
+        }
+
+        try {
+            $encodedAddress = urlencode($address);
+            $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encodedAddress}&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                return response()->json(json_decode($response, true));
+            }
+
+            return response()->json(['error' => 'Geocoding failed'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Geocoding failed'], 500);
+        }
+    }
+
+    /**
+     * API endpoint for Google Maps Place Details
+     */
+    public function placeDetails(Request $request)
+    {
+        $placeId = $request->query('place_id');
+        if (!$placeId) {
+            return response()->json(['error' => 'Place ID required'], 400);
+        }
+
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return response()->json(['error' => 'Google Maps API key not configured'], 500);
+        }
+
+        try {
+            $url = "https://maps.googleapis.com/maps/api/place/details/json?place_id={$placeId}&fields=geometry&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                return response()->json(json_decode($response, true));
+            }
+
+            return response()->json(['error' => 'Place details failed'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Place details failed'], 500);
+        }
     }
 }

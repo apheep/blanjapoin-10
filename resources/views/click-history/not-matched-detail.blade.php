@@ -376,23 +376,24 @@
         @endif
 
         <!-- Summary -->
-        @if(count($comparisons) > 0)
+        @if($comparisons->total() > 0)
             <div class="mt-6 bg-white rounded-xl shadow-sm p-6">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">Total Komparasi</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ count($comparisons) }}</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ $comparisons->total() }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Menampilkan {{ $comparisons->count() }} dari {{ $comparisons->total() }} komparasi</p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-gray-600">Total Matched</p>
                         <p class="text-2xl font-bold text-green-600 mt-1">
-                            {{ array_sum(array_map(fn($c) => count($c['matched']), $comparisons)) }}
+                            {{ $totalMatched ?? 0 }}
                         </p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-gray-600">Total Not Matched</p>
                         <p class="text-2xl font-bold text-red-600 mt-1">
-                            {{ array_sum(array_map(fn($c) => count($c['not_matched']), $comparisons)) }}
+                            {{ $totalNotMatched ?? 0 }}
                         </p>
                     </div>
                 </div>

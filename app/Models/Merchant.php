@@ -75,9 +75,11 @@ class Merchant extends Model
             
             foreach ($redemptions as $redemption) {
                 // Find the closest click history entry for this redemption
+                // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
                 $matchingClick = \DB::table('click_history')
                     ->where('keyword_id', $redemption->coupon)
                     ->where('clicked_at', '<', $redemption->created_date) // Click must be before redeem
+                    ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
                     ->orderByRaw("ABS(TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}')) ASC") // Closest time difference
                     ->first();
                 

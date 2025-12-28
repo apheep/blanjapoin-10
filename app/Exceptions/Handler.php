@@ -4,6 +4,8 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Session\TokenMismatchException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -58,6 +60,20 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $e)
     {
+        // Handle AuthenticationException FIRST (sebelum production error handling)
+        // Ini penting agar redirect ke login tidak tertangkap sebagai error 500
+        if ($e instanceof AuthenticationException) {
+            return $this->unauthenticated($request, $e);
+        }
+
+        // Handle TokenMismatchException (CSRF token expired)
+        if ($e instanceof TokenMismatchException) {
+            // Redirect ke halaman login biasa dengan pesan error
+            return redirect()->route('login')
+                ->with('error', 'Sesi Anda telah berakhir. Silakan login kembali.');
+        }
+
+
         // Di production, sembunyikan detail error
         if (config('app.env') === 'production' || !config('app.debug')) {
             // Untuk MethodNotAllowedHttpException (405)
@@ -81,5 +97,24 @@ class Handler extends ExceptionHandler
 
         // Di development, tampilkan error detail seperti biasa
         return parent::render($request, $e);
+    }
+
+    /**
+     * Convert an authentication exception into a response.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Auth\AuthenticationException  $exception
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        // Jika request expects JSON, return JSON response
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        // Redirect semua ke halaman login biasa
+        return redirect()->guest(route('login'))
+            ->with('error', 'Sesi Anda telah berakhir. Silakan login kembali.');
     }
 }
