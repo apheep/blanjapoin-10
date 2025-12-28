@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>blanjapoin.id - Merchant</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts - Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <style>
+    @include('partials.head')
+     <style>
         /* Font optimization for Poppins */
         body {
             font-family: 'Poppins', sans-serif;
@@ -24,1032 +23,1428 @@
             text-rendering: optimizeLegibility;
             font-feature-settings: 'kern' 1;
             letter-spacing: -0.01em;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        /* Prevent horizontal scroll on mobile */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        /* Animasi fade-in untuk halaman */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        /* Hide horizontal scrollbar on keyword desktop table but keep scrollability */
+        .keyword-table-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .keyword-table-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .dashboard-entrance {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 360ms ease-out, transform 360ms ease-out;
+        }
+        .dashboard-entrance.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .dashboard-entrance button,
+        .dashboard-entrance a,
+        .dashboard-entrance input,
+        .dashboard-entrance select {
+            transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+        }
+        .dashboard-entrance button:active,
+        .dashboard-entrance a:active {
+            transform: translateY(1px);
         }
     </style>
 
-    
 </head>
-
 <body class="min-h-screen bg-white font-poppins">
 
-    <!-- Header -->
-   <nav id="navbar" class="sticky top-0 z-20 bg-white transition-shadow duration-300 w-full">
-    <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
-     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-6">
-       <img src="/logo.png" alt="BlanjaPoin" class="h-10 md:h-12 lg:h-14 w-auto" />
-      </div>
+    @if(session('success'))
+        <div data-flash-message="{{ session('success') }}" data-flash-type="success" class="hidden"></div>
+    @endif
+    @if(session('error'))
+        <div data-flash-message="{{ session('error') }}" data-flash-type="error" class="hidden"></div>
+    @endif
+    @if($errors->any())
+        <div data-flash-message="{{ $errors->first() }}" data-flash-type="error" class="hidden"></div>
+    @endif
+@include('partials.navbar-admin')
+        <main class="dashboard-entrance max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+            @php
+                $tabParam = request()->get('tab', 'merchant');
+                // Normalize: if tab is not 'keyword', default to 'merchant'
+                $activeTab = ($tabParam === 'keyword') ? 'keyword' : 'merchant';
+            @endphp
+            <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto sm:overflow-x-visible">
+                <div class="flex space-x-3 px-4 sm:px-0 sm:min-w-max">
+                    <!-- TAB MERCHANT -->
+                    <button
+                        onclick="switchTab('merchant')"
+                        id="tab-merchant"
+                        class="shrink-0 px-6 py-2 rounded-full border border-orange-400
+                               {{ $activeTab === 'merchant' ? 'bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg' : 'text-gray-700 hover:bg-orange-50 transition-colors' }}">
+                        Merchant
+                    </button>
 
-      <!-- Centered primary navigation -->
-      <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      @if(Auth::check() && Auth::user()->can_approve == 1) 
-        <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
-        <a href="{{ route('approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Approval</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>
-       @endif
-      </div>
-
-       <div class="relative">
-        <button onclick="toggleUserDropdown()" id="userDropdownBtn" class="inline-flex items-center gap-1.5 md:gap-2 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#FF3B30] via-[#FF6B2C] to-[#FF9F0A] px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-white shadow-lg shadow-orange-300/50 drop-shadow-lg ring-1 ring-white/30 transition-all hover:shadow-xl hover:shadow-orange-400/50 hover:drop-shadow-xl hover:scale-105 active:scale-95">
-         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5 md:h-4 md:w-4 opacity-95">
-          <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5Z"/>
-         </svg>
-         <span class="tracking-tight">{{ Auth::user()->username }}</span>
-         <svg id="userDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3 w-3 md:h-3.5 md:w-3.5 opacity-95 transition-transform duration-300">
-          <path d="M7 10l5 5 5-5z"/>
-         </svg>
-        </button>
-        <div id="userDropdown" class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top-right transition-all duration-300 ease-out z-50 backdrop-blur-sm">
-         <div class="py-1">
-          <form method="POST" action="{{ route('logout') }}">
-           @csrf
-           <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
-             <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V15a.75.75 0 011.5 0v3.75a3 3 0 01-3 3h-6a3 3 0 01-3-3V5.25a3 3 0 013-3h6a3 3 0 013 3V9A.75.75 0 0115 9V5.25a1.5 1.5 0 00-1.5-1.5h-6zm10.72 4.72a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H9a.75.75 0 010-1.5h10.94l-1.72-1.72a.75.75 0 010-1.06z" clip-rule="evenodd" />
-            </svg>
-            <span>Logout</span>
-           </button>
-          </form>
-         </div>
-        </div>
-       </div>
-      </div>
-     </div>
-    </div>
-   </nav>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
-        <!-- Navigation Tabs -->
-        <div class="mb-6 -mx-4 sm:mx-0 overflow-x-auto">
-            <div class="flex space-x-3 px-4 sm:px-0 min-w-max">
-                <button onclick="switchTab('all')" id="tab-all" class="shrink-0 px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg">All</button>
-                <button onclick="switchTab('merchant')" id="tab-merchant" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchant</button>
-                <button onclick="switchTab('merchandise')" id="tab-merchandise" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Merchandise</button>
-                <button onclick="switchTab('telkom')" id="tab-telkom" class="shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors">Telkom Packages</button>
+                    <!-- TAB KEYWORD -->
+                    <button
+                        onclick="switchTab('keyword')"
+                        id="tab-keyword"
+                        class="shrink-0 px-6 py-2 rounded-full border border-orange-400
+                               {{ $activeTab === 'keyword' ? 'bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg' : 'text-gray-700 hover:bg-orange-50 transition-colors' }}">
+                        Keyword
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <!-- JavaScript Functions -->
-        <script>
-            ////////////////////////////////////////////////////////////////////
-            // Dropdown Toggle Functions
-            ////////////////////////////////////////////////////////////////////
+            <script>
+                // Dropdown Toggle Functions //
 
-            function toggleDateFilter(id) {
-                const dropdown = document.getElementById(id || 'dateFilterDropdown');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            // Function to toggle User dropdown
-            function toggleUserDropdown() {
-                const dropdown = document.getElementById('userDropdown');
-                const arrow = document.getElementById('userDropdownArrow');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('opacity-0')) {
-                    // Show dropdown
-                    dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
-                    dropdown.classList.add('opacity-100', 'visible', 'scale-100');
-                    if (arrow) arrow.style.transform = 'rotate(180deg)';
-                } else {
-                    // Hide dropdown
-                    dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
-                    dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
-                    if (arrow) arrow.style.transform = 'rotate(0deg)';
-                }
-            }
-
-            // New function to toggle Kategori dropdown
-            function toggleKategoriDropdown() {
-                const dropdown = document.getElementById('kategoriDropdown');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            // Function to close all dropdowns
-            function closeAllDropdowns() {
-                const dropdowns = document.querySelectorAll('[id$="Dropdown"], [id^="kategoriDropdown"]');
-                dropdowns.forEach(dropdown => {
-                    if (!dropdown.classList.contains('hidden')) {
-                        dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                        dropdown.style.opacity = '0';
-                        dropdown.style.transform = 'translateY(-6px)';
-                        setTimeout(() => {
-                            dropdown.classList.add('hidden');
-                            dropdown.style.transition = '';
-                            dropdown.style.opacity = '';
-                            dropdown.style.transform = '';
-                        }, 200);
-                    }
-                });
-            }
-
-            ////////////////////////////////////////////////////////////////////
-            // File Upload Functions
-            ////////////////////////////////////////////////////////////////////
-
-            // Function to handle file upload
-            function handleFileUpload(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    // Check if file is an image
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
+                function toggleDateFilter(id) {
+                    const dropdown = document.getElementById(id);
+                    if (!dropdown) return;
                     
-                    // Here you would typically send the file to your server
-                    // For now, we'll just show a success message
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                    
-                    // In a real application, you would do something like:
-                    // const formData = new FormData();
-                    // formData.append('image', file);
-                    // fetch('/upload-image', { method: 'POST', body: formData })
-                    //   .then(response => response.json())
-                    //   .then(data => console.log('Success:', data))
-                    //   .catch(error => console.error('Error:', error));
-                }
-            }
-
-            // Functions for Merchant section
-            function toggleKategoriDropdownMerchant() {
-                const dropdown = document.getElementById('kategoriDropdownMerchant');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadMerchant(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            // Functions for Merchandise section
-            function toggleKategoriDropdownMerchandise() {
-                const dropdown = document.getElementById('kategoriDropdownMerchandise');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadMerchandise(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            // Functions for Telkom section
-            function toggleKategoriDropdownTelkom() {
-                const dropdown = document.getElementById('kategoriDropdownTelkom');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadTelkom(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            // Functions for All section - Merchant
-            function toggleKategoriDropdownAll1() {
-                const dropdown = document.getElementById('kategoriDropdownAll1');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadAll1(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            // Functions for All section - Merchandise
-            function toggleKategoriDropdownAll2() {
-                const dropdown = document.getElementById('kategoriDropdownAll2');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadAll2(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            // Functions for All section - Telkom
-            function toggleKategoriDropdownAll3() {
-                const dropdown = document.getElementById('kategoriDropdownAll3');
-                if (!dropdown) return;
-                
-                if (dropdown.classList.contains('hidden')) {
-                    // Close any other open dropdowns first
-                    closeAllDropdowns();
-                    dropdown.classList.remove('hidden');
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    requestAnimationFrame(() => {
-                        dropdown.style.transition = 'opacity .25s ease, transform .25s ease';
-                        dropdown.style.opacity = '1';
-                        dropdown.style.transform = 'translateY(0)';
-                    });
-                } else {
-                    dropdown.style.transition = 'opacity .2s ease, transform .2s ease';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.transform = 'translateY(-6px)';
-                    setTimeout(() => {
-                        dropdown.classList.add('hidden');
-                        dropdown.style.transition = '';
-                        dropdown.style.opacity = '';
-                        dropdown.style.transform = '';
-                    }, 200);
-                }
-            }
-
-            function handleFileUploadAll3(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                        return;
-                    }
-                    alert(`File selected: ${file.name}\nSize: ${Math.round(file.size/1024)} KB\nType: ${file.type}`);
-                }
-            }
-
-            ////////////////////////////////////////////////////////////////////
-            // Image Preview Functions
-            ////////////////////////////////////////////////////////////////////
-
-            // Function to preview single image
-            function previewImage(event, previewId) {
-                const file = event.target.files[0];
-                const preview = document.getElementById(previewId);
-                const fileNameSpan = document.getElementById('logoFileName');
-                
-                if (file) {
-                    fileNameSpan.textContent = file.name;
-                    
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-xl">`;
-                        };
-                        reader.readAsDataURL(file);
-                    } else {
-                        preview.innerHTML = '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>';
-                        alert('Please select an image file (JPEG, PNG, GIF, etc.)');
-                    }
-                } else {
-                    preview.innerHTML = '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>';
-                    fileNameSpan.textContent = 'No file chosen';
-                }
-            }
-
-            // Function to preview multiple images
-            function previewImages(event, previewId) {
-                const files = event.target.files;
-                const preview = document.getElementById(previewId);
-                const countSpan = document.getElementById('imagesCount');
-                
-                preview.innerHTML = '';
-                
-                if (files.length > 0) {
-                    countSpan.textContent = `${files.length} file(s) selected`;
-                    
-                    for (let i = 0; i < files.length; i++) {
-                        const file = files[i];
-                        if (file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                const imgContainer = document.createElement('div');
-                                imgContainer.className = 'w-16 h-16 relative';
-                                imgContainer.innerHTML = `
-                                    <img src="${e.target.result}" class="w-full h-full object-cover rounded-xl">
-                                    <button type="button" onclick="removeImage(this)" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
-                                `;
-                                preview.appendChild(imgContainer);
-                            };
-                            reader.readAsDataURL(file);
+                    const allDropdowns = document.querySelectorAll("[id^='dateFilterDropdown']");
+                    allDropdowns.forEach(dd => {
+                        if (dd.id !== id) {
+                            dd.classList.add('hidden');
+                            dd.classList.remove('opacity-100', 'translate-y-0');
+                            dd.classList.add('opacity-0', 'translate-y-1');
                         }
+                    });
+
+                    const isHidden = dropdown.classList.contains('hidden');
+                    if (isHidden) {
+                        dropdown.classList.remove('hidden');
+                        requestAnimationFrame(() => {
+                            dropdown.classList.remove('opacity-0', 'translate-y-1');
+                            dropdown.classList.add('opacity-100', 'translate-y-0');
+                        });
+                    } else {
+                        dropdown.classList.remove('opacity-100', 'translate-y-0');
+                        dropdown.classList.add('opacity-0', 'translate-y-1');
+                        setTimeout(() => dropdown.classList.add('hidden'), 150);
                     }
-                } else {
-                    countSpan.textContent = 'No files chosen';
                 }
-            }
 
-            // Function to remove image from preview
-            function removeImage(button) {
-                const imgContainer = button.parentElement;
-                imgContainer.remove();
-                
-                // Update count
-                const preview = document.getElementById('imagesPreview');
-                const countSpan = document.getElementById('imagesCount');
-                const imageCount = preview.children.length;
-                countSpan.textContent = imageCount > 0 ? `${imageCount} file(s) selected` : 'No files chosen';
-            }
-
-            ////////////////////////////////////////////////////////////////////
-            // Form Handling Functions
-            ////////////////////////////////////////////////////////////////////
-
-            // Function to handle form submission
-            function handleMerchantFormSubmit(event) {
-                event.preventDefault();
-                
-                // Get form data
-                const form = document.getElementById('merchantUploadFormElement');
-                const formData = new FormData(form);
-                
-                // In a real application, you would send this data to your server
-                
-                // Reset form and hide it
-                form.reset();
-                document.getElementById('logoPreview').innerHTML = '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>';
-                document.getElementById('imagesPreview').innerHTML = '';
-                document.getElementById('logoFileName').textContent = 'No file chosen';
-                document.getElementById('imagesCount').textContent = 'No files chosen';
-                toggleMerchantUploadModal();
-            }
-
-            // Add event listener for form submission
-            document.addEventListener('DOMContentLoaded', function() {
-                const form = document.getElementById('merchantUploadFormElement');
-                if (form) {
-                    form.addEventListener('submit', handleMerchantFormSubmit);
-                }
-            });
-
-            ////////////////////////////////////////////////////////////////////
-            // Event Listeners
-            ////////////////////////////////////////////////////////////////////
-
-            // Click outside to close dropdowns
-            document.addEventListener('click', function(event) {
-                // Handle user dropdown
-                const userDropdownBtn = document.getElementById('userDropdownBtn');
-                const userDropdown = document.getElementById('userDropdown');
-                
-                if (userDropdownBtn && userDropdown && 
-                    !userDropdownBtn.contains(event.target) && 
-                    !userDropdown.contains(event.target) &&
-                    !userDropdown.classList.contains('opacity-0')) {
-                    toggleUserDropdown();
-                }
-                
-                // Handle main section dropdown
-                const kategoriBtn = document.getElementById('kategoriBtn');
-                const kategoriDropdown = document.getElementById('kategoriDropdown');
-                
-                if (kategoriBtn && kategoriDropdown && 
-                    !kategoriBtn.contains(event.target) && 
-                    !kategoriDropdown.contains(event.target) &&
-                    !kategoriDropdown.classList.contains('hidden')) {
-                    toggleKategoriDropdown();
-                }
-                
-                // Handle merchant section dropdown
-                const kategoriBtnMerchant = document.getElementById('kategoriBtnMerchant');
-                const kategoriDropdownMerchant = document.getElementById('kategoriDropdownMerchant');
-                
-                if (kategoriBtnMerchant && kategoriDropdownMerchant && 
-                    !kategoriBtnMerchant.contains(event.target) && 
-                    !kategoriDropdownMerchant.contains(event.target) &&
-                    !kategoriDropdownMerchant.classList.contains('hidden')) {
-                    toggleKategoriDropdownMerchant();
-                }
-                
-                // Handle merchandise section dropdown
-                const kategoriBtnMerchandise = document.getElementById('kategoriBtnMerchandise');
-                const kategoriDropdownMerchandise = document.getElementById('kategoriDropdownMerchandise');
-                
-                if (kategoriBtnMerchandise && kategoriDropdownMerchandise && 
-                    !kategoriBtnMerchandise.contains(event.target) && 
-                    !kategoriDropdownMerchandise.contains(event.target) &&
-                    !kategoriDropdownMerchandise.classList.contains('hidden')) {
-                    toggleKategoriDropdownMerchandise();
-                }
-                
-                // Handle telkom section dropdown
-                const kategoriBtnTelkom = document.getElementById('kategoriBtnTelkom');
-                const kategoriDropdownTelkom = document.getElementById('kategoriDropdownTelkom');
-                
-                if (kategoriBtnTelkom && kategoriDropdownTelkom && 
-                    !kategoriBtnTelkom.contains(event.target) && 
-                    !kategoriDropdownTelkom.contains(event.target) &&
-                    !kategoriDropdownTelkom.classList.contains('hidden')) {
-                    toggleKategoriDropdownTelkom();
-                }
-                
-                // Handle All section dropdowns
-                const kategoriBtnAll1 = document.getElementById('kategoriBtnAll1');
-                const kategoriDropdownAll1 = document.getElementById('kategoriDropdownAll1');
-                
-                if (kategoriBtnAll1 && kategoriDropdownAll1 && 
-                    !kategoriBtnAll1.contains(event.target) && 
-                    !kategoriDropdownAll1.contains(event.target) &&
-                    !kategoriDropdownAll1.classList.contains('hidden')) {
-                    toggleKategoriDropdownAll1();
-                }
-                
-                const kategoriBtnAll2 = document.getElementById('kategoriBtnAll2');
-                const kategoriDropdownAll2 = document.getElementById('kategoriDropdownAll2');
-                
-                if (kategoriBtnAll2 && kategoriDropdownAll2 && 
-                    !kategoriBtnAll2.contains(event.target) && 
-                    !kategoriDropdownAll2.contains(event.target) &&
-                    !kategoriDropdownAll2.classList.contains('hidden')) {
-                    toggleKategoriDropdownAll2();
-                }
-                
-                const kategoriBtnAll3 = document.getElementById('kategoriBtnAll3');
-                const kategoriDropdownAll3 = document.getElementById('kategoriDropdownAll3');
-                
-                if (kategoriBtnAll3 && kategoriDropdownAll3 && 
-                    !kategoriBtnAll3.contains(event.target) && 
-                    !kategoriDropdownAll3.contains(event.target) &&
-                    !kategoriDropdownAll3.classList.contains('hidden')) {
-                    toggleKategoriDropdownAll3();
-                }
-                
-                // Also close date filters if clicking outside
-                const dateFilterBtns = document.querySelectorAll('[onclick*="toggleDateFilter"]');
-                const dateFilterDropdowns = document.querySelectorAll('[id^="dateFilter"]');
-                
-                let clickedInsideDateFilter = false;
-                dateFilterBtns.forEach(btn => {
-                    if (btn.contains(event.target)) clickedInsideDateFilter = true;
+                document.addEventListener('click', function(event) {
+                    if (!event.target.closest("[id^='dateFilterDropdown']") && !event.target.closest("[id^='dateFilterButton']")) {
+                        const allDropdowns = document.querySelectorAll("[id^='dateFilterDropdown']");
+                        allDropdowns.forEach(dropdown => {
+                            dropdown.classList.remove('opacity-100', 'translate-y-0');
+                            dropdown.classList.add('opacity-0', 'translate-y-1');
+                            setTimeout(() => dropdown.classList.add('hidden'), 150);
+                        });
+                    }
                 });
-                dateFilterDropdowns.forEach(dropdown => {
-                    if (dropdown.contains(event.target)) clickedInsideDateFilter = true;
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const form = document.getElementById('merchantUploadFormElement');
+                    if (form) {
+                        form.addEventListener('submit', handleMerchantFormSubmit);
+                    }
                 });
-                
-                if (!clickedInsideDateFilter) {
-                    dateFilterDropdowns.forEach(dropdown => {
-                        if (!dropdown.classList.contains('hidden')) {
-                            const id = dropdown.id;
-                            const dropdownElement = document.getElementById(id);
-                            if (dropdownElement) {
-                                dropdownElement.style.transition = 'opacity .2s ease, transform .2s ease';
-                                dropdownElement.style.opacity = '0';
-                                dropdownElement.style.transform = 'translateY(-6px)';
-                                setTimeout(() => {
-                                    dropdownElement.classList.add('hidden');
-                                    dropdownElement.style.transition = '';
-                                    dropdownElement.style.opacity = '';
-                                    dropdownElement.style.transform = '';
-                                }, 200);
+
+                ////////////////////////////////////////////////////////////////////
+                // Keyword Status Filter
+                ////////////////////////////////////////////////////////////////////
+
+                let selectedKeywordStatus = 'all';
+
+                function toggleKeywordStatusDropdown() {
+                    const dropdown = document.getElementById('statusDropdownKeyword');
+                    const arrow = document.getElementById('statusArrowKeyword');
+                    if (!dropdown) return;
+                    
+                    const isHidden = dropdown.classList.contains('hidden');
+                    
+                    const otherDropdowns = document.querySelectorAll("[id^='statusDropdown']");
+                    otherDropdowns.forEach(dd => {
+                        if (dd.id !== 'statusDropdownKeyword') {
+                            dd.classList.add('hidden');
+                            dd.classList.remove('opacity-100', 'translate-y-0');
+                            dd.classList.add('opacity-0', 'translate-y-1');
+                        }
+                    });
+
+                    if (isHidden) {
+                        dropdown.classList.remove('hidden');
+                        requestAnimationFrame(() => {
+                            dropdown.classList.remove('opacity-0', 'translate-y-1');
+                            dropdown.classList.add('opacity-100', 'translate-y-0');
+                        });
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    } else {
+                        dropdown.classList.remove('opacity-100', 'translate-y-0');
+                        dropdown.classList.add('opacity-0', 'translate-y-1');
+                        setTimeout(() => dropdown.classList.add('hidden'), 150);
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    }
+                }
+
+
+                function filterKeywordByStatus(status) {
+                    const button = document.getElementById('statusBtnKeyword');
+                    if (!button) return;
+
+                    const previousStatus = selectedKeywordStatus;
+                    
+                    if (selectedKeywordStatus === status) {
+                        status = 'all';
+                    }
+                    selectedKeywordStatus = status;
+
+                    let label = 'Status';
+                    let buttonClasses = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300 ';
+
+                    if (status === 'all') {
+                        buttonClasses += 'border-gray-300 text-gray-700 hover:bg-gray-50';
+                    } else if (status === 'pending') {
+                        label = 'Pending';
+                        buttonClasses += 'border-yellow-300 text-yellow-800 bg-gradient-to-r from-yellow-100 to-amber-100';
+                    } else if (status === 'reject') {
+                        label = 'Rejected';
+                        buttonClasses += 'border-red-300 text-red-800 bg-gradient-to-r from-red-100 to-rose-100';
+                    } else if (status === 'approve') {
+                        label = 'Approved';
+                        buttonClasses += 'border-green-300 text-green-800 bg-gradient-to-r from-green-100 to-emerald-100';
+                    }
+
+                    button.className = buttonClasses;
+                    button.innerHTML = `<i class="fas fa-filter mr-2"></i>${label}<i id="statusArrowKeyword" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>`;
+
+                    // ====== (update dropdown item active state) ======
+                    const dropdownItems = document.querySelectorAll('#statusDropdownKeyword a[data-status]');
+                    dropdownItems.forEach(item => {
+                        const itemStatus = item.getAttribute('data-status');
+                        const normalizedItemStatus = (itemStatus || '').toLowerCase();
+                        const normalizedCurrentStatus = (status || '').toLowerCase();
+
+                        // Reset semua item ke state default
+                        item.classList.remove('bg-gray-100', 'bg-yellow-100', 'bg-red-100', 'bg-green-100',
+                            'text-gray-900', 'text-yellow-900', 'text-red-900', 'text-green-900');
+
+                        // Apply active state jika status cocok
+                        if (normalizedItemStatus === normalizedCurrentStatus || 
+                            (normalizedCurrentStatus === 'all' && normalizedItemStatus === 'all')) {
+                            
+                            if (status === 'all') {
+                                item.classList.add('bg-gray-100', 'text-gray-900');
+                            } else if (status === 'pending') {
+                                item.classList.add('bg-yellow-100', 'text-yellow-900');
+                            } else if (status === 'reject') {
+                                item.classList.add('bg-red-100', 'text-red-900');
+                            } else if (status === 'approve') {
+                                item.classList.add('bg-green-100', 'text-green-900');
                             }
                         }
                     });
+
+                    // Reload seluruh tabel keyword dari server dengan filter status ini
+                    if (typeof fetchKeywordTable === 'function' && typeof buildKeywordSearchRequestUrl === 'function') {
+                        // Reset pagination ke page 1 saat filter status berubah
+                        // Buat URL baru dengan keyword_page=1
+                        const url = new URL('/keywords/search', window.location.origin);
+                        url.searchParams.set('tab', 'keyword');
+                        url.searchParams.set('keyword_page', '1');
+                        
+                        // Pertahankan merchant_page
+                        const currentUrl = new URL(window.location.href);
+                        const merchantPage = currentUrl.searchParams.get('merchant_page');
+                        if (merchantPage) {
+                            url.searchParams.set('merchant_page', merchantPage);
+                        }
+                        
+                        // Set status filter (hapus jika 'all')
+                        if (status && status !== 'all') {
+                            url.searchParams.set('status', status);
+                        } else {
+                            url.searchParams.delete('status');
+                        }
+                        
+                        // Set search query jika ada
+                        if (currentKeywordQuery) {
+                            url.searchParams.set('q', currentKeywordQuery);
+                        }
+                        
+                        // Langsung fetch dengan URL yang sudah dibuat
+                        fetchKeywordTable(url.toString());
+                    }
+
+                    toggleKeywordStatusDropdown();
+                }
+
+                document.addEventListener('click', function(event) {
+                if (!event.target.closest('#statusDropdownKeyword') && 
+                    !event.target.closest('#statusBtnKeyword')) {
+                    const dropdown = document.getElementById('statusDropdownKeyword');
+                    const arrow = document.getElementById('statusArrowKeyword');
+                    if (dropdown) {
+                        dropdown.classList.add('hidden');
+                    }
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(0deg)';
+                    }
                 }
             });
 
-            ////////////////////////////////////////////////////////////////////
-            // Tab Switching Functions
-            ////////////////////////////////////////////////////////////////////
 
-            // Store current active tab
-            let currentActiveTab = 'all';
-            // Make it accessible from partials
-            window.currentActiveTab = currentActiveTab;
+                ////////////////////////////////////////////////////////////////////
+                // Category Dropdown & Filter for Merchant and Telkom
+                ////////////////////////////////////////////////////////////////////
 
-            // Trigger file input for All section
-            function switchTab(tab) {
-                // Store the current active tab
-                currentActiveTab = tab;
-                window.currentActiveTab = tab;
-                // Reset all tabs
-                const tabs = ['all', 'merchant', 'merchandise', 'telkom'];
-                tabs.forEach(t => {
-                    const btn = document.getElementById('tab-' + t);
-                    btn.className = 'px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors';
-                });
-                // Activate selected tab
-                const activeBtn = document.getElementById('tab-' + tab);
-                activeBtn.className = 'px-6 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg';
-                // Hide non-active sections with Tailwind utilities
-                const sections = ['all', 'merchant', 'merchandise', 'telkom'];
-                sections.forEach(s => {
-                    const section = document.getElementById('section-' + s);
-                    if (section) {
-                        if (s !== tab) {
-                            section.classList.remove('opacity-100','translate-y-0');
-                            section.classList.add('opacity-0','translate-y-5','pointer-events-none');
-                            section.classList.add('hidden');
+                let selectedCategory = {
+                    merchant: 'Semua',
+                    telkom: 'Semua'
+                };
+
+                function hideDropdown(dropdown) {
+                    dropdown.classList.remove('opacity-100', 'translate-y-0');
+                    dropdown.classList.add('opacity-0', 'translate-y-1');
+                    setTimeout(() => dropdown.classList.add('hidden'), 150);
+                }
+
+                function closeAllDropdowns() {
+                    const dropdownIds = [
+                        'kategoriDropdownAll1',
+                        'kategoriDropdownAll3',
+                        'kategoriDropdownMerchant',
+                        'kategoriDropdownTelkom'
+                    ];
+
+                    dropdownIds.forEach(id => {
+                        const dropdown = document.getElementById(id);
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
+                        }
+                    });
+                }
+
+                function toggleKategoriDropdownMerchant() {
+                    const dropdown = document.getElementById('kategoriDropdownMerchant');
+                    const arrow = document.getElementById('kategoriArrowMerchant');
+                    if (!dropdown) return;
+
+                    const isHidden = dropdown.classList.contains('hidden');
+                    const otherDropdowns = document.querySelectorAll("[id^='kategoriDropdown']");
+
+                    otherDropdowns.forEach(dd => {
+                        if (dd.id !== 'kategoriDropdownMerchant' && !dd.classList.contains('hidden')) {
+                            hideDropdown(dd);
+                        }
+                    });
+
+                    if (isHidden) {
+                        dropdown.classList.remove('hidden');
+                        requestAnimationFrame(() => {
+                            dropdown.classList.remove('opacity-0', 'translate-y-1');
+                            dropdown.classList.add('opacity-100', 'translate-y-0');
+                        });
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    } else {
+                        hideDropdown(dropdown);
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    }
+                }
+
+
+                document.addEventListener('click', function(event) {
+                    const merchantDropdown = document.getElementById('kategoriDropdownMerchant');
+                    const telkomDropdown = document.getElementById('kategoriDropdownTelkom');
+
+                    const clickMerchant = event.target.closest('#kategoriDropdownMerchant') || event.target.closest('#kategoriBtnMerchant');
+                    const clickTelkom = event.target.closest('#kategoriDropdownTelkom') || event.target.closest('#kategoriBtnTelkom');
+                    const clickAll1 = event.target.closest('#kategoriDropdownAll1') || event.target.closest('#kategoriBtnAll1');
+                    const clickAll3 = event.target.closest('#kategoriDropdownAll3') || event.target.closest('#kategoriBtnAll3');
+
+                    if (!clickMerchant && merchantDropdown && !merchantDropdown.classList.contains('hidden')) {
+                        hideDropdown(merchantDropdown);
+                        const merchantArrow = document.getElementById('kategoriArrowMerchant');
+                        if (merchantArrow) {
+                            merchantArrow.style.transform = 'rotate(0deg)';
+                        }
+                    }
+
+
+                    if (!clickTelkom && telkomDropdown && !telkomDropdown.classList.contains('hidden')) {
+                        hideDropdown(telkomDropdown);
+                    }
+
+                    if (!clickAll1) {
+                        const dropdownAll1 = document.getElementById('kategoriDropdownAll1');
+                        if (dropdownAll1 && !dropdownAll1.classList.contains('hidden')) {
+                            hideDropdown(dropdownAll1);
+                        }
+                    }
+
+                    if (!clickAll3) {
+                        const dropdownAll3 = document.getElementById('kategoriDropdownAll3');
+                        if (dropdownAll3 && !dropdownAll3.classList.contains('hidden')) {
+                            hideDropdown(dropdownAll3);
                         }
                     }
                 });
-                // Show and activate selected section
-                const activeSection = document.getElementById('section-' + tab);
-                if (activeSection) {
-                    activeSection.classList.remove('hidden','pointer-events-none');
-                    // ensure starting at hidden state
-                    activeSection.classList.add('opacity-0','translate-y-5');
-                    requestAnimationFrame(() => {
-                        activeSection.classList.remove('opacity-0','translate-y-5');
-                        activeSection.classList.add('opacity-100','translate-y-0');
-                    });
-                }
-            }
 
-            // Keep track of selected category per table for toggle behavior
-            const selectedCategory = { merchant: 'All', merchandise: 'All', telkom: 'All' };
-            // Function to filter table based on category
-            function filterTable(tableType, category) {
-                // Close the dropdown after selection
-                closeAllDropdowns();
-                
-                // Update the button text to show the selected category
-                let buttonId = '';
-                if (document.getElementById('section-all').classList.contains('hidden') === false) {
-                    // We are in the "All" section
-                    if (tableType === 'merchant') buttonId = 'kategoriBtnAll1';
-                    else if (tableType === 'merchandise') buttonId = 'kategoriBtnAll2';
-                    else if (tableType === 'telkom') buttonId = 'kategoriBtnAll3';
-                } else {
-                    // We are in a specific section
-                    if (tableType === 'merchant') buttonId = 'kategoriBtnMerchant';
-                    else if (tableType === 'merchandise') buttonId = 'kategoriBtnMerchandise';
-                    else if (tableType === 'telkom') buttonId = 'kategoriBtnTelkom';
-                }
-                // Toggle: clicking the same category again resets to All
-                if (selectedCategory[tableType] === category) {
-                    category = 'All';
-                }
-                selectedCategory[tableType] = category;
+                ////////////////////////////////////////////////////////////////////
+                // Tab Switching Functions
+                ////////////////////////////////////////////////////////////////////
 
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    const label = category === 'All' ? 'Kategori' : category;
-                    // Reset button classes
-                    button.className = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300';
-                    // Apply category-specific styling
-                    if (category === 'All') {
-                        button.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
-                    } else if (category === 'F&B') {
-                        button.classList.add('border-orange-300', 'text-orange-800', 'bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'hover:from-orange-200', 'hover:to-red-200');
-                    } else if (category === 'Entertain') {
-                        button.classList.add('border-purple-300', 'text-purple-800', 'bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'hover:from-purple-200', 'hover:to-pink-200');
-                    } else if (category === 'Vacation') {
-                        button.classList.add('border-blue-300', 'text-blue-800', 'bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'hover:from-blue-200', 'hover:to-cyan-200');
-                    } else if (category === 'Shopping') {
-                        button.classList.add('border-green-300', 'text-green-800', 'bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'hover:from-green-200', 'hover:to-emerald-200');
-                    } else if (category === 'Beauty & Care') {
-                        button.classList.add('border-pink-300', 'text-pink-800', 'bg-gradient-to-r', 'from-pink-100', 'to-rose-100', 'hover:from-pink-200', 'hover:to-rose-200');
-                    } else if (category === 'Telkomsel Packet') {
-                        button.classList.add('border-indigo-300', 'text-indigo-800', 'bg-gradient-to-r', 'from-indigo-100', 'to-blue-100', 'hover:from-indigo-200', 'hover:to-blue-200');
-                    }
+                // Store current active tab - get from URL or default to merchant
+                const urlParams = new URLSearchParams(window.location.search);
+                let tabParam = urlParams.get('tab');
+                // Normalize: if tab is not 'keyword', default to 'merchant'
+                let currentActiveTab = (tabParam === 'keyword') ? 'keyword' : 'merchant';
+                // Make it accessible from partials
+                window.currentActiveTab = currentActiveTab;
+
+                function switchTab(tab) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', tab);
                     
-                    button.innerHTML = `<i class="fas fa-list mr-2"></i>${label}<i class=\"fas fa-chevron-down ml-2 text-xs\"></i>`;
+                    // PENTING: Pertahankan parameter pagination saat pindah tab
+                    // merchant_page dan keyword_page tetap dipertahankan di URL
+                    // Tidak perlu dihapus atau diubah, biarkan tetap ada
+                    
+                    window.history.replaceState({}, '', url);
+
+                    currentActiveTab = tab;
+                    window.currentActiveTab = tab;
+
+                    const tabs = ['merchant', 'keyword'];
+                    tabs.forEach(t => {
+                        const btn = document.getElementById('tab-' + t);
+                        if (btn) {
+                            btn.className = 'shrink-0 px-6 py-2 rounded-full border border-orange-400 text-gray-700 hover:bg-orange-50 transition-colors';
+                        }
+                    });
+
+                    const activeBtn = document.getElementById('tab-' + tab);
+                    if (activeBtn) {
+                        activeBtn.className = 'shrink-0 px-6 py-2 rounded-full border border-orange-400 bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-medium shadow-lg';
+                    }
+
+                    const sections = ['merchant', 'keyword'];
+                    sections.forEach(s => {
+                        const section = document.getElementById('section-' + s);
+                        if (section) {
+                            if (s !== tab) {
+                                section.classList.remove('opacity-100', 'translate-y-0');
+                                section.classList.add('opacity-0', 'translate-y-5', 'pointer-events-none', 'hidden');
+                            }
+                        }
+                    });
+
+                    const activeSection = document.getElementById('section-' + tab);
+                    if (activeSection) {
+                        activeSection.classList.remove('hidden', 'pointer-events-none');
+                        requestAnimationFrame(() => {
+                            activeSection.classList.remove('opacity-0', 'translate-y-5');
+                            activeSection.classList.add('opacity-100', 'translate-y-0');
+                        });
+                    }
                 }
-                
-                // Filter the table rows based on category
-                let tableBodyId = '';
-                let rowClass = '';
-                
-                if (tableType === 'merchant') {
-                    tableBodyId = 'merchant-table-body';
-                    rowClass = 'merchant-row';
-                } else if (tableType === 'merchandise') {
-                    tableBodyId = 'merchandise-table-body';
-                    rowClass = 'merchandise-row';
-                } else if (tableType === 'telkom') {
-                    tableBodyId = 'telkom-table-body';
-                    rowClass = 'telkom-row';
-                }
-                
-                const tableBody = document.getElementById(tableBodyId);
-                if (tableBody) {
-                    const rows = tableBody.querySelectorAll(`.${rowClass}`);
-                    rows.forEach(row => {
-                        const rowCategory = row.getAttribute('data-category');
-                        if (category === 'All' || rowCategory === category) {
-                            row.style.display = '';
+
+                ////////////////////////////////////////////////////////////////////
+                // Filtering Function
+                ////////////////////////////////////////////////////////////////////
+
+                function filterTable(tableType, category, options = {}) {
+                    const { reapply = false } = options;
+                    const previousCategory = selectedCategory[tableType] || 'Semua';
+                    let targetCategory = category || 'Semua';
+                    const normalizedIncoming = (targetCategory || '').toLowerCase();
+
+                    if (reapply) {
+                        targetCategory = previousCategory;
+                    } else if ((previousCategory || '').toLowerCase() === normalizedIncoming) {
+                        targetCategory = 'Semua';
+                    }
+
+                    selectedCategory[tableType] = targetCategory;
+                    category = targetCategory;
+
+                    // ====== (update label & style tombol kategori) ======
+                    let buttonId = '';
+                    if (tableType === 'merchant') {
+                        buttonId = 'kategoriBtnMerchant';
+                    } else if (tableType === 'telkom') {
+                        buttonId = 'kategoriBtnTelkom';
+                    }
+
+                    const button = document.getElementById(buttonId);
+                    if (button) {
+                        const label = category === 'Semua' ? 'Kategori' : category;
+                        button.className = 'flex items-center px-4 py-2 text-sm rounded-full border transition-all duration-300';
+
+                        if (category === 'Semua') {
+                            button.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+                        } else if (category === 'Kuliner') {
+                            button.classList.add('border-orange-300', 'text-orange-800', 'bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'hover:from-orange-200', 'hover:to-red-200');
+                        } else if (category === 'Hiburan') {
+                            button.classList.add('border-purple-300', 'text-purple-800', 'bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'hover:from-purple-200', 'hover:to-pink-200');
+                        } else if (category === 'Liburan') {
+                            button.classList.add('border-blue-300', 'text-blue-800', 'bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'hover:from-blue-200', 'hover:to-cyan-200');
+                        } else if (category === 'Belanja') {
+                            button.classList.add('border-green-300', 'text-green-800', 'bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'hover:from-green-200', 'hover:to-emerald-200');
+                        } else if (category === 'Kecantikan') {
+                            button.classList.add('border-rose-300', 'text-rose-800', 'bg-gradient-to-r', 'from-rose-100', 'to-pink-100', 'hover:from-rose-200', 'hover:to-pink-200');
                         } else {
-                            row.style.display = 'none';
+                            button.classList.add('border-orange-300', 'text-orange-800', 'bg-gradient-to-r', 'from-orange-100', 'to-yellow-100', 'hover:from-orange-200', 'hover:to-yellow-200');
                         }
+
+                        button.innerHTML = `
+                            <i class="fas fa-list mr-2"></i>
+                            ${label}
+                            <i id="kategoriArrowMerchant" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
+                        `;
+
+                    }
+
+                    // ====== (update dropdown item active state) ======
+                    if (tableType === 'merchant') {
+                        const dropdownItems = document.querySelectorAll('#kategoriDropdownMerchant a[data-category]');
+                        dropdownItems.forEach(item => {
+                            const itemCategory = item.getAttribute('data-category');
+                            const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                            const normalizedCurrentCategory = (category || '').toLowerCase();
+
+                            // Reset semua item ke state default
+                            item.classList.remove('bg-gray-100', 'bg-gradient-to-r', 
+                                'from-orange-100', 'to-red-100', 'text-orange-900',
+                                'from-purple-100', 'to-pink-100', 'text-purple-900',
+                                'from-blue-100', 'to-cyan-100', 'text-blue-900',
+                                'from-green-100', 'to-emerald-100', 'text-green-900',
+                                'from-rose-100', 'to-pink-100', 'text-rose-900',
+                                'from-red-100', 'to-orange-100', 'text-red-900',
+                                'text-gray-900');
+
+                            // Apply active state jika kategori cocok
+                            if (normalizedItemCategory === normalizedCurrentCategory || 
+                                (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                                
+                                if (category === 'Semua') {
+                                    item.classList.add('bg-gray-100', 'text-gray-900');
+                                } else if (category === 'Kuliner') {
+                                    item.classList.add('bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'text-orange-900');
+                                } else if (category === 'Hiburan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'text-purple-900');
+                                } else if (category === 'Liburan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'text-blue-900');
+                                } else if (category === 'Belanja') {
+                                    item.classList.add('bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'text-green-900');
+                                } else if (category === 'Kecantikan') {
+                                    item.classList.add('bg-gradient-to-r', 'from-rose-100', 'to-pink-100', 'text-rose-900');
+                                } else {
+                                    item.classList.add('bg-gradient-to-r', 'from-red-100', 'to-orange-100', 'text-red-900');
+                                }
+                            }
+                        });
+
+                        const dropdown = document.getElementById('kategoriDropdownMerchant');
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
+                        }
+                    } else if (tableType === 'telkom') {
+                        const dropdownItems = document.querySelectorAll('#kategoriDropdownTelkom a[data-category]');
+                        dropdownItems.forEach(item => {
+                            const itemCategory = item.getAttribute('data-category');
+                            const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                            const normalizedCurrentCategory = (category || '').toLowerCase();
+
+                            item.classList.remove('bg-gray-100', 'text-gray-900', 'bg-gradient-to-r',
+                                'from-orange-100', 'to-red-100', 'text-orange-900',
+                                'from-purple-100', 'to-pink-100', 'text-purple-900');
+
+                            if (normalizedItemCategory === normalizedCurrentCategory || 
+                                (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                                item.classList.add('bg-gray-100', 'text-gray-900');
+                            }
+                        });
+
+                        const dropdown = document.getElementById('kategoriDropdownTelkom');
+                        if (dropdown && !dropdown.classList.contains('hidden')) {
+                            hideDropdown(dropdown);
+                        }
+                    }
+
+                    // ==== MERCHANT TABLE: gunakan filter ke server (bukan hanya data di halaman saat ini) ====
+                    if (tableType === 'merchant') {
+                        // Saat reapply (mis. setelah pagination AJAX), cukup perbarui tampilan tombol & dropdown saja,
+                        // jangan trigger request baru supaya tidak loop.
+                        if (!reapply && typeof fetchMerchantTable === 'function' && typeof buildMerchantSearchRequestUrl === 'function') {
+                            fetchMerchantTable(buildMerchantSearchRequestUrl());
+                        }
+                        return;
+                    }
+
+                    // Mapping table type to actual DOM elements (saat ini dipakai untuk telkom)
+                    let tableBodyId = '';
+                    let rowClass = '';
+
+                    if (tableType === 'merchant') {
+                        tableBodyId = 'merchant-table-body';
+                        rowClass = 'merchant-row';
+                    } else if (tableType === 'telkom') {
+                        tableBodyId = 'telkom-table-body';
+                        rowClass = 'telkom-row';
+                    }
+
+                    const normalizedSelected = (selectedCategory[tableType] || '').toLowerCase();
+                    const tableBody = document.getElementById(tableBodyId);
+
+                    if (tableBody) {
+                        const rows = tableBody.querySelectorAll(`.${rowClass}`);
+                        rows.forEach((row, index) => {
+                            const rowCategory = (row.getAttribute('data-category') || '').toLowerCase();
+                            const shouldShow = !normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all' || rowCategory === normalizedSelected;
+                            
+                            if (shouldShow) {
+                                row.style.opacity = '0';
+                                row.style.transform = 'translateY(-10px)';
+                                row.style.display = '';
+                                setTimeout(() => {
+                                    row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                    row.style.opacity = '1';
+                                    row.style.transform = 'translateY(0)';
+                                }, index * 20);
+                            } else {
+                                row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                                row.style.opacity = '0';
+                                row.style.transform = 'translateY(-10px)';
+                                setTimeout(() => {
+                                    row.style.display = 'none';
+                                }, 200);
+                            }
+                        });
+                    }
+
+                    // Filter juga tampilan mobile (cards)
+                    if (tableType === 'merchant') {
+                        const cardsContainer = document.getElementById('merchant-cards-container');
+                        if (cardsContainer) {
+                            const cards = cardsContainer.querySelectorAll('[data-category]');
+                            cards.forEach((card, index) => {
+                                const cardCategory = (card.getAttribute('data-category') || '').toLowerCase();
+                                const shouldShow = !normalizedSelected || normalizedSelected === 'semua' || normalizedSelected === 'all' || cardCategory === normalizedSelected;
+                                
+                                if (shouldShow) {
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'translateY(-10px)';
+                                    card.style.display = '';
+                                    setTimeout(() => {
+                                        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                                        card.style.opacity = '1';
+                                        card.style.transform = 'translateY(0)';
+                                    }, index * 20);
+                                } else {
+                                    card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'translateY(-10px)';
+                                    setTimeout(() => {
+                                        card.style.display = 'none';
+                                    }, 200);
+                                }
+                            });
+                        }
+                    }
+                }
+
+                ////////////////////////////////////////////////////////////////////
+                // Upload & AJAX (Merchant, Keyword, etc)
+                ////////////////////////////////////////////////////////////////////
+
+                function openUploadMerchant() {
+                    const modal = document.getElementById('uploadMerchantModal');
+                    if (!modal) return;
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        modal.classList.remove('opacity-0');
+                        modal.classList.add('opacity-100');
+                    }, 10);
+                }
+
+                function closeUploadMerchant() {
+                    const modal = document.getElementById('uploadMerchantModal');
+                    if (!modal) return;
+                    modal.classList.remove('opacity-100');
+                    modal.classList.add('opacity-0');
+                    setTimeout(() => modal.classList.add('hidden'), 150);
+                }
+
+                function handleMerchantFormSubmit(event) {
+                    event.preventDefault();
+
+                    const form = event.target;
+                    const url = form.action;
+                    const formData = new FormData(form);
+
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const submitText = submitBtn.querySelector('.submit-text');
+                    const submitSpinner = submitBtn.querySelector('.submit-spinner');
+
+                    submitBtn.disabled = true;
+                    submitText.classList.add('hidden');
+                    submitSpinner.classList.remove('hidden');
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            closeUploadMerchant();
+
+                            const merchantTableContainer = document.getElementById('merchant-table-container');
+                            if (merchantTableContainer && data.tableHtml) {
+                                merchantTableContainer.innerHTML = data.tableHtml;
+                            }
+
+                            const cardsContainer = document.getElementById('merchant-cards-container');
+                            if (cardsContainer && data.cardsHtml) {
+                                cardsContainer.innerHTML = data.cardsHtml;
+                            }
+                        } else {
+                            alert(data.message || 'Terjadi kesalahan saat upload.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Merchant upload error:', error);
+                        alert('Terjadi kesalahan saat upload. Silakan coba lagi.');
+                    })
+                    .finally(() => {
+                        submitBtn.disabled = false;
+                        submitText.classList.remove('hidden');
+                        submitSpinner.classList.add('hidden');
                     });
                 }
+
+            </script>
+
+            <div id="section-keyword" class="transition-all duration-300 {{ $activeTab === 'keyword' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Keyword</h2>
+                
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="relative">
+                            <button id="statusBtnKeyword" onclick="toggleKeywordStatusDropdown()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-filter mr-2"></i>
+                                Status
+                                <i id="statusArrowKeyword" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
+                            </button>
+
+                            <div id="statusDropdownKeyword" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-56 sm:max-w-none max-w-full z-40 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
+                                <div class="py-1">
+                                    <a href="#" id="status-item-all" data-status="all" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('all'); return false;">All</a>
+                                    <a href="#" id="status-item-pending" data-status="pending" class="block px-4 py-2 text-sm text-gray-700 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('pending'); return false;">Pending</a>
+                                    <a href="#" id="status-item-reject" data-status="reject" class="block px-4 py-2 text-sm text-gray-700 hover:bg-red-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('reject'); return false;">Rejected</a>
+                                    <a href="#" id="status-item-approve" data-status="approve" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-100 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterKeywordByStatus('approve'); return false;">Approved</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            @include('partials.date-filter', ['filterId' => 'dateFilterKeyword'])
+                        </div>
+
+                        <div class="relative">
+                            <button
+                                type="button"
+                                onclick="openUploadKeyword()"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <i class="fas fa-plus mr-2"></i>
+                                Add
+                            </button>
+                        </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('keywords.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-auto">
+                            <input type="text" id="keywordSearch" placeholder="Search keyword..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <div class="absolute left-3 top-2.5 text-gray-400">
+                                <i class="fas fa-search text-sm"></i>
+                            </div>
+                        </div>
+                        <button type="button" id="keywordSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="keyword-table-container">
+                    @include('partials.table-keyword')
+                </div>
+            </div>
+
+            <div id="section-merchant" class="transition-all duration-300 {{ $activeTab === 'merchant' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Merchant</h2>
+                
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div class="flex space-x-3">
+                        <div class="relative">
+                            <button id="kategoriBtnMerchant" onclick="toggleKategoriDropdownMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-list mr-2"></i>
+                                Kategori
+                                <i id="kategoriArrowMerchant" class="fas fa-chevron-down ml-2 text-xs transition-transform duration-300"></i>
+                            </button>
+
+                            <div id="kategoriDropdownMerchant" class="hidden absolute left-0 right-0 sm:right-auto sm:left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-full sm:w-64 sm:max-w-none max-w-full z-50 transition-all duration-300 ease-out opacity-0 translate-y-1 max-h-[80vh] overflow-y-auto">
+                                <div class="py-1">
+                                    <a href="#" id="dropdown-item-semua" data-category="Semua" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Semua'); return false;">Semua</a>
+                                    <a href="#" id="dropdown-item-kuliner" data-category="Kuliner" class="block px-4 py-2 text-sm text-orange-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kuliner'); return false;">Kuliner</a>
+                                    <a href="#" id="dropdown-item-hiburan" data-category="Hiburan" class="block px-4 py-2 text-sm text-purple-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Hiburan'); return false;">Hiburan</a>
+                                    <a href="#" id="dropdown-item-liburan" data-category="Liburan" class="block px-4 py-2 text-sm text-blue-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Liburan'); return false;">Liburan</a>
+                                    <a href="#" id="dropdown-item-belanja" data-category="Belanja" class="block px-4 py-2 text-sm text-green-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Belanja'); return false;">Belanja</a>
+                                    <a href="#" id="dropdown-item-kecantikan" data-category="Kecantikan" class="block px-4 py-2 text-sm text-rose-700 hover:bg-gradient-to-r hover:from-rose-100 hover:to-pink-100 hover:text-rose-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Kecantikan'); return false;">Kecantikan</a>
+                                    <a href="#" id="dropdown-item-telkomsel" data-category="Telkomsel Packet" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-orange-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
+                                    <a href="#" id="dropdown-item-merchandise" data-category="Merchandise" class="block px-4 py-2 text-sm text-red-700 hover:bg-gradient-to-r hover:from-red-100 hover:to-orange-100 hover:text-red-900 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Merchandise'); return false;">Merchandise</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <button
+                                type="button"
+                                onclick="openUploadMerchant()"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <i class="fas fa-upload mr-2"></i>
+                                Upload
+                            </button>
+                        </div>
+
+                        <div class="relative">
+                            <a
+                                href="{{ route('merchants.export.excel') }}"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-green-300 text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors"
+                            >
+                                <i class="fas fa-file-excel mr-2"></i>
+                                Export
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-auto">
+                            <input type="text" id="merchantSearch" placeholder="Search merchant..." class="w-full sm:w-64 pl-9 pr-9 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                            <div class="absolute left-3 top-2.5 text-gray-400">
+                                <i class="fas fa-search text-sm"></i>
+                            </div>
+                            <button type="button" id="merchantSearchClear" class="hidden absolute inset-y-0 right-2 px-2 text-gray-400 hover:text-gray-600 focus:outline-none" aria-label="Clear search">
+                                &times;
+                            </button>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <div id="merchant-table-container">
+                    @include('partials.table-merchant')
+                </div>
+            </div>
+        </main>
+        
+
+        <script>
+        // Search functionality for Merchant table - aligned with section rendering
+        let merchantSearchTimeout;
+        let currentMerchantQuery = new URL(window.location.href).searchParams.get('merchant_search') || '';
+        // Simpan kategori merchant yang sedang aktif (untuk dikirim ke server)
+        if (typeof selectedCategory === 'undefined') {
+            selectedCategory = { merchant: 'Semua',};
+        } else if (!selectedCategory.merchant) {
+            selectedCategory.merchant = 'Semua';
+        }
+        const merchantSearchInput = document.getElementById('merchantSearch');
+        
+        if (merchantSearchInput && currentMerchantQuery) {
+            merchantSearchInput.value = currentMerchantQuery;
+            fetchMerchantTable(buildMerchantSearchRequestUrl(), true);
+        }
+
+        merchantSearchInput?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
             }
 
-            ////////////////////////////////////////////////////////////////////
-            // Modal Functions
-            ////////////////////////////////////////////////////////////////////
-            // Note: toggleMerchantUploadModal() has been moved to upload-modal.blade.php
-        </script>
+            event.preventDefault();
+            currentMerchantQuery = event.target.value.trim();
 
-        <!-- All Tables Section -->
-         <div id="section-all" class="transition-all duration-300 opacity-100 translate-y-0"> 
-            <!-- Merchant Table -->
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 mt-4 sm:mt-8">Merchant</h2>
+            if (merchantSearchTimeout) {
+                clearTimeout(merchantSearchTimeout);
+            }
+
+            merchantSearchTimeout = setTimeout(() => {
+                fetchMerchantTable(buildMerchantSearchRequestUrl());
+            }, 50);
+        });
+
+        merchantSearchInput?.addEventListener('input', (event) => {
+            const value = event.target.value.trim();
+
+            if (value === '' && currentMerchantQuery !== '') {
+                currentMerchantQuery = '';
+
+                if (merchantSearchTimeout) {
+                    clearTimeout(merchantSearchTimeout);
+                }
+
+                merchantSearchTimeout = setTimeout(() => {
+                    fetchMerchantTable(buildMerchantSearchRequestUrl());
+                }, 50);
+            }
+        });
+
+        function buildMerchantSearchRequestUrl(sourceHref = null) {
+            if (sourceHref) {
+                return sourceHref;
+            }
+
+            const searchUrl = new URL('/merchants/search', window.location.origin);
+            if (currentMerchantQuery) {
+                searchUrl.searchParams.set('q', currentMerchantQuery);
+            }
+            searchUrl.searchParams.set('tab', 'merchant');
+            // Pertahankan keyword_page dari URL saat ini jika ada
+            const currentUrl = new URL(window.location.href);
+            const keywordPage = currentUrl.searchParams.get('keyword_page');
+            if (keywordPage) {
+                searchUrl.searchParams.set('keyword_page', keywordPage);
+            }
+            // Sertakan kategori bila dipilih selain "Semua"
+            const activeCategory = (selectedCategory?.merchant || 'Semua');
+            if (activeCategory && activeCategory !== 'Semua') {
+                searchUrl.searchParams.set('category', activeCategory);
+            }
+            // Sertakan sort parameters dari URL saat ini atau dari window.currentMerchantSort
+            const sortMerchant = window.currentMerchantSort || currentUrl.searchParams.get('sort_merchant');
+            const sortMerchantDir = window.currentMerchantSortDir || currentUrl.searchParams.get('sort_merchant_dir');
+            if (sortMerchant) {
+                searchUrl.searchParams.set('sort_merchant', sortMerchant);
+                if (sortMerchantDir) {
+                    searchUrl.searchParams.set('sort_merchant_dir', sortMerchantDir);
+                }
+            }
+            return searchUrl.toString();
+        }
+
+        function reapplyMerchantCategoryFilter() {
+            if (typeof selectedCategory === 'undefined') {
+                return;
+            }
+
+            if (!selectedCategory.merchant) {
+                selectedCategory.merchant = 'Semua';
+            }
+
+            filterTable('merchant', selectedCategory.merchant, { reapply: true });
+        }
+
+        function fetchMerchantTable(requestUrl, skipTransition = false) {
+            const url = requestUrl || buildMerchantSearchRequestUrl();
+            const container = document.getElementById('merchant-table-container');
+
+            if (!container) {
+                return;
+            }
             
-            <!-- Merchant Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Kategori Dropdown -->
-                    <div class="relative">
-                        <button id="kategoriBtnAll1" onclick="toggleKategoriDropdownAll1()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-list mr-2"></i>
-                            Kategori
-                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                        </button>
-                        <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
-                            <div class="py-1">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'F&B'); return false;">F&B</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Entertain'); return false;">Entertain</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Vacation'); return false;">Vacation</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Shopping'); return false;">Shopping</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Beauty & Care'); return false;">Beauty & Care</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
-                            </div>
-                        </div>
-                    </div>
+            if (!skipTransition) {
+                container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                container.style.opacity = '0';
+                container.style.transform = 'translateY(8px)';
+            }
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.html) {
+                        return;
+                    }
+
+                    const delay = skipTransition ? 0 : 200;
+                    setTimeout(() => {
+                        container.innerHTML = data.html;
+                        attachMerchantPaginationHandlers();
+                        updateMerchantUrlState();
+                        reapplyMerchantCategoryFilter();
+
+                        if (!skipTransition) {
+                            void container.offsetWidth;
+                            container.style.opacity = '1';
+                            container.style.transform = 'translateY(0)';
+                        }
+                    }, delay);
+                })
+                .catch(error => console.error('Search error:', error));
+        }
+
+        function attachMerchantPaginationHandlers() {
+            const container = document.getElementById('merchant-table-container');
+            if (!container) return;
+
+            container.querySelectorAll('.merchant-pagination-link').forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const linkUrl = new URL(this.href, window.location.origin);
                     
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
-                        </button>
-                    </div>
-                </div>
+                    // Pastikan tab=merchant selalu ada
+                    linkUrl.searchParams.set('tab', 'merchant');
+                    
+                    // Pertahankan keyword_page dari URL saat ini jika ada
+                    const currentUrl = new URL(window.location.href);
+                    const keywordPage = currentUrl.searchParams.get('keyword_page');
+                    if (keywordPage) {
+                        linkUrl.searchParams.set('keyword_page', keywordPage);
+                    }
+                    
+                    // Jika link adalah dari /merchants/search, gunakan AJAX
+                    if (linkUrl.pathname === '/merchants/search') {
+                        fetchMerchantTable(linkUrl.toString());
+                    } else {
+                        // Jika bukan, redirect langsung ke URL yang sudah di-update
+                        window.location.href = linkUrl.toString();
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+        }
+
+        function updateMerchantUrlState() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'merchant');
+            if (currentMerchantQuery) {
+                url.searchParams.set('merchant_search', currentMerchantQuery);
+            } else {
+                url.searchParams.delete('merchant_search');
+            }
+            // Simpan kategori aktif ke URL supaya bisa dibuka ulang dengan filter yang sama
+            const activeCategory = (selectedCategory?.merchant || 'Semua');
+            if (activeCategory && activeCategory !== 'Semua') {
+                url.searchParams.set('category', activeCategory);
+            } else {
+                url.searchParams.delete('category');
+            }
+            // PENTING: Jangan hapus keyword_page, biarkan tetap ada untuk mempertahankan pagination keyword
+            // Parameter keyword_page akan tetap dipertahankan di URL
+            window.history.replaceState({}, '', url);
+        }
+
+        attachMerchantPaginationHandlers();
+
+        ////////////////////////////////////////////////////////////////////
+        // Keyword search & pagination (AJAX across all pages)
+        ////////////////////////////////////////////////////////////////////
+        const keywordSearchInput = document.getElementById('keywordSearch');
+        const keywordSearchClear = document.getElementById('keywordSearchClear');
+        let keywordSearchTimeout;
+        let currentKeywordQuery = new URL(window.location.href).searchParams.get('keyword_search') || '';
+
+        if (keywordSearchInput && currentKeywordQuery) {
+            keywordSearchInput.value = currentKeywordQuery;
+            fetchKeywordTable(buildKeywordSearchRequestUrl());
+            if (keywordSearchClear) keywordSearchClear.classList.remove('hidden');
+        }
+
+        keywordSearchClear?.addEventListener('click', () => {
+            if (!keywordSearchInput) return;
+            keywordSearchInput.value = '';
+            currentKeywordQuery = '';
+            if (keywordSearchTimeout) {
+                clearTimeout(keywordSearchTimeout);
+            }
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 10);
+            keywordSearchClear.classList.add('hidden');
+        });
+
+        // Trigger search hanya saat Enter, tapi kalau input dikosongkan,
+        // otomatis reset tabel tanpa perlu Enter lagi.
+        keywordSearchInput?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+
+            event.preventDefault();
+            currentKeywordQuery = event.target.value.trim();
+
+            if (keywordSearchTimeout) {
+                clearTimeout(keywordSearchTimeout);
+            }
+
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 50);
+        });
+
+        keywordSearchInput?.addEventListener('input', (event) => {
+            const value = event.target.value.trim();
+            if (keywordSearchClear) {
+                keywordSearchClear.classList.toggle('hidden', value.length === 0);
+            }
+
+            // Kalau dikosongkan, langsung reset ke semua data
+            if (value === '' && currentKeywordQuery !== '') {
+                currentKeywordQuery = '';
+
+                if (keywordSearchTimeout) {
+                    clearTimeout(keywordSearchTimeout);
+                }
+
+                keywordSearchTimeout = setTimeout(() => {
+                    fetchKeywordTable(buildKeywordSearchRequestUrl());
+                }, 50);
+            }
+        });
+
+        function buildKeywordSearchRequestUrl(sourceHref = null) {
+            const base = new URL(sourceHref || '/keywords', window.location.origin);
+            const searchUrl = new URL('/keywords/search', window.location.origin);
+
+            base.searchParams.forEach((value, key) => {
+                // abaikan parameter yang akan kita kelola sendiri
+                if (key === 'tab' || key === 'keyword_search' || key === 'status' || key === 'keyword_page') {
+                    return;
+                }
+                searchUrl.searchParams.set(key, value);
+            });
+
+            if (currentKeywordQuery) {
+                searchUrl.searchParams.set('q', currentKeywordQuery);
+            } else {
+                searchUrl.searchParams.delete('q');
+            }
+
+            // sertakan filter status jika sedang aktif (selain 'all')
+            if (selectedKeywordStatus && selectedKeywordStatus !== 'all') {
+                searchUrl.searchParams.set('status', selectedKeywordStatus);
+            } else {
+                searchUrl.searchParams.delete('status');
+            }
+
+            // Jika sourceHref diberikan (dari pagination link), gunakan keyword_page dari URL tersebut
+            if (sourceHref) {
+                const sourceUrl = new URL(sourceHref, window.location.origin);
+                const keywordPage = sourceUrl.searchParams.get('keyword_page');
+                if (keywordPage) {
+                    searchUrl.searchParams.set('keyword_page', keywordPage);
+                }
+            }
+            // Jika tidak ada sourceHref, biarkan keyword_page tetap dari URL saat ini atau default ke 1
+
+            // Pertahankan merchant_page dari URL saat ini jika ada
+            const currentUrl = new URL(window.location.href);
+            const merchantPage = currentUrl.searchParams.get('merchant_page');
+            if (merchantPage) {
+                searchUrl.searchParams.set('merchant_page', merchantPage);
+            }
+
+            searchUrl.searchParams.set('tab', 'keyword');
+            return searchUrl.toString();
+        }
+
+        function fetchKeywordTable(requestUrl) {
+            const url = requestUrl || buildKeywordSearchRequestUrl();
+            const container = document.getElementById('keyword-table-container');
+
+            if (!container) {
+                return;
+            }
+
+            // Animasi keluar (fade + slight slide)
+            container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(8px)';
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                // Handle redirect (302) - biasanya karena session expired
+                if (response.redirected || response.status === 302) {
+                    throw new Error('Session expired. Please refresh the page and login again.');
+                }
                 
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter1'])
-                </div>
-            </div>
-            
-            @include('partials.table-merchant')
-
-            <!-- Merchandise Table -->
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 mt-8 sm:mt-12">Merchandise</h2>
-            
-            <!-- Merchandise Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadMerchandise()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
-                        </button>
-                    </div>
-                </div>
+                if (!response.ok) {
+                    // Cek jika response adalah HTML (redirect ke login)
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('text/html')) {
+                        throw new Error('Authentication required. Please refresh the page and login again.');
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter2'])
-                </div>
-            </div>
-            
-            @include('partials.table-merchandise')
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.html) {
+                    // Ganti konten setelah animasi keluar selesai
+                    setTimeout(() => {
+                        container.innerHTML = data.html;
+                        attachKeywordPaginationHandlers();
+                        updateKeywordUrlState();
+                        // Re-apply date filter if user set one before the table reload
+                        if (window.dateFilterState?.dateFilterKeyword && (window.dateFilterState.dateFilterKeyword.start || window.dateFilterState.dateFilterKeyword.end)) {
+                            applyDateFilterCompact('dateFilterKeyword');
+                        }
 
-            <!-- Telkom Packages Table -->
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 mt-8 sm:mt-12">Telkom Packages</h2>
-            
-            <!-- Telkom Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadTelkom()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
-                        </button>
-                    </div>
-                </div>
+                        // Trigger reflow sebelum animasi masuk
+                        void container.offsetWidth;
+
+                        // Animasi masuk (fade + slide up)
+                        container.style.opacity = '1';
+                        container.style.transform = 'translateY(0)';
+                    }, 200);
+                } else {
+                    console.error('Keyword search: No HTML in response', data);
+                    // Restore visibility jika tidak ada data
+                    container.style.opacity = '1';
+                    container.style.transform = 'translateY(0)';
+                }
+            })
+            .catch(error => {
+                console.error('Keyword search error:', error);
+                // Tampilkan pesan error
+                container.innerHTML = '<div class="p-4 text-center text-red-600 bg-red-50 rounded-lg"><i class="fas fa-exclamation-triangle mr-2"></i>Error loading keywords. Please refresh the page.</div>';
+                // Restore visibility on error
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            });
+        }
+
+        // Gunakan event delegation di level document untuk pagination keyword agar lebih robust
+        // Event delegation di level document akan tetap bekerja meskipun container di-replace
+        // Hanya attach sekali dengan menggunakan flag
+        if (!window.keywordPaginationHandlerAttached) {
+            document.addEventListener('click', function(event) {
+                const link = event.target.closest('.keyword-pagination-link');
+                if (!link) return;
                 
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter3'])
-                </div>
-            </div>
-            
-            @include('partials.table-talkompackages')
-        </div>
-
-        <!-- Merchant Only Section -->
-        <div id="section-merchant" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Merchant</h2>
-            
-            <!-- Merchant Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Kategori Dropdown -->
-                    <div class="relative">
-                        <button id="kategoriBtnMerchant" onclick="toggleKategoriDropdownMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-list mr-2"></i>
-                            Kategori 
-                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
-                        </button>
-                        <div id="kategoriDropdownAll1" class="hidden absolute left-0 mt-2 bg-white rounded-2xl shadow-2xl p-3 border border-gray-200 w-64 z-50">
-                            <div class="py-1">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:text-gray-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'All'); return false;">All</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-100 hover:to-red-100 hover:text-orange-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'F&B'); return false;">F&B</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Entertain'); return false;">Entertain</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-100 hover:to-cyan-100 hover:text-blue-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Vacation'); return false;">Vacation</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 hover:text-green-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Shopping'); return false;">Shopping</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-pink-100 hover:to-rose-100 hover:text-pink-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Beauty & Care'); return false;">Beauty & Care</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-indigo-100 hover:to-blue-100 hover:text-indigo-800 rounded-lg transition-all duration-300" onclick="filterTable('merchant', 'Telkomsel Packet'); return false;">Telkomsel Packet</a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Upload Button with File Input -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadMerchant()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
-                        </button>
-                    </div>
-                </div>
+                // Pastikan link berada di dalam keyword-table-container
+                const container = document.getElementById('keyword-table-container');
+                if (!container || !container.contains(link)) return;
                 
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter4'])
-                </div>
-            </div>
-            
-            @include('partials.table-merchant')
-        </div>
+                event.preventDefault();
+                const linkUrl = new URL(link.href, window.location.origin);
+                
+                // Pastikan tab=keyword selalu ada
+                linkUrl.searchParams.set('tab', 'keyword');
+                
+                // Pertahankan merchant_page dari URL saat ini jika ada
+                const currentUrl = new URL(window.location.href);
+                const merchantPage = currentUrl.searchParams.get('merchant_page');
+                if (merchantPage) {
+                    linkUrl.searchParams.set('merchant_page', merchantPage);
+                }
+                
+                // Pertahankan status filter jika ada
+                if (selectedKeywordStatus && selectedKeywordStatus !== 'all') {
+                    linkUrl.searchParams.set('status', selectedKeywordStatus);
+                }
+                
+                // Gunakan AJAX untuk semua pagination link keyword
+                const requestUrl = buildKeywordSearchRequestUrl(linkUrl.toString());
+                fetchKeywordTable(requestUrl);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            window.keywordPaginationHandlerAttached = true;
+        }
+        
+        function attachKeywordPaginationHandlers() {
+            // Function ini tidak perlu melakukan apa-apa karena event delegation sudah di level document
+            // Tapi tetap dipanggil untuk kompatibilitas dengan kode yang sudah ada
+        }
 
-        <!-- Merchandise Only Section -->
-        <div id="section-merchandise" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Merchandise</h2>
-            
-            <!-- Merchandise Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadMerchandise()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
+        function updateKeywordUrlState() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', 'keyword');
+            if (currentKeywordQuery) {
+                url.searchParams.set('keyword_search', currentKeywordQuery);
+            } else {
+                url.searchParams.delete('keyword_search');
+            }
+            // Update parameter status berdasarkan selectedKeywordStatus
+            if (selectedKeywordStatus && selectedKeywordStatus !== 'all') {
+                url.searchParams.set('status', selectedKeywordStatus);
+            } else {
+                url.searchParams.delete('status');
+            }
+            // PENTING: Jangan hapus merchant_page, biarkan tetap ada untuk mempertahankan pagination merchant
+            // Parameter merchant_page akan tetap dipertahankan di URL
+            window.history.replaceState({}, '', url);
+        }
+
+        attachKeywordPaginationHandlers();
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            const arrow = document.getElementById('userDropdownArrow');
+            if (!dropdown) return;
+
+            if (dropdown.classList.contains('opacity-0')) {
+                dropdown.classList.remove('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.add('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            } else {
+                dropdown.classList.add('opacity-0', 'invisible', 'scale-95');
+                dropdown.classList.remove('opacity-100', 'visible', 'scale-100');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const btn = document.getElementById('userDropdownBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (!btn || !dropdown) return;
+
+            if (!btn.contains(event.target) && !dropdown.contains(event.target) && dropdown.classList.contains('opacity-100')) {
+                toggleUserDropdown();
+            }
+        });
+
+        function previewKeywordImage(imageUrl, fileName) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                    <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">${fileName}</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
+                    <div class="p-4">
+                        <img src="${imageUrl}" alt="${fileName}" class="w-full h-auto rounded-lg">
                     </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter5'])
                 </div>
-            </div>
-            
-            @include('partials.table-merchandise')
-        </div>
+            `;
+            document.body.appendChild(modal);
+        }
 
-        <!-- Telkom Packages Only Section -->
-        <div id="section-telkom" class="transition-all duration-300 opacity-0 translate-y-5 hidden pointer-events-none">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Telkom Packages</h2>
-            
-            <!-- Telkom Controls -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div class="flex space-x-3">
-                    <!-- Upload Button -->
-                    <div class="relative">
-                        <button type="button" onclick="openUploadTelkom()" class="flex items-center px-4 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-upload mr-2"></i>
-                            Upload
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-auto">
-                        <input type="text" placeholder="Search..." class="w-full sm:w-48 pl-9 pr-4 py-2 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <i class="fas fa-search text-sm"></i>
-                        </div>
-                    </div>
-                    
-                    @include('partials.date-filter', ['filterId' => 'dateFilter6'])
-                </div>
-            </div>
-            
-            @include('partials.table-talkompackages')
-        </div>
+        // Initialize dropdown active state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update dropdown item active state for merchant
+            const merchantCategory = selectedCategory.merchant || 'Semua';
+            const dropdownItems = document.querySelectorAll('#kategoriDropdownMerchant a[data-category]');
+            dropdownItems.forEach(item => {
+                const itemCategory = item.getAttribute('data-category');
+                const normalizedItemCategory = (itemCategory || '').toLowerCase();
+                const normalizedCurrentCategory = (merchantCategory || '').toLowerCase();
 
-    </main>
-    
-    @include('partials.upload-modal-merchant')
-    @include('partials.upload-modal-merchandise')
-    @include('partials.upload-modal-telkom')
-    @include('partials.edit-modal-merchant')
-    @include('partials.edit-modal-merchandise')
-    @include('partials.edit-modal-telkom')
-    @include('partials.delete-confirmation-modal')
-    @include('partials.approve-confirmation-modal')
+                // Reset semua item ke state default
+                item.classList.remove('bg-gray-100', 'bg-gradient-to-r', 
+                    'from-orange-100', 'to-red-100', 'text-orange-900',
+                    'from-purple-100', 'to-pink-100', 'text-purple-900',
+                    'from-blue-100', 'to-cyan-100', 'text-blue-900',
+                    'from-green-100', 'to-emerald-100', 'text-green-900',
+                    'from-rose-100', 'to-pink-100', 'text-rose-900',
+                    'from-red-100', 'to-orange-100', 'text-red-900',
+                    'text-gray-900');
+
+                // Apply active state jika kategori cocok
+                if (normalizedItemCategory === normalizedCurrentCategory || 
+                    (normalizedCurrentCategory === 'semua' && normalizedItemCategory === 'semua')) {
+                    
+                    if (merchantCategory === 'Semua') {
+                        item.classList.add('bg-gray-100', 'text-gray-900');
+                    } else if (merchantCategory === 'Kuliner') {
+                        item.classList.add('bg-gradient-to-r', 'from-orange-100', 'to-red-100', 'text-orange-900');
+                    } else if (merchantCategory === 'Hiburan') {
+                        item.classList.add('bg-gradient-to-r', 'from-purple-100', 'to-pink-100', 'text-purple-900');
+                    } else if (merchantCategory === 'Liburan') {
+                        item.classList.add('bg-gradient-to-r', 'from-blue-100', 'to-cyan-100', 'text-blue-900');
+                    } else if (merchantCategory === 'Belanja') {
+                        item.classList.add('bg-gradient-to-r', 'from-green-100', 'to-emerald-100', 'text-green-900');
+                    } else if (merchantCategory === 'Kecantikan') {
+                        item.classList.add('bg-gradient-to-r', 'from-rose-100', 'to-pink-100', 'text-rose-900');
+                    } else {
+                        item.classList.add('bg-gradient-to-r', 'from-red-100', 'to-orange-100', 'text-red-900');
+                    }
+                }
+            });
+
+            // Update dropdown item active state for keyword status
+            const keywordStatus = selectedKeywordStatus || 'all';
+            const statusDropdownItems = document.querySelectorAll('#statusDropdownKeyword a[data-status]');
+            statusDropdownItems.forEach(item => {
+                const itemStatus = item.getAttribute('data-status');
+                const normalizedItemStatus = (itemStatus || '').toLowerCase();
+                const normalizedCurrentStatus = (keywordStatus || '').toLowerCase();
+
+                // Reset semua item ke state default
+                item.classList.remove('bg-gray-100', 'bg-yellow-100', 'bg-red-100', 'bg-green-100',
+                    'text-gray-900', 'text-yellow-900', 'text-red-900', 'text-green-900');
+
+                // Apply active state jika status cocok
+                if (normalizedItemStatus === normalizedCurrentStatus || 
+                    (normalizedCurrentStatus === 'all' && normalizedItemStatus === 'all')) {
+                    
+                    if (keywordStatus === 'all') {
+                        item.classList.add('bg-gray-100', 'text-gray-900');
+                    } else if (keywordStatus === 'pending') {
+                        item.classList.add('bg-yellow-100', 'text-yellow-900');
+                    } else if (keywordStatus === 'reject') {
+                        item.classList.add('bg-red-100', 'text-red-900');
+                    } else if (keywordStatus === 'approve') {
+                        item.classList.add('bg-green-100', 'text-green-900');
+                    }
+                }
+            });
+
+            const dashboardMain = document.querySelector('main.dashboard-entrance');
+            if (dashboardMain) {
+                requestAnimationFrame(() => dashboardMain.classList.add('is-visible'));
+            }
+        });
+
+    </script>
+        @include('partials.upload-modal-merchant')
+        @include('partials.upload-modal-merchandise')
+        @include('partials.upload-modal-keyword')
+        @include('partials.edit-modal-merchant')
+        @include('partials.edit-modal-merchandise')
+        @include('partials.edit-modal-keyword')
+        @include('partials.delete-confirmation-modal')
+        @include('partials.approve-confirmation-modal')
+
 </body>
 </html>

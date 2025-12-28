@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'portal' => [
+            'driver' => 'session',
+            'provider' => 'portal_users',
+        ],
     ],
 
     /*
@@ -63,6 +67,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'portal_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\PortalUser::class,
         ],
 
         // 'users' => [
@@ -97,6 +106,12 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+        'portal_users' => [
+            'provider' => 'portal_users',
+            'table' => 'portal_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*
@@ -111,5 +126,19 @@ return [
     */
 
     'password_timeout' => 10800,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Remember Me Cookie Lifetime
+    |--------------------------------------------------------------------------
+    |
+    | This option controls the lifetime (in minutes) of the "remember me" cookie.
+    | When a user logs in with "remember me" enabled, this cookie will persist
+    | for the specified duration, allowing the user to remain authenticated
+    | even after closing the browser.
+    |
+    */
+
+    'remember' => env('AUTH_REMEMBER_DURATION', 1440), // 1440 minutes = 24 hours
 
 ];

@@ -18,9 +18,22 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
+        'username',
         'password',
+        'role',
+        'can_approve',
+        'no_hp',
+        'email',
+        'otp',
+        'otp_expires_at',
+        'user_level',
+        'area',
+        'regional',
+        'branch',
+        'sub_branch',
+        'cluster',
+        'city',
+        'area_level',
     ];
 
     /**
@@ -39,6 +52,17 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        'username_verified_at' => 'datetime',
+        'otp_expires_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
+
+    /**
+     * Scope to get last login time
+     */
+    public function getLastLoginAttribute()
+    {
+        return $this->updated_at ? $this->updated_at->format('Y-m-d H:i') : 'Belum pernah login';
+    }
 }
