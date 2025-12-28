@@ -247,7 +247,7 @@ class MerchantController extends Controller
             // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
             // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.coupon) 
                     FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
@@ -985,7 +985,7 @@ class MerchantController extends Controller
             // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
             // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.coupon) 
                     FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
@@ -1324,7 +1324,6 @@ class MerchantController extends Controller
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
-                'tr.id',
                 'tr.created_date as created_at',
                 'tr.msisdn',
                 'tr.keyword_desc as nama_produk',
@@ -1936,7 +1935,6 @@ class MerchantController extends Controller
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
-                'tr.id',
                 'tr.created_date as created_at',
                 'tr.msisdn',
                 'tr.keyword_desc as nama_produk',
