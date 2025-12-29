@@ -157,21 +157,15 @@ Route::get('/api/resolve-gmap-url', [\App\Http\Controllers\MerchantController::c
 Route::get('/api/geocode', [\App\Http\Controllers\MerchantController::class, 'geocode'])->name('api.geocode');
 Route::get('/api/place-details', [\App\Http\Controllers\MerchantController::class, 'placeDetails'])->name('api.place.details');
 
-// Portal merchant authentication
+// Portal merchant authentication (OTP-based)
 Route::middleware('guest:portal')->group(function () {
     Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
-    Route::post('/merchant-login', [PortalAuthController::class, 'login'])->name('portal.login.post');
-    
-    // Google OAuth routes (sesuai dokumentasi Socialite)
-    Route::get('/auth/redirect', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
-    Route::get('/auth-google-callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
-    
-    // Debug route untuk melihat data Google OAuth (hapus di production)
-    Route::get('/debug/google-callback', [PortalAuthController::class, 'debugGoogleCallback'])->name('portal.google.debug');
+    Route::post('/merchant-send-otp', [PortalAuthController::class, 'sendOtp'])->name('portal.send-otp');
+    Route::post('/merchant-authenticate', [PortalAuthController::class, 'authenticate'])->name('portal.authenticate');
 });
 Route::post('/merchant-logout', [PortalAuthController::class, 'logout'])->name('portal.logout');
 
-// Route untuk link dashboard (conditional auth berdasarkan email merchant)
+// Route untuk link dashboard (conditional auth berdasarkan wa_pic merchant)
 Route::middleware('merchant.email.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
 
 // Route untuk link history (public, tidak perlu login)
@@ -331,6 +325,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
     Route::get('/merchants/{merchant}', [MerchantController::class, 'show'])->name('merchants.show');
     Route::patch('/api/merchants/{id}/toggle-status', [MerchantController::class, 'toggleStatus'])->name('merchants.toggle-status');
+    Route::patch('/api/merchants/{id}/toggle-link-status', [MerchantController::class, 'toggleLinkStatus'])->name('merchants.toggle-link-status');
 
     // Keywords routes
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');

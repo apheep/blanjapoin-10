@@ -1109,6 +1109,11 @@ class MerchantController extends Controller
             abort(404, 'Merchant tidak ditemukan');
         }
 
+        // Validasi link_status - jika 0 (nonaktif), link pelanggan tidak dapat diakses
+        if (!$merchant->link_status) {
+            abort(403, 'Link ' . $merchant->nama_merchant . ' saat ini tidak dapat diakses. Silakan hubungi merchant untuk informasi lebih lanjut.');
+        }
+
         // Ambil semua voucher/keyword yang approved untuk merchant ini
         // Validasi hanya pada is_active keyword (bukan merchant)
         $merchantKeywords = Keyword::with('merchant')
@@ -2229,6 +2234,49 @@ class MerchantController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle link status merchant (mengaktifkan/menonaktifkan akses link pelanggan)
+     */
+    public function toggleLinkStatus(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $merchant = Merchant::findOrFail($id);
+            $oldLinkStatus = $merchant->link_status;
+            $merchant->link_status = $merchant->link_status ? 0 : 1;
+            $merchant->save();
+
+            Log::info('Merchant link status toggled', [
+                'merchant_id' => $id,
+                'old_link_status' => $oldLinkStatus,
+                'new_link_status' => $merchant->link_status,
+                'admin_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Link status merchant berhasil diperbarui',
+                'link_status' => (bool)$merchant->link_status,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling merchant link status: ' . $e->getMessage(), [
+                'merchant_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui link status: ' . $e->getMessage()
             ], 500);
         }
     }
