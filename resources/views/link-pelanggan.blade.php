@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css','resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="{{ asset('js/merchant-radius-validator.js') }}"></script>
     <style>
       /* ===== WhatsApp CS Floating Button (anti bentrok) ===== */
       .cs-wa-btn{
@@ -227,277 +228,23 @@
     <script>
         // Merchant data from server
         const merchantData = @json($merchant);
-        let userLocation = null;
-        let isWithinRadius = true; // Default true jika tidak ada validasi radius
         
-        // Extract coordinates from Google Maps link
-        function extractCoordinatesFromGmapsLink(gmapLink) {
-            if (!gmapLink) return null;
-            
-            // Pattern 1: https://www.google.com/maps?q=lat,lng
-            let match = gmapLink.match(/[?&]q=([-\d.]+),([-\d.]+)/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            // Pattern 2: https://www.google.com/maps/@lat,lng,zoom
-            match = gmapLink.match(/@([-\d.]+),([-\d.]+),/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            // Pattern 3: https://maps.google.com/?q=lat,lng
-            match = gmapLink.match(/[?&]q=([-\d.]+),([-\d.]+)/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            // Pattern 4: https://www.google.com/maps/place/@lat,lng
-            match = gmapLink.match(/place\/@?([-\d.]+),([-\d.]+)/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            return null;
-        }
-        
-        // Calculate distance between two coordinates using Haversine formula (in meters)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371000; // Earth's radius in meters
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; // Distance in meters
-        }
-        
-        // Update all redeem buttons based on location status
-        function updateRedeemButtons() {
-            const redeemButtons = document.querySelectorAll('[data-redeem-btn]');
-            console.log('🔄 Updating buttons...', {
-                buttonsFound: redeemButtons.length,
-                isWithinRadius: isWithinRadius,
-                hasRadiusValidation: !!(merchantData.radius && merchantData.link_gmap)
-            });
-            
-            redeemButtons.forEach((btn, index) => {
-                if (!isWithinRadius && merchantData.radius && merchantData.link_gmap) {
-                    // User di luar radius - disable button dan ganti text
-                    console.log(`❌ Button ${index}: Disabling (outside radius)`);
-                    btn.disabled = true;
-                    btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'hover:from-orange-600', 'hover:to-red-600');
-                    btn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    btn.innerHTML = '<i class="fas fa-map-marker-alt mr-1"></i>Harus ke Lokasi';
-                    btn.title = `Anda harus berada dalam radius ${merchantData.radius} meter dari merchant`;
-                } else {
-                    // User dalam radius atau tidak ada validasi - enable button
-                    console.log(`✅ Button ${index}: Enabling (within radius or no validation)`);
-                    btn.disabled = false;
-                    btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    btn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'hover:from-orange-600', 'hover:to-red-600');
-                    btn.innerHTML = 'Redeem';
-                    btn.title = '';
-                }
-            });
-        }
-        
-        // Check location on page load
-        async function checkLocationOnLoad() {
-            console.log('🔍 Checking location...', {
-                merchantRadius: merchantData.radius,
-                merchantGmap: merchantData.link_gmap
-            });
-            
-            // Check if merchant has radius validation
-            if (!merchantData.radius || !merchantData.link_gmap) {
-                // No radius validation needed
-                console.log('✅ No radius validation - allowing all redeems');
-                isWithinRadius = true;
-                updateRedeemButtons();
-                return;
-            }
-            
-            // Extract merchant coordinates
-            const merchantCoords = extractCoordinatesFromGmapsLink(merchantData.link_gmap);
-            console.log('📍 Merchant coordinates:', merchantCoords);
-            
-            if (!merchantCoords) {
-                // Can't extract coordinates, allow redeem
-                console.log('⚠️ Cannot extract merchant coordinates - allowing redeem');
-                isWithinRadius = true;
-                updateRedeemButtons();
-                return;
-            }
-            
-            // Check if browser supports geolocation
-            if (!navigator.geolocation) {
-                console.log('❌ Browser does not support geolocation');
-                isWithinRadius = false;
-                updateRedeemButtons();
-                return;
-            }
-            
-            try {
-                console.log('🌍 Getting user location...');
-                // Get user's current position
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 30000 // Cache for 30 seconds
-                    });
-                });
-                
-                userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                
-                console.log('📍 User location:', userLocation);
-                
-                // Calculate distance
-                const distance = calculateDistance(
-                    userLocation.lat, userLocation.lng,
-                    merchantCoords.lat, merchantCoords.lng
-                );
-                
-                console.log('📏 Distance calculated:', {
-                    distance: Math.round(distance) + ' meters',
-                    maxRadius: merchantData.radius + ' meters',
-                    withinRadius: distance <= merchantData.radius
-                });
-                
-                // Check if within radius
-                isWithinRadius = distance <= merchantData.radius;
-                
-                // Update all buttons
-                updateRedeemButtons();
-                
-            } catch (error) {
-                console.error('❌ Error getting location:', error);
-                // If error getting location, block redeem (strict security)
-                // User mungkin reject permission atau GPS off
-                isWithinRadius = false; // Block redeem if location access fails
-                updateRedeemButtons();
+        // Initialize validator dengan merchant data
+        initRadiusValidator(merchantData);
 
-                // Show modal error to user
-                setTimeout(() => {
-                    const modal = document.createElement('div');
-                    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4';
-                    modal.innerHTML = `
-                        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-95 opacity-0"
-                             style="animation: modalFadeIn 0.3s ease-out forwards;">
-                            <!-- Close button -->
-                            <button onclick="this.closest('.fixed').remove()"
-                                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-                                <i class="fas fa-times text-xl"></i>
-                            </button>
-
-                            <div class="p-6 text-center">
-                                <!-- Icon -->
-                                <div class="w-20 h-20 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                                    <i class="fas fa-exclamation-triangle text-3xl text-white"></i>
-                                </div>
-
-                                <!-- Title -->
-                                <h3 class="text-xl font-bold text-gray-800 mb-3">Akses Lokasi Gagal! 🚫</h3>
-
-                                <!-- Message -->
-                                <div class="text-sm text-gray-600 mb-6 space-y-2">
-                                    <p class="font-medium text-red-600">Tidak dapat mengakses lokasi Anda</p>
-                                    <p class="text-xs text-gray-500 leading-relaxed">
-                                        Redeem voucher tidak dapat dilakukan tanpa akses lokasi.
-                                        Pastikan GPS aktif dan izinkan akses lokasi untuk perangkat ini.
-                                    </p>
-                                </div>
-
-                                <!-- Action buttons -->
-                                <div class="space-y-3">
-                                    <button onclick="this.closest('.fixed').remove()"
-                                            class="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                                        <i class="fas fa-times mr-2"></i>Mengerti
-                                    </button>
-                                    <button onclick="window.location.reload()"
-                                            class="w-full px-6 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm">
-                                        <i class="fas fa-refresh mr-1"></i>Coba Lagi
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    // Add modal fade in animation
-                    const style = document.createElement('style');
-                    style.textContent = `
-                        @keyframes modalFadeIn {
-                            to {
-                                opacity: 1;
-                                transform: scale(1);
-                            }
-                        }
-                    `;
-                    document.head.appendChild(style);
-
-                    document.body.appendChild(modal);
-
-                    // Auto remove after 8 seconds
-                    setTimeout(() => {
-                        if (modal.parentNode) {
-                            modal.remove();
-                        }
-                    }, 8000);
-                }, 1000);
-            }
-        }
-        
         // Function called when user clicks redeem button
         function handleRedeemClick(redeemUrl) {
-            if (isWithinRadius) {
+            if (!merchantValidator) {
+                window.open(redeemUrl, '_blank');
+                return;
+            }
+
+            if (merchantValidator.isWithinRadius) {
                 // User dalam radius, langsung redeem
                 window.open(redeemUrl, '_blank');
             } else {
-                // User di luar radius, show info
-                const distanceText = userLocation && merchantData.link_gmap ? 
-                    (() => {
-                        const merchantCoords = extractCoordinatesFromGmapsLink(merchantData.link_gmap);
-                        if (merchantCoords) {
-                            const distance = calculateDistance(
-                                userLocation.lat, userLocation.lng,
-                                merchantCoords.lat, merchantCoords.lng
-                            );
-                            return distance < 1000 ? Math.round(distance) + ' meter' : (distance / 1000).toFixed(2) + ' km';
-                        }
-                        return 'tidak diketahui';
-                    })() : 'tidak diketahui';
-                
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'fixed inset-0 bg-black/50 z-[10000] flex items-center justify-center';
-                errorDiv.innerHTML = `
-                    <div class="bg-white rounded-2xl p-6 mx-4 max-w-sm text-center shadow-2xl">
-                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-times-circle text-4xl text-red-500"></i>
-                        </div>
-                        <div class="text-xl font-bold text-gray-800 mb-2">Lokasi Terlalu Jauh! ❌</div>
-                        <div class="text-sm text-gray-600 mb-1">Jarak Anda: <strong>${distanceText}</strong></div>
-                        <div class="text-xs text-gray-500 mb-2">Radius maksimal: <strong>${merchantData.radius}m</strong></div>
-                        <div class="text-xs text-orange-600 bg-orange-50 p-3 rounded-lg mb-4">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Anda harus berada dalam radius ${merchantData.radius} meter dari lokasi merchant untuk redeem voucher ini.
-                        </div>
-                        <a href="${merchantData.link_gmap}" 
-                           target="_blank"
-                           class="w-full inline-block px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all shadow-lg mb-2">
-                            <i class="fas fa-map-marker-alt mr-2"></i>Lihat Lokasi Merchant
-                        </a>
-                        <button onclick="this.closest('.fixed').remove()" 
-                                class="w-full px-6 py-2 text-gray-600 hover:text-gray-800 font-medium">
-                            Tutup
-                        </button>
-                    </div>
-                `;
-                document.body.appendChild(errorDiv);
+                // User di luar radius, show error modal
+                showLocationErrorModal(merchantValidator.getErrorMessage() || 'Lokasi Anda terlalu jauh dari merchant');
             }
         }
         
@@ -512,7 +259,7 @@
             }
             
             // Check user location on page load
-            checkLocationOnLoad();
+            checkUserLocationAndUpdateUI();
         });
 
         // Animate cards on page load
