@@ -356,6 +356,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/click-history/analytics', [\App\Http\Controllers\ClickHistoryController::class, 'analytics'])->name('click.history.analytics');
     Route::get('/click-history/anonymous-redeems', [\App\Http\Controllers\ClickHistoryController::class, 'anonymousRedeems'])->name('click.history.anonymous');
     Route::get('/click-history/not-matched-detail', [\App\Http\Controllers\ClickHistoryController::class, 'notMatchedDetail'])->name('click.history.not-matched-detail');
+    
+    // Blocked IPs Management
+    Route::get('/click-history/blocked-ips', [\App\Http\Controllers\ClickHistoryController::class, 'blockedIpsIndex'])->name('click.history.blocked');
+    Route::post('/click-history/unlock-ip', [\App\Http\Controllers\ClickHistoryController::class, 'unlockIp'])->name('click.history.unlock');
 
     // Recalculate Diamond
     Route::post('/merchants/recalculate-diamond', [MerchantController::class, 'recalculateDiamond'])->name('merchants.recalculate-diamond');

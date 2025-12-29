@@ -2828,6 +2828,41 @@ class MerchantController extends Controller
      */
     public function trackAndRedirect(Request $request, $merchantId, $keywordId = null)
     {
+        // 1. IP LIMIT CHECK (Backend Security)
+        // Cek apakah IP ini sudah melebihi batas harian (100 klik)
+        $today = now()->format('Y-m-d');
+        $ip = $request->ip();
+        
+        $dailyClicks = \App\Models\ClickHistory::where('ip_address', $ip)
+            ->whereDate('clicked_at', $today)
+            ->count();
+
+        if ($dailyClicks > 100) {
+            // Lempar error 403 dengan pesan khusus "Bot" agar ditangkap oleh view 403.blade.php
+            abort(403, 'Maaf terdeteksi Bot. IP Address Anda telah diblokir sementara karena aktivitas yang tidak wajar. Silakan coba lagi besok.');
+        }
+
+        // 2. ReCAPTCHA Verification
+        $recaptchaToken = $request->input('g_recaptcha_response') ?? $request->query('g_recaptcha_response');
+        
+        if ($recaptchaToken) {
+            $secret = config('services.recaptcha.secret') ?? env('RECAPTCHA_SECRET_KEY');
+            
+            if ($secret) {
+                $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => $secret,
+                    'response' => $recaptchaToken,
+                    'remoteip' => $request->ip(),
+                ]);
+                
+                $verification = $response->json();
+                
+                if (!$verification['success']) {
+                    return redirect()->route('home')->with('error', 'Verifikasi keamanan gagal. Silakan coba lagi.');
+                }
+            }
+        }
+
         // Track click menggunakan ClickHistoryController
         \App\Http\Controllers\ClickHistoryController::recordClick($merchantId, $keywordId, $request);
 

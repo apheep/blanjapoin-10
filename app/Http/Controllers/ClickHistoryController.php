@@ -738,6 +738,8 @@ class ClickHistoryController extends Controller
                 'keyword_id' => $keywordId,
                 'ip_address' => $ipAddress,
                 'device_id' => $deviceId,
+                'latitude' => $request->input('lat') ?? $request->input('latitude'),
+                'longitude' => $request->input('long') ?? $request->input('longitude') ?? $request->input('lng'),
                 'clicked_at' => \Carbon\Carbon::now('Asia/Jakarta'),
                 'user_agent' => $request->header('User-Agent'),
                 'referer' => $request->header('Referer'),
@@ -779,6 +781,8 @@ class ClickHistoryController extends Controller
                 'keyword_id' => $keywordId,
                 'ip_address' => $ipAddress,
                 'device_id' => $deviceId,
+                'latitude' => $request->input('lat') ?? $request->input('latitude'),
+                'longitude' => $request->input('long') ?? $request->input('longitude') ?? $request->input('lng'),
                 'clicked_at' => \Carbon\Carbon::now('Asia/Jakarta'),
                 'user_agent' => $request->header('User-Agent'),
                 'referer' => $request->header('Referer'),
@@ -1060,5 +1064,65 @@ class ClickHistoryController extends Controller
         cookie()->queue($cookie_name, $cookie_value, 86400 * 60); // 60 days
         
         return $cookie_value;
+    }
+
+    public function blockedIpsIndex(Request $request)
+    {
+        $search = $request->get('search');
+        $today = now()->format('Y-m-d');
+
+        // Base query for aggregation
+        // We select IP and count clicks. We also grab the latest device_id for reference.
+        // Since we need to paginate grouped results, it's safer to use a subquery or basic grouping.
+        // For 'latest device_id', strictly speaking we need a subquery or join, 
+        // but MAX(device_id) or ANY_VALUE is often sufficient for a quick view.
+        // Let's use a simpler approach: Group by IP.
+        
+        $query = ClickHistory::select('ip_address', DB::raw('MAX(device_id) as device_id'), DB::raw('count(*) as total_clicks'))
+            ->whereDate('clicked_at', $today);
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('ip_address', 'like', "%{$search}%")
+                  ->orWhere('device_id', 'like', "%{$search}%");
+            });
+        }
+
+        $blockedIps = $query->groupBy('ip_address')
+            ->having('total_clicks', '>', 100)
+            ->orderBy('total_clicks', 'desc')
+            ->paginate(20);
+
+        return view('click-history.blocked-ips', [
+            'blockedIps' => $blockedIps,
+            'search' => $search
+        ]);
+    }
+
+    public function unlockIp(Request $request)
+    {
+        try {
+            $ip = $request->input('ip_address');
+            if (!$ip) {
+                return back()->with('error', 'IP Address diperlukan');
+            }
+
+            $today = now()->format('Y-m-d');
+            
+            // Delete history for this IP today to reset the counter
+            DB::beginTransaction();
+            
+            $deleted = ClickHistory::where('ip_address', $ip)
+                ->whereDate('clicked_at', $today)
+                ->delete();
+                
+            DB::commit();
+            
+            return back()->with('success', "IP $ip berhasil di-unlock. $deleted history dihapus.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error unlocking IP: ' . $e->getMessage());
+            return back()->with('error', 'Gagal unlock IP: ' . $e->getMessage());
+        }
     }
 }
