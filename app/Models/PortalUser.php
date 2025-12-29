@@ -17,6 +17,8 @@ class PortalUser extends Authenticatable
         'password',
         'google_id',
         'avatar',
+        'wa_pic',
+        'merchant_id',
     ];
 
     protected $hidden = [
@@ -27,5 +29,13 @@ class PortalUser extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Get the merchant associated with this portal user
+     */
+    public function merchant()
+    {
+        return $this->belongsTo(Merchant::class, 'merchant_id', 'id');
+    }
 }
 

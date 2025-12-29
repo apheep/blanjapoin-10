@@ -247,7 +247,7 @@ class MerchantController extends Controller
             // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
             // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.coupon) 
                     FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
@@ -985,7 +985,7 @@ class MerchantController extends Controller
             // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
             // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.coupon) 
                     FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
@@ -1107,6 +1107,11 @@ class MerchantController extends Controller
 
         if (!$merchant) {
             abort(404, 'Merchant tidak ditemukan');
+        }
+
+        // Validasi link_status - jika 0 (nonaktif), link pelanggan tidak dapat diakses
+        if (!$merchant->link_status) {
+            abort(403, 'Link ' . $merchant->nama_merchant . ' saat ini tidak dapat diakses. Silakan hubungi merchant untuk informasi lebih lanjut.');
         }
 
         // Ambil semua voucher/keyword yang approved untuk merchant ini
@@ -1324,7 +1329,6 @@ class MerchantController extends Controller
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
-                'tr.id',
                 'tr.created_date as created_at',
                 'tr.msisdn',
                 'tr.keyword_desc as nama_produk',
@@ -1936,7 +1940,6 @@ class MerchantController extends Controller
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
-                'tr.id',
                 'tr.created_date as created_at',
                 'tr.msisdn',
                 'tr.keyword_desc as nama_produk',
@@ -2231,6 +2234,49 @@ class MerchantController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle link status merchant (mengaktifkan/menonaktifkan akses link pelanggan)
+     */
+    public function toggleLinkStatus(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $merchant = Merchant::findOrFail($id);
+            $oldLinkStatus = $merchant->link_status;
+            $merchant->link_status = $merchant->link_status ? 0 : 1;
+            $merchant->save();
+
+            Log::info('Merchant link status toggled', [
+                'merchant_id' => $id,
+                'old_link_status' => $oldLinkStatus,
+                'new_link_status' => $merchant->link_status,
+                'admin_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Link status merchant berhasil diperbarui',
+                'link_status' => (bool)$merchant->link_status,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling merchant link status: ' . $e->getMessage(), [
+                'merchant_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui link status: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -2920,4 +2966,229 @@ class MerchantController extends Controller
             return response()->json(['error' => 'Place details failed'], 500);
         }
     }
+
+    /**
+     * Get all Google Maps locations untuk merchant
+     */
+    public function getGmapsLocations($id)
+    {
+        $merchant = Merchant::findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $merchant->getGmapsLocations()
+        ]);
+    }
+
+    /**
+     * Add new Google Maps location untuk merchant
+     */
+    public function addGmapsLocation(Request $request, $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'link_gmap' => 'required|string|max:500',
+            'radius' => 'nullable|integer|min:0|max:100000',
+        ]);
+
+        try {
+            $link = $this->convertGmapUrl($validated['link_gmap']);
+            if (!$link) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat memproses link Google Maps'
+                ], 400);
+            }
+
+            $merchant->addGmapsLocation($link, $validated['radius'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lokasi berhasil ditambahkan',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error adding gmaps location:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan lokasi'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update Google Maps location untuk merchant
+     */
+    public function updateGmapsLocation(Request $request, $id, $locationIndex)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'link_gmap' => 'required|string|max:500',
+            'radius' => 'nullable|integer|min:0|max:100000',
+        ]);
+
+        try {
+            $link = $this->convertGmapUrl($validated['link_gmap']);
+            if (!$link) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat memproses link Google Maps'
+                ], 400);
+            }
+
+            $merchant->updateGmapsLocation($locationIndex, $link, $validated['radius'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lokasi berhasil diupdate',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating gmaps location:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate lokasi'
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove Google Maps location dari merchant
+     */
+    public function removeGmapsLocation(Request $request, $id, $locationIndex)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        try {
+            $merchant->removeGmapsLocation($locationIndex);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lokasi berhasil dihapus',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error removing gmaps location:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus lokasi'
+            ], 500);
+        }
+    }
+
+    /**
+     * Sync all Google Maps locations untuk merchant (replace semua sekaligus)
+     */
+    public function syncGmapsLocations(Request $request, $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'locations' => 'required|array',
+            'locations.*.link' => 'required|string|max:500',
+            'locations.*.radius' => 'nullable|integer|min:0|max:100000',
+        ]);
+
+        try {
+            $processedLocations = [];
+            
+            foreach ($validated['locations'] as $locationData) {
+                $link = $this->convertGmapUrl($locationData['link']);
+                if (!$link) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tidak dapat memproses salah satu link Google Maps'
+                    ], 400);
+                }
+
+                $processedLocations[] = [
+                    'link' => $link,
+                    'radius' => $locationData['radius'] ?? null
+                ];
+            }
+
+            // Set semua locations sekaligus
+            $merchant->link_gmaps = count($processedLocations) > 0 ? $processedLocations : null;
+            $merchant->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Semua lokasi berhasil disimpan',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error syncing gmaps locations:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan lokasi Google Maps'
+            ], 500);
+        }
+    }
+
+    /**
+     * Check if user is within radius of any merchant location
+     * Used by mobile app / customer facing endpoint
+     */
+    public function checkUserWithinRadius(Request $request, $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        $validated = $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        try {
+            $result = $merchant->isUserWithinAnyRadius(
+                $validated['latitude'],
+                $validated['longitude']
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $result
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error checking radius:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memeriksa radius'
+            ], 500);
+        }
+    }
 }
+

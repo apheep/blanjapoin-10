@@ -38,6 +38,7 @@
                     </th>
                     @if(Auth::check() && Auth::user()->can_approve == 1)
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Status</th>
                     @endif
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Start Periode</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">End Periode</th>
@@ -195,6 +196,16 @@
                                 <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
                             </label>
                         </td>
+                        {{-- Link Status Toggle --}}
+                        <td class="px-4 py-4 text-center">
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Link Status">
+                                <input type="checkbox" 
+                                       data-merchant-id="{{ $merchant->id }}" 
+                                       class="sr-only peer toggle-link-status" 
+                                       {{ $merchant->link_status ? 'checked' : '' }} />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                            </label>
+                        </td>
                         @endif
                         {{-- Start Periode --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
@@ -295,15 +306,29 @@
 
                         {{-- Link Google Maps --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @if($merchant->link_gmap)
-                                <a href="{{ $merchant->link_gmap }}" 
-                                   onclick="event.stopPropagation();"
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
-                                    <i class="fas fa-map-marker-alt text-xs"></i>
-                                    <span class="truncate max-w-xs">Link</span>
-                                </a>
+                            @php
+                                $gmapsLocations = [];
+                                if ($merchant->link_gmaps && is_array($merchant->link_gmaps)) {
+                                    $gmapsLocations = $merchant->link_gmaps;
+                                } elseif ($merchant->link_gmap) {
+                                    $gmapsLocations = [['link' => $merchant->link_gmap, 'radius' => $merchant->radius]];
+                                }
+                            @endphp
+
+                            @if(count($gmapsLocations) > 0)
+                                <div class="flex items-center justify-center gap-1">
+                                    @foreach($gmapsLocations as $i => $location)
+                                        <a href="{{ $location['link'] ?? '#' }}" 
+                                           onclick="event.stopPropagation();"
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 rounded"
+                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                            <i class="fas fa-map-marker-alt text-xs"></i>
+                                            <span>{{ $i + 1 }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -524,6 +549,16 @@
                         </label>
                     </div>
                     <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link Status</p>
+                        <label class="relative inline-flex items-center cursor-pointer mt-1" title="Toggle Link Status">
+                            <input type="checkbox" 
+                                   data-merchant-id="{{ $merchant->id }}" 
+                                   class="sr-only peer toggle-link-status-mobile" 
+                                   {{ $merchant->link_status ? 'checked' : '' }} />
+                            <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                        </label>
+                    </div>
+                    <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Kategori</p>
                         <p class="text-base text-gray-700">{{ $merchant->kategori ?? '-' }}</p>
                     </div>
@@ -636,15 +671,29 @@
                         </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link GMaps</p>
-                            @if($merchant->link_gmap)
-                                <a href="{{ $merchant->link_gmap }}"
-                                   onclick="event.stopPropagation();"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-map-marker-alt text-[11px]"></i>
-                                    Buka Peta
-                                </a>
+                            @php
+                                $gmapsLocations = [];
+                                if ($merchant->link_gmaps && is_array($merchant->link_gmaps)) {
+                                    $gmapsLocations = $merchant->link_gmaps;
+                                } elseif ($merchant->link_gmap) {
+                                    $gmapsLocations = [['link' => $merchant->link_gmap, 'radius' => $merchant->radius]];
+                                }
+                            @endphp
+
+                            @if(count($gmapsLocations) > 0)
+                                <div class="mt-1 flex flex-wrap gap-1">
+                                    @foreach($gmapsLocations as $i => $location)
+                                        <a href="{{ $location['link'] ?? '#' }}"
+                                           onclick="event.stopPropagation();"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded"
+                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                            <i class="fas fa-map-marker-alt text-[11px]"></i>
+                                            Lok {{ $i + 1 }}
+                                        </a>
+                                    @endforeach
+                                </div>
                             @else
                                 <p class="text-xs text-gray-400 mt-1">-</p>
                             @endif
@@ -856,6 +905,24 @@
                 toggleMerchantStatus(merchantId);
             });
         });
+
+        // Attach toggle listeners for link status (desktop)
+        document.querySelectorAll('.toggle-link-status').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleLinkStatus(merchantId);
+            });
+        });
+
+        // Attach toggle listeners for link status (mobile)
+        document.querySelectorAll('.toggle-link-status-mobile').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleLinkStatus(merchantId);
+            });
+        });
     });
 
     // Function to toggle merchant status
@@ -900,6 +967,51 @@
                 mobileCheckbox.checked = !mobileCheckbox.checked;
             }
             alert('Gagal memperbarui status: ' + error.message);
+        }
+    }
+
+    // Function to toggle link status
+    async function toggleLinkStatus(merchantId) {
+        try {
+            const response = await fetch(`/api/merchants/${merchantId}/toggle-link-status`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Gagal memperbarui link status');
+            }
+
+            // Update both desktop and mobile checkboxes
+            const desktopCheckbox = document.querySelector(`.toggle-link-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-link-status-mobile[data-merchant-id="${merchantId}"]`);
+            
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = data.link_status;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = data.link_status;
+            }
+
+            console.log('Link status merchant berhasil diperbarui');
+        } catch (error) {
+            console.error('Error toggling link status:', error);
+            // Revert checkboxes on error
+            const desktopCheckbox = document.querySelector(`.toggle-link-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-link-status-mobile[data-merchant-id="${merchantId}"]`);
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = !desktopCheckbox.checked;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = !mobileCheckbox.checked;
+            }
+            alert('Gagal memperbarui link status: ' + error.message);
         }
     }
 
@@ -1176,6 +1288,23 @@
                                 const merchantId = e.target.dataset.merchantId;
                                 if (!merchantId) return;
                                 toggleMerchantStatus(merchantId);
+                            });
+                        });
+
+                        // Re-attach toggle listeners for link status checkboxes
+                        document.querySelectorAll('.toggle-link-status').forEach(toggle => {
+                            toggle.addEventListener('change', (e) => {
+                                const merchantId = e.target.dataset.merchantId;
+                                if (!merchantId) return;
+                                toggleLinkStatus(merchantId);
+                            });
+                        });
+                        
+                        document.querySelectorAll('.toggle-link-status-mobile').forEach(toggle => {
+                            toggle.addEventListener('change', (e) => {
+                                const merchantId = e.target.dataset.merchantId;
+                                if (!merchantId) return;
+                                toggleLinkStatus(merchantId);
                             });
                         });
                         
