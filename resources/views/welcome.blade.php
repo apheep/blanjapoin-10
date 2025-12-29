@@ -54,6 +54,21 @@
       display: none;
     }
 
+    /* Mobile: smaller size */
+    @media (max-width: 768px) {
+      .cs-wa-btn{
+        width: 52px;
+        height: 52px;
+        right: 14px;
+        bottom: 14px;
+      }
+
+      .cs-wa-svg{
+        width: 28px;
+        height: 28px;
+      }
+    }
+
     /* Desktop: hover expand (hanya device yang bisa hover) */
     @media (hover:hover) and (pointer:fine){
       .cs-wa-btn{
