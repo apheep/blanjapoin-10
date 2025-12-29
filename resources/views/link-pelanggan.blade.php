@@ -248,6 +248,23 @@
             }
         }
         
+        // Prevent click on "Harus ke Lokasi" buttons
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-redeem-btn]');
+            if (target) {
+                // Check if button contains "Harus ke Lokasi" text or is disabled
+                const buttonText = target.textContent.trim();
+                if (buttonText.includes('Harus ke Lokasi') || target.disabled) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (merchantValidator) {
+                        showLocationErrorModal(merchantValidator.getErrorMessage() || 'Anda harus berada dalam radius yang ditentukan');
+                    }
+                    return false;
+                }
+            }
+        }, true); // Use capture phase to catch before default behavior
+        
         // Hide loading spinner when page loads and check location
         window.addEventListener('load', function() {
             const spinner = document.getElementById('loadingSpinner');

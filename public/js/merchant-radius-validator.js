@@ -381,17 +381,74 @@ function updateRedeemButtons() {
     
     redeemButtons.forEach((btn) => {
         if (!merchantValidator.isWithinRadius) {
+            // Store original href and classes before converting to button
+            const originalHref = btn.href || btn.getAttribute('href');
+            const originalTarget = btn.target || btn.getAttribute('target');
+            
+            // Convert <a> to <button> when outside radius
+            if (btn.tagName === 'A') {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = btn.className;
+                button.setAttribute('data-redeem-btn', '');
+                button.setAttribute('data-original-href', originalHref || '');
+                button.setAttribute('data-original-target', originalTarget || '');
+                
+                // Copy all data attributes
+                Array.from(btn.attributes).forEach(attr => {
+                    if (attr.name.startsWith('data-') && attr.name !== 'data-redeem-btn') {
+                        button.setAttribute(attr.name, attr.value);
+                    }
+                });
+                
+                btn.parentNode.replaceChild(button, btn);
+                btn = button; // Update reference
+            }
+            
             btn.disabled = true;
             btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'hover:from-orange-600', 'hover:to-red-600');
             btn.classList.add('bg-gray-400', 'cursor-not-allowed');
             btn.innerHTML = '<i class="fas fa-map-marker-alt mr-1"></i>Harus ke Lokasi';
             btn.title = merchantValidator.getErrorMessage() || 'Anda harus berada dalam radius yang ditentukan';
+            
+            // Prevent any click events
+            btn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showLocationErrorModal(merchantValidator.getErrorMessage() || 'Anda harus berada dalam radius yang ditentukan');
+                return false;
+            };
         } else {
+            // Convert back to <a> when within radius
+            if (btn.tagName === 'BUTTON' && btn.hasAttribute('data-original-href')) {
+                const link = document.createElement('a');
+                link.href = btn.getAttribute('data-original-href');
+                const originalTarget = btn.getAttribute('data-original-target');
+                if (originalTarget) {
+                    link.target = originalTarget;
+                }
+                link.className = btn.className;
+                link.setAttribute('data-redeem-btn', '');
+                
+                // Copy all data attributes except the ones we added
+                Array.from(btn.attributes).forEach(attr => {
+                    if (attr.name.startsWith('data-') && 
+                        attr.name !== 'data-original-href' && 
+                        attr.name !== 'data-original-target') {
+                        link.setAttribute(attr.name, attr.value);
+                    }
+                });
+                
+                btn.parentNode.replaceChild(link, btn);
+                btn = link; // Update reference
+            }
+            
             btn.disabled = false;
             btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
             btn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'hover:from-orange-600', 'hover:to-red-600');
             btn.innerHTML = 'Redeem';
             btn.title = '';
+            btn.onclick = null; // Remove click handler
         }
     });
 }
