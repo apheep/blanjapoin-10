@@ -7,12 +7,15 @@ class MerchantRadiusValidator {
     constructor(merchantData) {
         this.merchantData = merchantData;
         this.userLocation = null;
-        this.isWithinRadius = true;
         this.matchedLocation = null;
         this.gmapsLocations = [];
         
         // Load gmaps locations from merchant data
         this.loadGmapsLocations();
+        
+        // Set default isWithinRadius based on whether radius validation is needed
+        const hasAnyRadiusValidation = this.gmapsLocations.some(loc => loc.radius);
+        this.isWithinRadius = !hasAnyRadiusValidation; // false if radius validation needed, true if not needed
     }
 
     /**
@@ -344,7 +347,6 @@ async function checkUserLocationAndUpdateUI() {
         console.log('❌ Browser does not support geolocation');
         merchantValidator.isWithinRadius = false;
         updateRedeemButtons();
-        showLocationErrorModal('Geolokasi tidak didukung oleh browser Anda');
         return;
     }
 
@@ -367,7 +369,7 @@ async function checkUserLocationAndUpdateUI() {
         console.error('❌ Error getting location:', error);
         merchantValidator.isWithinRadius = false;
         updateRedeemButtons();
-        showLocationErrorModal('Tidak dapat mengakses lokasi Anda. Pastikan GPS aktif dan izinkan akses lokasi.');
+        // Tombol tetap dinonaktifkan tanpa menampilkan pesan error
     }
 }
 
@@ -411,11 +413,10 @@ function updateRedeemButtons() {
             btn.innerHTML = '<i class="fas fa-map-marker-alt mr-1"></i>Harus ke Lokasi';
             btn.title = merchantValidator.getErrorMessage() || 'Anda harus berada dalam radius yang ditentukan';
             
-            // Prevent any click events
+            // Prevent any click events (tidak menampilkan pesan error)
             btn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                showLocationErrorModal(merchantValidator.getErrorMessage() || 'Anda harus berada dalam radius yang ditentukan');
                 return false;
             };
         } else {
