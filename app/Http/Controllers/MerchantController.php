@@ -1110,8 +1110,11 @@ class MerchantController extends Controller
         }
 
         // Validasi link_status - jika 0 (nonaktif), link pelanggan tidak dapat diakses
-        if (!$merchant->link_status) {
-            abort(403, 'Link ' . $merchant->nama_merchant . ' saat ini tidak dapat diakses. Silakan hubungi merchant untuk informasi lebih lanjut.');
+        // Gunakan null coalescing untuk handle jika kolom belum ada (default = 1 untuk backward compatibility)
+        $linkStatus = $merchant->link_status ?? 1;
+        if (!$linkStatus) {
+            $merchantName = $merchant->nama_merchant ?? 'merchant ini';
+            abort(403, 'Link ' . $merchantName . ' saat ini tidak dapat diakses. Silakan hubungi merchant untuk informasi lebih lanjut.');
         }
 
         // Ambil semua voucher/keyword yang approved untuk merchant ini

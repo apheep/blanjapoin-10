@@ -32,6 +32,7 @@ class Merchant extends Model
         'link_gmap',
         'radius',
         'is_active',
+        'link_status',
         'start_date',
         'end_date',
         'diamond',
