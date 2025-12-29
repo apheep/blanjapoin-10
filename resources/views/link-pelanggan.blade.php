@@ -231,6 +231,12 @@
         
         // Initialize validator dengan merchant data
         initRadiusValidator(merchantData);
+        
+        // Disable redeem buttons by default until location is checked
+        // This will be called immediately after initialization
+        if (merchantValidator) {
+            updateRedeemButtons();
+        }
 
         // Function called when user clicks redeem button
         function handleRedeemClick(redeemUrl) {
@@ -243,8 +249,8 @@
                 // User dalam radius, langsung redeem
                 window.open(redeemUrl, '_blank');
             } else {
-                // User di luar radius, show error modal
-                showLocationErrorModal(merchantValidator.getErrorMessage() || 'Lokasi Anda terlalu jauh dari merchant');
+                // User di luar radius, tombol sudah dinonaktifkan, tidak perlu menampilkan error
+                // Tombol tidak bisa diklik karena sudah disabled
             }
         }
         
@@ -257,9 +263,7 @@
                 if (buttonText.includes('Harus ke Lokasi') || target.disabled) {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (merchantValidator) {
-                        showLocationErrorModal(merchantValidator.getErrorMessage() || 'Anda harus berada dalam radius yang ditentukan');
-                    }
+                    // Tombol dinonaktifkan, tidak menampilkan pesan error
                     return false;
                 }
             }
@@ -281,6 +285,11 @@
 
         // Animate cards on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Disable redeem buttons by default until location is checked
+            if (merchantValidator) {
+                updateRedeemButtons();
+            }
+            
             // Animate category section
             const categorySection = document.getElementById('categorySection');
             if (categorySection) {
