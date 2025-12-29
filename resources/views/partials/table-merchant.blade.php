@@ -306,15 +306,29 @@
 
                         {{-- Link Google Maps --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @if($merchant->link_gmap)
-                                <a href="{{ $merchant->link_gmap }}" 
-                                   onclick="event.stopPropagation();"
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
-                                    <i class="fas fa-map-marker-alt text-xs"></i>
-                                    <span class="truncate max-w-xs">Link</span>
-                                </a>
+                            @php
+                                $gmapsLocations = [];
+                                if ($merchant->link_gmaps && is_array($merchant->link_gmaps)) {
+                                    $gmapsLocations = $merchant->link_gmaps;
+                                } elseif ($merchant->link_gmap) {
+                                    $gmapsLocations = [['link' => $merchant->link_gmap, 'radius' => $merchant->radius]];
+                                }
+                            @endphp
+
+                            @if(count($gmapsLocations) > 0)
+                                <div class="flex items-center justify-center gap-1">
+                                    @foreach($gmapsLocations as $i => $location)
+                                        <a href="{{ $location['link'] ?? '#' }}" 
+                                           onclick="event.stopPropagation();"
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 rounded"
+                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                            <i class="fas fa-map-marker-alt text-xs"></i>
+                                            <span>{{ $i + 1 }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -657,15 +671,29 @@
                         </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link GMaps</p>
-                            @if($merchant->link_gmap)
-                                <a href="{{ $merchant->link_gmap }}"
-                                   onclick="event.stopPropagation();"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-map-marker-alt text-[11px]"></i>
-                                    Buka Peta
-                                </a>
+                            @php
+                                $gmapsLocations = [];
+                                if ($merchant->link_gmaps && is_array($merchant->link_gmaps)) {
+                                    $gmapsLocations = $merchant->link_gmaps;
+                                } elseif ($merchant->link_gmap) {
+                                    $gmapsLocations = [['link' => $merchant->link_gmap, 'radius' => $merchant->radius]];
+                                }
+                            @endphp
+
+                            @if(count($gmapsLocations) > 0)
+                                <div class="mt-1 flex flex-wrap gap-1">
+                                    @foreach($gmapsLocations as $i => $location)
+                                        <a href="{{ $location['link'] ?? '#' }}"
+                                           onclick="event.stopPropagation();"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded"
+                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                            <i class="fas fa-map-marker-alt text-[11px]"></i>
+                                            Lok {{ $i + 1 }}
+                                        </a>
+                                    @endforeach
+                                </div>
                             @else
                                 <p class="text-xs text-gray-400 mt-1">-</p>
                             @endif
