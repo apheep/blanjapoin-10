@@ -1170,4 +1170,60 @@ class ClickHistoryController extends Controller
             return redirect()->route('click.history.blocked')->with('error', 'Gagal unlock IP: ' . $e->getMessage());
         }
     }
+
+    public function blockIp(Request $request)
+    {
+        try {
+            $ip = $request->input('ip_address');
+            if (!$ip) {
+                return redirect()->route('click.history.blocked')->with('error', 'IP Address diperlukan');
+            }
+
+            $today = now()->format('Y-m-d');
+            
+            // Get current count and latest merchant info
+            $history = ClickHistory::where('ip_address', $ip)
+                ->whereDate('clicked_at', $today)
+                ->get();
+                
+            $currentCount = $history->count();
+            $targetCount = 25; // Target to be safely above 20
+            
+            if ($currentCount >= $targetCount) {
+                return redirect()->route('click.history.blocked')->with('info', "IP $ip sudah dalam status Blocked.");
+            }
+            
+            // We need a valid merchant_id and device_id to clone
+            $lastRecord = $history->last();
+            if (!$lastRecord) {
+                return redirect()->route('click.history.blocked')->with('error', 'Data history tidak ditemukan untuk IP ini.');
+            }
+            
+            $toInsert = $targetCount - $currentCount;
+            
+            DB::beginTransaction();
+            
+            for ($i = 0; $i < $toInsert; $i++) {
+                ClickHistory::create([
+                    'merchant_id' => $lastRecord->merchant_id,
+                    'keyword_id' => $lastRecord->keyword_id,
+                    'ip_address' => $ip,
+                    'device_id' => $lastRecord->device_id,
+                    'latitude' => $lastRecord->latitude,
+                    'longitude' => $lastRecord->longitude,
+                    'clicked_at' => \Carbon\Carbon::now('Asia/Jakarta'),
+                    'user_agent' => 'SYSTEM_MANUAL_BLOCK', // Marker
+                    'referer' => 'SYSTEM_MANUAL_BLOCK',
+                ]);
+            }
+                
+            DB::commit();
+            
+            return redirect()->route('click.history.blocked')->with('success', "IP $ip berhasil diblokir manual (Total forced to $targetCount clicks).");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error blocking IP: ' . $e->getMessage());
+            return redirect()->route('click.history.blocked')->with('error', 'Gagal memblokir IP: ' . $e->getMessage());
+        }
+    }
 }

@@ -252,7 +252,6 @@ class MerchantController extends Controller
                     FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
-                    AND k.is_active = 1 
                     AND tr.program = "BLANJAPOIN"
                     AND EXISTS (
                         SELECT 1 FROM click_history ch 

@@ -145,6 +145,11 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-right">
+                                        @if($item->status != 'blocked')
+                                            <button onclick="confirmBlock('{{ $item->ip_address }}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-all duration-200 text-xs font-medium shadow-sm mr-2" title="Force Block IP">
+                                                <i class="fas fa-ban"></i> Block
+                                            </button>
+                                        @endif
                                         <button onclick="confirmUnlock('{{ $item->ip_address }}')" class="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-indigo-600 hover:border-indigo-300 transition-all duration-200 text-xs font-medium shadow-sm" title="Reset Click History">
                                             <i class="fas fa-undo"></i> Reset
                                         </button>
@@ -206,6 +211,49 @@
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                     <button type="button" onclick="closeMerchantModal()" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
                         Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block Confirmation Modal -->
+    <div id="blockModal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeBlockModal()"></div>
+
+            <!-- Modal panel -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div id="blockModalContent" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full relative z-[70] scale-95 opacity-0 duration-300">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-ban text-red-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="block-modal-title">
+                                Konfirmasi Block IP
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">
+                                    Apakah Anda yakin ingin memblokir IP <span id="blockModalIpAddress" class="font-bold text-gray-800"></span>? 
+                                    Sistem akan memaksa jumlah klik menjadi > 20 agar IP ini terblokir hari ini.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <form id="blockForm" action="{{ route('click.history.block') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="ip_address" id="blockFormIpAddress">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Ya, Block IP
+                        </button>
+                    </form>
+                    <button type="button" onclick="closeBlockModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Batal
                     </button>
                 </div>
             </div>
@@ -282,6 +330,38 @@
         function closeModal() {
             const modal = document.getElementById('confirmModal');
             const content = document.getElementById('confirmModalContent');
+            
+            if (content) {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+            }
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        function confirmBlock(ip) {
+            document.getElementById('blockModalIpAddress').textContent = ip;
+            document.getElementById('blockFormIpAddress').value = ip;
+            
+            const modal = document.getElementById('blockModal');
+            const content = document.getElementById('blockModalContent');
+            
+            modal.classList.remove('hidden');
+            modal.style.display = 'block';
+            
+            // Animation
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeBlockModal() {
+            const modal = document.getElementById('blockModal');
+            const content = document.getElementById('blockModalContent');
             
             if (content) {
                 content.classList.remove('scale-100', 'opacity-100');
@@ -388,6 +468,8 @@
         window.closeMerchantModal = closeMerchantModal;
         window.confirmUnlock = confirmUnlock;
         window.closeModal = closeModal;
+        window.confirmBlock = confirmBlock;
+        window.closeBlockModal = closeBlockModal;
         window.copyToClipboard = copyToClipboard;
     </script>
 </body>
