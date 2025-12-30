@@ -430,13 +430,7 @@
          return text;
         }
 
-        // Function for redeem button click (location-based pages - no location validation)
-        function handleRedeemClick(redeemUrl) {
-          if (redeemUrl && redeemUrl !== '#') {
-            // Direct redeem without location validation for location-based pages
-            window.open(redeemUrl, '_blank');
-          }
-        }
+
 
         // Territorial Description Bottom Sheet Function
         function openTerritorialDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
@@ -534,6 +528,8 @@
 
         <span class="cs-wa-text">Customer Service</span>
     </a>
+    @include('partials.desktop-alert')
+    @include('partials.redeem-script')
 </body>
 </html>
 

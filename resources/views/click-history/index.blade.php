@@ -65,6 +65,9 @@
                     <p class="text-sm text-gray-600 mt-2">Track dan analisa klik sebelum redeem untuk mendeteksi potensi cheating</p>
                 </div>
                 <div class="flex gap-2">
+                    <a href="{{ route('click.history.blocked') }}" class="px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold">
+                        <i class="fas fa-lock mr-2"></i>Blocked IPs
+                    </a>
                     <a href="{{ route('click.history.anonymous') }}" class="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold">
                         <i class="fas fa-exclamation-triangle mr-2"></i>Anonymous Redeems
                     </a>
@@ -230,6 +233,7 @@
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keyword ID</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">IP Address</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Device ID</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Lokasi</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     <a href="{{ route('click.history.index', array_merge(request()->query(), ['sort' => 'clicked_at', 'dir' => (request('sort') == 'clicked_at' && request('dir') == 'asc') ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-orange-500 transition-colors">
                                         Waktu Klik
@@ -286,6 +290,15 @@
                                                     <i class="fas fa-copy text-xs"></i>
                                                 </button>
                                             </div>
+                                        @else
+                                            <span class="text-xs text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if($click->latitude && $click->longitude)
+                                            <a href="https://www.google.com/maps?q={{ $click->latitude }},{{ $click->longitude }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                                                <i class="fas fa-map-marker-alt"></i> Maps
+                                            </a>
                                         @else
                                             <span class="text-xs text-gray-400">-</span>
                                         @endif
@@ -360,6 +373,15 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4">
+                                            @if($click->latitude && $click->longitude)
+                                                <a href="https://www.google.com/maps?q={{ $click->latitude }},{{ $click->longitude }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                                                    <i class="fas fa-map-marker-alt"></i> Maps
+                                                </a>
+                                            @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4">
                                             <div class="text-sm text-gray-900">{{ $click->clicked_at->format('d M Y') }}</div>
                                             <div class="text-xs text-gray-500">{{ $click->clicked_at->format('H:i:s') }}</div>
                                         </td>
@@ -427,6 +449,15 @@
                                                     </button>
                                             </div>
                                         @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if($click->latitude && $click->longitude)
+                                                <a href="https://www.google.com/maps?q={{ $click->latitude }},{{ $click->longitude }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                                                    <i class="fas fa-map-marker-alt"></i> Maps
+                                                </a>
+                                            @else
                                                 <span class="text-xs text-gray-400">-</span>
                                             @endif
                                         </td>
@@ -791,6 +822,9 @@
         });
     </script>
 
+    <script>
+        // Merchant searchable dropdown
+        (function() {
 </body>
 </html>
 
