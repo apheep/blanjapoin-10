@@ -237,8 +237,8 @@ class Merchant extends Model
      */
     public function calculateTotalTrx()
     {
-        // Get all keywords for this merchant
-        $keywords = $this->keywords()->where('is_active', 1)->get();
+        // Get all keywords for this merchant (active or inactive)
+        $keywords = $this->keywords()->get();
         
         $totalTrx = 0;
         
