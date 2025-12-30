@@ -166,7 +166,7 @@
                 
                 const lastClickTime = sessionStorage.getItem('lastRedeemClickTime');
                 const now = Date.now();
-                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 10000); // 10 detik threshold
+                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 3000); // 3 detik threshold
                 sessionStorage.setItem('lastRedeemClickTime', now);
 
                 // Set callbacks for this specific click
@@ -179,10 +179,10 @@
                 };
 
                 // Bypass jika tidak spamming (User Santai)
-                // if (!isSpamming) {
-                //     doRedirect('', lat, lng);
-                //     return;
-                // }
+                if (!isSpamming) {
+                    doRedirect('', lat, lng);
+                    return;
+                }
 
                 // Jika spamming, panggil reCAPTCHA
                 if (typeof grecaptcha !== 'undefined' && typeof recaptchaWidgetId !== 'undefined') {
