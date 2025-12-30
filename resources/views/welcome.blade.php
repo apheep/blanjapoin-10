@@ -11,45 +11,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   
-  <script>
-    // Global Callback for ReCAPTCHA Load
-    var recaptchaWidgetId;
-    var onRecaptchaLoad = function() {
-        if (document.getElementById('recaptcha-container')) {
-            try {
-                recaptchaWidgetId = grecaptcha.render('recaptcha-container', {
-                    'sitekey': '{{ env("RECAPTCHA_SITE_KEY") }}',
-                    'size': 'invisible',
-                    'badge': 'bottomright',
-                    'callback': function(token) {
-                        console.log('ReCAPTCHA Success');
-                        if (typeof window.currentRedeemCallback === 'function') {
-                            window.currentRedeemCallback(token);
-                        }
-                        grecaptcha.reset(recaptchaWidgetId);
-                    },
-                    'error-callback': function() {
-                        console.error('ReCAPTCHA Network Error');
-                        // Fallback: Proceed without token to prevent infinite loading
-                        if (typeof window.currentRedeemCallback === 'function') {
-                            // Pass empty token
-                            window.currentRedeemCallback('');
-                        }
-                        if (typeof window.currentErrorCallback === 'function') {
-                            // Optional: still trigger error callback if needed, but we prefer to proceed
-                            // window.currentErrorCallback(); 
-                        }
-                    }
-                });
-                console.log('ReCAPTCHA Rendered, ID:', recaptchaWidgetId);
-            } catch (e) {
-                console.error('ReCAPTCHA Render Error:', e);
-            }
-        }
-    };
-  </script>
-  <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
-  
   <style>
     /* Hide reCAPTCHA badge (overlaps with WA button) */
     .grecaptcha-badge { 
@@ -529,51 +490,7 @@
     <span class="cs-wa-text">Customer Service</span>
   </a>
 
-  <!-- ReCAPTCHA Container -->
-  <div id="recaptcha-container"></div>
-
-  <!-- Desktop Alert Modal -->
-  <div id="desktopAlertModal" class="fixed inset-0 z-[10000] hidden">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300" onclick="closeDesktopAlert()"></div>
-    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center transform transition-all duration-300 scale-95 opacity-0" id="desktopAlertContent">
-        <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v6" />
-            </svg>
-        </div>
-        <h3 class="text-lg font-bold text-neutral-800 mb-2">Akses Terbatas</h3>
-        <p class="text-neutral-600 mb-6 text-sm">Fitur redeem hanya tersedia untuk pengguna smartphone. Silakan buka website ini melalui HP Anda.</p>
-        <button onclick="closeDesktopAlert()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold hover:shadow-lg transition-all active:scale-95 cursor-pointer">
-            OK, Mengerti
-        </button>
-    </div>
-  </div>
-
-  <script>
-    function showDesktopAlert() {
-        const modal = document.getElementById('desktopAlertModal');
-        const content = document.getElementById('desktopAlertContent');
-        if (modal && content) {
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                content.classList.remove('scale-95', 'opacity-0');
-                content.classList.add('scale-100', 'opacity-100');
-            }, 10);
-        }
-    }
-
-    function closeDesktopAlert() {
-        const modal = document.getElementById('desktopAlertModal');
-        const content = document.getElementById('desktopAlertContent');
-        if (modal && content) {
-            content.classList.remove('scale-100', 'opacity-100');
-            content.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        }
-    }
-  </script>
+  @include('partials.desktop-alert')
 
   <script>
    // Page Load Animation
@@ -1405,235 +1322,33 @@
    // Run immediately and also after a short delay to catch any dynamically loaded content
    initializeFiltersAndSorting();
    setTimeout(initializeFiltersAndSorting, 500);
-
-   // Function for redeem button click (welcome page - no location validation)
-   function handleRedeemClick(redeemUrl, merchantId = null, keywordId = null) {
-     if (redeemUrl && redeemUrl !== '#') {
-       // Track click before redirect (if tracking function exists)
-       if (typeof trackClick === 'function' && merchantId) {
-         trackClick(merchantId, keywordId).then(() => {
-           // Open redeem page in new tab after tracking
-           window.open(redeemUrl, '_blank');
-         }).catch(() => {
-           // If tracking fails, still open the page
-           window.open(redeemUrl, '_blank');
-         });
-       } else {
-         // If no tracking, direct redeem
-         window.open(redeemUrl, '_blank');
-       }
-     }
-   }
   </script>
 
-  <!-- Redeem Button Handler (ReCAPTCHA V2 Invisible + Location + Desktop Check) -->
+  @include('partials.redeem-script')
+
   <script>
-    var recaptchaWidgetId; // Gunakan var agar tidak error jika redeclare
-    var isRecaptchaProcessing = false;
-
-    // Flag Error Permanen untuk mencegah spam alert
-    let hasRecaptchaErrorOccurred = false;
-
-    // Callback global yang dipanggil saat script Google reCAPTCHA selesai dimuat
-    window.onRecaptchaLoad = function() {
-        const container = document.getElementById('recaptcha-container');
-        if (container) {
-            // Render hanya jika belum ada widget ID
-            if (typeof recaptchaWidgetId === 'undefined') {
-                try {
-                    recaptchaWidgetId = grecaptcha.render('recaptcha-container', {
-                        'sitekey': '{{ config('services.recaptcha.site_key') }}',
-                        'size': 'invisible', // KEMBALIKAN KE INVISIBLE
-                        // 'badge': 'bottomright', // Badge tidak dipakai di mode normal
-                        'callback': function(token) {
-                            hasRecaptchaErrorOccurred = false; // Reset error flag on success
-                            isRecaptchaProcessing = false;
-                            window.isRedeemGlobalProcessing = false;
-                            if (window.currentRedeemCallback) {
-                                window.currentRedeemCallback(token);
-                            }
-                            // Reset segera agar siap dipakai lagi
-                            grecaptcha.reset(recaptchaWidgetId);
-                        },
-                        'error-callback': function() {
-                            window.isRedeemGlobalProcessing = false;
-                            
-                            // Fail Open: Jika reCAPTCHA error (misal 400 Bad Request atau koneksi putus),
-                            // TETAP izinkan user masuk (Redirect tanpa token).
-                            
-                            // Reset state tombol dulu
-                            if (typeof resetButtonState === 'function') resetButtonState();
-                            
-                            // Lanjut redirect (tanpa token)
-                            if (window.currentErrorCallback) {
-                                // Panggil doRedirect lewat callback yang sudah disiapkan
-                                window.currentErrorCallback(); 
-                            }
-                        }
-                    });
-                } catch (e) {
-                    // Silent fail
-                }
+    // --- Geolocation Logic (Specific for welcome page) ---
+    // Karena redeem-script menghandle runRedeemFlow(lat, lng), kita perlu passing userLat/userLng ke sana
+    // Tapi redeem-script sudah punya logic geolocation sendiri di dalamnya!
+    // Jadi kode di bawah ini sebenarnya redundant, TAPI...
+    // redeem-script menggunakan 'navigator.geolocation.getCurrentPosition' saat tombol diklik.
+    // Kode di bawah ini mengambil lokasi saat PAGE LOAD.
+    
+    // Kita biarkan saja untuk backward compatibility jika ada fitur lain yang butuh userLat/userLng global.
+    let userLat = null;
+    let userLng = null;
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+            },
+            (error) => {
+                // Ignore
             }
-        }
-    };
-
-    // Global Processing Flag untuk mencegah multiple execution / loop
-    window.isRedeemGlobalProcessing = false;
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Prevent Multiple Listeners
-        if (window.redeemListenerAttached) return;
-        window.redeemListenerAttached = true;
-
-        // Intercept Redeem Buttons
-        document.addEventListener('click', function(e) {
-            const btn = e.target.closest('[data-redeem-btn]');
-            if (!btn) return;
-
-            // Stop immediate execution if global processing is active
-            if (window.isRedeemGlobalProcessing) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                console.log('Blocked by global processing flag');
-                return;
-            }
-
-            e.preventDefault();
-            e.stopPropagation(); 
-            e.stopImmediatePropagation(); 
-
-            // Set global flag
-            window.isRedeemGlobalProcessing = true;
-            
-            // Auto reset flag after 2 seconds (safety valve)
-            setTimeout(() => { 
-                window.isRedeemGlobalProcessing = false; 
-            }, 2000);
-
-            const originalUrl = btn.href;
-
-            // 1. Check Desktop
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-            if (!isMobile) {
-                showDesktopAlert();
-                return;
-            }
-
-            // 2. Get Location & ReCAPTCHA
-            // Save original content
-            if (!btn.hasAttribute('data-original-text')) {
-                btn.setAttribute('data-original-text', btn.innerHTML);
-            }
-            btn.innerHTML = '<span class="animate-spin inline-block w-3 h-3 border-2 border-white rounded-full border-t-transparent"></span> Processing...';
-            btn.style.pointerEvents = 'none';
-
-            // Hard Limit untuk mencegah banjir tab
-            let lastRedirectTime = 0;
-
-            const doRedirect = (token, lat, lng) => {
-                 // CEK WAKTU: Jika redirect terakhir kurang dari 3 detik lalu, STOP.
-                 const now = Date.now();
-                 if (now - lastRedirectTime < 3000) {
-                     console.warn('Redirect diblokir: Terlalu cepat (Spam/Loop protection)');
-                     return;
-                 }
-                 lastRedirectTime = now;
-
-                 const separator = originalUrl.includes('?') ? '&' : '?';
-                 let newUrl = `${originalUrl}${separator}`;
-                 if (token) newUrl += `g_recaptcha_response=${token}`;
-                 if (lat && lng) {
-                     newUrl += `&lat=${lat}&long=${lng}`;
-                 }
-                 
-                 console.log('Opening Window:', newUrl);
-                 
-                 // Open in new tab
-                 window.open(newUrl, '_blank');
-                 
-                 // Reset button
-                 btn.innerHTML = btn.getAttribute('data-original-text');
-                 btn.style.pointerEvents = '';
-                 
-                 // Reset Global Flag after short delay
-                 setTimeout(() => {
-                     window.isRedeemGlobalProcessing = false;
-                 }, 500);
-            };
-
-            // Main Execution Flow
-            const runRedeemFlow = (lat, lng) => {
-                // LOGIKA PRODUCTION:
-                // Cek interval klik. Jika user klik santai (> 10 detik), anggap aman (bypass reCAPTCHA).
-                // Jika spamming (< 10 detik), baru panggil reCAPTCHA.
-                
-                const lastClickTime = sessionStorage.getItem('lastRedeemClickTime');
-                const now = Date.now();
-                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 10000); // 10 detik threshold
-                sessionStorage.setItem('lastRedeemClickTime', now);
-
-                // Set callbacks for this specific click
-                window.currentRedeemCallback = function(token) {
-                    doRedirect(token, lat, lng);
-                };
-                window.currentErrorCallback = function() {
-                    // Fail Open: Tetap redirect meskipun error
-                    doRedirect('', lat, lng);
-                };
-
-                // Bypass jika tidak spamming (User Santai)
-                if (!isSpamming) {
-                    doRedirect('', lat, lng);
-                    return;
-                }
-
-                // Jika spamming, panggil reCAPTCHA
-                if (typeof grecaptcha !== 'undefined' && typeof recaptchaWidgetId !== 'undefined') {
-                    try {
-                        grecaptcha.reset(recaptchaWidgetId);
-                        grecaptcha.execute(recaptchaWidgetId);
-                    } catch(err) {
-                        // Fail Open jika error teknis
-                        doRedirect('', lat, lng);
-                    }
-                } else {
-                    // Fail Open jika reCAPTCHA belum siap
-                    doRedirect('', lat, lng);
-                }
-            };
-
-            // Helper untuk reset tombol otomatis jika macet
-            function resetButtonState() {
-                 if (btn.hasAttribute('data-original-text')) {
-                     btn.innerHTML = btn.getAttribute('data-original-text');
-                 }
-                 btn.style.pointerEvents = '';
-                 delete btn.dataset.processing;
-            }
-
-            // Safety Valve: Apapun yang terjadi, tombol harus kembali aktif dalam 5 detik
-            setTimeout(() => {
-                resetButtonState();
-            }, 5000);
-
-            // Get Location first
-            if (navigator.geolocation) {
-                 navigator.geolocation.getCurrentPosition(
-                     (position) => {
-                         runRedeemFlow(position.coords.latitude, position.coords.longitude);
-                     },
-                     (error) => {
-                         console.warn('Location denied or error:', error);
-                         runRedeemFlow(null, null);
-                     }
-                 );
-            } else {
-                 runRedeemFlow(null, null);
-            }
-        });
-    });
+        );
+    }
   </script>
    </body>
 </html>

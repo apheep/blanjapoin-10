@@ -1072,12 +1072,6 @@ class ClickHistoryController extends Controller
         $today = now()->format('Y-m-d');
 
         // Base query for aggregation
-        // We select IP and count clicks. We also grab the latest device_id for reference.
-        // Since we need to paginate grouped results, it's safer to use a subquery or basic grouping.
-        // For 'latest device_id', strictly speaking we need a subquery or join, 
-        // but MAX(device_id) or ANY_VALUE is often sufficient for a quick view.
-        // Let's use a simpler approach: Group by IP.
-        
         $query = ClickHistory::select('ip_address', DB::raw('MAX(device_id) as device_id'), DB::raw('count(*) as total_clicks'))
             ->whereDate('clicked_at', $today);
 
@@ -1088,10 +1082,61 @@ class ClickHistoryController extends Controller
             });
         }
 
-        $blockedIps = $query->groupBy('ip_address')
-            ->having('total_clicks', '>', 100)
+        // Get ALL grouped results first to avoid pagination count issues with GroupBy
+        $allBlockedIps = $query->groupBy('ip_address')
+            ->having('total_clicks', '>', 10) 
             ->orderBy('total_clicks', 'desc')
-            ->paginate(20);
+            ->get();
+
+        // Manual Pagination
+        $page = $request->get('page', 1);
+        $perPage = 20;
+        $offset = ($page - 1) * $perPage;
+        
+        // Slice items for current page
+        $currentPageItems = $allBlockedIps->slice($offset, $perPage)->values();
+
+        // Enrich ONLY the current page items (Performance Optimization)
+        foreach ($currentPageItems as $ipData) {
+            // Get latest click for this IP today to get merchant info
+            $latestClick = ClickHistory::with('merchant')
+                ->where('ip_address', $ipData->ip_address)
+                ->whereDate('clicked_at', $today)
+                ->orderBy('clicked_at', 'desc')
+                ->first();
+            
+            // Get all distinct merchants visited today
+            $visitedMerchants = ClickHistory::join('merchants', 'click_history.merchant_id', '=', 'merchants.id')
+                ->where('click_history.ip_address', $ipData->ip_address)
+                ->whereDate('click_history.clicked_at', $today)
+                ->distinct()
+                ->pluck('merchants.nama_merchant')
+                ->toArray();
+
+            $ipData->latest_merchant = $latestClick ? $latestClick->merchant : null;
+            $ipData->merchant_count = count($visitedMerchants);
+            $ipData->visited_merchants = $visitedMerchants;
+            
+            // Determine status
+            if ($ipData->total_clicks > 20) {
+                $ipData->status = 'blocked';
+                $ipData->status_label = 'Blocked';
+                $ipData->status_color = 'red';
+            } else {
+                $ipData->status = 'suspicious';
+                $ipData->status_label = 'Suspicious';
+                $ipData->status_color = 'yellow';
+            }
+        }
+
+        // Create Paginator
+        $blockedIps = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentPageItems,
+            $allBlockedIps->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('click-history.blocked-ips', [
             'blockedIps' => $blockedIps,
@@ -1104,7 +1149,7 @@ class ClickHistoryController extends Controller
         try {
             $ip = $request->input('ip_address');
             if (!$ip) {
-                return back()->with('error', 'IP Address diperlukan');
+                return redirect()->route('click.history.blocked')->with('error', 'IP Address diperlukan');
             }
 
             $today = now()->format('Y-m-d');
@@ -1118,11 +1163,11 @@ class ClickHistoryController extends Controller
                 
             DB::commit();
             
-            return back()->with('success', "IP $ip berhasil di-unlock. $deleted history dihapus.");
+            return redirect()->route('click.history.blocked')->with('success', "IP $ip berhasil di-unlock. $deleted history dihapus.");
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error unlocking IP: ' . $e->getMessage());
-            return back()->with('error', 'Gagal unlock IP: ' . $e->getMessage());
+            return redirect()->route('click.history.blocked')->with('error', 'Gagal unlock IP: ' . $e->getMessage());
         }
     }
 }

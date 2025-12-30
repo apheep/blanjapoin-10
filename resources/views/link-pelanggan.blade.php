@@ -238,21 +238,7 @@
             updateRedeemButtons();
         }
 
-        // Function called when user clicks redeem button
-        function handleRedeemClick(redeemUrl) {
-            if (!merchantValidator) {
-                window.open(redeemUrl, '_blank');
-                return;
-            }
 
-            if (merchantValidator.isWithinRadius) {
-                // User dalam radius, langsung redeem
-                window.open(redeemUrl, '_blank');
-            } else {
-                // User di luar radius, tombol sudah dinonaktifkan, tidak perlu menampilkan error
-                // Tombol tidak bisa diklik karena sudah disabled
-            }
-        }
         
         // Prevent click on "Harus ke Lokasi" buttons
         document.addEventListener('click', function(e) {
@@ -611,5 +597,7 @@
 
         <span class="cs-wa-text">Customer Service</span>
     </a>
+    @include('partials.desktop-alert')
+    @include('partials.redeem-script')
 </body>
 </html>
