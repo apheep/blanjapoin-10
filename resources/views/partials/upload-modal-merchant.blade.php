@@ -238,29 +238,54 @@
                         <input type="hidden" name="daerah" id="daerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Link Google Maps --}}
+                            {{-- Link Google Maps (Multiple) --}}
                             <div class="md:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Link Google Maps
-                                </label>
-                                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
-                                    <input type="url"
-                                           id="merchantLinkGmap"
-                                           name="link_gmap"
-                                           class="w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           placeholder="Paste link Google Maps atau pilih lokasi"
-                                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Link Google Maps
+                                    </label>
                                     <button type="button"
-                                            onclick="openMapPicker('upload')"
-                                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <span>Pilih Lokasi</span>
+                                            onclick="addGmapField()"
+                                            class="text-sm px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Tambah Titik</span>
                                     </button>
                                 </div>
-                                <p class="mt-1.5 text-xs text-gray-500">
+                                
+                                {{-- Container untuk multiple gmap fields --}}
+                                <div id="gmapFieldsContainer" class="space-y-3">
+                                    {{-- Field pertama (default) --}}
+                                    <div class="gmap-field-group" data-index="0">
+                                        <div class="flex items-start gap-2">
+                                            <div class="flex-1">
+                                                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                                                    <input type="url"
+                                                           name="link_gmaps[0][link]"
+                                                           class="gmap-link-input w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                                           placeholder="Paste link Google Maps atau pilih lokasi"
+                                                           data-index="0"
+                                                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                                                    <button type="button"
+                                                            onclick="openMapPicker('upload', 0)"
+                                                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
+                                                        <i class="fas fa-map-marker-alt"></i>
+                                                        <span>Pilih Lokasi</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button type="button"
+                                                    onclick="removeGmapField(0)"
+                                                    class="remove-gmap-btn hidden mt-1 px-3 h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <p class="mt-2 text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung</span>
-                                    <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps</span>
+                                    <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung. Klik "Tambah Titik" untuk menambah lokasi lainnya.</span>
+                                    <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps. Klik "+" untuk menambah lokasi.</span>
                                 </p>
                                 <p class="mt-1 text-xs text-orange-600 font-medium">
                                     <i class="fas fa-magic mr-1"></i>
@@ -718,6 +743,9 @@ function closeUploadMerchant() {
             document.getElementById('cityOptions').innerHTML = '';
             document.getElementById('daerahCombined').value = '';
             closeCityDropdown();
+            
+            // Reset gmap fields to single field
+            resetGmapFields();
             
             // Reset link blanjapoin
             document.getElementById('linkBlanjapoinCode').value = '';
@@ -1198,9 +1226,125 @@ async function geocodeGmapUrl(url) {
 }
 
 
+// ======================
+// Multiple Google Maps Fields Management
+// ======================
+let gmapFieldCounter = 1;
+let currentGmapFieldIndex = 0; // Track which field is being edited via map picker
+
+function addGmapField() {
+    const container = document.getElementById('gmapFieldsContainer');
+    if (!container) return;
+    
+    const newField = document.createElement('div');
+    newField.className = 'gmap-field-group';
+    newField.setAttribute('data-index', gmapFieldCounter);
+    
+    newField.innerHTML = `
+        <div class="flex items-start gap-2">
+            <div class="flex-1">
+                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                    <input type="url"
+                           name="link_gmaps[${gmapFieldCounter}][link]"
+                           class="gmap-link-input w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           placeholder="Paste link Google Maps atau pilih lokasi"
+                           data-index="${gmapFieldCounter}"
+                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                    <button type="button"
+                            onclick="openMapPicker('upload', ${gmapFieldCounter})"
+                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Pilih Lokasi</span>
+                    </button>
+                </div>
+            </div>
+            <button type="button"
+                    onclick="removeGmapField(${gmapFieldCounter})"
+                    class="remove-gmap-btn mt-1 px-3 h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(newField);
+    gmapFieldCounter++;
+    
+    // Show remove buttons on all fields if there's more than 1
+    updateRemoveButtons();
+}
+
+function removeGmapField(index) {
+    const field = document.querySelector(`.gmap-field-group[data-index="${index}"]`);
+    if (!field) return;
+    
+    // Don't allow removing if it's the last field
+    const totalFields = document.querySelectorAll('.gmap-field-group').length;
+    if (totalFields <= 1) {
+        alert('Minimal harus ada 1 lokasi');
+        return;
+    }
+    
+    field.remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const fields = document.querySelectorAll('.gmap-field-group');
+    const showRemoveButtons = fields.length > 1;
+    
+    fields.forEach(field => {
+        const removeBtn = field.querySelector('.remove-gmap-btn');
+        if (removeBtn) {
+            if (showRemoveButtons) {
+                removeBtn.classList.remove('hidden');
+            } else {
+                removeBtn.classList.add('hidden');
+            }
+        }
+    });
+}
+
+function resetGmapFields() {
+    const container = document.getElementById('gmapFieldsContainer');
+    if (!container) return;
+    
+    // Reset counter
+    gmapFieldCounter = 1;
+    
+    // Clear container
+    container.innerHTML = `
+        <div class="gmap-field-group" data-index="0">
+            <div class="flex items-start gap-2">
+                <div class="flex-1">
+                    <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                        <input type="url"
+                               name="link_gmaps[0][link]"
+                               class="gmap-link-input w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                               placeholder="Paste link Google Maps atau pilih lokasi"
+                               data-index="0"
+                               onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                        <button type="button"
+                                onclick="openMapPicker('upload', 0)"
+                                class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Pilih Lokasi</span>
+                        </button>
+                    </div>
+                </div>
+                <button type="button"
+                        onclick="removeGmapField(0)"
+                        class="remove-gmap-btn hidden mt-1 px-3 h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
 // Open map picker modal
-function openMapPicker(mode) {
+function openMapPicker(mode, gmapIndex) {
     mapPickerMode = mode || 'upload';
+    currentGmapFieldIndex = gmapIndex !== undefined ? gmapIndex : 0;
     const modal = document.getElementById('mapPickerModal');
     const overlay = document.getElementById('mapPickerOverlay');
     const panel = document.getElementById('mapPickerPanel');
@@ -1488,13 +1632,19 @@ function updateLinkGmapField(lat, lng) {
     const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
     
     // Update input field based on mode
-    const inputId = mapPickerMode === 'edit' ? 'editMerchantLinkGmap' : 'merchantLinkGmap';
-    const inputField = document.getElementById(inputId);
-    
-    if (inputField) {
-        inputField.value = googleMapsLink;
-        // Trigger input event to notify any listeners
-        inputField.dispatchEvent(new Event('input', { bubbles: true }));
+    if (mapPickerMode === 'edit') {
+        const inputField = document.getElementById('editMerchantLinkGmap');
+        if (inputField) {
+            inputField.value = googleMapsLink;
+            inputField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    } else {
+        // Upload mode - update specific field based on currentGmapFieldIndex
+        const inputField = document.querySelector(`.gmap-link-input[data-index="${currentGmapFieldIndex}"]`);
+        if (inputField) {
+            inputField.value = googleMapsLink;
+            inputField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
     }
 }
 

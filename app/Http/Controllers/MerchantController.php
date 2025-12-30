@@ -443,6 +443,8 @@ class MerchantController extends Controller
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
+            'link_gmaps'     => 'nullable|array',
+            'link_gmaps.*.link' => 'required|string|max:500',
             'radius'         => 'nullable|integer|min:0|max:100000',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -575,6 +577,30 @@ class MerchantController extends Controller
             }
             
             $merchant = Merchant::create($merchantData);
+            
+            // Process multiple Google Maps links if provided
+            if ($request->has('link_gmaps') && is_array($request->link_gmaps)) {
+                $processedLocations = [];
+                
+                foreach ($request->link_gmaps as $gmapData) {
+                    if (isset($gmapData['link']) && !empty(trim($gmapData['link']))) {
+                        $link = $this->convertGmapUrl(trim($gmapData['link']));
+                        if ($link) {
+                            $processedLocations[] = [
+                                'link' => $link,
+                                'radius' => null // Radius per link sudah dihapus, menggunakan radius global
+                            ];
+                        }
+                    }
+                }
+                
+                // Set link_gmaps (JSON field) jika ada data
+                if (!empty($processedLocations)) {
+                    $merchant->link_gmaps = $processedLocations;
+                    $merchant->save();
+                }
+            }
+            
             Log::info('Merchant created successfully with ID:', ['id' => $merchant->id]);
         } catch (\Exception $e) {
             Log::error('Error creating merchant:', [
@@ -751,6 +777,8 @@ class MerchantController extends Controller
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
+            'link_gmaps'     => 'nullable|array',
+            'link_gmaps.*.link' => 'required|string|max:500',
             'radius'         => 'nullable|integer|min:0|max:100000',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -852,6 +880,27 @@ class MerchantController extends Controller
             $oldStartDate = $merchant->start_date;
             $oldEndDate = $merchant->end_date;
             $merchant->update($merchantData);
+            
+            // Process multiple Google Maps links if provided
+            if ($request->has('link_gmaps') && is_array($request->link_gmaps)) {
+                $processedLocations = [];
+                
+                foreach ($request->link_gmaps as $gmapData) {
+                    if (isset($gmapData['link']) && !empty(trim($gmapData['link']))) {
+                        $link = $this->convertGmapUrl(trim($gmapData['link']));
+                        if ($link) {
+                            $processedLocations[] = [
+                                'link' => $link,
+                                'radius' => null // Radius per link sudah dihapus, menggunakan radius global
+                            ];
+                        }
+                    }
+                }
+                
+                // Set link_gmaps (JSON field) jika ada data, atau set null jika tidak ada
+                $merchant->link_gmaps = !empty($processedLocations) ? $processedLocations : null;
+                $merchant->save();
+            }
             
             // Refresh merchant untuk mendapatkan nilai baru
             $merchant->refresh();
