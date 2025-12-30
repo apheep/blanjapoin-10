@@ -166,7 +166,7 @@
                 
                 const lastClickTime = sessionStorage.getItem('lastRedeemClickTime');
                 const now = Date.now();
-                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 3000); // 3 detik threshold
+                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 100); // 3 detik threshold
                 sessionStorage.setItem('lastRedeemClickTime', now);
 
                 // Set callbacks for this specific click
