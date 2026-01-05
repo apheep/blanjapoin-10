@@ -441,15 +441,21 @@ class MerchantController extends Controller
             'email_pic'      => 'nullable|email|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
-            'link_gmap'      => 'nullable|string|max:500',
+            // Multiple Google Maps links support
             'link_gmaps'     => 'nullable|array',
-            'link_gmaps.*.link' => 'required|string|max:500',
+            'link_gmaps.*.link' => 'nullable|string|max:500',
+            'link_gmaps.*.lock_radius' => 'nullable|integer|min:1|max:100000',
+            // Backward compatibility dengan single link_gmap
+            'link_gmap'      => 'nullable|string|max:500',
             'radius'         => 'nullable|integer|min:0|max:100000',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
             'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+            'link_gmaps.*.lock_radius.integer' => 'Radius harus berupa angka',
+            'link_gmaps.*.lock_radius.min' => 'Radius minimal 1 meter',
+            'link_gmaps.*.lock_radius.max' => 'Radius maksimal 100000 meter (100 km)',
             'radius.integer' => 'Radius harus berupa angka',
             'radius.min' => 'Radius minimal 0 meter',
             'radius.max' => 'Radius maksimal 100000 meter (100 km)',
@@ -500,6 +506,54 @@ class MerchantController extends Controller
             return $value;
         };
         
+        // =====================
+        //  HANDLE MULTIPLE GOOGLE MAPS LINKS
+        // =====================
+        $linkGmapsArray = null;
+        
+        // Process link_gmaps array jika ada
+        if ($request->has('link_gmaps') && is_array($request->input('link_gmaps'))) {
+            $processedLocations = [];
+            
+            foreach ($request->input('link_gmaps') as $location) {
+                // Skip jika link kosong
+                if (!isset($location['link']) || trim($location['link']) === '') {
+                    continue;
+                }
+                
+                $linkConverted = $this->convertGmapUrl(trim($location['link']));
+                if ($linkConverted) {
+                    $processedLocations[] = [
+                        'link' => $linkConverted,
+                        'radius' => isset($location['lock_radius']) && $location['lock_radius'] !== '' && $location['lock_radius'] !== null
+                                    ? (int)$location['lock_radius']
+                                    : null
+                    ];
+                }
+            }
+            
+            // Jika ada lokasi yang valid, simpan
+            if (count($processedLocations) > 0) {
+                $linkGmapsArray = $processedLocations;
+            }
+        }
+        // Fallback ke single link_gmap jika tidak ada link_gmaps array
+        elseif ($request->filled('link_gmap')) {
+            $linkConverted = $this->convertGmapUrl($request->input('link_gmap'));
+            $radius = $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
+                      ? (int)$request->input('radius')
+                      : null;
+            
+            if ($linkConverted) {
+                $linkGmapsArray = [
+                    [
+                        'link' => $linkConverted,
+                        'radius' => $radius
+                    ]
+                ];
+            }
+        }
+        
         // SIMPAN DATA KE DATABASE - Pastikan semua field tersimpan
         // Ambil semua field langsung dari request tanpa transformasi untuk lat/long
         // Handle is_active: ambil langsung dari request, default 1 jika tidak ada
@@ -514,17 +568,8 @@ class MerchantController extends Controller
             'email_pic'      => $getValue($request->input('email_pic', null)),
             'daerah'         => $getValue($request->input('daerah', null)),
             'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
-            // Ambil lat dan long sebagai string untuk mempertahankan nilai asli input
-            // 'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
-            //                     ? (string)$request->input('lat')
-            //                     : null,
-            // 'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
-            //                     ? (string)$request->input('long')
-            //                     : null,
-            'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
-            'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
-                                ? (int)$request->input('radius')
-                                : null,
+            // Multiple Google Maps locations (JSON)
+            'link_gmaps'     => $linkGmapsArray,
             'logo_merchant'  => $logoPath,
             'ktp_pic'        => $ktpPath,
             'is_active'      => (int)$isActive,
@@ -576,30 +621,6 @@ class MerchantController extends Controller
             }
             
             $merchant = Merchant::create($merchantData);
-            
-            // Process multiple Google Maps links if provided
-            if ($request->has('link_gmaps') && is_array($request->link_gmaps)) {
-                $processedLocations = [];
-                
-                foreach ($request->link_gmaps as $gmapData) {
-                    if (isset($gmapData['link']) && !empty(trim($gmapData['link']))) {
-                        $link = $this->convertGmapUrl(trim($gmapData['link']));
-                        if ($link) {
-                            $processedLocations[] = [
-                                'link' => $link,
-                                'radius' => null // Radius per link sudah dihapus, menggunakan radius global
-                            ];
-                        }
-                    }
-                }
-                
-                // Set link_gmaps (JSON field) jika ada data
-                if (!empty($processedLocations)) {
-                    $merchant->link_gmaps = $processedLocations;
-                    $merchant->save();
-                }
-            }
-            
             Log::info('Merchant created successfully with ID:', ['id' => $merchant->id]);
         } catch (\Exception $e) {
             Log::error('Error creating merchant:', [
@@ -776,8 +797,6 @@ class MerchantController extends Controller
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
             'link_gmap'      => 'nullable|string|max:500',
-            'link_gmaps'     => 'nullable|array',
-            'link_gmaps.*.link' => 'required|string|max:500',
             'radius'         => 'nullable|integer|min:0|max:100000',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'ktp_pic'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -879,27 +898,6 @@ class MerchantController extends Controller
             $oldStartDate = $merchant->start_date;
             $oldEndDate = $merchant->end_date;
             $merchant->update($merchantData);
-            
-            // Process multiple Google Maps links if provided
-            if ($request->has('link_gmaps') && is_array($request->link_gmaps)) {
-                $processedLocations = [];
-                
-                foreach ($request->link_gmaps as $gmapData) {
-                    if (isset($gmapData['link']) && !empty(trim($gmapData['link']))) {
-                        $link = $this->convertGmapUrl(trim($gmapData['link']));
-                        if ($link) {
-                            $processedLocations[] = [
-                                'link' => $link,
-                                'radius' => null // Radius per link sudah dihapus, menggunakan radius global
-                            ];
-                        }
-                    }
-                }
-                
-                // Set link_gmaps (JSON field) jika ada data, atau set null jika tidak ada
-                $merchant->link_gmaps = !empty($processedLocations) ? $processedLocations : null;
-                $merchant->save();
-            }
             
             // Refresh merchant untuk mendapatkan nilai baru
             $merchant->refresh();

@@ -255,9 +255,9 @@
                                 {{-- Container untuk multiple gmap fields --}}
                                 <div id="gmapFieldsContainer" class="space-y-3">
                                     {{-- Field pertama (default) --}}
-                                    <div class="gmap-field-group" data-index="0">
+                                    <div class="gmap-field-group border border-gray-200 rounded-lg p-3 bg-gray-50" data-index="0">
                                         <div class="flex items-start gap-2">
-                                            <div class="flex-1">
+                                            <div class="flex-1 space-y-2">
                                                 <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
                                                     <input type="url"
                                                            name="link_gmaps[0][link]"
@@ -271,6 +271,41 @@
                                                         <i class="fas fa-map-marker-alt"></i>
                                                         <span>Pilih Lokasi</span>
                                                     </button>
+                                                </div>
+                                                
+                                                {{-- Lock Radius Toggle untuk titik ini --}}
+                                                <div class="flex items-center gap-3">
+                                                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                                                        <i class="fas fa-lock text-orange-500"></i>
+                                                        <span class="font-medium">Lock Radius</span>
+                                                    </label>
+                                                    <label class="relative inline-flex items-center cursor-pointer" title="Toggle Lock Radius">
+                                                        <input type="checkbox"
+                                                               class="lock-radius-toggle sr-only peer"
+                                                               data-index="0"
+                                                               onchange="toggleLockRadiusField(0)" />
+                                                        <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500 hover:peer-checked:from-orange-600 hover:peer-checked:to-red-600"></div>
+                                                        <span class="ml-2 text-sm text-gray-600 lock-radius-text" data-index="0">Tidak Aktif</span>
+                                                    </label>
+                                                </div>
+                                                
+                                                {{-- Radius Validasi Lokasi untuk titik ini --}}
+                                                <div class="lock-radius-field-container hidden" data-index="0">
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                                        <i class="fas fa-map-marked-alt mr-1 text-orange-500"></i>
+                                                        Radius Validasi Lokasi (meter)
+                                                    </label>
+                                                    <input type="number"
+                                                           name="link_gmaps[0][lock_radius]"
+                                                           class="lock-radius-input w-full px-4 h-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                                           placeholder="Contoh: 100"
+                                                           min="1"
+                                                           max="100000"
+                                                           data-index="0">
+                                                    <p class="mt-1 text-xs text-gray-500">
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        Radius area validasi untuk redeem di titik ini
+                                                    </p>
                                                 </div>
                                             </div>
                                             <button type="button"
@@ -1237,12 +1272,12 @@ function addGmapField() {
     if (!container) return;
     
     const newField = document.createElement('div');
-    newField.className = 'gmap-field-group';
+    newField.className = 'gmap-field-group border border-gray-200 rounded-lg p-3 bg-gray-50';
     newField.setAttribute('data-index', gmapFieldCounter);
     
     newField.innerHTML = `
         <div class="flex items-start gap-2">
-            <div class="flex-1">
+            <div class="flex-1 space-y-2">
                 <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
                     <input type="url"
                            name="link_gmaps[${gmapFieldCounter}][link]"
@@ -1256,6 +1291,39 @@ function addGmapField() {
                         <i class="fas fa-map-marker-alt"></i>
                         <span>Pilih Lokasi</span>
                     </button>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <i class="fas fa-lock text-orange-500"></i>
+                        <span class="font-medium">Lock Radius</span>
+                    </label>
+                    <label class="relative inline-flex items-center cursor-pointer" title="Toggle Lock Radius">
+                        <input type="checkbox"
+                               class="lock-radius-toggle sr-only peer"
+                               data-index="${gmapFieldCounter}"
+                               onchange="toggleLockRadiusField(${gmapFieldCounter})" />
+                        <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500 hover:peer-checked:from-orange-600 hover:peer-checked:to-red-600"></div>
+                        <span class="ml-2 text-sm text-gray-600 lock-radius-text" data-index="${gmapFieldCounter}">Tidak Aktif</span>
+                    </label>
+                </div>
+                
+                <div class="lock-radius-field-container hidden" data-index="${gmapFieldCounter}">
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-map-marked-alt mr-1 text-orange-500"></i>
+                        Radius Validasi Lokasi (meter)
+                    </label>
+                    <input type="number"
+                           name="link_gmaps[${gmapFieldCounter}][lock_radius]"
+                           class="lock-radius-input w-full px-4 h-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           placeholder="Contoh: 100"
+                           min="1"
+                           max="100000"
+                           data-index="${gmapFieldCounter}">
+                    <p class="mt-1 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Radius area validasi untuk redeem di titik ini
+                    </p>
                 </div>
             </div>
             <button type="button"
@@ -1304,41 +1372,46 @@ function updateRemoveButtons() {
     });
 }
 
-function resetGmapFields() {
-    const container = document.getElementById('gmapFieldsContainer');
-    if (!container) return;
+function toggleRadiusField(index) {
+    const checkbox = document.querySelector(`.radius-toggle[data-index="${index}"]`);
+    const radiusInput = document.querySelector(`.radius-input[data-index="${index}"]`);
     
-    // Reset counter
-    gmapFieldCounter = 1;
+    if (!checkbox || !radiusInput) return;
     
-    // Clear container
-    container.innerHTML = `
-        <div class="gmap-field-group" data-index="0">
-            <div class="flex items-start gap-2">
-                <div class="flex-1">
-                    <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
-                        <input type="url"
-                               name="link_gmaps[0][link]"
-                               class="gmap-link-input w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                               placeholder="Paste link Google Maps atau pilih lokasi"
-                               data-index="0"
-                               onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
-                        <button type="button"
-                                onclick="openMapPicker('upload', 0)"
-                                class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Pilih Lokasi</span>
-                        </button>
-                    </div>
-                </div>
-                <button type="button"
-                        onclick="removeGmapField(0)"
-                        class="remove-gmap-btn hidden mt-1 px-3 h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-    `;
+    if (checkbox.checked) {
+        radiusInput.classList.remove('hidden');
+        radiusInput.focus();
+    } else {
+        radiusInput.classList.add('hidden');
+        radiusInput.value = '';
+    }
+}
+
+function toggleLockRadiusField(index) {
+    const checkbox = document.querySelector(`.lock-radius-toggle[data-index="${index}"]`);
+    const container = document.querySelector(`.lock-radius-field-container[data-index="${index}"]`);
+    const statusText = document.querySelector(`.lock-radius-text[data-index="${index}"]`);
+    const radiusInput = document.querySelector(`.lock-radius-input[data-index="${index}"]`);
+    
+    if (!checkbox || !container) return;
+    
+    if (checkbox.checked) {
+        container.classList.remove('hidden');
+        if (statusText) {
+            statusText.textContent = 'Aktif';
+        }
+        if (radiusInput) {
+            radiusInput.focus();
+        }
+    } else {
+        container.classList.add('hidden');
+        if (statusText) {
+            statusText.textContent = 'Tidak Aktif';
+        }
+        if (radiusInput) {
+            radiusInput.value = '';
+        }
+    }
 }
 
 // Open map picker modal
