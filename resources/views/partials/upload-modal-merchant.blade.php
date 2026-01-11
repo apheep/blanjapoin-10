@@ -264,7 +264,7 @@
                                                            class="gmap-link-input w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                                                            placeholder="Paste link Google Maps atau pilih lokasi"
                                                            data-index="0"
-                                                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                                                           onpaste="setTimeout(() => validateUploadGmapLink(this), 100)">
                                                     <button type="button"
                                                             onclick="openMapPicker('upload', 0)"
                                                             class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
@@ -330,7 +330,7 @@
                         </div>
 
                         {{-- Lock Radius Toggle --}}
-                        <div class="md:col-span-2">
+                        <!-- <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 <i class="fas fa-lock mr-1.5 text-orange-500"></i>
                                 Lock Radius LongLat
@@ -346,7 +346,7 @@
                                 <i class="fas fa-info-circle mr-1"></i>
                                 <span>Aktifkan untuk menampilkan field radius validasi lokasi</span>
                             </p>
-                        </div>
+                        </div> -->
 
                         {{-- Radius untuk Validasi Lokasi --}}
                         <div id="radiusFieldContainer" class="hidden">
@@ -1130,7 +1130,8 @@ let selectedLocationData = null;
 let mapPickerMode = 'upload'; // 'upload' or 'edit'
 
 // Validate URL (accepts any URL now, not just Google Maps)
-async function validateGmapLink(url) {
+async function validateUploadGmapLink(inputElement) {
+    const url = inputElement.value;
     if (!url || url.trim() === '') {
         return true;
     }
@@ -1149,11 +1150,8 @@ async function validateGmapLink(url) {
             const convertedUrl = await convertGmapUrl(url);
             if (convertedUrl && convertedUrl !== url) {
                 // Update the input field with the converted URL
-                const inputField = document.getElementById('merchantLinkGmap');
-                if (inputField) {
-                    inputField.value = convertedUrl;
-                    // Silently update the field without showing message
-                }
+                inputElement.value = convertedUrl;
+                // Silently update the field without showing message
             }
         } catch (error) {
             console.warn('Failed to convert Google Maps URL:', error);
@@ -1284,7 +1282,7 @@ function addGmapField() {
                            class="gmap-link-input w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
                            placeholder="Paste link Google Maps atau pilih lokasi"
                            data-index="${gmapFieldCounter}"
-                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                           onpaste="setTimeout(() => validateUploadGmapLink(this), 100)">
                     <button type="button"
                             onclick="openMapPicker('upload', ${gmapFieldCounter})"
                             class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">

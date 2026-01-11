@@ -857,6 +857,54 @@ class MerchantController extends Controller
                 $ktpPath = $request->file('ktp_pic')->store('merchants', 'public');
             }
         
+            // =====================
+            //  HANDLE MULTIPLE GOOGLE MAPS LINKS
+            // =====================
+            $linkGmapsArray = null;
+            
+            // Process link_gmaps array jika ada
+            if ($request->has('link_gmaps') && is_array($request->input('link_gmaps'))) {
+                $processedLocations = [];
+                
+                foreach ($request->input('link_gmaps') as $location) {
+                    // Skip jika link kosong
+                    if (!isset($location['link']) || trim($location['link']) === '') {
+                        continue;
+                    }
+                    
+                    $linkConverted = $this->convertGmapUrl(trim($location['link']));
+                    if ($linkConverted) {
+                        $processedLocations[] = [
+                            'link' => $linkConverted,
+                            'radius' => isset($location['lock_radius']) && $location['lock_radius'] !== '' && $location['lock_radius'] !== null
+                                        ? (int)$location['lock_radius']
+                                        : (isset($location['radius']) && $location['radius'] !== '' ? (int)$location['radius'] : null)
+                        ];
+                    }
+                }
+                
+                // Jika ada lokasi yang valid, simpan
+                if (count($processedLocations) > 0) {
+                    $linkGmapsArray = $processedLocations;
+                }
+            }
+            // Fallback ke single link_gmap jika tidak ada link_gmaps array
+            elseif ($request->filled('link_gmap')) {
+                $linkConverted = $this->convertGmapUrl($request->input('link_gmap'));
+                $radius = $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
+                          ? (int)$request->input('radius')
+                          : null;
+                
+                if ($linkConverted) {
+                    $linkGmapsArray = [
+                        [
+                            'link' => $linkConverted,
+                            'radius' => $radius
+                        ]
+                    ];
+                }
+            }
+
             // Helper function untuk convert empty string ke null
             $getValue = function($value) {
                 if ($value === null) return null;
@@ -877,10 +925,11 @@ class MerchantController extends Controller
                 'email_pic'      => $getValue($request->input('email_pic', null)),
                 'daerah'         => $getValue($request->input('daerah', null)),
                 'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
-                'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
-                'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
-                                    ? (int)$request->input('radius')
-                                    : null,
+                // Multiple Google Maps locations (JSON)
+                'link_gmaps'     => $linkGmapsArray,
+                // Legacy fields (kept for backward compatibility if needed, or update from array)
+                'link_gmap'      => $linkGmapsArray && count($linkGmapsArray) > 0 ? $linkGmapsArray[0]['link'] : $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
+                'radius'         => $linkGmapsArray && count($linkGmapsArray) > 0 ? $linkGmapsArray[0]['radius'] : ($request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null ? (int)$request->input('radius') : null),
                 'logo_merchant'  => $logoPath,
                 'ktp_pic'        => $ktpPath,
                 'start_date'     => $request->input('start_date') ?: null,
