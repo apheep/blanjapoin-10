@@ -16,6 +16,8 @@ class ClickHistory extends Model
         'keyword_id',
         'ip_address',
         'device_id',
+        'latitude',
+        'longitude',
         'clicked_at',
         'user_agent',
         'referer',

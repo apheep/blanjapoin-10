@@ -65,6 +65,9 @@
                     <p class="text-sm text-gray-600 mt-2">Track dan analisa klik sebelum redeem untuk mendeteksi potensi cheating</p>
                 </div>
                 <div class="flex gap-2">
+                    <a href="{{ route('click.history.blocked') }}" class="px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold">
+                        <i class="fas fa-lock mr-2"></i>Blocked IPs
+                    </a>
                     <a href="{{ route('click.history.anonymous') }}" class="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold">
                         <i class="fas fa-exclamation-triangle mr-2"></i>Anonymous Redeems
                     </a>
@@ -79,7 +82,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
                             <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" 
-                                   placeholder="IP, Device ID, Keyword ID..." 
+                                   placeholder="IP, Device ID, Keyword ID, MSISDN..." 
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
                         </div>
 
@@ -183,6 +186,28 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-600">Not Matched</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p class="text-2xl font-bold text-red-600">
+                                    {{ $totalNotMatched ?? 0 }}
+                                </p>
+                                @if(($totalNotMatched ?? 0) > 0)
+                                    <a href="{{ route('click.history.not-matched-detail') }}" 
+                                       class="text-xs text-red-600 hover:text-red-700 font-medium underline flex items-center gap-1">
+                                        <i class="fas fa-eye"></i> View Detail
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Table -->
@@ -208,6 +233,7 @@
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keyword ID</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">IP Address</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Device ID</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Lokasi</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     <a href="{{ route('click.history.index', array_merge(request()->query(), ['sort' => 'clicked_at', 'dir' => (request('sort') == 'clicked_at' && request('dir') == 'asc') ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-orange-500 transition-colors">
                                         Waktu Klik
@@ -241,6 +267,8 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             @forelse($clickHistories as $click)
+                                {{-- Baris untuk Matched --}}
+                                @if($click->matched_redeem)
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-medium text-gray-900">{{ $click->merchant->nama_merchant ?? 'N/A' }}</div>
@@ -267,22 +295,24 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4">
+                                        @if($click->latitude && $click->longitude)
+                                            <a href="https://www.google.com/maps?q={{ $click->latitude }},{{ $click->longitude }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                                                <i class="fas fa-map-marker-alt"></i> Maps
+                                            </a>
+                                        @else
+                                            <span class="text-xs text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900">{{ $click->clicked_at->format('d M Y') }}</div>
                                         <div class="text-xs text-gray-500">{{ $click->clicked_at->format('H:i:s') }}</div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        @if($click->matched_redeem)
                                             <span class="badge badge-success">
                                                 <i class="fas fa-check-circle mr-1"></i>Matched
                                             </span>
-                                        @else
-                                            <span class="badge badge-info">
-                                                <i class="fas fa-clock mr-1"></i>No Redeem
-                                            </span>
-                                        @endif
                                     </td>
                                     <td class="px-6 py-4">
-                                        @if($click->matched_redeem)
                                             <div class="space-y-1">
                                                 <div class="text-xs">
                                                     <span class="font-semibold text-gray-700">MSISDN:</span> 
@@ -311,11 +341,140 @@
                                                     <span class="text-gray-900 font-medium">{{ $click->merchant->nama_merchant ?? 'N/A' }}</span>
                                                 </div>
                                             </div>
+                                        </td>
+                                    </tr>
+                                @endif
+
+                                {{-- Baris untuk Not Matched (jika ada) --}}
+                                @if($click->not_matched_redeem)
+                                    <tr class="hover:bg-red-50 transition-colors bg-red-50/30">
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ $click->merchant->nama_merchant ?? 'N/A' }}</div>
+                                            <div class="text-xs text-gray-500">ID: {{ $click->merchant_id }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-mono text-gray-900">{{ $click->keyword_id ?? '-' }}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-mono text-gray-700">{{ $click->ip_address ?? '-' }}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if($click->device_id)
+                                                <div class="flex items-center gap-2 group">
+                                                    <span class="text-xs font-mono text-gray-600 truncate flex-1 min-w-0" title="{{ $click->device_id }}">
+                                                        {{ $click->device_id }}
+                                                    </span>
+                                                    <button onclick="copyDeviceId('{{ addslashes($click->device_id) }}', this)" class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded flex-shrink-0" title="Copy Device ID">
+                                                        <i class="fas fa-copy text-xs"></i>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if($click->latitude && $click->longitude)
+                                                <a href="https://www.google.com/maps?q={{ $click->latitude }},{{ $click->longitude }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                                                    <i class="fas fa-map-marker-alt"></i> Maps
+                                                </a>
+                                            @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">{{ $click->clicked_at->format('d M Y') }}</div>
+                                            <div class="text-xs text-gray-500">{{ $click->clicked_at->format('H:i:s') }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="badge badge-danger">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>Not Matched
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="space-y-1">
+                                                <div class="text-xs">
+                                                    <span class="font-semibold text-gray-700">MSISDN:</span> 
+                                                    <span class="text-gray-600">{{ $click->not_matched_redeem->msisdn }}</span>
+                                                </div>
+                                                <div class="text-xs">
+                                                    <span class="font-semibold text-gray-700">Time Diff:</span> 
+                                                    <span class="text-red-600 font-semibold">{{ $click->not_matched_redeem->time_diff_human ?? 'N/A' }}</span>
+                                                </div>
+                                                <div class="text-xs">
+                                                    <span class="font-semibold text-gray-700">Confidence:</span> 
+                                                    @if(($click->not_matched_redeem->confidence ?? 'low') === 'high')
+                                                        <span class="text-green-600 font-semibold">● High</span> <span class="text-gray-500">(≤5 menit)</span>
+                                                    @elseif(($click->not_matched_redeem->confidence ?? 'low') === 'medium')
+                                                        <span class="text-yellow-600 font-semibold">● Medium</span> <span class="text-gray-500">(≤15 menit)</span>
+                                                    @else
+                                                        <span class="text-red-600 font-semibold">● Low</span> <span class="text-gray-500">(>15 menit)</span>
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs">
+                                                    <span class="font-semibold text-gray-700">Poin:</span> 
+                                                    <span class="text-orange-600 font-semibold">{{ number_format($click->not_matched_redeem->poin_redeem ?? 0) }}</span>
+                                                </div>
+                                                @if(isset($click->not_matched_redeem->matched_merchant))
+                                                    <div class="text-xs mt-1 pt-1 border-t border-red-200">
+                                                        <span class="font-semibold text-red-700">✗ Merchant dari Click:</span> 
+                                                        <span class="text-gray-900 font-medium">{{ $click->not_matched_redeem->matched_merchant->nama_merchant ?? 'N/A' }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+
+                                {{-- Baris untuk No Redeem --}}
+                                @if(!$click->matched_redeem && !$click->not_matched_redeem)
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ $click->merchant->nama_merchant ?? 'N/A' }}</div>
+                                            <div class="text-xs text-gray-500">ID: {{ $click->merchant_id }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-mono text-gray-900">{{ $click->keyword_id ?? '-' }}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-mono text-gray-700">{{ $click->ip_address ?? '-' }}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if($click->device_id)
+                                                <div class="flex items-center gap-2 group">
+                                                    <span class="text-xs font-mono text-gray-600 truncate flex-1 min-w-0" title="{{ $click->device_id }}">
+                                                        {{ $click->device_id }}
+                                                    </span>
+                                                    <button onclick="copyDeviceId('{{ addslashes($click->device_id) }}', this)" class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded flex-shrink-0" title="Copy Device ID">
+                                                        <i class="fas fa-copy text-xs"></i>
+                                                    </button>
+                                            </div>
                                         @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if($click->latitude && $click->longitude)
+                                                <a href="https://www.google.com/maps?q={{ $click->latitude }},{{ $click->longitude }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium">
+                                                    <i class="fas fa-map-marker-alt"></i> Maps
+                                                </a>
+                                            @else
+                                                <span class="text-xs text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">{{ $click->clicked_at->format('d M Y') }}</div>
+                                            <div class="text-xs text-gray-500">{{ $click->clicked_at->format('H:i:s') }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="badge badge-info">
+                                                <i class="fas fa-clock mr-1"></i>No Redeem
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
                                             <span class="text-xs text-gray-400">Belum ada redeem setelah klik ini</span>
-                                        @endif
                                     </td>
                                 </tr>
+                                @endif
                             @empty
                                 <tr>
                                     <td colspan="7" class="px-6 py-12 text-center">
@@ -663,6 +822,9 @@
         });
     </script>
 
+    <script>
+        // Merchant searchable dropdown
+        (function() {
 </body>
 </html>
 

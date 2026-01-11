@@ -511,8 +511,28 @@ class LoginController extends Controller
         }
 
         // OTP is valid, login user (using potentially updated user object)
-        Auth::login($user);
+        // Set remember to true so session persists for 24 hours even after browser close
+        Auth::login($user, true);
         $request->session()->regenerate();
+
+        // Explicitly set remember cookie with 24 hour lifetime
+        // This ensures the cookie persists even after browser close
+        $rememberDuration = 1440; // 24 hours in minutes
+        $cookieName = Auth::getRecallerName(); // Get the remember cookie name
+        $cookieValue = $user->id . '|' . $user->getRememberToken() . '|' . $user->getAuthPassword();
+        
+        // Queue the remember cookie with explicit lifetime
+        \Cookie::queue(
+            $cookieName,
+            encrypt($cookieValue),
+            $rememberDuration, // 1440 minutes = 24 hours
+            config('session.path'),
+            config('session.domain'),
+            config('session.secure'),
+            true, // httpOnly
+            false, // raw
+            config('session.same_site')
+        );
 
         // Generate JWT token using Sanctum (or you can use custom JWT)
         $token = $user->createToken('auth-token', ['*'])->plainTextToken;
@@ -524,6 +544,8 @@ class LoginController extends Controller
             'user_id' => $user->id,
             'username' => $user->username,
             'token_generated' => true,
+            'remember_cookie_set' => true,
+            'remember_duration_minutes' => $rememberDuration,
         ]);
 
         // Clear OTP session data

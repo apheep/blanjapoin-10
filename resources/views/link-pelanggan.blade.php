@@ -10,6 +10,106 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css','resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="{{ asset('js/merchant-radius-validator.js') }}"></script>
+    <style>
+      /* ===== WhatsApp CS Floating Button (anti bentrok) ===== */
+      .cs-wa-btn{
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 999999;
+
+        width: 64px;
+        height: 64px;
+        border-radius: 999px;
+
+        background: #00d757;
+        box-shadow: 2px 4px 14px rgba(0,0,0,.28);
+        text-decoration: none;
+        overflow: hidden;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        transition: all .25s ease;
+      }
+
+      .cs-wa-sign{
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .cs-wa-svg{
+        width: 34px;
+        height: 34px;
+        display: block;
+      }
+      .cs-wa-svg path{ fill:#fff; }
+
+      /* default: text hidden (mobile icon only) */
+      .cs-wa-text{
+        display: none;
+      }
+
+      /* Mobile: smaller size */
+      @media (max-width: 768px) {
+        .cs-wa-btn{
+          width: 52px;
+          height: 52px;
+          right: 14px;
+          bottom: 14px;
+        }
+
+        .cs-wa-svg{
+          width: 28px;
+          height: 28px;
+        }
+      }
+
+      /* Desktop: hover expand (hanya device yang bisa hover) */
+      @media (hover:hover) and (pointer:fine){
+        .cs-wa-btn{
+          justify-content: flex-start;
+        }
+
+        .cs-wa-text{
+          display: block;
+          position: absolute;
+          right: 0;
+          width: 0;
+          opacity: 0;
+          padding-right: 0;
+
+          color: #fff;
+          font-size: 15px;
+          font-weight: 700;
+          white-space: nowrap;
+
+          transition: all .25s ease;
+        }
+
+        .cs-wa-btn:hover{
+          width: 220px;
+          border-radius: 44px;
+        }
+
+        .cs-wa-btn:hover .cs-wa-sign{
+          width: 30%;
+          padding-left: 14px;
+          justify-content: flex-start;
+        }
+
+        .cs-wa-btn:hover .cs-wa-text{
+          width: 70%;
+          opacity: 1;
+          padding-right: 16px;
+        }
+      }
+    </style>
     @include('partials.head')
 </head>
 <body class="bg-white text-neutral-900 antialiased font-poppins min-h-screen" id="pageBody">
@@ -128,279 +228,32 @@
     <script>
         // Merchant data from server
         const merchantData = @json($merchant);
-        let userLocation = null;
-        let isWithinRadius = true; // Default true jika tidak ada validasi radius
         
-        // Extract coordinates from Google Maps link
-        function extractCoordinatesFromGmapsLink(gmapLink) {
-            if (!gmapLink) return null;
-            
-            // Pattern 1: https://www.google.com/maps?q=lat,lng
-            let match = gmapLink.match(/[?&]q=([-\d.]+),([-\d.]+)/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            // Pattern 2: https://www.google.com/maps/@lat,lng,zoom
-            match = gmapLink.match(/@([-\d.]+),([-\d.]+),/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            // Pattern 3: https://maps.google.com/?q=lat,lng
-            match = gmapLink.match(/[?&]q=([-\d.]+),([-\d.]+)/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            // Pattern 4: https://www.google.com/maps/place/@lat,lng
-            match = gmapLink.match(/place\/@?([-\d.]+),([-\d.]+)/);
-            if (match) {
-                return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-            }
-            
-            return null;
+        // Initialize validator dengan merchant data
+        initRadiusValidator(merchantData);
+        
+        // Disable redeem buttons by default until location is checked
+        // This will be called immediately after initialization
+        if (merchantValidator) {
+            updateRedeemButtons();
         }
+
+
         
-        // Calculate distance between two coordinates using Haversine formula (in meters)
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371000; // Earth's radius in meters
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; // Distance in meters
-        }
-        
-        // Update all redeem buttons based on location status
-        function updateRedeemButtons() {
-            const redeemButtons = document.querySelectorAll('[data-redeem-btn]');
-            console.log('🔄 Updating buttons...', {
-                buttonsFound: redeemButtons.length,
-                isWithinRadius: isWithinRadius,
-                hasRadiusValidation: !!(merchantData.radius && merchantData.link_gmap)
-            });
-            
-            redeemButtons.forEach((btn, index) => {
-                if (!isWithinRadius && merchantData.radius && merchantData.link_gmap) {
-                    // User di luar radius - disable button dan ganti text
-                    console.log(`❌ Button ${index}: Disabling (outside radius)`);
-                    btn.disabled = true;
-                    btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'hover:from-orange-600', 'hover:to-red-600');
-                    btn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    btn.innerHTML = '<i class="fas fa-map-marker-alt mr-1"></i>Harus ke Lokasi';
-                    btn.title = `Anda harus berada dalam radius ${merchantData.radius} meter dari merchant`;
-                } else {
-                    // User dalam radius atau tidak ada validasi - enable button
-                    console.log(`✅ Button ${index}: Enabling (within radius or no validation)`);
-                    btn.disabled = false;
-                    btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    btn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'hover:from-orange-600', 'hover:to-red-600');
-                    btn.innerHTML = 'Redeem';
-                    btn.title = '';
+        // Prevent click on "Harus ke Lokasi" buttons
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-redeem-btn]');
+            if (target) {
+                // Check if button contains "Harus ke Lokasi" text or is disabled
+                const buttonText = target.textContent.trim();
+                if (buttonText.includes('Harus ke Lokasi') || target.disabled) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Tombol dinonaktifkan, tidak menampilkan pesan error
+                    return false;
                 }
-            });
-        }
-        
-        // Check location on page load
-        async function checkLocationOnLoad() {
-            console.log('🔍 Checking location...', {
-                merchantRadius: merchantData.radius,
-                merchantGmap: merchantData.link_gmap
-            });
-            
-            // Check if merchant has radius validation
-            if (!merchantData.radius || !merchantData.link_gmap) {
-                // No radius validation needed
-                console.log('✅ No radius validation - allowing all redeems');
-                isWithinRadius = true;
-                updateRedeemButtons();
-                return;
             }
-            
-            // Extract merchant coordinates
-            const merchantCoords = extractCoordinatesFromGmapsLink(merchantData.link_gmap);
-            console.log('📍 Merchant coordinates:', merchantCoords);
-            
-            if (!merchantCoords) {
-                // Can't extract coordinates, allow redeem
-                console.log('⚠️ Cannot extract merchant coordinates - allowing redeem');
-                isWithinRadius = true;
-                updateRedeemButtons();
-                return;
-            }
-            
-            // Check if browser supports geolocation
-            if (!navigator.geolocation) {
-                console.log('❌ Browser does not support geolocation');
-                isWithinRadius = false;
-                updateRedeemButtons();
-                return;
-            }
-            
-            try {
-                console.log('🌍 Getting user location...');
-                // Get user's current position
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 30000 // Cache for 30 seconds
-                    });
-                });
-                
-                userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                
-                console.log('📍 User location:', userLocation);
-                
-                // Calculate distance
-                const distance = calculateDistance(
-                    userLocation.lat, userLocation.lng,
-                    merchantCoords.lat, merchantCoords.lng
-                );
-                
-                console.log('📏 Distance calculated:', {
-                    distance: Math.round(distance) + ' meters',
-                    maxRadius: merchantData.radius + ' meters',
-                    withinRadius: distance <= merchantData.radius
-                });
-                
-                // Check if within radius
-                isWithinRadius = distance <= merchantData.radius;
-                
-                // Update all buttons
-                updateRedeemButtons();
-                
-            } catch (error) {
-                console.error('❌ Error getting location:', error);
-                // If error getting location, block redeem (strict security)
-                // User mungkin reject permission atau GPS off
-                isWithinRadius = false; // Block redeem if location access fails
-                updateRedeemButtons();
-
-                // Show modal error to user
-                setTimeout(() => {
-                    const modal = document.createElement('div');
-                    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4';
-                    modal.innerHTML = `
-                        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-95 opacity-0"
-                             style="animation: modalFadeIn 0.3s ease-out forwards;">
-                            <!-- Close button -->
-                            <button onclick="this.closest('.fixed').remove()"
-                                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-                                <i class="fas fa-times text-xl"></i>
-                            </button>
-
-                            <div class="p-6 text-center">
-                                <!-- Icon -->
-                                <div class="w-20 h-20 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                                    <i class="fas fa-exclamation-triangle text-3xl text-white"></i>
-                                </div>
-
-                                <!-- Title -->
-                                <h3 class="text-xl font-bold text-gray-800 mb-3">Akses Lokasi Gagal! 🚫</h3>
-
-                                <!-- Message -->
-                                <div class="text-sm text-gray-600 mb-6 space-y-2">
-                                    <p class="font-medium text-red-600">Tidak dapat mengakses lokasi Anda</p>
-                                    <p class="text-xs text-gray-500 leading-relaxed">
-                                        Redeem voucher tidak dapat dilakukan tanpa akses lokasi.
-                                        Pastikan GPS aktif dan izinkan akses lokasi untuk perangkat ini.
-                                    </p>
-                                </div>
-
-                                <!-- Action buttons -->
-                                <div class="space-y-3">
-                                    <button onclick="this.closest('.fixed').remove()"
-                                            class="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                                        <i class="fas fa-times mr-2"></i>Mengerti
-                                    </button>
-                                    <button onclick="window.location.reload()"
-                                            class="w-full px-6 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm">
-                                        <i class="fas fa-refresh mr-1"></i>Coba Lagi
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    // Add modal fade in animation
-                    const style = document.createElement('style');
-                    style.textContent = `
-                        @keyframes modalFadeIn {
-                            to {
-                                opacity: 1;
-                                transform: scale(1);
-                            }
-                        }
-                    `;
-                    document.head.appendChild(style);
-
-                    document.body.appendChild(modal);
-
-                    // Auto remove after 8 seconds
-                    setTimeout(() => {
-                        if (modal.parentNode) {
-                            modal.remove();
-                        }
-                    }, 8000);
-                }, 1000);
-            }
-        }
-        
-        // Function called when user clicks redeem button
-        function handleRedeemClick(redeemUrl) {
-            if (isWithinRadius) {
-                // User dalam radius, langsung redeem
-                window.open(redeemUrl, '_blank');
-            } else {
-                // User di luar radius, show info
-                const distanceText = userLocation && merchantData.link_gmap ? 
-                    (() => {
-                        const merchantCoords = extractCoordinatesFromGmapsLink(merchantData.link_gmap);
-                        if (merchantCoords) {
-                            const distance = calculateDistance(
-                                userLocation.lat, userLocation.lng,
-                                merchantCoords.lat, merchantCoords.lng
-                            );
-                            return distance < 1000 ? Math.round(distance) + ' meter' : (distance / 1000).toFixed(2) + ' km';
-                        }
-                        return 'tidak diketahui';
-                    })() : 'tidak diketahui';
-                
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'fixed inset-0 bg-black/50 z-[10000] flex items-center justify-center';
-                errorDiv.innerHTML = `
-                    <div class="bg-white rounded-2xl p-6 mx-4 max-w-sm text-center shadow-2xl">
-                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-times-circle text-4xl text-red-500"></i>
-                        </div>
-                        <div class="text-xl font-bold text-gray-800 mb-2">Lokasi Terlalu Jauh! ❌</div>
-                        <div class="text-sm text-gray-600 mb-1">Jarak Anda: <strong>${distanceText}</strong></div>
-                        <div class="text-xs text-gray-500 mb-2">Radius maksimal: <strong>${merchantData.radius}m</strong></div>
-                        <div class="text-xs text-orange-600 bg-orange-50 p-3 rounded-lg mb-4">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Anda harus berada dalam radius ${merchantData.radius} meter dari lokasi merchant untuk redeem voucher ini.
-                        </div>
-                        <a href="${merchantData.link_gmap}" 
-                           target="_blank"
-                           class="w-full inline-block px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all shadow-lg mb-2">
-                            <i class="fas fa-map-marker-alt mr-2"></i>Lihat Lokasi Merchant
-                        </a>
-                        <button onclick="this.closest('.fixed').remove()" 
-                                class="w-full px-6 py-2 text-gray-600 hover:text-gray-800 font-medium">
-                            Tutup
-                        </button>
-                    </div>
-                `;
-                document.body.appendChild(errorDiv);
-            }
-        }
+        }, true); // Use capture phase to catch before default behavior
         
         // Hide loading spinner when page loads and check location
         window.addEventListener('load', function() {
@@ -413,11 +266,16 @@
             }
             
             // Check user location on page load
-            checkLocationOnLoad();
+            checkUserLocationAndUpdateUI();
         });
 
         // Animate cards on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Disable redeem buttons by default until location is checked
+            if (merchantValidator) {
+                updateRedeemButtons();
+            }
+            
             // Animate category section
             const categorySection = document.getElementById('categorySection');
             if (categorySection) {
@@ -716,8 +574,30 @@
                     </svg>
                 </button>
             </div>
-            <div id="desktopModalContent" class="overflow-y-auto p-6 max-h-[70vh]"></div>
+            <div id="desktopModalContent" class="overflow-y-auto p-6 max-h-[70vh]">            </div>
         </div>
     </div>
+
+    <!-- Floating WhatsApp CS Button -->
+    <a
+        href="https://wa.me/628112500066?text=Halo%20CS%20BlanjaPoin%2C%20saya%20butuh%20bantuan."
+        class="cs-wa-btn"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chat WhatsApp Customer Service"
+        title="Chat WhatsApp"
+    >
+        <span class="cs-wa-sign" aria-hidden="true">
+            <svg class="cs-wa-svg" viewBox="0 0 16 16">
+                <path
+                    d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"
+                ></path>
+            </svg>
+        </span>
+
+        <span class="cs-wa-text">Customer Service</span>
+    </a>
+    @include('partials.desktop-alert')
+    @include('partials.redeem-script')
 </body>
 </html>

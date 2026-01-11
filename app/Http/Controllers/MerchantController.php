@@ -17,12 +17,217 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Maatwebsite\Excel\Facades\Excel;
 
 class MerchantController extends Controller
 {
+    /**
+     * Convert Google Maps URL to coordinate format
+     * Handles goo.gl short URLs and converts them to coordinate format
+     */
+    private function convertGmapUrl($url)
+    {
+        if (!$url || trim($url) === '') {
+            return null;
+        }
+
+        $url = trim($url);
+
+        // If it's already a coordinate format URL, return as-is
+        if (strpos($url, 'maps?q=') !== false && strpos($url, ',') !== false) {
+            // Check if it contains coordinates (numbers with decimal points)
+            if (preg_match('/maps\?q=([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/', $url, $matches)) {
+                return $url;
+            }
+        }
+
+        // Handle goo.gl short URLs and other Google Maps URLs
+        if (strpos($url, 'goo.gl') !== false || strpos($url, 'maps.app.goo.gl') !== false ||
+            strpos($url, 'maps/place') !== false || strpos($url, 'maps/@') !== false) {
+            try {
+                // Follow redirects to get the final URL
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => $url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_MAXREDIRS => 5,
+                    CURLOPT_TIMEOUT => 10,
+                    CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                ]);
+
+                $response = curl_exec($ch);
+                $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && $finalUrl) {
+                    // Try different patterns to extract coordinates
+
+                    // Pattern 1: /maps?q=lat,lng
+                    if (preg_match('/maps\?q=([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/', $finalUrl, $matches)) {
+                        return 'https://www.google.com/maps?q=' . $matches[1] . ',' . $matches[2];
+                    }
+
+                    // Pattern 2: /maps/@lat,lng,
+                    if (preg_match('/maps\/@([-+]?\d+\.?\d*),([-+]?\d+\.?\d*)/', $finalUrl, $matches)) {
+                        return 'https://www.google.com/maps?q=' . $matches[1] . ',' . $matches[2];
+                    }
+
+                    // Pattern 3: Extract from place URL with data parameter
+                    // Look for coordinates in the data parameter: !3d(lat)!4d(lng) or similar
+                    if (preg_match('/!3d([-+]?\d+\.?\d*)!4d([-+]?\d+\.?\d*)/', $finalUrl, $matches)) {
+                        return 'https://www.google.com/maps?q=' . $matches[1] . ',' . $matches[2];
+                    }
+
+                    // If we can't extract coordinates but it's a Google Maps URL,
+                    // try to get coordinates using Google Maps Geocoding API
+                    if (strpos($finalUrl, 'google.com/maps') !== false) {
+                        // Try to get coordinates from Google Maps Geocoding API
+                        // Extract address from place URL
+                        if (preg_match('/\/place\/([^\/]+)\//', $finalUrl, $addressMatch)) {
+                            $address = urldecode($addressMatch[1]);
+                            $coordinates = $this->geocodeAddress($address);
+                            if ($coordinates) {
+                                return 'https://www.google.com/maps?q=' . $coordinates['lat'] . ',' . $coordinates['lng'];
+                            }
+                        }
+
+                        // For place URLs with data parameter, try to extract place ID and geocode it
+                        if (preg_match('/!1s([^!]+)/', $finalUrl, $placeIdMatch)) {
+                            $placeId = $placeIdMatch[1];
+                            $coordinates = $this->geocodePlaceId($placeId);
+                            if ($coordinates) {
+                                return 'https://www.google.com/maps?q=' . $coordinates['lat'] . ',' . $coordinates['lng'];
+                            }
+                        }
+
+                        // Return the final URL as fallback
+                        return $finalUrl;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to convert Google Maps URL: ' . $url . ' - ' . $e->getMessage());
+            }
+        }
+
+        // Return original URL if conversion failed
+        return $url;
+    }
+
+    /**
+     * Geocode address using Google Maps Geocoding API
+     */
+    private function geocodeAddress($address)
+    {
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return null;
+        }
+
+        try {
+            $encodedAddress = urlencode($address);
+            $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encodedAddress}&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                $data = json_decode($response, true);
+                if ($data && $data['status'] === 'OK' && !empty($data['results'])) {
+                    $location = $data['results'][0]['geometry']['location'];
+                    return [
+                        'lat' => $location['lat'],
+                        'lng' => $location['lng']
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to geocode address: ' . $address . ' - ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Geocode place ID using Google Maps Places API
+     */
+    private function geocodePlaceId($placeId)
+    {
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return null;
+        }
+
+        try {
+            $url = "https://maps.googleapis.com/maps/api/place/details/json?place_id={$placeId}&fields=geometry&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                $data = json_decode($response, true);
+                if ($data && $data['status'] === 'OK' && isset($data['result']['geometry']['location'])) {
+                    $location = $data['result']['geometry']['location'];
+                    return [
+                        'lat' => $location['lat'],
+                        'lng' => $location['lng']
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to geocode place ID: ' . $placeId . ' - ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract latitude and longitude from Google Maps URL
+     * Returns array with 'lat' and 'lng' keys, or null if not found
+     */
+    public function extractCoordinatesFromGmapUrl($url)
+    {
+        if (!$url) {
+            return null;
+        }
+
+        // Look for coordinate pattern in URL: maps?q=lat,lng
+        if (preg_match('/maps\?q=([-+]?\d*\.?\d+),([-+]?\d*\.?\d+)/', $url, $matches)) {
+            return [
+                'lat' => (float) $matches[1],
+                'lng' => (float) $matches[2]
+            ];
+        }
+
+        return null;
+    }
+
     public function index(Request $request)
     {
         // Buat query params untuk appends, pastikan keyword_page tetap ada
@@ -43,11 +248,10 @@ class MerchantController extends Controller
             // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
             // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.coupon) 
                     FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
-                    AND k.is_active = 1 
                     AND tr.program = "BLANJAPOIN"
                     AND EXISTS (
                         SELECT 1 FROM click_history ch 
@@ -124,7 +328,7 @@ class MerchantController extends Controller
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
             // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
@@ -208,7 +412,7 @@ class MerchantController extends Controller
             ->where('merchant_key', $merchant->id)
             // Removed is_active filter to show all keywords (both active and inactive) in merchant-detail page
             // ->where('status', 'approve')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
@@ -315,7 +519,7 @@ class MerchantController extends Controller
             // 'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
             //                     ? (string)$request->input('long')
             //                     : null,
-            'link_gmap'      => $getValue($request->input('link_gmap', null)),
+            'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
             'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
                                 ? (int)$request->input('radius')
                                 : null,
@@ -626,7 +830,7 @@ class MerchantController extends Controller
                 'email_pic'      => $getValue($request->input('email_pic', null)),
                 'daerah'         => $getValue($request->input('daerah', null)),
                 'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
-                'link_gmap'      => $getValue($request->input('link_gmap', null)),
+                'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
                 'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
                                     ? (int)$request->input('radius')
                                     : null,
@@ -781,7 +985,7 @@ class MerchantController extends Controller
             // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
             // Hanya count redemptions yang ada matching click dari merchant ini
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(DISTINCT tr.id) 
+                ->selectRaw('(SELECT COUNT(DISTINCT tr.coupon) 
                     FROM tokodigi_tselpoin_redeem as tr 
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
@@ -903,6 +1107,14 @@ class MerchantController extends Controller
 
         if (!$merchant) {
             abort(404, 'Merchant tidak ditemukan');
+        }
+
+        // Validasi link_status - jika 0 (nonaktif), link pelanggan tidak dapat diakses
+        // Gunakan null coalescing untuk handle jika kolom belum ada (default = 1 untuk backward compatibility)
+        $linkStatus = $merchant->link_status ?? 1;
+        if (!$linkStatus) {
+            $merchantName = $merchant->nama_merchant ?? 'merchant ini';
+            abort(403, 'Link ' . $merchantName . ' saat ini tidak dapat diakses. Silakan hubungi merchant untuk informasi lebih lanjut.');
         }
 
         // Ambil semua voucher/keyword yang approved untuk merchant ini
@@ -1120,7 +1332,6 @@ class MerchantController extends Controller
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
-                'tr.id',
                 'tr.created_date as created_at',
                 'tr.msisdn',
                 'tr.keyword_desc as nama_produk',
@@ -1732,7 +1943,6 @@ class MerchantController extends Controller
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
-                'tr.id',
                 'tr.created_date as created_at',
                 'tr.msisdn',
                 'tr.keyword_desc as nama_produk',
@@ -2027,6 +2237,49 @@ class MerchantController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Gagal memperbarui status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle link status merchant (mengaktifkan/menonaktifkan akses link pelanggan)
+     */
+    public function toggleLinkStatus(Request $request, $id)
+    {
+        // Only admin with can_approve = 1 can access
+        if (!Auth::check() || !Auth::user()->can_approve) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            $merchant = Merchant::findOrFail($id);
+            $oldLinkStatus = $merchant->link_status;
+            $merchant->link_status = $merchant->link_status ? 0 : 1;
+            $merchant->save();
+
+            Log::info('Merchant link status toggled', [
+                'merchant_id' => $id,
+                'old_link_status' => $oldLinkStatus,
+                'new_link_status' => $merchant->link_status,
+                'admin_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Link status merchant berhasil diperbarui',
+                'link_status' => (bool)$merchant->link_status,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling merchant link status: ' . $e->getMessage(), [
+                'merchant_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui link status: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -2575,6 +2828,41 @@ class MerchantController extends Controller
      */
     public function trackAndRedirect(Request $request, $merchantId, $keywordId = null)
     {
+        // 1. IP LIMIT CHECK (Backend Security)
+        // Cek apakah IP ini sudah melebihi batas harian (100 klik)
+        $today = now()->format('Y-m-d');
+        $ip = $request->ip();
+        
+        $dailyClicks = \App\Models\ClickHistory::where('ip_address', $ip)
+            ->whereDate('clicked_at', $today)
+            ->count();
+
+        if ($dailyClicks > 20) {
+            // Lempar error 403 dengan pesan khusus "Bot" agar ditangkap oleh view 403.blade.php
+            abort(403, 'Maaf terdeteksi Bot. IP Address Anda telah diblokir sementara karena aktivitas yang tidak wajar. Silakan coba lagi besok.');
+        }
+
+        // 2. ReCAPTCHA Verification
+        $recaptchaToken = $request->input('g_recaptcha_response') ?? $request->query('g_recaptcha_response');
+        
+        if ($recaptchaToken) {
+            $secret = config('services.recaptcha.secret') ?? env('RECAPTCHA_SECRET_KEY');
+            
+            if ($secret) {
+                $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => $secret,
+                    'response' => $recaptchaToken,
+                    'remoteip' => $request->ip(),
+                ]);
+                
+                $verification = $response->json();
+                
+                if (!$verification['success']) {
+                    return redirect()->route('home')->with('error', 'Verifikasi keamanan gagal. Silakan coba lagi.');
+                }
+            }
+        }
+
         // Track click menggunakan ClickHistoryController
         \App\Http\Controllers\ClickHistoryController::recordClick($merchantId, $keywordId, $request);
 
@@ -2595,4 +2883,350 @@ class MerchantController extends Controller
         // Jika tidak ada link, redirect ke home
         return redirect()->route('home')->with('error', 'Link tidak ditemukan');
     }
+
+    /**
+     * API endpoint to resolve Google Maps URL
+     */
+    public function resolveGmapUrl(Request $request)
+    {
+        $url = $request->query('url');
+        if (!$url) {
+            return response()->json(['error' => 'URL required'], 400);
+        }
+
+        try {
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS => 5,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            curl_exec($ch);
+            $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200 && $finalUrl) {
+                return response()->json(['final_url' => $finalUrl]);
+            }
+
+            return response()->json(['error' => 'Failed to resolve URL'], 400);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to resolve URL'], 500);
+        }
+    }
+
+    /**
+     * API endpoint for Google Maps Geocoding
+     */
+    public function geocode(Request $request)
+    {
+        $address = $request->query('address');
+        if (!$address) {
+            return response()->json(['error' => 'Address required'], 400);
+        }
+
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return response()->json(['error' => 'Google Maps API key not configured'], 500);
+        }
+
+        try {
+            $encodedAddress = urlencode($address);
+            $url = "https://maps.googleapis.com/maps/api/geocode/json?address={$encodedAddress}&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                return response()->json(json_decode($response, true));
+            }
+
+            return response()->json(['error' => 'Geocoding failed'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Geocoding failed'], 500);
+        }
+    }
+
+    /**
+     * API endpoint for Google Maps Place Details
+     */
+    public function placeDetails(Request $request)
+    {
+        $placeId = $request->query('place_id');
+        if (!$placeId) {
+            return response()->json(['error' => 'Place ID required'], 400);
+        }
+
+        $apiKey = config('services.google_maps.api_key');
+        if (!$apiKey) {
+            return response()->json(['error' => 'Google Maps API key not configured'], 500);
+        }
+
+        try {
+            $url = "https://maps.googleapis.com/maps/api/place/details/json?place_id={$placeId}&fields=geometry&key={$apiKey}";
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode === 200) {
+                return response()->json(json_decode($response, true));
+            }
+
+            return response()->json(['error' => 'Place details failed'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Place details failed'], 500);
+        }
+    }
+
+    /**
+     * Get all Google Maps locations untuk merchant
+     */
+    public function getGmapsLocations($id)
+    {
+        $merchant = Merchant::findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $merchant->getGmapsLocations()
+        ]);
+    }
+
+    /**
+     * Add new Google Maps location untuk merchant
+     */
+    public function addGmapsLocation(Request $request, $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'link_gmap' => 'required|string|max:500',
+            'radius' => 'nullable|integer|min:0|max:100000',
+        ]);
+
+        try {
+            $link = $this->convertGmapUrl($validated['link_gmap']);
+            if (!$link) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat memproses link Google Maps'
+                ], 400);
+            }
+
+            $merchant->addGmapsLocation($link, $validated['radius'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lokasi berhasil ditambahkan',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error adding gmaps location:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan lokasi'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update Google Maps location untuk merchant
+     */
+    public function updateGmapsLocation(Request $request, $id, $locationIndex)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'link_gmap' => 'required|string|max:500',
+            'radius' => 'nullable|integer|min:0|max:100000',
+        ]);
+
+        try {
+            $link = $this->convertGmapUrl($validated['link_gmap']);
+            if (!$link) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat memproses link Google Maps'
+                ], 400);
+            }
+
+            $merchant->updateGmapsLocation($locationIndex, $link, $validated['radius'] ?? null);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lokasi berhasil diupdate',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating gmaps location:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate lokasi'
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove Google Maps location dari merchant
+     */
+    public function removeGmapsLocation(Request $request, $id, $locationIndex)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        try {
+            $merchant->removeGmapsLocation($locationIndex);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lokasi berhasil dihapus',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error removing gmaps location:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus lokasi'
+            ], 500);
+        }
+    }
+
+    /**
+     * Sync all Google Maps locations untuk merchant (replace semua sekaligus)
+     */
+    public function syncGmapsLocations(Request $request, $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        // Check authorization
+        if (!$this->canEditMerchant($merchant)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit merchant ini.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'locations' => 'required|array',
+            'locations.*.link' => 'required|string|max:500',
+            'locations.*.radius' => 'nullable|integer|min:0|max:100000',
+        ]);
+
+        try {
+            $processedLocations = [];
+            
+            foreach ($validated['locations'] as $locationData) {
+                $link = $this->convertGmapUrl($locationData['link']);
+                if (!$link) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tidak dapat memproses salah satu link Google Maps'
+                    ], 400);
+                }
+
+                $processedLocations[] = [
+                    'link' => $link,
+                    'radius' => $locationData['radius'] ?? null
+                ];
+            }
+
+            // Set semua locations sekaligus
+            $merchant->link_gmaps = count($processedLocations) > 0 ? $processedLocations : null;
+            $merchant->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Semua lokasi berhasil disimpan',
+                'data' => $merchant->getGmapsLocations()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error syncing gmaps locations:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan lokasi Google Maps'
+            ], 500);
+        }
+    }
+
+    /**
+     * Check if user is within radius of any merchant location
+     * Used by mobile app / customer facing endpoint
+     */
+    public function checkUserWithinRadius(Request $request, $id)
+    {
+        $merchant = Merchant::findOrFail($id);
+
+        $validated = $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        try {
+            $result = $merchant->isUserWithinAnyRadius(
+                $validated['latitude'],
+                $validated['longitude']
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $result
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error checking radius:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memeriksa radius'
+            ], 500);
+        }
+    }
 }
+

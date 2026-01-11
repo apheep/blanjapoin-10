@@ -10,7 +10,13 @@
   @vite(['resources/css/app.css','resources/js/app.js'])
 
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  
   <style>
+    /* Hide reCAPTCHA badge (overlaps with WA button) */
+    .grecaptcha-badge { 
+        visibility: hidden; 
+    }
+
     /* ===== WhatsApp CS Floating Button (anti bentrok) ===== */
     .cs-wa-btn{
       position: fixed;
@@ -52,6 +58,21 @@
     /* default: text hidden (mobile icon only) */
     .cs-wa-text{
       display: none;
+    }
+
+    /* Mobile: smaller size */
+    @media (max-width: 768px) {
+      .cs-wa-btn{
+        width: 52px;
+        height: 52px;
+        right: 14px;
+        bottom: 14px;
+      }
+
+      .cs-wa-svg{
+        width: 28px;
+        height: 28px;
+      }
     }
 
     /* Desktop: hover expand (hanya device yang bisa hover) */
@@ -318,6 +339,9 @@
     </section>
 
     @php
+        // Ensure $keywords is available (fallback to empty collection if not set)
+        $keywords = $keywords ?? collect();
+
         // Helper function to check if category has data
         $hasCategoryData = function($category) use ($keywords) {
             return $keywords->filter(function ($keyword) use ($category) {
@@ -466,6 +490,7 @@
     <span class="cs-wa-text">Customer Service</span>
   </a>
 
+  @include('partials.desktop-alert')
 
   <script>
    // Page Load Animation
@@ -1297,25 +1322,33 @@
    // Run immediately and also after a short delay to catch any dynamically loaded content
    initializeFiltersAndSorting();
    setTimeout(initializeFiltersAndSorting, 500);
+  </script>
 
-   // Function for redeem button click (welcome page - no location validation)
-   function handleRedeemClick(redeemUrl, merchantId = null, keywordId = null) {
-     if (redeemUrl && redeemUrl !== '#') {
-       // Track click before redirect (if tracking function exists)
-       if (typeof trackClick === 'function' && merchantId) {
-         trackClick(merchantId, keywordId).then(() => {
-           // Open redeem page in new tab after tracking
-           window.open(redeemUrl, '_blank');
-         }).catch(() => {
-           // If tracking fails, still open the page
-           window.open(redeemUrl, '_blank');
-         });
-       } else {
-         // If no tracking, direct redeem
-         window.open(redeemUrl, '_blank');
-       }
-     }
-   }
+  @include('partials.redeem-script')
+
+  <script>
+    // --- Geolocation Logic (Specific for welcome page) ---
+    // Karena redeem-script menghandle runRedeemFlow(lat, lng), kita perlu passing userLat/userLng ke sana
+    // Tapi redeem-script sudah punya logic geolocation sendiri di dalamnya!
+    // Jadi kode di bawah ini sebenarnya redundant, TAPI...
+    // redeem-script menggunakan 'navigator.geolocation.getCurrentPosition' saat tombol diklik.
+    // Kode di bawah ini mengambil lokasi saat PAGE LOAD.
+    
+    // Kita biarkan saja untuk backward compatibility jika ada fitur lain yang butuh userLat/userLng global.
+    let userLat = null;
+    let userLng = null;
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
+            },
+            (error) => {
+                // Ignore
+            }
+        );
+    }
   </script>
    </body>
 </html>

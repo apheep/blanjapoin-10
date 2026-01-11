@@ -3,229 +3,572 @@
 namespace App\Http\Controllers;
 
 use App\Models\PortalUser;
-use App\Services\UserGoogle;
+use App\Models\Merchant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class PortalAuthController extends Controller
 {
+    private $apiBaseUrl = 'https://mynami.id/obc/api/user/code';
+    private $apiVerifyUrl = 'https://mynami.id/obc/api/user/checkcode';
+    
+    /**
+     * Make cURL request to external API
+     * Mimics AJAX request format exactly like browser
+     */
+    private function makeCurlRequest($url, $data, $headers = [])
+    {
+        $ch = curl_init();
+        
+        // Default headers exactly like browser AJAX request
+        $defaultHeaders = [
+            'Content-Type: application/json',
+            'Accept: application/json, text/javascript, */*; q=0.01',
+            'X-Requested-With: XMLHttpRequest',
+            'Referer: https://mynami.id/',
+            'Origin: https://mynami.id',
+            'Accept-Language: en-US,en;q=0.9,id;q=0.8',
+            'Accept-Encoding: gzip, deflate, br',
+            'Connection: keep-alive',
+            'Cache-Control: no-cache',
+            'Pragma: no-cache',
+        ];
+        
+        $allHeaders = array_merge($defaultHeaders, $headers);
+        
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => $allHeaders,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 5,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_ENCODING => '',
+            CURLOPT_COOKIEFILE => '',
+            CURLOPT_COOKIEJAR => '',
+        ]);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        $curlInfo = curl_getinfo($ch);
+        
+        curl_close($ch);
+        
+        if ($error) {
+            Log::error('cURL Error Details', [
+                'error' => $error,
+                'url' => $url,
+                'http_code' => $httpCode,
+                'curl_info' => $curlInfo,
+            ]);
+            throw new \Exception("cURL Error: " . $error);
+        }
+        
+        return [
+            'status' => $httpCode,
+            'body' => $response,
+            'success' => $httpCode >= 200 && $httpCode < 300,
+        ];
+    }
+
     public function showLoginForm(Request $request)
     {
         $returnTo = $request->query('returnTo', $request->session()->get('portal.intended'));
+        $waPic = $request->query('wa_pic');
+        
+        // Log untuk debugging
+        Log::info('Portal Login Form Displayed', [
+            'wa_pic_from_query' => $waPic,
+            'returnTo' => $returnTo,
+            'session_portal_otp_phone_display' => $request->session()->get('portal_otp_phone_display'),
+        ]);
 
         return view('portal-login', [
             'returnTo' => $returnTo,
+            'waPic' => $waPic, // Pass wa_pic untuk auto-fill (dari query parameter)
         ]);
     }
 
-    public function login(Request $request): RedirectResponse
+    public function sendOtp(Request $request)
     {
-        $data = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
+        Log::info('Portal Send OTP Request Received', [
+            'all_input' => $request->all(),
+            'wa_pic' => $request->wa_pic,
+            'otp_type' => $request->otp_type,
         ]);
-
-        $remember = $request->boolean('remember');
-        $returnTo = $request->input('returnTo') ?: $request->session()->pull('portal.intended', route('home'));
-
-        if (Auth::guard('portal')->attempt([
-            'email' => $data['email'],
-            'password' => $data['password'],
-        ], $remember)) {
-            $request->session()->regenerate();
-
-            return redirect()->to($returnTo ?? route('home'));
-        }
-
-        throw ValidationException::withMessages([
-            'email' => __('Email atau password tidak sesuai.'),
-        ]);
-    }
-
-    public function logout(Request $request): RedirectResponse
-    {
-        Auth::guard('portal')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('portal.login');
-    }
-
-    public function redirectToGoogle(Request $request)
-    {
-        $returnTo = $request->query('returnTo');
-
-        if ($returnTo) {
-            $request->session()->put('portal.intended', $returnTo);
-        }
 
         try {
-            $google = new UserGoogle();
-            $authUrl = $google->getAuthUrl();
-            
-            Log::info('Google OAuth redirect', [
-                'auth_url' => $authUrl,
-                'redirect_uri' => url('/auth-google-callback'),
+            $request->validate([
+                'wa_pic' => ['required', 'string'],
+                'otp_type' => ['required', 'in:emailphone,whatsapp,telegram'],
             ]);
-            
-            return redirect($authUrl);
-        } catch (\Exception $e) {
-            Log::error('Google OAuth redirect error', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Portal OTP Validation Failed', [
+                'errors' => $e->errors(),
+                'input' => $request->all(),
             ]);
-            
-            return redirect()->route('portal.login')->withErrors([
-                'google' => 'Konfigurasi Google OAuth tidak valid. Silakan hubungi administrator.',
-            ]);
+            throw $e;
         }
-    }
 
-    public function handleGoogleCallback(Request $request)
-    {
-        $code = $request->query('code');
+        // Normalize input phone untuk pencarian
+        $inputPhone = trim($request->wa_pic);
         
-        if (!$code) {
-            Log::error('Google OAuth callback: No code received', [
-                'request_params' => $request->all(),
-            ]);
-            
-            return redirect()->route('portal.login')->withErrors([
-                'google' => __('Gagal login menggunakan Google. Kode autentikasi tidak ditemukan.'),
+        // Helper function untuk normalize nomor ke format dasar (hanya angka, tanpa prefix)
+        $normalizeToBase = function($phone) {
+            if (empty($phone)) return null;
+            $phone = trim($phone);
+            // Remove semua karakter non-digit
+            $phone = preg_replace('/\D/', '', $phone);
+            // Remove prefix 62 jika ada
+            if (substr($phone, 0, 2) === '62' && strlen($phone) > 2) {
+                $phone = substr($phone, 2);
+            }
+            // Remove leading 0 jika ada
+            if (substr($phone, 0, 1) === '0' && strlen($phone) > 1) {
+                $phone = substr($phone, 1);
+            }
+            return $phone;
+        };
+        
+        $basePhone = $normalizeToBase($inputPhone);
+        
+        // Cari merchant dengan berbagai format nomor
+        // Gunakan base phone (hanya angka) untuk pencarian yang lebih fleksibel
+        $merchant = Merchant::where(function($query) use ($inputPhone, $basePhone) {
+            // Cari dengan format asli (exact match)
+            $query->where('wa_pic', $inputPhone)
+                  // Cari dengan format +62 + base
+                  ->orWhere('wa_pic', '+62' . $basePhone)
+                  // Cari dengan format 62 + base
+                  ->orWhere('wa_pic', '62' . $basePhone)
+                  // Cari dengan format 0 + base
+                  ->orWhere('wa_pic', '0' . $basePhone)
+                  // Cari dengan format base saja (tanpa prefix)
+                  ->orWhere('wa_pic', $basePhone)
+                  // Cari dengan LIKE untuk handle variasi format (jika ada spasi atau karakter lain)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(wa_pic, '+', ''), ' ', ''), '-', '') LIKE ?", ['%' . $basePhone . '%']);
+        })->first();
+        
+        Log::info('Merchant Lookup', [
+            'input_wa_pic' => $inputPhone,
+            'base_phone' => $basePhone,
+            'merchant_found' => $merchant ? true : false,
+            'merchant_id' => $merchant ? $merchant->id : null,
+            'merchant_name' => $merchant ? $merchant->nama_merchant : null,
+            'merchant_wa_pic' => $merchant ? $merchant->wa_pic : null,
+        ]);
+
+        if (!$merchant) {
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+                'otp_type' => $request->otp_type,
+            ])->withErrors([
+                'wa_pic' => 'Nomor WhatsApp tidak terdaftar sebagai PIC merchant.',
             ]);
         }
 
+        // Normalize nomor untuk API (format: 62xxx)
+        $phone = '62' . $basePhone;
+
         try {
-            $google = new UserGoogle();
-            $userInfo = $google->getProfile($code);
+            // Build API URL
+            $otpTypeLower = strtolower($request->otp_type);
+            $apiUrl = "{$this->apiBaseUrl}/{$otpTypeLower}";
             
-            if (!$userInfo) {
-                Log::error('Google OAuth callback: Failed to get profile', [
-                    'code' => $code,
-                ]);
+            $requestData = [
+                'phone' => $phone,
+                'name' => 'BLANJAPOIN MERCHANT',
+            ];
+            
+            Log::info('Preparing Portal API Call (cURL)', [
+                'url' => $apiUrl,
+                'phone' => $phone,
+                'type' => $request->otp_type,
+                'request_data' => $requestData,
+            ]);
+
+            // Make API call using cURL
+            $response = $this->makeCurlRequest($apiUrl, $requestData);
+            
+            Log::info('Portal API Response', [
+                'status' => $response['status'],
+                'body' => $response['body'],
+                'success' => $response['success'],
+            ]);
+
+            if (!$response['success']) {
+                $errorMessage = 'Gagal mengirim OTP.';
                 
-                return redirect()->route('portal.login')->withErrors([
-                    'google' => __('Gagal login menggunakan Google. Tidak dapat mengambil data profil.'),
+                if ($response['status'] == 404) {
+                    $errorMessage = 'Endpoint API tidak ditemukan (404). Pastikan URL endpoint benar: ' . $apiUrl;
+                } elseif ($response['status'] == 401) {
+                    $errorMessage = 'Unauthorized. Mungkin perlu API key atau authentication.';
+                } elseif ($response['status'] == 403) {
+                    $errorMessage = 'Forbidden. Akses ditolak oleh server.';
+                } elseif ($response['status'] == 500) {
+                    $errorMessage = 'Server error. Silakan coba lagi nanti.';
+                } else {
+                    $errorMessage = 'Gagal mengirim OTP. Status: ' . $response['status'];
+                }
+
+                Log::error('Portal OTP API Error', [
+                    'status' => $response['status'],
+                    'body' => $response['body'],
+                    'phone' => $phone,
+                    'type' => $request->otp_type,
+                    'url' => $apiUrl,
+                ]);
+
+                return back()->withInput([
+                    'wa_pic' => $request->wa_pic,
+                    'otp_type' => $request->otp_type,
+                ])->withErrors([
+                    'wa_pic' => $errorMessage,
                 ]);
             }
+
+            // Parse response
+            $responseData = json_decode($response['body'], true);
+            if (!$responseData) {
+                $responseText = trim($response['body']);
+                $responseData = ['message' => $responseText];
+            }
             
-            // Log semua data yang diterima dari Google
-            Log::info('=== Google OAuth Callback Data ===', [
-                'email' => $userInfo->getEmail(),
-                'name' => $userInfo->getName(),
-                'id' => $userInfo->getId(),
-                'picture' => $userInfo->getPicture(),
-                'verified_email' => $userInfo->getVerifiedEmail(),
+            // Store phone and type in session for OTP verification
+            $request->session()->put('portal_otp_phone', $phone);
+            $request->session()->put('portal_otp_phone_display', $request->wa_pic);
+            $request->session()->put('portal_otp_type', $request->otp_type);
+            $request->session()->put('portal_otp_requested_at', Carbon::now()->toDateTimeString());
+
+            // Handle response based on type
+            if ($request->otp_type === 'emailphone') {
+                return back()->withInput([
+                    'wa_pic' => $request->wa_pic,
+                    'otp_type' => $request->otp_type,
+                ])->with('success', 'OTP telah dikirim ke email Anda. Silakan cek inbox atau folder spam.');
+            } elseif ($request->otp_type === 'whatsapp') {
+                $redirectUrl = $responseData['whatsapp'] ?? $responseData['redirect_url'] ?? $responseData['redirect'] ?? $responseData['link'] ?? null;
+                
+                if ($redirectUrl) {
+                    $request->session()->put('portal_otp_redirect_url', $redirectUrl);
+
+                    return back()->withInput([
+                        'wa_pic' => $request->wa_pic,
+                        'otp_type' => $request->otp_type,
+                    ])->with([
+                        'success' => 'OTP telah dikirim. Silakan buka aplikasi WhatsApp Anda.',
+                        'redirect_url' => $redirectUrl,
+                        'otp_type' => $request->otp_type,
+                    ]);
+                } else {
+                    Log::warning('No whatsapp URL in response', [
+                        'response' => $responseData,
+                    ]);
+                    return back()->withInput([
+                        'wa_pic' => $request->wa_pic,
+                        'otp_type' => $request->otp_type,
+                    ])->with('success', 'OTP telah dikirim. Silakan cek aplikasi WhatsApp Anda.');
+                }
+            } elseif ($request->otp_type === 'telegram') {
+                $redirectUrl = $responseData['telegram'] ?? $responseData['redirect_url'] ?? $responseData['redirect'] ?? $responseData['link'] ?? null;
+                
+                if ($redirectUrl) {
+                    $request->session()->put('portal_otp_redirect_url', $redirectUrl);
+
+                    return back()->withInput([
+                        'wa_pic' => $request->wa_pic,
+                        'otp_type' => $request->otp_type,
+                    ])->with([
+                        'success' => 'OTP telah dikirim. Silakan buka aplikasi Telegram Anda.',
+                        'redirect_url' => $redirectUrl,
+                        'otp_type' => $request->otp_type,
+                    ]);
+                } else {
+                    Log::warning('No telegram URL in response', [
+                        'response' => $responseData,
+                    ]);
+                    return back()->withInput([
+                        'wa_pic' => $request->wa_pic,
+                        'otp_type' => $request->otp_type,
+                    ])->with('success', 'OTP telah dikirim. Silakan cek aplikasi Telegram Anda.');
+                }
+            }
+
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+                'otp_type' => $request->otp_type,
+            ])->with('success', 'OTP telah dikirim.');
+
+        } catch (\Exception $e) {
+            Log::error('Portal OTP API Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'phone' => $phone,
+                'type' => $request->otp_type,
+            ]);
+
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+                'otp_type' => $request->otp_type,
+            ])->withErrors([
+                'wa_pic' => 'Gagal mengirim OTP: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function authenticate(Request $request)
+    {
+        $request->validate([
+            'wa_pic' => ['required', 'string'],
+            'otp' => ['required', 'string', 'size:6'],
+        ]);
+
+        // Normalize input phone untuk pencarian
+        $inputPhone = trim($request->wa_pic);
+        
+        // Helper function untuk normalize nomor ke format dasar (hanya angka, tanpa prefix)
+        $normalizeToBase = function($phone) {
+            if (empty($phone)) return null;
+            $phone = trim($phone);
+            // Remove semua karakter non-digit
+            $phone = preg_replace('/\D/', '', $phone);
+            // Remove prefix 62 jika ada
+            if (substr($phone, 0, 2) === '62' && strlen($phone) > 2) {
+                $phone = substr($phone, 2);
+            }
+            // Remove leading 0 jika ada
+            if (substr($phone, 0, 1) === '0' && strlen($phone) > 1) {
+                $phone = substr($phone, 1);
+            }
+            return $phone;
+        };
+        
+        $basePhone = $normalizeToBase($inputPhone);
+        
+        // Cari merchant dengan berbagai format nomor
+        $merchant = Merchant::where(function($query) use ($inputPhone, $basePhone) {
+            // Cari dengan format asli (exact match)
+            $query->where('wa_pic', $inputPhone)
+                  // Cari dengan format +62 + base
+                  ->orWhere('wa_pic', '+62' . $basePhone)
+                  // Cari dengan format 62 + base
+                  ->orWhere('wa_pic', '62' . $basePhone)
+                  // Cari dengan format 0 + base
+                  ->orWhere('wa_pic', '0' . $basePhone)
+                  // Cari dengan format base saja (tanpa prefix)
+                  ->orWhere('wa_pic', $basePhone)
+                  // Cari dengan LIKE untuk handle variasi format (jika ada spasi atau karakter lain)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(wa_pic, '+', ''), ' ', ''), '-', '') LIKE ?", ['%' . $basePhone . '%']);
+        })->first();
+        
+        Log::info('Merchant Lookup (Authenticate)', [
+            'input_wa_pic' => $inputPhone,
+            'base_phone' => $basePhone,
+            'merchant_found' => $merchant ? true : false,
+            'merchant_id' => $merchant ? $merchant->id : null,
+            'merchant_wa_pic' => $merchant ? $merchant->wa_pic : null,
+        ]);
+
+        if (!$merchant) {
+            $otpType = $request->session()->get('portal_otp_type');
+            
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+                'otp_type' => $otpType,
+            ])->withErrors([
+                'wa_pic' => 'Nomor WhatsApp tidak terdaftar sebagai PIC merchant.',
+            ]);
+        }
+
+        // Normalize nomor untuk API (format: 62xxx)
+        $phone = '62' . $basePhone;
+
+        // Check if OTP was requested (from session)
+        $otpRequestedAt = $request->session()->get('portal_otp_requested_at');
+        if (!$otpRequestedAt) {
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+            ])->withErrors([
+                'otp' => 'Silakan request OTP terlebih dahulu.',
+            ]);
+        }
+
+        // Check if OTP is expired (10 minutes)
+        $requestedTime = Carbon::parse($otpRequestedAt);
+        if (Carbon::now()->diffInMinutes($requestedTime) > 10) {
+            $request->session()->forget(['portal_otp_requested_at', 'portal_otp_phone', 'portal_otp_type', 'portal_otp_phone_display']);
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+            ])->withErrors([
+                'otp' => 'OTP telah kadaluarsa. Silakan request OTP baru.',
+            ]);
+        }
+
+        // Verify OTP format (6 digits)
+        if (!preg_match('/^\d{6}$/', $request->otp)) {
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+            ])->withErrors([
+                'otp' => 'Format OTP tidak valid. Harus 6 digit angka.',
+            ]);
+        }
+
+        // Get OTP type from session
+        $otpType = $request->session()->get('portal_otp_type', 'emailphone');
+        
+        // Map otp_type to API method
+        $methodMap = [
+            'emailphone' => 'EMAIL',
+            'whatsapp' => 'WA',
+            'telegram' => 'TELE',
+        ];
+        $apiMethod = $methodMap[$otpType] ?? 'EMAIL';
+
+        // Verify OTP with API
+        try {
+            $verifyData = [
+                'method' => $apiMethod,
+                'phone' => $phone,
+                'otp' => $request->otp,
+            ];
+            
+            Log::info('Portal Verifying OTP with API', [
+                'url' => $this->apiVerifyUrl,
+                'phone' => $phone,
+                'method' => $apiMethod,
+                'otp' => $request->otp,
+            ]);
+
+            $verifyResponse = $this->makeCurlRequest($this->apiVerifyUrl, $verifyData);
+
+            Log::info('Portal OTP Verification Response', [
+                'status' => $verifyResponse['status'],
+                'body_preview' => substr($verifyResponse['body'], 0, 500),
+                'success' => $verifyResponse['success'],
+            ]);
+
+            if (!$verifyResponse['success']) {
+                $errorMessage = 'OTP tidak valid.';
+                
+                try {
+                    $errorData = json_decode($verifyResponse['body'], true);
+                    if (isset($errorData['message'])) {
+                        $errorMessage = $errorData['message'];
+                    } elseif (isset($errorData['error'])) {
+                        $errorMessage = $errorData['error'];
+                    }
+                } catch (\Exception $e) {
+                    // Use default error message
+                }
+
+                Log::error('Portal OTP Verification Failed', [
+                    'status' => $verifyResponse['status'],
+                    'body' => $verifyResponse['body'],
+                    'phone' => $phone,
+                ]);
+
+                return back()->withInput([
+                    'wa_pic' => $request->wa_pic,
+                ])->withErrors([
+                    'otp' => $errorMessage,
+                ]);
+            }
+
+            // OTP is valid, create or update PortalUser
+            $userData = json_decode($verifyResponse['body'], true);
+            
+            // Normalize wa_pic untuk konsistensi (format: 62xxx)
+            $normalizedWaPic = $phone; // $phone sudah dinormalisasi ke format 62xxx
+            
+            Log::info('Portal OTP Verified Successfully', [
+                'merchant_id' => $merchant->id,
+                'merchant_name' => $merchant->nama_merchant,
+                'merchant_wa_pic' => $merchant->wa_pic,
+                'normalized_wa_pic' => $normalizedWaPic,
             ]);
             
-            $user = PortalUser::updateOrCreate(
-                ['email' => $userInfo->getEmail()],
+            // Create or update PortalUser dengan wa_pic yang sudah dinormalisasi
+            $portalUser = PortalUser::updateOrCreate(
+                ['wa_pic' => $normalizedWaPic],
                 [
-                    'name' => $userInfo->getName(),
-                    'google_id' => $userInfo->getId(),
-                    'avatar' => $userInfo->getPicture(),
+                    'name' => $merchant->nama_merchant,
+                    'merchant_id' => $merchant->id,
+                    'wa_pic' => $normalizedWaPic, // Pastikan wa_pic disimpan dalam format konsisten
                     'password' => Hash::make(Str::random(32)),
                 ]
             );
 
             Log::info('PortalUser created/updated', [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'user_name' => $user->name,
-                'google_id' => $user->google_id,
-            ]);
-
-            Auth::guard('portal')->login($user, true);
-
-            $redirectTo = $request->session()->pull('portal.intended', route('home'));
-
-            Log::info('Redirecting after Google login', [
-                'redirect_to' => $redirectTo,
-                'user_email' => $user->email,
-            ]);
-
-            return redirect()->to($redirectTo);
-            
-        } catch (\Exception $exception) {
-            Log::error('Google OAuth callback error', [
-                'message' => $exception->getMessage(),
-                'trace' => $exception->getTraceAsString(),
-                'code' => $code ?? 'not set',
+                'portal_user_id' => $portalUser->id,
+                'merchant_id' => $merchant->id,
+                'wa_pic' => $portalUser->wa_pic,
             ]);
             
-            return redirect()->route('portal.login')->withErrors([
-                'google' => __('Gagal login menggunakan Google. Silakan coba lagi.'),
+        } catch (\Exception $e) {
+            Log::error('Portal OTP Verification Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'phone' => $phone,
+            ]);
+
+            return back()->withInput([
+                'wa_pic' => $request->wa_pic,
+            ])->withErrors([
+                'otp' => 'Gagal memverifikasi OTP. Silakan coba lagi.',
             ]);
         }
+
+        // OTP is valid, login user with portal guard
+        // JANGAN regenerate session karena akan mempengaruhi guard lain (admin)
+        // Guard portal sudah terpisah, jadi tidak perlu regenerate session
+        Auth::guard('portal')->login($portalUser, true);
+
+        Log::info('Portal User logged in successfully', [
+            'portal_user_id' => $portalUser->id,
+            'merchant_id' => $merchant->id,
+            'wa_pic' => $portalUser->wa_pic,
+            'admin_session_active' => Auth::guard('web')->check(), // Log status admin session
+        ]);
+
+        // Clear OTP session data (hanya data portal, tidak mempengaruhi session admin)
+        $request->session()->forget(['portal_otp_redirect_url', 'portal_otp_type', 'portal_otp_phone', 'portal_otp_phone_display', 'portal_otp_requested_at']);
+
+        // Redirect to intended URL or home
+        $redirectTo = $request->session()->pull('portal.intended', route('home'));
+        return redirect()->to($redirectTo);
     }
 
-    /**
-     * Debug method untuk melihat data yang diterima dari Google OAuth
-     * Hapus method ini di production atau protect dengan middleware
-     */
-    public function debugGoogleCallback(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
-        if (!config('app.debug')) {
-            abort(404);
-        }
-
-        $code = $request->query('code');
+        // Hanya logout guard portal, jangan invalidate semua session
+        // Ini akan menjaga session admin tetap aktif
+        Auth::guard('portal')->logout();
         
-        if (!$code) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'No code received',
-                'request_params' => $request->all(),
-            ], 400, [], JSON_PRETTY_PRINT);
-        }
+        // Hanya clear session data portal, tidak invalidate semua session
+        $request->session()->forget([
+            'portal_otp_redirect_url',
+            'portal_otp_type',
+            'portal_otp_phone',
+            'portal_otp_phone_display',
+            'portal_otp_requested_at',
+            'portal.intended'
+        ]);
+        
+        // JANGAN regenerate token karena akan mempengaruhi guard lain
+        // $request->session()->regenerateToken();
 
-        try {
-            $google = new UserGoogle();
-            $userInfo = $google->getProfile($code);
-            
-            if (!$userInfo) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Failed to get profile from Google',
-                ], 500, [], JSON_PRETTY_PRINT);
-            }
-            
-            $data = [
-                'email' => $userInfo->getEmail(),
-                'name' => $userInfo->getName(),
-                'id' => $userInfo->getId(),
-                'picture' => $userInfo->getPicture(),
-                'verified_email' => $userInfo->getVerifiedEmail(),
-            ];
-            
-            // Log juga ke file
-            Log::info('=== DEBUG: Google OAuth Callback Data ===', $data);
-            
-            // Return JSON untuk mudah dibaca
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data berhasil diterima dari Google',
-                'data' => $data,
-                'note' => 'Cek juga di storage/logs/laravel.log untuk detail lengkap'
-            ], 200, [], JSON_PRETTY_PRINT);
-            
-        } catch (\Exception $exception) {
-            Log::error('DEBUG: Google OAuth callback error', [
-                'message' => $exception->getMessage(),
-                'trace' => $exception->getTraceAsString(),
-            ]);
-            
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal mendapatkan data dari Google',
-                'error' => $exception->getMessage(),
-            ], 500, [], JSON_PRETTY_PRINT);
-        }
+        return redirect()->route('portal.login');
     }
 }
 
