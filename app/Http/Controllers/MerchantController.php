@@ -274,6 +274,17 @@ class MerchantController extends Controller
                     AND tr.program = "BLANJAPOIN" 
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
+        } elseif ($sortBy === 'link_gmaps') {
+            // Sort by whether merchant has Google Maps link or not
+            // Merchants with links come first in asc, last in desc
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('CASE 
+                    WHEN link_gmaps IS NOT NULL AND link_gmaps != "null" AND JSON_LENGTH(link_gmaps) > 0 THEN 1
+                    WHEN link_gmap IS NOT NULL AND link_gmap != "" THEN 1
+                    ELSE 0
+                END as has_gmaps_link')
+                ->orderBy('has_gmaps_link', $sortDir)
+                ->orderBy('id', $sortDir); // Secondary sort by ID for consistency
         } else {
             // For other columns, use standard orderBy
             $merchantsQuery->orderBy($sortBy, $sortDir);
@@ -1108,6 +1119,17 @@ class MerchantController extends Controller
                     AND tr.program = "BLANJAPOIN" 
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
+        } elseif ($sortBy === 'link_gmaps') {
+            // Sort by whether merchant has Google Maps link or not
+            // Merchants with links come first in asc, last in desc
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('CASE 
+                    WHEN link_gmaps IS NOT NULL AND link_gmaps != "null" AND JSON_LENGTH(link_gmaps) > 0 THEN 1
+                    WHEN link_gmap IS NOT NULL AND link_gmap != "" THEN 1
+                    ELSE 0
+                END as has_gmaps_link')
+                ->orderBy('has_gmaps_link', $sortDir)
+                ->orderBy('id', $sortDir); // Secondary sort by ID for consistency
         } else {
             $merchantsQuery->orderBy($sortBy, $sortDir);
         }
