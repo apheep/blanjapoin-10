@@ -274,6 +274,17 @@ class MerchantController extends Controller
                     AND tr.program = "BLANJAPOIN" 
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
+        } elseif ($sortBy === 'link_gmaps') {
+            // Sort by whether merchant has Google Maps link or not
+            // Merchants with links come first in asc, last in desc
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('CASE 
+                    WHEN link_gmaps IS NOT NULL AND link_gmaps != "null" AND JSON_LENGTH(link_gmaps) > 0 THEN 1
+                    WHEN link_gmap IS NOT NULL AND link_gmap != "" THEN 1
+                    ELSE 0
+                END as has_gmaps_link')
+                ->orderBy('has_gmaps_link', $sortDir)
+                ->orderBy('id', $sortDir); // Secondary sort by ID for consistency
         } else {
             // For other columns, use standard orderBy
             $merchantsQuery->orderBy($sortBy, $sortDir);
@@ -441,6 +452,11 @@ class MerchantController extends Controller
             'email_pic'      => 'nullable|email|max:255',
             'daerah'         => 'nullable|string|max:255',
             'detail_alamat'  => 'nullable|string',
+            // Multiple Google Maps links support
+            'link_gmaps'     => 'nullable|array',
+            'link_gmaps.*.link' => 'nullable|string|max:500',
+            'link_gmaps.*.lock_radius' => 'nullable|integer|min:1|max:100000',
+            // Backward compatibility dengan single link_gmap
             'link_gmap'      => 'nullable|string|max:500',
             'radius'         => 'nullable|integer|min:0|max:100000',
             'logo_merchant'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -448,6 +464,9 @@ class MerchantController extends Controller
         ], [
             'wa_pic.regex' => 'Nomor WhatsApp harus dimulai dengan +62 dan diikuti 9-12 digit angka (format: +6281234567890)',
             'email_pic.email' => 'Email PIC harus dalam format email yang valid',
+            'link_gmaps.*.lock_radius.integer' => 'Radius harus berupa angka',
+            'link_gmaps.*.lock_radius.min' => 'Radius minimal 1 meter',
+            'link_gmaps.*.lock_radius.max' => 'Radius maksimal 100000 meter (100 km)',
             'radius.integer' => 'Radius harus berupa angka',
             'radius.min' => 'Radius minimal 0 meter',
             'radius.max' => 'Radius maksimal 100000 meter (100 km)',
@@ -498,6 +517,54 @@ class MerchantController extends Controller
             return $value;
         };
         
+        // =====================
+        //  HANDLE MULTIPLE GOOGLE MAPS LINKS
+        // =====================
+        $linkGmapsArray = null;
+        
+        // Process link_gmaps array jika ada
+        if ($request->has('link_gmaps') && is_array($request->input('link_gmaps'))) {
+            $processedLocations = [];
+            
+            foreach ($request->input('link_gmaps') as $location) {
+                // Skip jika link kosong
+                if (!isset($location['link']) || trim($location['link']) === '') {
+                    continue;
+                }
+                
+                $linkConverted = $this->convertGmapUrl(trim($location['link']));
+                if ($linkConverted) {
+                    $processedLocations[] = [
+                        'link' => $linkConverted,
+                        'radius' => isset($location['lock_radius']) && $location['lock_radius'] !== '' && $location['lock_radius'] !== null
+                                    ? (int)$location['lock_radius']
+                                    : null
+                    ];
+                }
+            }
+            
+            // Jika ada lokasi yang valid, simpan
+            if (count($processedLocations) > 0) {
+                $linkGmapsArray = $processedLocations;
+            }
+        }
+        // Fallback ke single link_gmap jika tidak ada link_gmaps array
+        elseif ($request->filled('link_gmap')) {
+            $linkConverted = $this->convertGmapUrl($request->input('link_gmap'));
+            $radius = $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
+                      ? (int)$request->input('radius')
+                      : null;
+            
+            if ($linkConverted) {
+                $linkGmapsArray = [
+                    [
+                        'link' => $linkConverted,
+                        'radius' => $radius
+                    ]
+                ];
+            }
+        }
+        
         // SIMPAN DATA KE DATABASE - Pastikan semua field tersimpan
         // Ambil semua field langsung dari request tanpa transformasi untuk lat/long
         // Handle is_active: ambil langsung dari request, default 1 jika tidak ada
@@ -512,17 +579,8 @@ class MerchantController extends Controller
             'email_pic'      => $getValue($request->input('email_pic', null)),
             'daerah'         => $getValue($request->input('daerah', null)),
             'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
-            // Ambil lat dan long sebagai string untuk mempertahankan nilai asli input
-            // 'lat'            => $request->has('lat') && $request->input('lat') !== '' && $request->input('lat') !== null
-            //                     ? (string)$request->input('lat')
-            //                     : null,
-            // 'long'           => $request->has('long') && $request->input('long') !== '' && $request->input('long') !== null
-            //                     ? (string)$request->input('long')
-            //                     : null,
-            'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
-            'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
-                                ? (int)$request->input('radius')
-                                : null,
+            // Multiple Google Maps locations (JSON)
+            'link_gmaps'     => $linkGmapsArray,
             'logo_merchant'  => $logoPath,
             'ktp_pic'        => $ktpPath,
             'is_active'      => (int)$isActive,
@@ -810,6 +868,54 @@ class MerchantController extends Controller
                 $ktpPath = $request->file('ktp_pic')->store('merchants', 'public');
             }
         
+            // =====================
+            //  HANDLE MULTIPLE GOOGLE MAPS LINKS
+            // =====================
+            $linkGmapsArray = null;
+            
+            // Process link_gmaps array jika ada
+            if ($request->has('link_gmaps') && is_array($request->input('link_gmaps'))) {
+                $processedLocations = [];
+                
+                foreach ($request->input('link_gmaps') as $location) {
+                    // Skip jika link kosong
+                    if (!isset($location['link']) || trim($location['link']) === '') {
+                        continue;
+                    }
+                    
+                    $linkConverted = $this->convertGmapUrl(trim($location['link']));
+                    if ($linkConverted) {
+                        $processedLocations[] = [
+                            'link' => $linkConverted,
+                            'radius' => isset($location['lock_radius']) && $location['lock_radius'] !== '' && $location['lock_radius'] !== null
+                                        ? (int)$location['lock_radius']
+                                        : (isset($location['radius']) && $location['radius'] !== '' ? (int)$location['radius'] : null)
+                        ];
+                    }
+                }
+                
+                // Jika ada lokasi yang valid, simpan
+                if (count($processedLocations) > 0) {
+                    $linkGmapsArray = $processedLocations;
+                }
+            }
+            // Fallback ke single link_gmap jika tidak ada link_gmaps array
+            elseif ($request->filled('link_gmap')) {
+                $linkConverted = $this->convertGmapUrl($request->input('link_gmap'));
+                $radius = $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
+                          ? (int)$request->input('radius')
+                          : null;
+                
+                if ($linkConverted) {
+                    $linkGmapsArray = [
+                        [
+                            'link' => $linkConverted,
+                            'radius' => $radius
+                        ]
+                    ];
+                }
+            }
+
             // Helper function untuk convert empty string ke null
             $getValue = function($value) {
                 if ($value === null) return null;
@@ -830,10 +936,11 @@ class MerchantController extends Controller
                 'email_pic'      => $getValue($request->input('email_pic', null)),
                 'daerah'         => $getValue($request->input('daerah', null)),
                 'detail_daerah'  => $getValue($request->input('detail_alamat', null)),
-                'link_gmap'      => $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
-                'radius'         => $request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null
-                                    ? (int)$request->input('radius')
-                                    : null,
+                // Multiple Google Maps locations (JSON)
+                'link_gmaps'     => $linkGmapsArray,
+                // Legacy fields (kept for backward compatibility if needed, or update from array)
+                'link_gmap'      => $linkGmapsArray && count($linkGmapsArray) > 0 ? $linkGmapsArray[0]['link'] : $getValue($this->convertGmapUrl($request->input('link_gmap', null))),
+                'radius'         => $linkGmapsArray && count($linkGmapsArray) > 0 ? $linkGmapsArray[0]['radius'] : ($request->has('radius') && $request->input('radius') !== '' && $request->input('radius') !== null ? (int)$request->input('radius') : null),
                 'logo_merchant'  => $logoPath,
                 'ktp_pic'        => $ktpPath,
                 'start_date'     => $request->input('start_date') ?: null,
@@ -1012,6 +1119,17 @@ class MerchantController extends Controller
                     AND tr.program = "BLANJAPOIN" 
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
+        } elseif ($sortBy === 'link_gmaps') {
+            // Sort by whether merchant has Google Maps link or not
+            // Merchants with links come first in asc, last in desc
+            $merchantsQuery->select('merchants.*')
+                ->selectRaw('CASE 
+                    WHEN link_gmaps IS NOT NULL AND link_gmaps != "null" AND JSON_LENGTH(link_gmaps) > 0 THEN 1
+                    WHEN link_gmap IS NOT NULL AND link_gmap != "" THEN 1
+                    ELSE 0
+                END as has_gmaps_link')
+                ->orderBy('has_gmaps_link', $sortDir)
+                ->orderBy('id', $sortDir); // Secondary sort by ID for consistency
         } else {
             $merchantsQuery->orderBy($sortBy, $sortDir);
         }

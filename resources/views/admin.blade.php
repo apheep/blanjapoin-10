@@ -878,6 +878,7 @@
         // Search functionality for Merchant table - aligned with section rendering
         let merchantSearchTimeout;
         let currentMerchantQuery = new URL(window.location.href).searchParams.get('merchant_search') || '';
+        let currentMerchantSortColumn = new URLSearchParams(window.location.href).get('sort_merchant') || null;
         // Simpan kategori merchant yang sedang aktif (untuk dikirim ke server)
         if (typeof selectedCategory === 'undefined') {
             selectedCategory = { merchant: 'Semua',};
@@ -945,13 +946,12 @@
             if (activeCategory && activeCategory !== 'Semua') {
                 searchUrl.searchParams.set('category', activeCategory);
             }
-            // Sertakan sort parameters dari URL saat ini atau dari window.currentMerchantSort
-            const sortMerchant = window.currentMerchantSort || currentUrl.searchParams.get('sort_merchant');
-            const sortMerchantDir = window.currentMerchantSortDir || currentUrl.searchParams.get('sort_merchant_dir');
-            if (sortMerchant) {
-                searchUrl.searchParams.set('sort_merchant', sortMerchant);
-                if (sortMerchantDir) {
-                    searchUrl.searchParams.set('sort_merchant_dir', sortMerchantDir);
+        
+            //  Sort parameters
+            if (currentMerchantSortColumn) {
+                searchUrl.searchParams.set('sort_merchant', currentMerchantSortColumn);
+                if (currentMerchantSortDir) {
+                    searchUrl.searchParams.set('sort_merchant_dir', currentMerchantSortDir);
                 }
             }
             return searchUrl.toString();
@@ -977,10 +977,34 @@
                 return;
             }
             
+            // Get table body and cards container for smooth transition
+            const tableBody = container.querySelector('#merchant-table-body');
+            const cardsContainer = document.getElementById('merchant-cards-container');
+            const loadingOverlay = document.getElementById('merchant-table-loading');
+            const cardsLoadingOverlay = document.getElementById('merchant-cards-loading');
+            
+            // Show loading overlay immediately
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('hidden');
+            }
+            if (cardsLoadingOverlay) {
+                cardsLoadingOverlay.classList.remove('hidden');
+            }
+            
+            // Store current height to prevent layout shift
+            const currentHeight = container.offsetHeight;
+            container.style.minHeight = currentHeight + 'px';
+            
+            // Smooth fade out transition (like table-keyword)
             if (!skipTransition) {
-                container.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-                container.style.opacity = '0';
-                container.style.transform = 'translateY(8px)';
+                if (tableBody) {
+                    tableBody.style.transition = 'opacity 0.2s ease';
+                    tableBody.style.opacity = '0';
+                }
+                if (cardsContainer) {
+                    cardsContainer.style.transition = 'opacity 0.2s ease';
+                    cardsContainer.style.opacity = '0';
+                }
             }
 
             fetch(url, {
@@ -1002,14 +1026,104 @@
                         updateMerchantUrlState();
                         reapplyMerchantCategoryFilter();
 
+                 document.querySelectorAll('.toggle-merchant-status, .toggle-merchant-status-mobile').forEach(toggle => {
+                    toggle.addEventListener('change', (e) => {
+                        const merchantId = e.target.dataset.merchantId;
+                        if (merchantId) toggleMerchantStatus(merchantId);
+                    });
+                });
+                
+                document.querySelectorAll('.toggle-link-status, .toggle-link-status-mobile').forEach(toggle => {
+                    toggle.addEventListener('change', (e) => {
+                        const merchantId = e.target.dataset.merchantId;
+                        if (merchantId) toggleLinkStatus(merchantId);
+                    });
+                });
+
+                // Update sort icons
+                if (currentMerchantSortColumn) {
+                    updateMerchantSortIcons(currentMerchantSortColumn, currentMerchantSortDir);
+                }
+                
+              // Hide loading
+                if (window.merchantSortInProgress) {
+                    hideMerchantSortLoading(currentMerchantSortColumn);
+                    window.merchantSortInProgress = false;
+                    
+                    // Restore posisi scroll
+                    if (window.merchantScrollPositions) {
+                        // Restore scroll vertikal (halaman)
+                        window.scrollTo(window.merchantScrollPositions.scrollY || 0, window.merchantScrollPositions.scrollY || 0);
+                        
+                        // Restore scroll horizontal (tabel)
+                        const newTableScrollContainer = container.querySelector('.overflow-x-auto');
+                        if (newTableScrollContainer && window.merchantScrollPositions.tableScrollX > 0) {
+                            newTableScrollContainer.scrollLeft = window.merchantScrollPositions.tableScrollX;
+                        }
+                        
+                        // Cleanup
+                        delete window.merchantScrollPositions;
+                    }
+                }
+
+                        // Get new table body and cards container after update
+                        const newTableBody = container.querySelector('#merchant-table-body');
+                        const newCardsContainer = document.getElementById('merchant-cards-container');
+                        
+                        // Smooth fade in transition (like table-keyword)
                         if (!skipTransition) {
-                            void container.offsetWidth;
-                            container.style.opacity = '1';
-                            container.style.transform = 'translateY(0)';
+                            if (newTableBody) {
+                                newTableBody.style.transition = 'opacity 0.2s ease';
+                                newTableBody.style.opacity = '0';
+                                // Trigger reflow
+                                void newTableBody.offsetWidth;
+                                // Fade in
+                                newTableBody.style.opacity = '1';
+                            }
+                            if (newCardsContainer) {
+                                newCardsContainer.style.transition = 'opacity 0.2s ease';
+                                newCardsContainer.style.opacity = '0';
+                                // Trigger reflow
+                                void newCardsContainer.offsetWidth;
+                                // Fade in
+                                newCardsContainer.style.opacity = '1';
+                            }
+                        }
+
+                        // Hide loading overlay after transition completes
+                        setTimeout(() => {
+                            if (loadingOverlay) {
+                                loadingOverlay.classList.add('hidden');
+                            }
+                            if (cardsLoadingOverlay) {
+                                cardsLoadingOverlay.classList.add('hidden');
+                            }
+                            // Remove min-height after transition
+                            container.style.minHeight = '';
+                        }, 200);
+
+                        //  Double check restore scroll
+                        if (window.merchantScrollPositions) {
+                            setTimeout(() => {
+                                window.scrollTo(window.merchantScrollPositions.scrollY || 0, window.merchantScrollPositions.scrollY || 0);
+                                const newTableScrollContainer = container.querySelector('.overflow-x-auto');
+                                if (newTableScrollContainer && window.merchantScrollPositions.tableScrollX > 0) {
+                                    newTableScrollContainer.scrollLeft = window.merchantScrollPositions.tableScrollX;
+                                }
+                            }, 50);
                         }
                     }, delay);
-                })
-                .catch(error => console.error('Search error:', error));
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            //   Hide loading on error
+            if (window.merchantSortInProgress) {
+                hideMerchantSortLoading(currentMerchantSortColumn);
+                window.merchantSortInProgress = false;
+                delete window.merchantScrollPositions;
+            }
+        });
+
         }
 
         function attachMerchantPaginationHandlers() {
