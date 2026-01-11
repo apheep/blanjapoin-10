@@ -44,6 +44,20 @@ class Merchant extends Model
         'link_gmaps' => 'array',
     ];
 
+    /**
+     * Set link_gmaps attribute with proper JSON encoding (no escaped slashes)
+     */
+    public function setLinkGmapsAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['link_gmaps'] = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        } elseif (is_string($value)) {
+            $this->attributes['link_gmaps'] = $value;
+        } else {
+            $this->attributes['link_gmaps'] = null;
+        }
+    }
+
     // Jangan cast lat dan long, biarkan sebagai string/decimal dari database
     // Ini mempertahankan format asli yang diinput user
 
@@ -63,19 +77,9 @@ class Merchant extends Model
      */
     public function getGmapsLocations()
     {
-        // Jika sudah ada link_gmaps (format baru), gunakan itu
+        // Return link_gmaps jika ada
         if ($this->link_gmaps && is_array($this->link_gmaps) && count($this->link_gmaps) > 0) {
             return $this->link_gmaps;
-        }
-
-        // Backward compatibility: jika hanya ada link_gmap lama
-        if ($this->link_gmap) {
-            return [
-                [
-                    'link' => $this->link_gmap,
-                    'radius' => $this->radius ?? null
-                ]
-            ];
         }
 
         return [];

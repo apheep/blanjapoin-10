@@ -133,10 +133,11 @@
                         <span id="fileError" class="text-xs text-rose-500 mt-2 hidden">Silakan pilih gambar terlebih dahulu.</span>
                     </label>
                     <label class="block">
-                        <span class="text-sm font-semibold text-neutral-700">CTA Link <span id="ctaAutoLabel" class="text-xs text-neutral-400 font-normal hidden">(Otomatis dari keyword)</span></span>
+                        <span class="text-sm font-semibold text-neutral-700">CTA Link <span id="ctaAutoLabel" class="text-xs text-neutral-400 font-normal hidden">(Otomatis dari keyword)</span> <span class="text-rose-500">*</span></span>
                         <input id="linkInput" type="url" name="link_iklan" value="{{ old('link_iklan') }}"
                                placeholder="https://contoh.com/promo"
-                               class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                               class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                               required>
                     </label>
                     <label class="block">
                         <span class="text-sm font-semibold text-neutral-700">Target Lokasi <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
@@ -869,10 +870,18 @@ document.addEventListener('DOMContentLoaded', function () {
             if (previewMerchant) previewMerchant.textContent = keywordMerchantName || 'Merchant tidak diketahui';
             
             // Auto-populate CTA
-            if (linkInput && keywordCta) {
-                linkInput.value = keywordCta;
-                linkInput.setAttribute('readonly', 'readonly');
-                linkInput.classList.add('bg-neutral-50');
+            if (linkInput) {
+                if (keywordCta) {
+                    linkInput.value = keywordCta;
+                    linkInput.setAttribute('readonly', 'readonly');
+                    linkInput.classList.add('bg-neutral-50');
+                    if (ctaAutoLabel) ctaAutoLabel.classList.remove('hidden');
+                } else {
+                    linkInput.value = '';
+                    linkInput.removeAttribute('readonly');
+                    linkInput.classList.remove('bg-neutral-50');
+                    if (ctaAutoLabel) ctaAutoLabel.classList.add('hidden');
+                }
             }
         } else {
             // Hide preview
