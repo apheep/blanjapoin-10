@@ -101,9 +101,26 @@
 
             const originalUrl = btn.href;
 
-            // 1. Check Desktop
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-            if (!isMobile) {
+            // 1. Check Desktop (Allow only Mobile & Tablet)
+            // Logic:
+            // - Android/iPhone/iPod/BlackBerry/IEMobile/Opera Mini -> Mobile (Allow)
+            // - iPad/MacIntel with Touch -> Tablet (Allow)
+            // - Macintosh without Touch -> Desktop (Block)
+            // - Windows/Linux -> Desktop (Block)
+            
+            const ua = navigator.userAgent;
+            const isTouchDevice = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+            
+            // Check for standard mobile User Agents
+            const isStandardMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+            
+            // Check for iPad (Old & New iPadOS)
+            // New iPadOS sends "Macintosh" as UA, but has touch points.
+            const isIPad = /iPad/i.test(ua) || (ua.includes('Macintosh') && isTouchDevice);
+
+            const isMobileOrTablet = isStandardMobile || isIPad || window.innerWidth <= 768;
+
+            if (!isMobileOrTablet) {
                 showDesktopAlert();
                 window.isRedeemGlobalProcessing = false; // Reset flag
                 return;
@@ -146,8 +163,18 @@
                      newUrl += `&lat=${lat}&long=${lng}`;
                  }
                  
-                 // Open in new tab
-                 window.open(newUrl, '_blank');
+                 // Detect iOS (iPhone/iPad) & Mac to fix popup blocker issues
+                 // iPadOS 13+ often pretends to be Macintosh, so we include that too.
+                 const isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                 
+                 // On Apple devices (Safari/WebKit), window.open inside async callbacks is often blocked.
+                 // We use window.location.href to ensure redirect happens.
+                 if (isApple) {
+                     window.location.href = newUrl;
+                 } else {
+                     // For Android/Windows, try opening in new tab
+                     window.open(newUrl, '_blank');
+                 }
                  
                  // Reset button
                  resetButtonState();
@@ -161,12 +188,12 @@
             // Main Execution Flow
             const runRedeemFlow = (lat, lng) => {
                 // LOGIKA PRODUCTION:
-                // Cek interval klik. Jika user klik santai (> 10 detik), anggap aman (bypass reCAPTCHA).
-                // Jika spamming (< 10 detik), baru panggil reCAPTCHA.
+                // Cek interval klik. Jika user klik santai (> 5 detik), anggap aman (bypass reCAPTCHA).
+                // Jika spamming (< 5 detik), baru panggil reCAPTCHA.
                 
                 const lastClickTime = sessionStorage.getItem('lastRedeemClickTime');
                 const now = Date.now();
-                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 3000); // 3 detik threshold
+                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 5000); // 5 detik threshold
                 sessionStorage.setItem('lastRedeemClickTime', now);
 
                 // Set callbacks for this specific click
@@ -197,7 +224,7 @@
                     // Jika reCAPTCHA belum siap, jangan langsung bypass (karena user ingin strict)
                     // Coba tunggu sebentar
                     console.log('reCAPTCHA not ready, waiting...');
-                    btn.innerHTML = '<span class="animate-spin inline-block w-3 h-3 border-2 border-white rounded-full border-t-transparent"></span> Loading Security...';
+                    btn.innerHTML = '<span class="animate-spin inline-block w-3 h-3 border-2 border-white rounded-full border-t-transparent"></span> Processing...';
                     
                     setTimeout(() => {
                         if (typeof grecaptcha !== 'undefined' && typeof recaptchaWidgetId !== 'undefined') {
