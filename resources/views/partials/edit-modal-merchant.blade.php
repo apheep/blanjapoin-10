@@ -225,75 +225,35 @@
                         <input type="hidden" name="daerah" id="editDaerahCombined">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {{-- Link Google Maps --}}
+                            {{-- Link Google Maps (Multiple) --}}
                             <div class="md:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Link Google Maps
-                                </label>
-                                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
-                                    <input type="url"
-                                           id="editMerchantLinkGmap"
-                                           name="link_gmap"
-                                           class="w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                           placeholder="Paste link Google Maps atau pilih lokasi"
-                                           onpaste="setTimeout(() => validateGmapLink(this.value), 100)">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Link Google Maps
+                                    </label>
                                     <button type="button"
-                                            onclick="openMapPicker('edit')"
-                                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <span>Pilih Lokasi</span>
+                                            onclick="addEditGmapField()"
+                                            class="text-sm px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Tambah Titik</span>
                                     </button>
                                 </div>
-                                <p class="mt-1.5 text-xs text-gray-500">
+                                
+                                {{-- Container untuk multiple gmap fields --}}
+                                <div id="editGmapFieldsContainer" class="space-y-3">
+                                    {{-- Fields will be populated by JS --}}
+                                </div>
+                                
+                                <p class="mt-2 text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung</span>
-                                    <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps</span>
+                                    <span class="hidden sm:inline">Klik "Pilih Lokasi" untuk membuka peta interaktif atau paste link Google Maps langsung. Klik "Tambah Titik" untuk menambah lokasi lainnya.</span>
+                                    <span class="sm:hidden">Pilih lokasi di peta atau paste link Google Maps. Klik "+" untuk menambah lokasi.</span>
                                 </p>
                                 <p class="mt-1 text-xs text-orange-600 font-medium">
                                     <i class="fas fa-magic mr-1"></i>
                                     *Auto konvert koordinat maps
                                 </p>
                             </div>
-                        </div>
-
-                        {{-- Lock Radius Toggle --}}
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                <i class="fas fa-lock mr-1.5 text-orange-500"></i>
-                                Lock Radius LongLat
-                            </label>
-                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Lock Radius">
-                                <input type="checkbox"
-                                       id="editLockRadiusCheckbox"
-                                       class="sr-only peer" />
-                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500 hover:peer-checked:from-orange-600 hover:peer-checked:to-red-600"></div>
-                                <span class="ml-3 text-sm text-gray-700" id="editLockRadiusText">Tidak Aktif</span>
-                            </label>
-                            <p class="mt-1.5 text-xs text-gray-500">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                <span>Aktifkan untuk menampilkan field radius validasi lokasi</span>
-                            </p>
-                        </div>
-
-                        {{-- Radius untuk Validasi Lokasi --}}
-                        <div id="editRadiusFieldContainer" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                <i class="fas fa-map-marked-alt mr-1.5 text-orange-500"></i>
-                                Radius Validasi Lokasi (meter)
-                                <span class="text-red-500">*</span>
-                            </label>
-                            <input type="number"
-                                   name="radius"
-                                   id="editMerchantRadius"
-                                   min="0"
-                                   max="100000"
-                                   step="1"
-                                   class="w-full px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
-                                   placeholder="Contoh: 300 (meter)">
-                            <p class="mt-1.5 text-xs text-gray-500">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                <span>Atur radius dalam meter untuk validasi lokasi saat user redeem</span>
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -469,47 +429,11 @@ function removeEditMerchantKtp() {
 }
 
 // ======================
-// Toggle Lock Radius (Edit Modal)
+// Toggle Lock Radius (Edit Modal) - Removed (Replaced by per-field toggle)
 // ======================
-document.addEventListener('DOMContentLoaded', function() {
-    const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
-    const lockRadiusText = document.getElementById('editLockRadiusText');
-    const radiusFieldContainer = document.getElementById('editRadiusFieldContainer');
-    const radiusInput = document.getElementById('editMerchantRadius');
-
-    function toggleEditLockRadius() {
-        const isLocked = lockRadiusCheckbox.checked;
-
-        // Update toggle text
-        if (lockRadiusText) {
-            lockRadiusText.textContent = isLocked ? 'Aktif' : 'Tidak Aktif';
-        }
-
-        // Toggle visibility of radius field
-        if (radiusFieldContainer) {
-            if (isLocked) {
-                radiusFieldContainer.classList.remove('hidden');
-                // Make radius required when visible
-                if (radiusInput) {
-                    radiusInput.setAttribute('required', 'required');
-                }
-            } else {
-                radiusFieldContainer.classList.add('hidden');
-                // Remove required when hidden
-                if (radiusInput) {
-                    radiusInput.removeAttribute('required');
-                    radiusInput.value = ''; // Clear value when hidden
-                }
-            }
-        }
-    }
-
-    if (lockRadiusCheckbox) {
-        lockRadiusCheckbox.addEventListener('change', toggleEditLockRadius);
-        // Initialize state (hidden by default)
-        toggleEditLockRadius();
-    }
-});
+// document.addEventListener('DOMContentLoaded', function() {
+//     // Logic removed as it is now handled per-field in addEditGmapField
+// });
 
 // ======================
 // Toggle KTP Upload based on Email PIC
@@ -655,26 +579,36 @@ function openEditMerchant(id, merchantData) {
     }
     
     document.getElementById('editMerchantDetailAlamat').value = merchantData.detail_daerah || '';
-    document.getElementById('editMerchantLinkGmap').value = merchantData.link_gmap || '';
-
-    // Set lock radius checkbox and radius field
-    const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
-    const lockRadiusText = document.getElementById('editLockRadiusText');
-    const radiusValue = merchantData.radius || '';
-    if (lockRadiusCheckbox && radiusValue) {
-        lockRadiusCheckbox.checked = true;
-        if (lockRadiusText) lockRadiusText.textContent = 'Aktif';
-        // Trigger change event to show radius field
-        lockRadiusCheckbox.dispatchEvent(new Event('change'));
-        // Set radius value after field is shown
-        setTimeout(() => {
-            document.getElementById('editMerchantRadius').value = radiusValue;
-        }, 100);
-    } else {
-        lockRadiusCheckbox.checked = false;
-        if (lockRadiusText) lockRadiusText.textContent = 'Tidak Aktif';
-        lockRadiusCheckbox.dispatchEvent(new Event('change'));
+    
+    // Link Google Maps (Multiple)
+    const gmapContainer = document.getElementById('editGmapFieldsContainer');
+    if (gmapContainer) {
+        gmapContainer.innerHTML = '';
+        editGmapFieldCounter = 0;
+        
+        // Determine data source (array vs legacy singular)
+        let locations = [];
+        if (merchantData.link_gmaps && Array.isArray(merchantData.link_gmaps) && merchantData.link_gmaps.length > 0) {
+            locations = merchantData.link_gmaps;
+        } else if (merchantData.link_gmap) {
+            // Legacy singular data
+            locations.push({
+                link: merchantData.link_gmap,
+                radius: merchantData.radius,
+                lock_radius: !!merchantData.radius
+            });
+        } else {
+            // Default empty field
+            locations.push({});
+        }
+        
+        locations.forEach(loc => {
+            addEditGmapField(loc);
+        });
     }
+
+    // Legacy fields handling (removed/replaced above)
+    // document.getElementById('editMerchantLinkGmap').value = merchantData.link_gmap || '';
     
     // Periode - set start_date dan end_date
     const startDateEl = document.getElementById('editMerchantStartDate');
@@ -820,16 +754,11 @@ function closeEditMerchant() {
             }
             if (ktpText) ktpText.textContent = 'Click to upload KTP';
 
-            // Reset lock radius toggle
-            const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
-            const lockRadiusText = document.getElementById('editLockRadiusText');
-            if (lockRadiusCheckbox) {
-                lockRadiusCheckbox.checked = false;
-                // Trigger change event to hide radius field and reset text
-                lockRadiusCheckbox.dispatchEvent(new Event('change'));
-            }
-            if (lockRadiusText) {
-                lockRadiusText.textContent = 'Tidak Aktif';
+            // Reset Gmap Fields
+            const gmapContainer = document.getElementById('editGmapFieldsContainer');
+            if (gmapContainer) {
+                gmapContainer.innerHTML = '';
+                editGmapFieldCounter = 0;
             }
         }
     }, 300);
@@ -1168,17 +1097,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Mohon isi field yang diperlukan (Nama Merchant, Kategori)');
                 return false;
             }
-
-            // Validate lock radius
-            const lockRadiusCheckbox = document.getElementById('editLockRadiusCheckbox');
-            const isLockRadiusChecked = lockRadiusCheckbox && lockRadiusCheckbox.checked;
-            const radius = form.querySelector('input[name="radius"]').value.trim();
-
-            if (isLockRadiusChecked && !radius) {
-                alert('Radius wajib diisi karena fitur Lock Radius aktif');
-                document.getElementById('editMerchantRadius').focus();
-                return false;
-            }
+            
+            // Lock radius validation is handled by HTML5 required attribute in dynamic fields
             
             // Update link blanjapoin sebelum submit
             updateEditLinkBlanjapoin();
@@ -1272,7 +1192,147 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleEditKtpUpload();
 });
 
-async function validateGmapLink(url) {
+// ======================
+// Multiple Google Maps Fields Management (Edit Modal)
+// ======================
+let editGmapFieldCounter = 0;
+
+function addEditGmapField(data = null) {
+    const container = document.getElementById('editGmapFieldsContainer');
+    if (!container) return;
+    
+    const index = editGmapFieldCounter; // Use current counter as index
+    const newField = document.createElement('div');
+    newField.className = 'gmap-field-group border border-gray-200 rounded-lg p-3 bg-gray-50';
+    newField.setAttribute('data-index', index);
+    
+    // Default values
+    const linkValue = data ? (data.link || data.link_gmap || '') : '';
+    // Check if lock_radius is explicitly set, otherwise infer from radius presence
+    const lockRadius = data ? (data.lock_radius !== undefined ? data.lock_radius : (data.radius ? true : false)) : false;
+    const radiusValue = data ? (data.radius || '') : '';
+    
+    newField.innerHTML = `
+        <div class="flex items-start gap-2">
+            <div class="flex-1 space-y-2">
+                <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                    <input type="url"
+                           name="link_gmaps[${index}][link]"
+                           class="edit-gmap-link-input w-full sm:flex-1 px-4 h-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           placeholder="Paste link Google Maps atau pilih lokasi"
+                           data-index="${index}"
+                           value="${linkValue}"
+                           onpaste="setTimeout(() => validateEditGmapLink(this), 100)">
+                    <button type="button"
+                            onclick="openMapPicker('edit', ${index})"
+                            class="w-full sm:w-auto sm:flex-shrink-0 px-4 sm:px-6 h-12 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap font-medium shadow-sm hover:shadow-md">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Pilih Lokasi</span>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <i class="fas fa-lock text-orange-500"></i>
+                        <span class="font-medium">Lock Radius</span>
+                    </label>
+                    <label class="relative inline-flex items-center cursor-pointer" title="Toggle Lock Radius">
+                        <input type="checkbox"
+                               name="link_gmaps[${index}][lock_radius]"
+                               class="edit-lock-radius-toggle sr-only peer"
+                               data-index="${index}"
+                               onchange="toggleEditLockRadiusField(${index})"
+                               ${lockRadius ? 'checked' : ''}
+                               value="1" />
+                        <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-orange-500 peer-checked:to-red-500 hover:peer-checked:from-orange-600 hover:peer-checked:to-red-600"></div>
+                        <span class="ml-2 text-sm text-gray-600 edit-lock-radius-text" data-index="${index}">${lockRadius ? 'Aktif' : 'Tidak Aktif'}</span>
+                    </label>
+                </div>
+                
+                <div class="edit-lock-radius-field-container ${lockRadius ? '' : 'hidden'}" data-index="${index}">
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-map-marked-alt mr-1 text-orange-500"></i>
+                        Radius Validasi Lokasi (meter)
+                    </label>
+                    <input type="number"
+                           name="link_gmaps[${index}][radius]"
+                           class="edit-lock-radius-input w-full px-4 h-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           placeholder="Contoh: 100"
+                           min="1"
+                           max="100000"
+                           data-index="${index}"
+                           value="${radiusValue}"
+                           ${lockRadius ? 'required' : ''}>
+                    <p class="mt-1 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Radius area validasi untuk redeem di titik ini
+                    </p>
+                </div>
+            </div>
+            <button type="button"
+                    onclick="removeEditGmapField(${index})"
+                    class="edit-remove-gmap-btn hidden mt-1 px-3 h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(newField);
+    editGmapFieldCounter++;
+    
+    updateEditRemoveButtons();
+}
+
+function removeEditGmapField(index) {
+    const field = document.querySelector(`.gmap-field-group[data-index="${index}"]`);
+    if (field) {
+        field.remove();
+        updateEditRemoveButtons();
+    }
+}
+
+function updateEditRemoveButtons() {
+    const fields = document.querySelectorAll('#editGmapFieldsContainer .gmap-field-group');
+    fields.forEach(field => {
+        const btn = field.querySelector('.edit-remove-gmap-btn');
+        if (btn) {
+            if (fields.length > 1) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+    });
+}
+
+function toggleEditLockRadiusField(index) {
+    const checkbox = document.querySelector(`.edit-lock-radius-toggle[data-index="${index}"]`);
+    const text = document.querySelector(`.edit-lock-radius-text[data-index="${index}"]`);
+    const container = document.querySelector(`.edit-lock-radius-field-container[data-index="${index}"]`);
+    const input = container ? container.querySelector('input') : null;
+    
+    if (!checkbox) return;
+    
+    const isLocked = checkbox.checked;
+    
+    if (text) text.textContent = isLocked ? 'Aktif' : 'Tidak Aktif';
+    
+    if (container) {
+        if (isLocked) {
+            container.classList.remove('hidden');
+            if (input) input.setAttribute('required', 'required');
+        } else {
+            container.classList.add('hidden');
+            if (input) {
+                input.removeAttribute('required');
+                input.value = '';
+            }
+        }
+    }
+}
+
+async function validateEditGmapLink(inputElement) {
+    const url = inputElement.value;
     if (!url || url.trim() === '') {
         return true;
     }
@@ -1291,11 +1351,7 @@ async function validateGmapLink(url) {
             const convertedUrl = await convertGmapUrl(url);
             if (convertedUrl && convertedUrl !== url) {
                 // Update the input field with the converted URL
-                const inputField = document.getElementById('editMerchantLinkGmap');
-                if (inputField) {
-                    inputField.value = convertedUrl;
-                    // Silently update the field without showing message
-                }
+                inputElement.value = convertedUrl;
             }
         } catch (error) {
             console.warn('Failed to convert Google Maps URL:', error);

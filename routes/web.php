@@ -157,21 +157,15 @@ Route::get('/api/resolve-gmap-url', [\App\Http\Controllers\MerchantController::c
 Route::get('/api/geocode', [\App\Http\Controllers\MerchantController::class, 'geocode'])->name('api.geocode');
 Route::get('/api/place-details', [\App\Http\Controllers\MerchantController::class, 'placeDetails'])->name('api.place.details');
 
-// Portal merchant authentication
+// Portal merchant authentication (OTP-based)
 Route::middleware('guest:portal')->group(function () {
     Route::get('/merchant-login', [PortalAuthController::class, 'showLoginForm'])->name('portal.login');
-    Route::post('/merchant-login', [PortalAuthController::class, 'login'])->name('portal.login.post');
-    
-    // Google OAuth routes (sesuai dokumentasi Socialite)
-    Route::get('/auth/redirect', [PortalAuthController::class, 'redirectToGoogle'])->name('portal.google.redirect');
-    Route::get('/auth-google-callback', [PortalAuthController::class, 'handleGoogleCallback'])->name('portal.google.callback');
-    
-    // Debug route untuk melihat data Google OAuth (hapus di production)
-    Route::get('/debug/google-callback', [PortalAuthController::class, 'debugGoogleCallback'])->name('portal.google.debug');
+    Route::post('/merchant-send-otp', [PortalAuthController::class, 'sendOtp'])->name('portal.send-otp');
+    Route::post('/merchant-authenticate', [PortalAuthController::class, 'authenticate'])->name('portal.authenticate');
 });
 Route::post('/merchant-logout', [PortalAuthController::class, 'logout'])->name('portal.logout');
 
-// Route untuk link dashboard (conditional auth berdasarkan email merchant)
+// Route untuk link dashboard (conditional auth berdasarkan wa_pic merchant)
 Route::middleware('merchant.email.auth')->get('/dash/{code}', [MerchantController::class, 'linkDashboard'])->name('link.dashboard');
 
 // Route untuk link history (public, tidak perlu login)
@@ -331,6 +325,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('merchants', MerchantController::class)->except(['index', 'show']);
     Route::get('/merchants/{merchant}', [MerchantController::class, 'show'])->name('merchants.show');
     Route::patch('/api/merchants/{id}/toggle-status', [MerchantController::class, 'toggleStatus'])->name('merchants.toggle-status');
+    Route::patch('/api/merchants/{id}/toggle-link-status', [MerchantController::class, 'toggleLinkStatus'])->name('merchants.toggle-link-status');
 
     // Keywords routes
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
@@ -361,6 +356,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/click-history/analytics', [\App\Http\Controllers\ClickHistoryController::class, 'analytics'])->name('click.history.analytics');
     Route::get('/click-history/anonymous-redeems', [\App\Http\Controllers\ClickHistoryController::class, 'anonymousRedeems'])->name('click.history.anonymous');
     Route::get('/click-history/not-matched-detail', [\App\Http\Controllers\ClickHistoryController::class, 'notMatchedDetail'])->name('click.history.not-matched-detail');
+    
+    // Blocked IPs Management
+    Route::get('/click-history/blocked-ips', [\App\Http\Controllers\ClickHistoryController::class, 'blockedIpsIndex'])->name('click.history.blocked');
+    Route::post('/click-history/unlock-ip', [\App\Http\Controllers\ClickHistoryController::class, 'unlockIp'])->name('click.history.unlock');
+    Route::post('/click-history/block-ip', [\App\Http\Controllers\ClickHistoryController::class, 'blockIp'])->name('click.history.block');
 
     // Recalculate Diamond
     Route::post('/merchants/recalculate-diamond', [MerchantController::class, 'recalculateDiamond'])->name('merchants.recalculate-diamond');

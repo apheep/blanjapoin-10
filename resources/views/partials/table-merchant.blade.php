@@ -24,12 +24,36 @@
         </div>
     </div>
     <div class="overflow-x-auto" style="overflow-y: visible; position: relative;">
-        <table class="min-w-full divide-y divide-gray-200 transition-opacity duration-300" id="merchant-table">
+        <table class="min-w-full divide-y divide-gray-200" id="merchant-table">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Quick Access</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="id" onclick="sortMerchantColumn('id', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>No</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'id' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'id' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="id" onclick="sortMerchantColumn('id', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>Actions</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'id' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'id' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="id" onclick="sortMerchantColumn('id', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>Quick Access</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'id' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'id' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 3, 'text')" data-sortable="true" data-column-index="3">
                         <div class="flex items-center justify-center gap-1">
                             <span>Merchant</span>
@@ -37,10 +61,43 @@
                         </div>
                     </th>
                     @if(Auth::check() && Auth::user()->can_approve == 1)
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="is_active" onclick="sortMerchantColumn('is_active', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>Status</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'is_active' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'is_active' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="link_status" onclick="sortMerchantColumn('link_status', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>Link Status</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'link_status' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'link_status' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
                     @endif
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Start Periode</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">End Periode</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="start_date" onclick="sortMerchantColumn('start_date', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>Start Periode</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'start_date' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'start_date' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="end_date" onclick="sortMerchantColumn('end_date', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>End Periode</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'end_date' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'end_date' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('merchant-table-body', 5, 'text')" data-sortable="true" data-column-index="5">
                         <div class="flex items-center justify-center gap-1">
                             <span>Kategori</span>
@@ -91,7 +148,15 @@
                             </span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link GMaps</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-all duration-200 select-none merchant-sort-header" data-sort-column="link_gmaps" onclick="sortMerchantColumn('link_gmaps', event)">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <span>Link GMaps</span>
+                            <span class="sort-icon text-gray-400 text-[10px] relative">
+                                <i class="fas fa-sort{{ request('sort_merchant') === 'link_gmaps' ? (request('sort_merchant_dir', 'asc') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_merchant') === 'link_gmaps' ? 'text-orange-500' : 'text-gray-400' }} transition-all duration-200"></i>
+                                <i class="fas fa-spinner fa-spin sort-loading hidden absolute inset-0 text-orange-500"></i>
+                            </span>
+                        </div>
+                    </th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Dashboard</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link Pelanggan</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Link History</th>
@@ -195,6 +260,16 @@
                                 <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
                             </label>
                         </td>
+                        {{-- Link Status Toggle --}}
+                        <td class="px-4 py-4 text-center">
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Link Status">
+                                <input type="checkbox" 
+                                       data-merchant-id="{{ $merchant->id }}" 
+                                       class="sr-only peer toggle-link-status" 
+                                       {{ $merchant->link_status ? 'checked' : '' }} />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                            </label>
+                        </td>
                         @endif
                         {{-- Start Periode --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
@@ -295,15 +370,29 @@
 
                         {{-- Link Google Maps --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
-                            @if($merchant->link_gmap)
-                                <a href="{{ $merchant->link_gmap }}" 
-                                   onclick="event.stopPropagation();"
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1">
-                                    <i class="fas fa-map-marker-alt text-xs"></i>
-                                    <span class="truncate max-w-xs">Link</span>
-                                </a>
+                            @php
+                                $gmapsLocations = [];
+                                if ($merchant->link_gmaps && is_array($merchant->link_gmaps)) {
+                                    $gmapsLocations = $merchant->link_gmaps;
+                                } elseif ($merchant->link_gmap) {
+                                    $gmapsLocations = [['link' => $merchant->link_gmap, 'radius' => $merchant->radius]];
+                                }
+                            @endphp
+
+                            @if(count($gmapsLocations) > 0)
+                                <div class="flex items-center justify-center gap-1">
+                                    @foreach($gmapsLocations as $i => $location)
+                                        <a href="{{ $location['link'] ?? '#' }}" 
+                                           onclick="event.stopPropagation();"
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 rounded"
+                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                            <i class="fas fa-map-marker-alt text-xs"></i>
+                                            <span>{{ $i + 1 }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -524,6 +613,16 @@
                         </label>
                     </div>
                     <div>
+                        <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link Status</p>
+                        <label class="relative inline-flex items-center cursor-pointer mt-1" title="Toggle Link Status">
+                            <input type="checkbox" 
+                                   data-merchant-id="{{ $merchant->id }}" 
+                                   class="sr-only peer toggle-link-status-mobile" 
+                                   {{ $merchant->link_status ? 'checked' : '' }} />
+                            <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 hover:peer-checked:bg-green-700"></div>
+                        </label>
+                    </div>
+                    <div>
                         <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Kategori</p>
                         <p class="text-base text-gray-700">{{ $merchant->kategori ?? '-' }}</p>
                     </div>
@@ -636,15 +735,29 @@
                         </div>
                         <div>
                             <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Link GMaps</p>
-                            @if($merchant->link_gmap)
-                                <a href="{{ $merchant->link_gmap }}"
-                                   onclick="event.stopPropagation();"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-map-marker-alt text-[11px]"></i>
-                                    Buka Peta
-                                </a>
+                            @php
+                                $gmapsLocations = [];
+                                if ($merchant->link_gmaps && is_array($merchant->link_gmaps)) {
+                                    $gmapsLocations = $merchant->link_gmaps;
+                                } elseif ($merchant->link_gmap) {
+                                    $gmapsLocations = [['link' => $merchant->link_gmap, 'radius' => $merchant->radius]];
+                                }
+                            @endphp
+
+                            @if(count($gmapsLocations) > 0)
+                                <div class="mt-1 flex flex-wrap gap-1">
+                                    @foreach($gmapsLocations as $i => $location)
+                                        <a href="{{ $location['link'] ?? '#' }}"
+                                           onclick="event.stopPropagation();"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded"
+                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                            <i class="fas fa-map-marker-alt text-[11px]"></i>
+                                            Lok {{ $i + 1 }}
+                                        </a>
+                                    @endforeach
+                                </div>
                             @else
                                 <p class="text-xs text-gray-400 mt-1">-</p>
                             @endif
@@ -836,7 +949,189 @@
             closeAllQuickMenus();
         }
     });
+// Update sort icons for merchant table
+function updateMerchantSortIcons(column, order) {
+    // Reset all sort icons
+    document.querySelectorAll('.merchant-sort-header .sort-icon i:not(.sort-loading)').forEach(icon => {
+        icon.className = 'fas fa-sort text-gray-400 transition-all duration-200';
+    });
+    
+    // Update icon for active column (handle multiple headers with same column)
+    const activeHeaders = document.querySelectorAll(`.merchant-sort-header[data-sort-column="${column}"]`);
+    
+    if (activeHeaders.length > 0 && order) {
+        activeHeaders.forEach(header => {
+            const icon = header.querySelector('.sort-icon i:not(.sort-loading)');
+            if (icon) {
+                icon.className = `fas fa-sort-${order === 'asc' ? 'up' : 'down'} text-orange-500 transition-all duration-200`;
+            }
+        });
+    }
+}
 
+// Show loading state
+function showMerchantSortLoading(column) {
+    const headers = document.querySelectorAll(`.merchant-sort-header[data-sort-column="${column}"]`);
+    headers.forEach(header => {
+        const loadingIcon = header.querySelector('.sort-loading');
+        const sortIcon = header.querySelector('.sort-icon i:not(.sort-loading)');
+        if (loadingIcon && sortIcon) {
+            sortIcon.classList.add('opacity-30');
+            loadingIcon.classList.remove('hidden');
+            header.classList.add('opacity-75', 'cursor-wait');
+            header.style.pointerEvents = 'none';
+        }
+    });
+    
+    // Get container and elements
+    const container = document.getElementById('merchant-table-container');
+    const tableBody = container?.querySelector('#merchant-table-body');
+    const cardsContainer = document.getElementById('merchant-cards-container');
+    const loadingOverlay = document.getElementById('merchant-table-loading');
+    const cardsLoadingOverlay = document.getElementById('merchant-cards-loading');
+    
+    // Store current height to prevent layout shift (like table-keyword)
+    if (container) {
+        const currentHeight = container.offsetHeight;
+        container.style.minHeight = currentHeight + 'px';
+    }
+    
+    // Show loading overlay immediately
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('hidden');
+    }
+    if (cardsLoadingOverlay) {
+        cardsLoadingOverlay.classList.remove('hidden');
+    }
+    
+    // Smooth fade out transition (like table-keyword)
+    if (tableBody) {
+        tableBody.style.transition = 'opacity 0.2s ease';
+        tableBody.style.opacity = '0';
+    }
+    if (cardsContainer) {
+        cardsContainer.style.transition = 'opacity 0.2s ease';
+        cardsContainer.style.opacity = '0';
+    }
+}
+
+// Hide loading state
+function hideMerchantSortLoading(column) {
+    const headers = document.querySelectorAll(`.merchant-sort-header[data-sort-column="${column}"]`);
+    headers.forEach(header => {
+        const loadingIcon = header.querySelector('.sort-loading');
+        const sortIcon = header.querySelector('.sort-icon i:not(.sort-loading)');
+        if (loadingIcon && sortIcon) {
+            sortIcon.classList.remove('opacity-30');
+            loadingIcon.classList.add('hidden');
+            header.classList.remove('opacity-75', 'cursor-wait');
+            header.style.pointerEvents = '';
+        }
+    });
+    
+    // Get elements for smooth fade in
+    const container = document.getElementById('merchant-table-container');
+    const tableBody = container?.querySelector('#merchant-table-body');
+    const cardsContainer = document.getElementById('merchant-cards-container');
+    const loadingOverlay = document.getElementById('merchant-table-loading');
+    const cardsLoadingOverlay = document.getElementById('merchant-cards-loading');
+    
+    // Smooth fade in transition (like table-keyword)
+    if (tableBody) {
+        tableBody.style.transition = 'opacity 0.2s ease';
+        tableBody.style.opacity = '0';
+        // Trigger reflow
+        void tableBody.offsetWidth;
+        // Fade in
+        tableBody.style.opacity = '1';
+    }
+    if (cardsContainer) {
+        cardsContainer.style.transition = 'opacity 0.2s ease';
+        cardsContainer.style.opacity = '0';
+        // Trigger reflow
+        void cardsContainer.offsetWidth;
+        // Fade in
+        cardsContainer.style.opacity = '1';
+    }
+    
+    // Hide loading overlay after transition completes (like table-keyword)
+    setTimeout(() => {
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
+        if (cardsLoadingOverlay) {
+            cardsLoadingOverlay.classList.add('hidden');
+        }
+        // Remove min-height after transition
+        if (container) {
+            container.style.minHeight = '';
+        }
+    }, 200);
+}
+
+// Main AJAX sort function
+function sortMerchantColumn(column, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    // Prevent multiple simultaneous sorts
+    if (window.merchantSortInProgress) {
+        return;
+    }
+    
+    // Determine new sort direction
+    let newSort = column;
+    let newOrder = 'asc';
+    
+    if (currentMerchantSortColumn === column) {
+        if (currentMerchantSortDir === 'asc') {
+            newOrder = 'desc';
+        } else {
+            newSort = null;
+            newOrder = null;
+        }
+    }
+    
+    currentMerchantSortColumn = newSort;
+    currentMerchantSortDir = newOrder;
+    
+    updateMerchantSortIcons(column, newOrder);
+    showMerchantSortLoading(column);
+    window.merchantSortInProgress = true;
+    
+    // ⭐ TAMBAHKAN BAGIAN INI - Simpan posisi scroll
+    const container = document.getElementById('merchant-table-container');
+    const tableScrollContainer = container?.querySelector('.overflow-x-auto');
+    
+    // Simpan scroll vertikal (halaman)
+    const scrollY = window.scrollY || window.pageYOffset;
+    // Simpan scroll horizontal (tabel)
+    const tableScrollX = tableScrollContainer ? tableScrollContainer.scrollLeft : 0;
+    
+    // Store di window agar bisa diakses di fetchMerchantTable
+    window.merchantScrollPositions = {
+        scrollY: scrollY,
+        tableScrollX: tableScrollX
+    };
+    
+    // Use existing fetchMerchantTable function
+    if (typeof fetchMerchantTable === 'function') {
+        fetchMerchantTable(buildMerchantSearchRequestUrl());
+    }
+}
+
+// Initialize sort icons on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof currentMerchantSortColumn !== 'undefined' && currentMerchantSortColumn) {
+        updateMerchantSortIcons(currentMerchantSortColumn, currentMerchantSortDir);
+    }
+});
+
+// Make functions globally available
+window.sortMerchantColumn = sortMerchantColumn;
+window.updateMerchantSortIcons = updateMerchantSortIcons;
     // Toggle Merchant Status
     document.addEventListener('DOMContentLoaded', function() {
         // Attach toggle listeners for server-rendered checkboxes (desktop)
@@ -854,6 +1149,24 @@
                 const merchantId = e.target.dataset.merchantId;
                 if (!merchantId) return;
                 toggleMerchantStatus(merchantId);
+            });
+        });
+
+        // Attach toggle listeners for link status (desktop)
+        document.querySelectorAll('.toggle-link-status').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleLinkStatus(merchantId);
+            });
+        });
+
+        // Attach toggle listeners for link status (mobile)
+        document.querySelectorAll('.toggle-link-status-mobile').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const merchantId = e.target.dataset.merchantId;
+                if (!merchantId) return;
+                toggleLinkStatus(merchantId);
             });
         });
     });
@@ -903,331 +1216,51 @@
         }
     }
 
-    // Merchant table uses the same global sortTable function defined in table-keyword.blade.php
-    // No additional code needed here as the function handles both tables
-    
-    // Update sort icons for merchant table
-    function updateMerchantSortIcons(column, order) {
-        // Reset all sort icons (except loading spinners)
-        document.querySelectorAll('.merchant-sort-header .sort-icon i:not(.sort-loading)').forEach(icon => {
-            icon.className = 'fas fa-sort text-gray-400 transition-all duration-200';
-        });
-        
-        // Update icon for active column
-        const activeHeader = document.querySelector(`.merchant-sort-header[data-sort-column="${column}"]`);
-        
-        if (activeHeader && order) {
-            const icon = activeHeader.querySelector('.sort-icon i:not(.sort-loading)');
-            if (icon) {
-                icon.className = `fas fa-sort-${order === 'asc' ? 'up' : 'down'} text-orange-500 transition-all duration-200`;
-            }
-        } else if (activeHeader && !order) {
-            const icon = activeHeader.querySelector('.sort-icon i:not(.sort-loading)');
-            if (icon) {
-                icon.className = 'fas fa-sort text-gray-400 transition-all duration-200';
-            }
-        }
-    }
-    
-    // Show loading state for sort column
-    function showSortLoading(column) {
-        const header = document.querySelector(`.merchant-sort-header[data-sort-column="${column}"]`);
-        if (header) {
-            const loadingIcon = header.querySelector('.sort-loading');
-            const sortIcon = header.querySelector('.sort-icon i:not(.sort-loading)');
-            if (loadingIcon && sortIcon) {
-                sortIcon.classList.add('opacity-30');
-                loadingIcon.classList.remove('hidden');
-                header.classList.add('opacity-75', 'cursor-wait');
-                header.style.pointerEvents = 'none';
-            }
-        }
-        
-        // Show table loading overlay (desktop)
-        const loadingOverlay = document.getElementById('merchant-table-loading');
-        const table = document.getElementById('merchant-table');
-        if (loadingOverlay) {
-            loadingOverlay.classList.remove('hidden');
-        }
-        if (table) {
-            table.style.opacity = '0.6';
-        }
-        
-        // Show cards loading overlay (mobile)
-        const cardsLoadingOverlay = document.getElementById('merchant-cards-loading');
-        const cardsContainer = document.getElementById('merchant-cards-container');
-        if (cardsLoadingOverlay) {
-            cardsLoadingOverlay.classList.remove('hidden');
-        }
-        if (cardsContainer) {
-            cardsContainer.style.opacity = '0.6';
-        }
-    }
-    
-    // Hide loading state for sort column
-    function hideSortLoading(column) {
-        const header = document.querySelector(`.merchant-sort-header[data-sort-column="${column}"]`);
-        if (header) {
-            const loadingIcon = header.querySelector('.sort-loading');
-            const sortIcon = header.querySelector('.sort-icon i:not(.sort-loading)');
-            if (loadingIcon && sortIcon) {
-                sortIcon.classList.remove('opacity-30');
-                loadingIcon.classList.add('hidden');
-                header.classList.remove('opacity-75', 'cursor-wait');
-                header.style.pointerEvents = '';
-            }
-        }
-        
-        // Hide table loading overlay (desktop)
-        const loadingOverlay = document.getElementById('merchant-table-loading');
-        const table = document.getElementById('merchant-table');
-        if (loadingOverlay) {
-            loadingOverlay.classList.add('hidden');
-        }
-        if (table) {
-            table.style.opacity = '1';
-        }
-        
-        // Hide cards loading overlay (mobile)
-        const cardsLoadingOverlay = document.getElementById('merchant-cards-loading');
-        const cardsContainer = document.getElementById('merchant-cards-container');
-        if (cardsLoadingOverlay) {
-            cardsLoadingOverlay.classList.add('hidden');
-        }
-        if (cardsContainer) {
-            cardsContainer.style.opacity = '1';
-        }
-    }
-    
-    // AJAX sort function for merchant calculated columns (like best offer)
-    function sortMerchantColumn(column, event) {
-        // Prevent default behavior if event is provided
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        
-        // Prevent multiple simultaneous sorts
-        if (window.merchantSortInProgress) {
-            return;
-        }
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentSort = urlParams.get('sort_merchant');
-        const currentOrder = urlParams.get('sort_merchant_dir') || 'asc';
-        
-        let newSort = column;
-        let newOrder = 'asc';
-        
-        if (currentSort === column) {
-            // Toggle between asc and desc
-            if (currentOrder === 'asc') {
-                newOrder = 'desc';
-            } else {
-                // Reset to default (no sort)
-                newSort = null;
-                newOrder = null;
-            }
-        }
-        
-        // Update URL params
-        if (newSort) {
-            urlParams.set('sort_merchant', newSort);
-            urlParams.set('sort_merchant_dir', newOrder);
-        } else {
-            urlParams.delete('sort_merchant');
-            urlParams.delete('sort_merchant_dir');
-        }
-        
-        // Update icons immediately
-        updateMerchantSortIcons(column, newOrder);
-        
-        // Update URL without reload
-        window.history.pushState({}, '', '?' + urlParams.toString());
-        
-        // Show loading state
-        showSortLoading(column);
-        window.merchantSortInProgress = true;
-        
-        // Get container elements
-        const container = document.getElementById('merchant-table-container');
-        const tableBody = container?.querySelector('#merchant-table-body') || container?.querySelector('tbody');
-        const cardsContainer = document.getElementById('merchant-cards-container');
-        // Get the overflow-x-auto div that contains the table (for horizontal scroll)
-        const tableScrollContainer = container?.querySelector('.overflow-x-auto');
-        
-        if (container) {
-            // Store current height to prevent layout shift (like best offer)
-            const currentHeight = container.offsetHeight;
-            container.style.minHeight = currentHeight + 'px';
-            
-            // Store scroll positions BEFORE making request (to maintain after update)
-            const scrollX = window.scrollX || window.pageXOffset;
-            const scrollY = window.scrollY || window.pageYOffset;
-            const tableScrollX = tableScrollContainer ? tableScrollContainer.scrollLeft : 0;
-            
-            // Build request URL (like spesial-promo-form)
-            let requestUrl;
-            if (typeof buildMerchantSearchRequestUrl === 'function') {
-                // Temporarily store sort params in global scope
-                window.currentMerchantSort = newSort;
-                window.currentMerchantSortDir = newOrder;
-                requestUrl = buildMerchantSearchRequestUrl();
-                // Clean up after a short delay
-                setTimeout(() => {
-                    delete window.currentMerchantSort;
-                    delete window.currentMerchantSortDir;
-                }, 100);
-            } else {
-                // Fallback: build URL manually (like spesial-promo-form)
-                const baseUrl = '{{ route("merchants.search") }}';
-                requestUrl = baseUrl + '?' + urlParams.toString();
-            }
-            
-            // Make AJAX request (like spesial-promo-form)
-            fetch(requestUrl, {
-                method: 'GET',
+    // Function to toggle link status
+    async function toggleLinkStatus(merchantId) {
+        try {
+            const response = await fetch(`/api/merchants/${merchantId}/toggle-link-status`, {
+                method: 'PATCH',
                 headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html'
+                    'Content-Type': 'application/json'
                 }
-            })
-            .then(response => response.text())
-            .then(html => {
-                // Parse HTML response (like spesial-promo-form)
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newTableBody = doc.getElementById('merchant-table-body');
-                const newCardsContainer = doc.getElementById('merchant-cards-container');
-                // Find pagination container (like spesial-promo-form) - desktop pagination
-                const newPaginationContainer = doc.querySelector('.bg-white.px-4.py-4.border-t.flex.items-center.justify-between');
-                // Find mobile pagination container
-                const newMobilePaginationContainer = doc.querySelector('.bg-white.px-4.py-4.border-t.flex.flex-col.items-center.justify-center.space-y-3.rounded-xl');
-                
-                if (newTableBody || newCardsContainer) {
-                    // Smooth transition (like spesial-promo-form)
-                    if (tableBody) {
-                        tableBody.style.opacity = '0';
-                        tableBody.style.transition = 'opacity 0.2s';
-                    }
-                    if (cardsContainer) {
-                        cardsContainer.style.opacity = '0';
-                        cardsContainer.style.transition = 'opacity 0.2s';
-                    }
-                    
-                    setTimeout(() => {
-                        // Replace table body content (like spesial-promo-form)
-                        if (newTableBody && tableBody) {
-                            tableBody.innerHTML = newTableBody.innerHTML;
-                        }
-                        
-                        // Replace cards container if exists
-                        if (newCardsContainer && cardsContainer) {
-                            cardsContainer.innerHTML = newCardsContainer.innerHTML;
-                        }
-                        
-                        // Replace pagination container if exists (like spesial-promo-form)
-                        if (newPaginationContainer) {
-                            const currentPaginationContainer = container.querySelector('.bg-white.px-4.py-4.border-t.flex.items-center.justify-between');
-                            if (currentPaginationContainer) {
-                                currentPaginationContainer.outerHTML = newPaginationContainer.outerHTML;
-                            }
-                        }
-                        
-                        // Also handle mobile pagination if exists
-                        if (newMobilePaginationContainer && cardsContainer) {
-                            const currentMobilePagination = cardsContainer.parentElement?.querySelector('.bg-white.px-4.py-4.border-t.flex.flex-col.items-center.justify-center.space-y-3.rounded-xl');
-                            if (currentMobilePagination) {
-                                currentMobilePagination.outerHTML = newMobilePaginationContainer.outerHTML;
-                            }
-                        }
-                        
-                        // Restore scroll positions immediately (BEFORE re-attaching listeners)
-                        window.scrollTo(scrollX, scrollY);
-                        
-                        // Restore horizontal scroll position of table container
-                        const newTableScrollContainer = container.querySelector('.overflow-x-auto');
-                        if (newTableScrollContainer && tableScrollX > 0) {
-                            newTableScrollContainer.scrollLeft = tableScrollX;
-                        }
-                        
-                        // Re-attach event listeners (like spesial-promo-form)
-                        if (typeof attachMerchantPaginationHandlers === 'function') {
-                            attachMerchantPaginationHandlers();
-                        }
-                        if (typeof updateMerchantUrlState === 'function') {
-                            updateMerchantUrlState();
-                        }
-                        if (typeof reapplyMerchantCategoryFilter === 'function') {
-                            reapplyMerchantCategoryFilter();
-                        }
-                        
-                        // Re-attach toggle listeners for status checkboxes
-                        document.querySelectorAll('.toggle-merchant-status').forEach(toggle => {
-                            toggle.addEventListener('change', (e) => {
-                                const merchantId = e.target.dataset.merchantId;
-                                if (!merchantId) return;
-                                toggleMerchantStatus(merchantId);
-                            });
-                        });
-                        
-                        document.querySelectorAll('.toggle-merchant-status-mobile').forEach(toggle => {
-                            toggle.addEventListener('change', (e) => {
-                                const merchantId = e.target.dataset.merchantId;
-                                if (!merchantId) return;
-                                toggleMerchantStatus(merchantId);
-                            });
-                        });
-                        
-                        // Restore opacity
-                        const updatedTableBody = container.querySelector('#merchant-table-body') || container.querySelector('tbody');
-                        const updatedCardsContainer = document.getElementById('merchant-cards-container');
-                        if (updatedTableBody) {
-                            updatedTableBody.style.opacity = '1';
-                        }
-                        if (updatedCardsContainer) {
-                            updatedCardsContainer.style.opacity = '1';
-                        }
-                        
-                        // Remove min-height after transition (like spesial-promo-form)
-                        setTimeout(() => {
-                            container.style.minHeight = '';
-                            // Ensure scroll positions are maintained after all updates
-                            window.scrollTo(scrollX, scrollY);
-                            if (newTableScrollContainer && tableScrollX > 0) {
-                                newTableScrollContainer.scrollLeft = tableScrollX;
-                            }
-                        }, 300);
-                        
-                        // Hide loading and finalize icons
-                        hideSortLoading(column);
-                        window.merchantSortInProgress = false;
-                        updateMerchantSortIcons(column, newOrder);
-                    }, 200);
-                } else {
-                    // Fallback: reload if parsing fails (like spesial-promo-form)
-                    hideSortLoading(column);
-                    window.merchantSortInProgress = false;
-                    container.style.minHeight = '';
-                    window.location.reload();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                hideSortLoading(column);
-                window.merchantSortInProgress = false;
-                if (container) {
-                    container.style.minHeight = '';
-                }
-                // Fallback: reload on error (like spesial-promo-form)
-                window.location.reload();
             });
-        } else {
-            hideSortLoading(column);
-            window.merchantSortInProgress = false;
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Gagal memperbarui link status');
+            }
+
+            // Update both desktop and mobile checkboxes
+            const desktopCheckbox = document.querySelector(`.toggle-link-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-link-status-mobile[data-merchant-id="${merchantId}"]`);
+            
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = data.link_status;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = data.link_status;
+            }
+
+            console.log('Link status merchant berhasil diperbarui');
+        } catch (error) {
+            console.error('Error toggling link status:', error);
+            // Revert checkboxes on error
+            const desktopCheckbox = document.querySelector(`.toggle-link-status[data-merchant-id="${merchantId}"]`);
+            const mobileCheckbox = document.querySelector(`.toggle-link-status-mobile[data-merchant-id="${merchantId}"]`);
+            if (desktopCheckbox) {
+                desktopCheckbox.checked = !desktopCheckbox.checked;
+            }
+            if (mobileCheckbox) {
+                mobileCheckbox.checked = !mobileCheckbox.checked;
+            }
+            alert('Gagal memperbarui link status: ' + error.message);
         }
     }
-
+    
     // QR Code Modal Functions
     function openQRCodeModal(linkUrl, merchantName) {
         const modal = document.getElementById('qrcode-modal');
