@@ -229,7 +229,7 @@ class IklanController extends Controller
             'upload_type' => ['required', 'in:manual,keyword'],
             'keyword_id' => ['required_if:upload_type,keyword', 'nullable', 'exists:keywords,id'],
             'image' => ['required_if:upload_type,manual', 'nullable', 'image', 'max:2048'],
-            'link_iklan' => ['nullable', 'url'],
+            'link_iklan' => ['required', 'url'],
             'territorial' => ['nullable', 'string'],
             'regional' => ['nullable', 'string'],
             'branch' => ['nullable', 'string'],
@@ -264,6 +264,11 @@ class IklanController extends Controller
 
             // Use keyword's CTA link
             $link = $keyword->cta_link;
+
+            // If keyword doesn't have CTA link, use the one from input
+            if (empty($link)) {
+                $link = $request->input('link_iklan');
+            }
 
             // Use keyword's merchant
             if ($keyword->merchant_key) {
