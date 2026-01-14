@@ -107,6 +107,7 @@
             // - iPad/MacIntel with Touch -> Tablet (Allow)
             // - Macintosh without Touch -> Desktop (Block)
             // - Windows/Linux -> Desktop (Block)
+            // - REMOVED: window.innerWidth check (prevents bypass by resizing window/opening console)
             
             const ua = navigator.userAgent;
             const isTouchDevice = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
@@ -118,7 +119,9 @@
             // New iPadOS sends "Macintosh" as UA, but has touch points.
             const isIPad = /iPad/i.test(ua) || (ua.includes('Macintosh') && isTouchDevice);
 
-            const isMobileOrTablet = isStandardMobile || isIPad || window.innerWidth <= 768;
+            // STRICT MODE: Hanya izinkan jika terdeteksi sebagai device mobile via User Agent.
+            // Hapus '|| window.innerWidth <= 768' karena membuat desktop bisa bypass dengan cara resize window / inspect element.
+            const isMobileOrTablet = isStandardMobile || isIPad;
 
             if (!isMobileOrTablet) {
                 showDesktopAlert();
