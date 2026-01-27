@@ -117,7 +117,7 @@
 
    /* Wave background height: lebih tinggi di mobile, tetap seperti semula di desktop */
    .wave-bg-mobile {
-    height: 1000px;
+    height: 800px;
    }
    @media (min-width: 600px) {
     .wave-bg-mobile {
@@ -131,7 +131,7 @@
    /* HP kecil */
    @media (max-width: 599px) {
     .wave-img-mobile {
-     height: 540px;
+     height: 400px;
     }
    }
    /* Tablet / hp lebar, tapi masih bukan desktop */
@@ -180,7 +180,7 @@
      </div>
 
      <section class="relative z-10 space-y-10 md:space-y-12"></section>
-     <div class="mt-1 md:mt-0">
+     <div class="mt-1 md:mt-0 relative z-30">
        @include('partials.spesial_promo', ['specialPromos' => $specialPromos ?? null])
       </div>
 

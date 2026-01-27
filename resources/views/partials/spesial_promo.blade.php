@@ -1,4 +1,4 @@
-<section class="relative z-20 mt-5 md:mt-14 mb-8 sm:mb-10">
+<section class="relative z-30 mt-5 md:mt-14 mb-8 sm:mb-10">
     <style>
         .special-promo-card {
             width: calc(50% - 6px);
