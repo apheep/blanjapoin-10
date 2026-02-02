@@ -882,7 +882,16 @@
 
    // Location searchable select (combobox)
   const serverLocations = <?php echo $locationList->toJson(); ?>;
-   const locations = ['All', ...serverLocations];
+   // Remove duplicates case-insensitively
+   const uniqueLocations = serverLocations.reduce((acc, location) => {
+    const normalized = location.toLowerCase();
+    if (!acc.map.has(normalized)) {
+     acc.map.set(normalized, location);
+     acc.list.push(location);
+    }
+    return acc;
+   }, { map: new Map(), list: [] }).list;
+   const locations = ['All', ...uniqueLocations];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');
    const voucherSections = new Map();
