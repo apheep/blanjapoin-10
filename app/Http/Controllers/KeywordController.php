@@ -1333,4 +1333,48 @@ class KeywordController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Download keyword image
+     */
+    public function downloadImage($id)
+    {
+        $keyword = Keyword::findOrFail($id);
+        
+        if (!$keyword->image) {
+            abort(404, 'Image tidak ditemukan');
+        }
+
+        $originalFileName = basename($keyword->image);
+        $filePath = public_path('storage/keywords/' . $originalFileName);
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'File image tidak ditemukan');
+        }
+        
+        // Create user-friendly filename
+        $extension = pathinfo($originalFileName, PATHINFO_EXTENSION);
+        $productName = preg_replace('/[^A-Za-z0-9\-_]/', '_', $keyword->nama_produk);
+        $fileName = 'Image_' . $productName . '.' . $extension;
+        
+        $fileSize = filesize($filePath);
+        $mimeType = mime_content_type($filePath);
+        
+        // Clear any output buffers to prevent corruption
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        return response()->stream(function() use ($filePath) {
+            $stream = fopen($filePath, 'rb');
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => $fileSize,
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Pragma' => 'public',
+        ]);
+    }
 }

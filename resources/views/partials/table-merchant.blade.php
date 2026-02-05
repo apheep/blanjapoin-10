@@ -458,15 +458,23 @@
                         {{-- Logo --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->logo_merchant)
-                                <a href="{{ asset('storage/' . $merchant->logo_merchant) }}" 
-                                   onclick="event.stopPropagation();"
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
-                                    <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" 
-                                         alt="{{ $merchant->nama_merchant }}" 
-                                         class="h-full w-full object-cover">
-                                </a>
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ asset('storage/' . $merchant->logo_merchant) }}" 
+                                       onclick="event.stopPropagation();"
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
+                                        <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" 
+                                             alt="{{ $merchant->nama_merchant }}" 
+                                             class="h-full w-full object-cover">
+                                    </a>
+                                    <a href="{{ route('merchant.logo.download', $merchant->id) }}" 
+                                       onclick="event.stopPropagation();"
+                                       class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                       title="Download Logo">
+                                        <i class="fas fa-download text-xs"></i>
+                                    </a>
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -824,15 +832,23 @@
                         <div>
                             <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Logo</p>
                             @if($merchant->logo_merchant)
-                                <a href="{{ asset('storage/' . $merchant->logo_merchant) }}"
-                                   onclick="event.stopPropagation();"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="mt-1 inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors">
-                                    <img src="{{ asset('storage/' . $merchant->logo_merchant) }}"
-                                         alt="{{ $merchant->nama_merchant }}"
-                                         class="h-full w-full object-cover">
-                                </a>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <a href="{{ asset('storage/' . $merchant->logo_merchant) }}"
+                                       onclick="event.stopPropagation();"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors">
+                                        <img src="{{ asset('storage/' . $merchant->logo_merchant) }}"
+                                             alt="{{ $merchant->nama_merchant }}"
+                                             class="h-full w-full object-cover">
+                                    </a>
+                                    <a href="{{ route('merchant.logo.download', $merchant->id) }}" 
+                                       onclick="event.stopPropagation();"
+                                       class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                       title="Download Logo">
+                                        <i class="fas fa-download text-xs"></i>
+                                    </a>
+                                </div>
                             @else
                                 <span class="text-xs text-gray-400 mt-1 inline-block">-</span>
                             @endif

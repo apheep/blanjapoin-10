@@ -312,14 +312,21 @@
                         </td>
                         <td class="px-4 py-4">
                             @if($keyword->image)
-                                <a href="{{ asset('storage/' . $keyword->image) }}"
-                                   target="_blank"
-                                   rel="noreferrer"
-                                   class="group block w-24 h-12 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition duration-150 hover:border-gray-300 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
-                                    <img src="{{ asset('storage/' . $keyword->image) }}" 
-                                         alt="{{ $keyword->nama_produk }}" 
-                                         class="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105">
-                                </a>
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ asset('storage/' . $keyword->image) }}"
+                                       target="_blank"
+                                       rel="noreferrer"
+                                       class="group block w-24 h-12 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition duration-150 hover:border-gray-300 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
+                                        <img src="{{ asset('storage/' . $keyword->image) }}" 
+                                             alt="{{ $keyword->nama_produk }}" 
+                                             class="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105">
+                                    </a>
+                                    <a href="{{ route('keyword.image.download', $keyword->id) }}" 
+                                       class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                       title="Download Image">
+                                        <i class="fas fa-download text-xs"></i>
+                                    </a>
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
