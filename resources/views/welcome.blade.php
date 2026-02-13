@@ -928,7 +928,7 @@
      return;
     }
     dropdownElement.innerHTML = options.map(l => `
-     <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l}</div>
+     <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l.toUpperCase()}</div>
     `).join('');
    }
 
@@ -1172,7 +1172,7 @@
     const f = q.trim().toLowerCase();
     const opts = locations.filter(l => f===''? true : l.toLowerCase().includes(f));
     holder.innerHTML = opts.map(l => `
-     <button type="button" class="w-full text-left px-6 py-4 text-base hover:bg-neutral-50" data-value="${l}">${l}</button>
+     <button type="button" class="w-full text-left px-6 py-4 text-base hover:bg-neutral-50" data-value="${l}">${l.toUpperCase()}</button>
     `).join('') || '<div class="px-6 py-4 text-neutral-500">Tidak ada hasil</div>';
    };
    renderList();
