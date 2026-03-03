@@ -228,6 +228,29 @@ class MerchantController extends Controller
         return null;
     }
 
+    public function qrList(Request $request)
+    {
+        $merchants = Merchant::whereNotNull('link_blanjapoin')
+            ->where('link_blanjapoin', '!=', '')
+            ->orderBy('nama_merchant', 'asc')
+            ->get(['id', 'nama_merchant', 'link_blanjapoin']);
+
+        $result = $merchants->map(function ($m) {
+            $cleanLink = preg_replace('#^https?://#', '', trim($m->link_blanjapoin));
+            $parts = explode('/', $cleanLink);
+            if (count($parts) >= 3 && $parts[1] === 'dash') {
+                $code = end($parts);
+                return [
+                    'name' => $m->nama_merchant,
+                    'url'  => route('link.pelanggan', $code),
+                ];
+            }
+            return null;
+        })->filter()->values();
+
+        return response()->json($result);
+    }
+
     public function index(Request $request)
     {
         // Buat query params untuk appends, pastikan keyword_page tetap ada

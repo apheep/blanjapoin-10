@@ -319,6 +319,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [MerchantController::class, 'index'])->name('dashboard');
     Route::get('/merchants/search', [MerchantController::class, 'search'])->name('merchants.search');
     Route::get('/merchants/export/excel', [MerchantController::class, 'exportExcel'])->name('merchants.export.excel');
+    Route::get('/api/merchants/qr-list', [MerchantController::class, 'qrList'])->name('merchants.qr-list');
     Route::get('/merchants/{merchant}/keywords/export/excel', [MerchantController::class, 'exportKeywordsExcel'])->name('merchants.keywords.export.excel');
 
     // Resource CRUD merchant (index sudah dipakai di atas)

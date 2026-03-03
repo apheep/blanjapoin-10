@@ -851,6 +851,17 @@
                                 Export
                             </a>
                         </div>
+
+                        <div class="relative">
+                            <button
+                                type="button"
+                                onclick="openBulkQRModal()"
+                                class="flex items-center px-4 py-2 text-sm rounded-full border border-orange-300 text-orange-700 bg-gradient-to-r from-orange-50 to-yellow-50 hover:from-orange-100 hover:to-yellow-100 transition-colors"
+                            >
+                                <i class="fas fa-qrcode mr-2"></i>
+                                Bulk QR
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
