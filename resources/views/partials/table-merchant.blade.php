@@ -1349,35 +1349,77 @@ window.updateMerchantSortIcons = updateMerchantSortIcons;
 
     function downloadQR() {
         const box = document.getElementById('qr-box');
-        const src = box ? box.querySelector('canvas') : null;
-        if (!src) { alert('QR belum siap, tunggu sebentar.'); return; }
+        if (!box || !box.dataset.url) { alert('QR belum siap, tunggu sebentar.'); return; }
 
-        const pad = 32, txtH = 52;
-        const W   = src.width + pad * 2;
-        const H   = src.height + pad * 2 + txtH;
-        const cv  = document.createElement('canvas');
-        cv.width  = W; cv.height = H;
-        const ctx = cv.getContext('2d');
+        const url  = box.dataset.url;
+        const name = box.dataset.name || 'merchant';
 
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, W, H);
-        ctx.drawImage(src, pad, pad);
+        // Render a fresh high-res QR off-screen (1000×1000)
+        const hiRes = 1000;
+        const tmpDiv = document.createElement('div');
+        tmpDiv.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;';
+        document.body.appendChild(tmpDiv);
 
-        const url = box.dataset.url || '';
-        let disp  = url;
-        ctx.font      = '600 13px "Segoe UI", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#6b7280';
-        while (ctx.measureText(disp).width > W - 24 && disp.length > 8)
-            disp = disp.slice(0, -4) + '...';
-        ctx.fillText(disp, W / 2, src.height + pad + txtH / 2 + 4);
+        const hiQR = new QRCodeStyling({
+            width:  hiRes,
+            height: hiRes,
+            type:   'canvas',
+            data:   url,
+            dotsOptions:          { color: '#111827', type: 'dots' },
+            cornersSquareOptions: { color: '#111827', type: 'extra-rounded' },
+            cornersDotOptions:    { color: '#111827', type: 'dot' },
+            backgroundOptions:    { color: '#ffffff' },
+            qrOptions:            { errorCorrectionLevel: 'H' }
+        });
+        hiQR.append(tmpDiv);
 
-        const a   = document.createElement('a');
-        const nm  = (box.dataset.name || 'merchant').replace(/\s+/g, '-');
-        const dt  = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        a.download = `qr-${nm}-${dt}.png`;
-        a.href     = cv.toDataURL('image/png', 1);
-        a.click();
+        setTimeout(() => {
+            const src = tmpDiv.querySelector('canvas');
+            if (!src) { document.body.removeChild(tmpDiv); alert('Gagal generate QR, coba lagi.'); return; }
+
+            const pad  = 80;
+            const txtH = 120;
+            const W    = src.width  + pad * 2;
+            const H    = src.height + pad * 2 + txtH;
+            const cv   = document.createElement('canvas');
+            cv.width   = W; cv.height = H;
+            const ctx  = cv.getContext('2d');
+
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // QR image
+            ctx.drawImage(src, pad, pad);
+
+            // Separator line
+            const textStartY = src.height + pad;
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(pad, textStartY + 18);
+            ctx.lineTo(W - pad, textStartY + 18);
+            ctx.stroke();
+
+            // Link URL — bold black
+            ctx.font         = '700 38px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle    = '#111827';
+            let disp = url;
+            while (ctx.measureText(disp).width > W - 80 && disp.length > 8)
+                disp = disp.slice(0, -4) + '...';
+            ctx.fillText(disp, W / 2, textStartY + 72);
+
+            const a   = document.createElement('a');
+            const nm  = name.replace(/\s+/g, '-');
+            const dt  = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            a.download = `qr-${nm}-${dt}.png`;
+            a.href     = cv.toDataURL('image/png', 1.0);
+            a.click();
+
+            document.body.removeChild(tmpDiv);
+        }, 300);
     }
 
     function printQR() {
@@ -1483,3 +1525,289 @@ window.updateMerchantSortIcons = updateMerchantSortIcons;
 </div>
 
 <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<!-- Bulk QR Download Modal -->
+<div id="bulk-qr-modal" class="fixed z-[9999] hidden" style="display:none; inset:0; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; padding:1rem;">
+    <div class="w-full h-full absolute inset-0" onclick="closeBulkQRModal()"></div>
+    <div id="bulk-qr-modal-content" class="relative z-10 bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-95 opacity-0 flex flex-col" style="max-height:90vh;">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-qrcode text-orange-600 text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Bulk Download QR Code</h3>
+                    <p class="text-sm text-gray-500">Pilih merchant untuk download QR</p>
+                </div>
+            </div>
+            <button onclick="closeBulkQRModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Search & Select All -->
+        <div class="px-6 pt-4 pb-2 border-b border-gray-100 flex-shrink-0">
+            <div class="relative mb-3">
+                <input type="text" id="bulk-qr-search" placeholder="Cari merchant..."
+                       oninput="filterBulkQRList()"
+                       class="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                <div class="absolute left-3 top-2.5 text-gray-400">
+                    <i class="fas fa-search text-sm"></i>
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="bulk-qr-select-all" onchange="toggleBulkQRAll(this)"
+                           class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400 cursor-pointer">
+                    <span class="text-sm font-medium text-gray-700">Pilih Semua</span>
+                </label>
+                <span id="bulk-qr-count" class="text-xs font-semibold text-gray-500">0 dipilih</span>
+            </div>
+        </div>
+
+        <!-- Merchant List -->
+        <div class="flex-1 overflow-y-auto px-6 py-3 min-h-0" id="bulk-qr-list-wrapper">
+            <div id="bulk-qr-list" class="space-y-1">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl border-t border-gray-100 flex-shrink-0">
+            <button onclick="closeBulkQRModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <i class="fas fa-times text-xs"></i> Batal
+            </button>
+            <button id="bulk-qr-download-btn" onclick="bulkDownloadQR()" disabled
+                    class="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-download text-xs"></i>
+                <span id="bulk-qr-download-text">Download ZIP</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Bulk QR Modal ──────────────────────────────────────────────
+let _bulkQRMerchants = [];
+
+function openBulkQRModal() {
+    // Fetch all merchants with QR links from server
+    _bulkQRMerchants = [];
+
+    const listEl = document.getElementById('bulk-qr-list');
+    listEl.innerHTML = '<p class="text-sm text-gray-400 text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat data merchant...</p>';
+
+    // Show modal first (teleport to body)
+    const modal = document.getElementById('bulk-qr-modal');
+    const content = document.getElementById('bulk-qr-modal-content');
+    if (modal.parentNode !== document.body) document.body.appendChild(modal);
+    modal.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; top:0 !important; left:0 !important; width:100% !important; height:100% !important; z-index:99999 !important; background:rgba(0,0,0,0.5) !important; align-items:center !important; justify-content:center !important; padding:1rem !important;';
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+    });
+
+    fetch('{{ route("merchants.qr-list") }}')
+        .then(r => r.json())
+        .then(data => {
+            _bulkQRMerchants = data;
+            _buildBulkQRList();
+        })
+        .catch(() => {
+            listEl.innerHTML = '<p class="text-sm text-red-400 text-center py-6">Gagal memuat data. Coba lagi.</p>';
+        });
+
+    // Reset state early
+    document.getElementById('bulk-qr-search').value = '';
+    document.getElementById('bulk-qr-select-all').checked = false;
+    updateBulkQRSelection();
+}
+
+function _buildBulkQRList() {
+    const listEl = document.getElementById('bulk-qr-list');
+    listEl.innerHTML = '';
+    if (!_bulkQRMerchants || _bulkQRMerchants.length === 0) {
+        listEl.innerHTML = '<p class="text-sm text-gray-400 text-center py-6">Tidak ada merchant dengan link pelanggan.</p>';
+        return;
+    }
+    _bulkQRMerchants.forEach((m, i) => {
+        const item = document.createElement('label');
+        item.className = 'bulk-qr-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors';
+        item.dataset.search = m.name.toLowerCase();
+        item.innerHTML = `
+            <input type="checkbox" class="bulk-qr-cb w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400 cursor-pointer"
+                   data-idx="${i}" onchange="updateBulkQRSelection()">
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate">${escapeHtml(m.name)}</p>
+                <p class="text-xs text-gray-400 truncate">${escapeHtml(m.url)}</p>
+            </div>
+            <div class="flex-shrink-0 w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
+                <i class="fas fa-qrcode text-orange-400 text-sm"></i>
+            </div>
+        `;
+        listEl.appendChild(item);
+    });
+    updateBulkQRSelection();
+}
+
+function closeBulkQRModal() {
+    const modal = document.getElementById('bulk-qr-modal');
+    const content = document.getElementById('bulk-qr-modal-content');
+    if (!modal) return;
+    content.classList.remove('scale-100', 'opacity-100');
+    content.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        modal.style.cssText = 'display:none !important;';
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }, 200);
+}
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function filterBulkQRList() {
+    const q = document.getElementById('bulk-qr-search').value.toLowerCase().trim();
+    document.querySelectorAll('.bulk-qr-item').forEach(item => {
+        item.style.display = (!q || item.dataset.search.includes(q)) ? '' : 'none';
+    });
+}
+
+function toggleBulkQRAll(master) {
+    const visible = document.querySelectorAll('.bulk-qr-item:not([style*="display: none"]) .bulk-qr-cb');
+    visible.forEach(cb => cb.checked = master.checked);
+    updateBulkQRSelection();
+}
+
+function updateBulkQRSelection() {
+    const all = document.querySelectorAll('.bulk-qr-cb');
+    const checked = document.querySelectorAll('.bulk-qr-cb:checked');
+    const countEl = document.getElementById('bulk-qr-count');
+    const btn = document.getElementById('bulk-qr-download-btn');
+    const btnText = document.getElementById('bulk-qr-download-text');
+
+    countEl.textContent = checked.length + ' dipilih';
+    btn.disabled = checked.length === 0;
+    btnText.textContent = checked.length > 0 ? `Download ZIP (${checked.length})` : 'Download ZIP';
+
+    // Update select-all state
+    const visible = document.querySelectorAll('.bulk-qr-item:not([style*="display: none"]) .bulk-qr-cb');
+    const visChecked = document.querySelectorAll('.bulk-qr-item:not([style*="display: none"]) .bulk-qr-cb:checked');
+    document.getElementById('bulk-qr-select-all').checked = visible.length > 0 && visible.length === visChecked.length;
+}
+
+async function bulkDownloadQR() {
+    const checked = document.querySelectorAll('.bulk-qr-cb:checked');
+    if (checked.length === 0) return;
+
+    const btn = document.getElementById('bulk-qr-download-btn');
+    const btnText = document.getElementById('bulk-qr-download-text');
+    btn.disabled = true;
+    btnText.innerHTML = '<i class="fas fa-spinner fa-spin text-xs mr-1"></i> Generating...';
+
+    try {
+        const zip = new JSZip();
+        const qrFolder = zip.folder('qr-codes');
+        const total = checked.length;
+        let done = 0;
+
+        for (const cb of checked) {
+            const idx = parseInt(cb.dataset.idx);
+            const m = _bulkQRMerchants[idx];
+            if (!m) continue;
+
+            btnText.innerHTML = `<i class="fas fa-spinner fa-spin text-xs mr-1"></i> ${++done}/${total}`;
+
+            // Generate hi-res QR
+            const blob = await generateQRBlob(m.url, m.name);
+            const safeName = m.name.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '-').substring(0, 50) || 'merchant';
+            qrFolder.file(`qr-${safeName}.png`, blob);
+        }
+
+        btnText.innerHTML = '<i class="fas fa-spinner fa-spin text-xs mr-1"></i> Zipping...';
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const dt = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(zipBlob);
+        a.download = `bulk-qr-${dt}.zip`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+
+        btnText.textContent = `Download ZIP (${total})`;
+        btn.disabled = false;
+    } catch (err) {
+        console.error('Bulk QR error:', err);
+        alert('Gagal generate QR. Coba lagi.');
+        btnText.textContent = 'Download ZIP';
+        btn.disabled = false;
+    }
+}
+
+function generateQRBlob(url, name) {
+    return new Promise((resolve, reject) => {
+        const hiRes = 1000;
+        const tmpDiv = document.createElement('div');
+        tmpDiv.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;';
+        document.body.appendChild(tmpDiv);
+
+        const hiQR = new QRCodeStyling({
+            width: hiRes, height: hiRes, type: 'canvas', data: url,
+            dotsOptions:          { color: '#111827', type: 'dots' },
+            cornersSquareOptions: { color: '#111827', type: 'extra-rounded' },
+            cornersDotOptions:    { color: '#111827', type: 'dot' },
+            backgroundOptions:    { color: '#ffffff' },
+            qrOptions:            { errorCorrectionLevel: 'H' }
+        });
+        hiQR.append(tmpDiv);
+
+        setTimeout(() => {
+            const src = tmpDiv.querySelector('canvas');
+            if (!src) { document.body.removeChild(tmpDiv); reject('Canvas not found'); return; }
+
+            const pad = 80, txtH = 120;
+            const W = src.width + pad * 2;
+            const H = src.height + pad * 2 + txtH;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(src, pad, pad);
+
+            // Separator line
+            const textStartY = src.height + pad;
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(pad, textStartY + 18);
+            ctx.lineTo(W - pad, textStartY + 18);
+            ctx.stroke();
+
+            // Link URL — bold black
+            ctx.font = '700 38px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#111827';
+            let disp = url;
+            while (ctx.measureText(disp).width > W - 80 && disp.length > 8)
+                disp = disp.slice(0, -4) + '...';
+            ctx.fillText(disp, W / 2, textStartY + 72);
+
+            cv.toBlob(blob => {
+                document.body.removeChild(tmpDiv);
+                if (blob) resolve(blob);
+                else reject('Failed to create blob');
+            }, 'image/png', 1.0);
+        }, 300);
+    });
+}
+</script>
