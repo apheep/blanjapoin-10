@@ -1142,17 +1142,17 @@
 
    // Initialize filters and sorting after DOM is ready
    function initializeFiltersAndSorting() {
-    // Remove animation classes from all cards to make them visible immediately
+    // Make visible cards (not hidden by see-more) show immediately
     const cards = document.querySelectorAll('[data-voucher-card="true"]');
     cards.forEach(card => {
+     // Skip cards hidden by see-more
+     if (card.style.display === 'none') return;
      card.classList.remove('opacity-0', 'translate-y-2');
-     card.style.opacity = '1';
-     card.style.transform = 'none';
+     card.classList.add('opacity-100', 'translate-y-0');
     });
     
     refreshVoucherCards();
     registerVoucherSections();
-    applyPointSort(currentPointSort);
    }
    
    // Run immediately and also after a short delay to catch any dynamically loaded content
