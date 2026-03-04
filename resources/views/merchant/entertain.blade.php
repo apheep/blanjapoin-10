@@ -236,8 +236,29 @@
         @endforelse
     </div>
 
+    <!-- See More Button -->
+    @if($entertainKeywords->count() > 4)
+    <div id="entertainSeeMoreWrapper" class="flex justify-center mt-4 md:mt-5">
+     <button onclick="entertainLoadMore()" class="group inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-orange-500 font-medium transition-colors duration-200">
+      <span>See more</span>
+      <svg class="w-4 h-4 transition-transform duration-200 group-hover:translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+     </button>
+    </div>
+    @endif
 
     <script>
+// === Entertain See More Logic ===
+(function() {
+ const MB = 4, DB = 6, BP = 1024; let visible = 0;
+ function batch() { return window.innerWidth < BP ? MB : DB; }
+ function cards() { const c = document.getElementById('entertainCardContainer'); return c ? Array.from(c.querySelectorAll('[data-voucher-card="true"]')) : []; }
+ function init() { const all = cards(); if (!all.length) return; visible = Math.min(batch(), all.length); all.forEach((c, i) => { if (i < visible) { c.style.display = ''; c.classList.remove('opacity-0','translate-y-2'); c.classList.add('opacity-100','translate-y-0'); } else { c.style.display = 'none'; c.classList.add('opacity-0','translate-y-2'); c.classList.remove('opacity-100','translate-y-0'); } }); updateBtn(all.length); }
+ function updateBtn(total) { const w = document.getElementById('entertainSeeMoreWrapper'); if (!w) return; w.style.display = visible >= total ? 'none' : 'flex'; }
+ window.entertainLoadMore = function() { const all = cards(), b = batch(), end = Math.min(visible + b, all.length); for (let i = visible; i < end; i++) { const c = all[i]; c.style.display = ''; c.style.transitionDelay = ((i - visible) * 70) + 'ms'; void c.offsetHeight; requestAnimationFrame(() => { c.classList.remove('opacity-0','translate-y-2'); c.classList.add('opacity-100','translate-y-0'); }); } setTimeout(() => { for (let i = visible; i < end; i++) all[i].style.transitionDelay = ''; }, (end - visible) * 70 + 350); visible = end; updateBtn(all.length); if (all[visible - b]) setTimeout(() => all[visible - b].scrollIntoView({ behavior:'smooth', block:'nearest' }), 100); };
+ let bp = window.innerWidth < BP ? 'm' : 'd'; window.addEventListener('resize', () => { const n = window.innerWidth < BP ? 'm' : 'd'; if (n !== bp) { bp = n; updateBtn(cards().length); } });
+ document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+})();
+
 // Function to format SKB text - split numbered items into separate lines
 function formatSKB(text) {
  if (!text) return '';
