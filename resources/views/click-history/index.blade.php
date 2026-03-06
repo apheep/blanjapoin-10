@@ -74,6 +74,25 @@
                 </div>
             </div>
 
+            <!-- Tab Buttons -->
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button type="button" data-ch-tab="click-log"
+                        class="ch-tab-btn px-4 py-2 rounded-full bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white font-semibold shadow-lg shadow-orange-100 transition-all duration-300">
+                    <i class="fas fa-mouse-pointer mr-1"></i> Click Log
+                </button>
+                <button type="button" data-ch-tab="rekap-merchant"
+                        class="ch-tab-btn px-4 py-2 rounded-full bg-white text-gray-700 font-semibold shadow-sm hover:bg-orange-50 transition-all duration-300">
+                    <i class="fas fa-store mr-1"></i> Rekap per Merchant
+                </button>
+                <button type="button" data-ch-tab="rekap-keyword"
+                        class="ch-tab-btn px-4 py-2 rounded-full bg-white text-gray-700 font-semibold shadow-sm hover:bg-orange-50 transition-all duration-300">
+                    <i class="fas fa-key mr-1"></i> Rekap per Keyword
+                </button>
+            </div>
+
+            {{-- =============== TAB 1: CLICK LOG (existing content) =============== --}}
+            <div data-ch-panel="click-log" class="ch-tab-panel transition-all duration-300">
+
             <!-- Filters -->
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                 <form method="GET" action="{{ route('click.history.index') }}" class="space-y-4">
@@ -583,9 +602,180 @@
                     </div>
                 </div>
             </div>
+
+            </div>{{-- End Tab 1: Click Log --}}
+
+            {{-- =============== TAB 2: REKAP PER MERCHANT =============== --}}
+            <div data-ch-panel="rekap-merchant" class="ch-tab-panel transition-all duration-300 hidden opacity-0">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Rekap TRX per Merchant</h2>
+                        <p class="text-sm text-gray-500 mt-1">Total TRX matched yang masuk ke setiap merchant</p>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Total: {{ $rekapMerchant->count() }} merchant
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <p class="text-sm text-gray-600">Total TRX (Semua Merchant)</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($rekapMerchant->sum('total_redeem'), 0, ',', '.') }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <p class="text-sm text-gray-600">Total Merchant</p>
+                        <p class="text-2xl font-bold text-blue-600 mt-1">{{ number_format($rekapMerchant->count(), 0, ',', '.') }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Kota</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Keyword</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Total TRX</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($rekapMerchant as $index => $rekap)
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-4 text-sm font-medium text-gray-900">{{ $index + 1 }}</td>
+                                        <td class="px-4 py-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ $rekap->nama_merchant }}</div>
+                                            <div class="text-xs text-gray-500">ID: {{ $rekap->merchant_id }}</div>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-gray-700">{{ $rekap->merchant_city ?? '-' }}</td>
+                                        <td class="px-4 py-4 text-sm text-center">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $rekap->total_keyword }}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-center font-semibold text-gray-900">{{ number_format($rekap->total_redeem, 0, ',', '.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-12 text-center">
+                                            <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                                            <p class="text-sm font-medium text-gray-500">Belum ada data rekap merchant</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>{{-- End Tab 2: Rekap per Merchant --}}
+
+            {{-- =============== TAB 3: REKAP PER KEYWORD =============== --}}
+            <div data-ch-panel="rekap-keyword" class="ch-tab-panel transition-all duration-300 hidden opacity-0">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Rekap TRX per Keyword ID</h2>
+                        <p class="text-sm text-gray-500 mt-1">Total redeem dan stock per keyword ID dari tokodigi_tselpoin_redeem</p>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Total: {{ $rekapKeyword->count() }} keyword
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <p class="text-sm text-gray-600">Total Redeem (Semua Keyword)</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($rekapKeyword->sum('total_redeem'), 0, ',', '.') }}</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <p class="text-sm text-gray-600">Total Keyword</p>
+                        <p class="text-2xl font-bold text-blue-600 mt-1">{{ number_format($rekapKeyword->count(), 0, ',', '.') }}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Keyword ID</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Nama Produk</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Merchant</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Stock</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Sisa Stock</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Redeem</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($rekapKeyword as $index => $rekap)
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-4 text-sm font-medium text-gray-900">{{ $index + 1 }}</td>
+                                        <td class="px-4 py-4">
+                                            <span class="text-sm font-mono font-medium text-gray-900">{{ $rekap->keyword_id }}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-gray-700">{{ $rekap->nama_produk ?? '-' }}</td>
+                                        <td class="px-4 py-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ $rekap->nama_merchant ?? '-' }}</div>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-center">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">{{ $rekap->stock ?? '-' }}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-center">
+                                            @php
+                                                $sisaStock = $rekap->sisa_stock ?? null;
+                                                $stockClass = 'bg-orange-100 text-orange-800';
+                                                if ($sisaStock !== null && $sisaStock <= 0) $stockClass = 'bg-red-100 text-red-800';
+                                                elseif ($sisaStock !== null && $sisaStock <= 5) $stockClass = 'bg-yellow-100 text-yellow-800';
+                                            @endphp
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full {{ $stockClass }}">{{ $sisaStock ?? '-' }}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-center font-semibold text-gray-900">{{ number_format($rekap->total_redeem, 0, ',', '.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="px-4 py-12 text-center">
+                                            <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                                            <p class="text-sm font-medium text-gray-500">Belum ada data rekap keyword</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>{{-- End Tab 3: Rekap per Keyword --}}
         </main>
 
     <script>
+        // Tab switching for Click History page
+        (function() {
+            const tabBtns = document.querySelectorAll('.ch-tab-btn');
+            const tabPanels = document.querySelectorAll('.ch-tab-panel');
+            const activeClasses = ['bg-gradient-to-r', 'from-[#F81611]', 'to-[#F0B100]', 'text-white', 'shadow-lg', 'shadow-orange-100'];
+            const inactiveClasses = ['bg-white', 'text-gray-700', 'shadow-sm'];
+            function showTab(targetTab) {
+                tabBtns.forEach(btn => {
+                    const isActive = btn.dataset.chTab === targetTab;
+                    activeClasses.forEach(cls => btn.classList.toggle(cls, isActive));
+                    inactiveClasses.forEach(cls => btn.classList.toggle(cls, !isActive));
+                });
+                tabPanels.forEach(panel => {
+                    if (panel.dataset.chPanel === targetTab) {
+                        panel.classList.remove('hidden', 'opacity-0');
+                        panel.classList.add('opacity-100');
+                    } else {
+                        panel.classList.add('hidden', 'opacity-0');
+                        panel.classList.remove('opacity-100');
+                    }
+                });
+            }
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => showTab(btn.dataset.chTab));
+            });
+            showTab('click-log');
+        })();
+
         // Merchant searchable dropdown
         (function() {
             const container = document.getElementById('merchant-dropdown-container');

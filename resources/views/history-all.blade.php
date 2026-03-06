@@ -61,6 +61,11 @@
                         class="tab-trigger px-4 py-2 rounded-full bg-white text-gray-700 font-semibold shadow-sm hover:bg-orange-50 transition-all duration-300">
                     History Keywords
                 </button>
+                <button type="button"
+                        data-tab-btn="redeem"
+                        class="tab-trigger px-4 py-2 rounded-full bg-white text-gray-700 font-semibold shadow-sm hover:bg-orange-50 transition-all duration-300">
+                    History Redeem
+                </button>
             </div>
 
             @php
@@ -751,6 +756,355 @@
                 </div>
             </section>
 
+            {{-- =============== REDEEM HISTORY TAB =============== --}}
+            <section id="redeem-history" data-tab-panel="redeem" class="mt-16 space-y-6 transition-all duration-300 {{ request('tab') === 'redeem' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5 hidden pointer-events-none' }}">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Redeem Section</p>
+                        <h2 class="text-xl font-bold text-gray-900">History Redeem (per Keyword ID)</h2>
+                        <p class="text-sm text-gray-500 mt-1">Semua data redeem yang mengurangi stock berdasarkan keyword ID</p>
+                    </div>
+                    @if(isset($redeemPaginator))
+                    <div class="text-sm text-gray-500">
+                        Menampilkan {{ $redeemPaginator->count() }} dari {{ $redeemPaginator->total() }} data
+                    </div>
+                    @endif
+                </div>
+
+                <!-- Search and Date Filter for Redeem -->
+                <form method="GET" action="{{ url()->current() }}" id="redeemSearchForm" class="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <input type="hidden" name="tab" value="redeem">
+                    <input type="hidden" name="sort_redeem" id="sortRedeemField" value="{{ request('sort_redeem', 'tanggal') }}">
+                    <input type="hidden" name="sort_redeem_dir" id="sortRedeemDirField" value="{{ request('sort_redeem_dir', 'desc') }}">
+                    <div class="relative w-full max-w-[280px] sm:max-w-[240px]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text"
+                               name="search_redeem"
+                               id="redeemSearchInput"
+                               value="{{ request('search_redeem', '') }}"
+                               class="search-input"
+                               placeholder="Cari MSISDN, Keyword..."
+                               onkeydown="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('redeemSearchForm').submit(); }" />
+                        @if(request()->has('search_redeem'))
+                            <button type="button" onclick="clearRedeemSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        @endif
+                    </div>
+                    <div class="flex-shrink-0">
+                        @include('partials.date-withdraw', ['filterId' => 'redeemDateFilter'])
+                    </div>
+                    <input type="hidden" name="start_date_redeem" id="redeemStartDate" value="{{ request('start_date_redeem') }}">
+                    <input type="hidden" name="end_date_redeem" id="redeemEndDate" value="{{ request('end_date_redeem') }}">
+                    @if(request()->has('search_redeem') || request()->has('start_date_redeem') || request()->has('end_date_redeem'))
+                        <a href="{{ url()->current() }}?tab=redeem" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-times mr-1"></i>Clear
+                        </a>
+                    @endif
+                </form>
+
+                @php $redeemData = $redeemPaginator ?? collect(); @endphp
+
+                <!-- Desktop Table -->
+                <div class="hidden md:block bg-white rounded-xl shadow overflow-hidden" style="position: relative; isolation: isolate;" id="redeem-history-table-container">
+                    <div id="redeemPaginationLoadingOverlay" class="hidden absolute inset-0 bg-white bg-opacity-75 z-30 flex items-center justify-center rounded-xl">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="w-6 h-6 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin"></div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table id="redeem-table" class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-20 shadow-sm">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('redeem', 'tanggal')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Tanggal Redeem</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_redeem') === 'tanggal' ? (request('sort_redeem_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_redeem') === 'tanggal' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('redeem', 'msisdn')">
+                                        <div class="flex items-center gap-1">
+                                            <span>MSISDN</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_redeem') === 'msisdn' ? (request('sort_redeem_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_redeem') === 'msisdn' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('redeem', 'keyword_id')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Keyword ID</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_redeem') === 'keyword_id' ? (request('sort_redeem_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_redeem') === 'keyword_id' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Product</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('redeem', 'poin_redeem')">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <span>Poin</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_redeem') === 'poin_redeem' ? (request('sort_redeem_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_redeem') === 'poin_redeem' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Click Match</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="serverSort('redeem', 'status')">
+                                        <div class="flex items-center gap-1">
+                                            <span>Status</span>
+                                            <span class="sort-icon text-gray-400 text-[10px]">
+                                                <i class="fas fa-sort{{ request('sort_redeem') === 'status' ? (request('sort_redeem_dir') === 'asc' ? '-up' : '-down') : '' }} {{ request('sort_redeem') === 'status' ? 'text-orange-500' : 'text-gray-400' }}"></i>
+                                            </span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($redeemData as $redeem)
+                                    @php
+                                        $redeemDate = $redeem->tanggal ? \Carbon\Carbon::parse($redeem->tanggal)->format('d/m/Y H:i') : '-';
+                                        $hasClickMatch = !empty($redeem->matched_merchant_id) && !empty($redeem->clicked_date);
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-4 text-sm font-medium text-gray-900">
+                                            {{ ($redeemData->currentPage() - 1) * $redeemData->perPage() + $loop->iteration }}
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-gray-900">{{ $redeemDate }}</td>
+                                        <td class="px-4 py-4 text-sm text-gray-900">{{ $redeem->msisdn ?? '-' }}</td>
+                                        <td class="px-4 py-4 text-sm text-gray-900">
+                                            <span class="font-medium">{{ $redeem->keyword_id ?? '-' }}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm text-gray-700">{{ $redeem->product ?? $redeem->nama_produk ?? '-' }}</td>
+                                        <td class="px-4 py-4 text-sm text-gray-900 text-right font-semibold">
+                                            {{ number_format($redeem->poin_redeem ?? 0, 0, ',', '.') }}
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            @if($hasClickMatch)
+                                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800" title="Matched: diff {{ $redeem->diff_click }}s">
+                                                    <i class="fas fa-check-circle"></i> Match
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-500">
+                                                    <i class="fas fa-minus-circle"></i> No Match
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-4 text-sm">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                                @if(strtolower($redeem->status ?? '') === 'approve')
+                                                    bg-green-100 text-green-800
+                                                @elseif(strtolower($redeem->status ?? '') === 'pending')
+                                                    bg-yellow-100 text-yellow-800
+                                                @elseif(strtolower($redeem->status ?? '') === 'reject')
+                                                    bg-red-100 text-red-800
+                                                @else
+                                                    bg-gray-100 text-gray-800
+                                                @endif
+                                            ">
+                                                {{ ucfirst($redeem->status ?? '-') }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="px-4 py-12 text-center">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                                                <p class="text-sm font-medium text-gray-500">Belum ada data redeem</p>
+                                                <p class="text-xs text-gray-400 mt-1">Data redeem berdasarkan keyword ID akan muncul di sini</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($redeemData instanceof \Illuminate\Pagination\LengthAwarePaginator && $redeemData->total() > 10)
+                        <div class="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                Menampilkan <span class="font-semibold">{{ $redeemData->firstItem() ?? 0 }}</span> hingga <span class="font-semibold">{{ $redeemData->lastItem() ?? 0 }}</span> dari <span class="font-semibold">{{ $redeemData->total() }}</span> data
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                @php
+                                    $redeemQueryParams = request()->except(['redeem_page']);
+                                    $redeemQueryParams['tab'] = 'redeem';
+                                    $redeemPaginatorWithParams = $redeemData->appends($redeemQueryParams);
+                                @endphp
+
+                                @if ($redeemData->onFirstPage())
+                                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                @else
+                                    <a href="{{ $redeemPaginatorWithParams->previousPageUrl() }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                @endif
+
+                                @php
+                                    $current = $redeemData->currentPage();
+                                    $last = $redeemData->lastPage();
+                                    $range = 2;
+                                    $start = max(1, $current - $range);
+                                    $end = min($last, $current + $range);
+                                @endphp
+
+                                @if ($start > 1)
+                                    <a href="{{ $redeemPaginatorWithParams->url(1) }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</a>
+                                @endif
+                                @if ($start > 2)
+                                    <span class="px-2 text-gray-400">…</span>
+                                @endif
+
+                                @for ($page = $start; $page <= $end; $page++)
+                                    @if ($page == $current)
+                                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">{{ $page }}</button>
+                                    @else
+                                        <a href="{{ $redeemPaginatorWithParams->url($page) }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $page }}</a>
+                                    @endif
+                                @endfor
+
+                                @if ($end < $last - 1)
+                                    <span class="px-2 text-gray-400">…</span>
+                                @endif
+                                @if ($end < $last)
+                                    <a href="{{ $redeemPaginatorWithParams->url($last) }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $last }}</a>
+                                @endif
+
+                                @if ($redeemData->hasMorePages())
+                                    <a href="{{ $redeemPaginatorWithParams->nextPageUrl() }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                @else
+                                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-4 mt-6">
+                    @forelse($redeemData as $redeem)
+                        @php
+                            $redeemDate = $redeem->tanggal ? \Carbon\Carbon::parse($redeem->tanggal)->format('d/m/Y H:i') : '-';
+                            $hasClickMatch = !empty($redeem->matched_merchant_id) && !empty($redeem->clicked_date);
+                        @endphp
+                        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-semibold text-gray-900">
+                                    {{ ($redeemData->currentPage() - 1) * $redeemData->perPage() + $loop->iteration }}.
+                                </span>
+                                <span class="text-xs font-semibold text-gray-500">{{ $redeemDate }}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 text-sm text-gray-700">
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">MSISDN</p>
+                                    <p class="font-semibold text-gray-900">{{ $redeem->msisdn ?? '-' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Keyword ID</p>
+                                    <p class="font-semibold text-gray-900">{{ $redeem->keyword_id ?? '-' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Poin</p>
+                                    <p class="font-semibold text-gray-900">{{ number_format($redeem->poin_redeem ?? 0, 0, ',', '.') }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Click Match</p>
+                                    @if($hasClickMatch)
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-green-700">
+                                            <i class="fas fa-check-circle"></i> Match ({{ $redeem->diff_click }}s)
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-gray-400">
+                                            <i class="fas fa-minus-circle"></i> No Match
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Product</p>
+                                <p class="text-sm font-semibold text-gray-900">{{ $redeem->product ?? $redeem->nama_produk ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Status</p>
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                    @if(strtolower($redeem->status ?? '') === 'approve') bg-green-100 text-green-800
+                                    @elseif(strtolower($redeem->status ?? '') === 'pending') bg-yellow-100 text-yellow-800
+                                    @else bg-gray-100 text-gray-800
+                                    @endif
+                                ">{{ ucfirst($redeem->status ?? '-') }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8">
+                            <i class="fas fa-inbox text-3xl text-gray-300 mb-3"></i>
+                            <p class="text-sm text-gray-500">Belum ada data redeem</p>
+                        </div>
+                    @endforelse
+
+                    @if($redeemData instanceof \Illuminate\Pagination\LengthAwarePaginator && $redeemData->total() > 10)
+                        <div class="bg-white px-4 py-4 border border-gray-200 rounded-2xl text-center space-y-3">
+                            <div class="text-sm text-gray-600">
+                                Menampilkan <span class="font-semibold">{{ $redeemData->firstItem() ?? 0 }}</span> hingga <span class="font-semibold">{{ $redeemData->lastItem() ?? 0 }}</span> dari <span class="font-semibold">{{ $redeemData->total() }}</span> data
+                            </div>
+                            <div class="flex items-center justify-center space-x-2">
+                                @php
+                                    $redeemQueryParamsMobile = request()->except(['redeem_page']);
+                                    $redeemQueryParamsMobile['tab'] = 'redeem';
+                                    $redeemPaginatorMobile = $redeemData->appends($redeemQueryParamsMobile);
+                                @endphp
+
+                                @if ($redeemData->onFirstPage())
+                                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-left"></i></button>
+                                @else
+                                    <a href="{{ $redeemPaginatorMobile->previousPageUrl() }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-left"></i></a>
+                                @endif
+
+                                @php
+                                    $current = $redeemData->currentPage();
+                                    $last = $redeemData->lastPage();
+                                    $start = max(1, $current - 2);
+                                    $end = min($last, $current + 2);
+                                @endphp
+
+                                @if ($start > 1)
+                                    <a href="{{ $redeemPaginatorMobile->url(1) }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</a>
+                                @endif
+                                @if ($start > 2)
+                                    <span class="px-2 text-gray-400">…</span>
+                                @endif
+                                @for ($page = $start; $page <= $end; $page++)
+                                    @if ($page == $current)
+                                        <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">{{ $page }}</button>
+                                    @else
+                                        <a href="{{ $redeemPaginatorMobile->url($page) }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $page }}</a>
+                                    @endif
+                                @endfor
+                                @if ($end < $last - 1)
+                                    <span class="px-2 text-gray-400">…</span>
+                                @endif
+                                @if ($end < $last)
+                                    <a href="{{ $redeemPaginatorMobile->url($last) }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $last }}</a>
+                                @endif
+
+                                @if ($redeemData->hasMorePages())
+                                    <a href="{{ $redeemPaginatorMobile->nextPageUrl() }}" class="redeem-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"><i class="fas fa-chevron-right"></i></a>
+                                @else
+                                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed"><i class="fas fa-chevron-right"></i></button>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </section>
+
             <footer class="mt-16 pb-12 text-center">
                 <div class="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-50 to-rose-50 shadow-sm ring-1 ring-neutral-200/50 mb-4">
                     <div class="text-sm font-semibold text-neutral-700">✨ Riwayat Lengkap BlanjaPoin</div>
@@ -801,9 +1155,40 @@
     window.applyWithdrawDateFilter = function(filterId) {
         if (filterId === 'transaksiDateFilter') {
             applyHistoryDateFilter(filterId);
+        } else if (filterId === 'redeemDateFilter') {
+            applyRedeemDateFilter(filterId);
         } else if (originalApply) {
             originalApply(filterId);
         }
+    };
+
+    window.applyRedeemDateFilter = function(filterId) {
+        const input = document.getElementById('dateInput' + filterId);
+        if (!input || !input.value.trim()) return;
+        
+        const dateValue = input.value.trim();
+        const parts = dateValue.split('/');
+        
+        if (parts.length !== 3) {
+            alert('Format tanggal tidak valid. Gunakan format DD/MM/YYYY');
+            return;
+        }
+        
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const year = parseInt(parts[2]);
+        
+        if (isNaN(day) || isNaN(month) || isNaN(year)) {
+            alert('Format tanggal tidak valid. Gunakan format DD/MM/YYYY');
+            return;
+        }
+        
+        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        document.getElementById('redeemStartDate').value = formattedDate;
+        document.getElementById('redeemEndDate').value = formattedDate;
+        
+        document.getElementById('redeemSearchForm').submit();
     };
     
     // Clear search functions
@@ -813,6 +1198,10 @@
 
     function clearKeywordSearch() {
         window.location.href = '{{ url()->current() }}?tab=keywords';
+    }
+
+    function clearRedeemSearch() {
+        window.location.href = '{{ url()->current() }}?tab=redeem';
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -902,6 +1291,10 @@
             form = document.getElementById('keywordSearchForm');
             sortField = document.getElementById('sortKeywordField');
             sortDirField = document.getElementById('sortKeywordDirField');
+        } else if (tableType === 'redeem') {
+            form = document.getElementById('redeemSearchForm');
+            sortField = document.getElementById('sortRedeemField');
+            sortDirField = document.getElementById('sortRedeemDirField');
         }
         
         if (!form || !sortField || !sortDirField) return;
@@ -958,6 +1351,34 @@
                 hiddenSearch.name = 'search_keyword';
                 hiddenSearch.value = searchInput.value || urlParams.get('search_keyword') || '';
                 form.appendChild(hiddenSearch);
+            }
+        } else if (tableType === 'redeem') {
+            const searchInput = document.getElementById('redeemSearchInput');
+            const startDateInput = document.getElementById('redeemStartDate');
+            const endDateInput = document.getElementById('redeemEndDate');
+            
+            if (searchInput && !form.querySelector('input[name="search_redeem"]')) {
+                const hiddenSearch = document.createElement('input');
+                hiddenSearch.type = 'hidden';
+                hiddenSearch.name = 'search_redeem';
+                hiddenSearch.value = searchInput.value || urlParams.get('search_redeem') || '';
+                form.appendChild(hiddenSearch);
+            }
+            
+            if (startDateInput && !form.querySelector('input[name="start_date_redeem"]')) {
+                const hiddenStartDate = document.createElement('input');
+                hiddenStartDate.type = 'hidden';
+                hiddenStartDate.name = 'start_date_redeem';
+                hiddenStartDate.value = startDateInput.value || urlParams.get('start_date_redeem') || '';
+                form.appendChild(hiddenStartDate);
+            }
+            
+            if (endDateInput && !form.querySelector('input[name="end_date_redeem"]')) {
+                const hiddenEndDate = document.createElement('input');
+                hiddenEndDate.type = 'hidden';
+                hiddenEndDate.name = 'end_date_redeem';
+                hiddenEndDate.value = endDateInput.value || urlParams.get('end_date_redeem') || '';
+                form.appendChild(hiddenEndDate);
             }
         }
         
@@ -1117,6 +1538,24 @@
                     
                     // Fetch and update table via AJAX
                     fetchHistoryTable(linkUrl.toString(), 'transaksi-history-table-container', 'transaksiPaginationLoadingOverlay');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+
+            // Redeem pagination links
+            const redeemLink = event.target.closest('.redeem-pagination-link');
+            if (redeemLink) {
+                const redeemHistorySection = document.getElementById('redeem-history');
+                if (redeemHistorySection && redeemHistorySection.contains(redeemLink)) {
+                    event.preventDefault();
+                    
+                    const href = redeemLink.getAttribute('href');
+                    if (!href) return;
+                    
+                    const linkUrl = new URL(href, window.location.origin);
+                    linkUrl.searchParams.set('tab', 'redeem');
+                    
+                    fetchHistoryTable(linkUrl.toString(), 'redeem-history-table-container', 'redeemPaginationLoadingOverlay');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             }

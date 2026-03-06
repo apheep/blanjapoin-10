@@ -1534,11 +1534,12 @@ class MerchantController extends Controller
         $sortKeywordDir = $request->get('sort_keyword_dir', 'desc');
 
         // Query untuk history transaksi: join tokodigi_tselpoin_redeem dengan keywords dan merchants
-        // Hanya tampilkan transaksi dari keyword yang sudah APPROVE
+        // Tampilkan semua transaksi dari keyword merchant yang sudah APPROVE
         $historyQuery = DB::table('tokodigi_tselpoin_redeem as tr')
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->join('merchants as m', 'k.merchant_key', '=', 'm.id')
             ->where('m.id', $merchant->id)
+            ->where('tr.merchant_id', $merchant->id)  // Filter: hanya yang matched ke merchant ini
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
@@ -1653,10 +1654,77 @@ class MerchantController extends Controller
             $keyword->refresh();
         }
 
+        // Query untuk Redeem History: semua data dari tokodigi_tselpoin_redeem berdasarkan keyword_id merchant
+        // Ini menampilkan semua redeem yang mengurangi stock (berdasarkan keyword_id)
+        $searchRedeem = $request->get('search_redeem');
+        $startDateRedeem = $request->get('start_date_redeem');
+        $endDateRedeem = $request->get('end_date_redeem');
+        $sortRedeem = $request->get('sort_redeem');
+        $sortRedeemDir = $request->get('sort_redeem_dir', 'desc');
+
+        // Ambil keyword_ids milik merchant ini
+        $merchantKeywordIds = Keyword::where('merchant_key', $merchant->id)
+            ->whereNotNull('keyword_id')
+            ->pluck('keyword_id')
+            ->toArray();
+
+        $redeemQuery = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->whereIn('tr.coupon', $merchantKeywordIds)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->leftJoin('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->select(
+                'tr.created_date as tanggal',
+                'tr.msisdn',
+                'tr.coupon as keyword_id',
+                'tr.keyword_desc as product',
+                'tr.poin_redeem',
+                'tr.merchant_id as matched_merchant_id',
+                'tr.clicked_date',
+                'tr.diff_click',
+                'k.nama_produk',
+                'k.stock as keyword_stock',
+                DB::raw('(SELECT COUNT(DISTINCT t2.msisdn) FROM tokodigi_tselpoin_redeem t2 WHERE t2.coupon = tr.coupon AND t2.program = "BLANJAPOIN") as total_redeemed')
+            );
+
+        // Apply search filter
+        if ($searchRedeem) {
+            $redeemQuery->where(function($query) use ($searchRedeem) {
+                $query->where('tr.msisdn', 'like', '%' . $searchRedeem . '%')
+                      ->orWhere('tr.coupon', 'like', '%' . $searchRedeem . '%')
+                      ->orWhere('tr.keyword_desc', 'like', '%' . $searchRedeem . '%');
+            });
+        }
+
+        // Apply date filter
+        if ($startDateRedeem) {
+            $redeemQuery->whereRaw('DATE(tr.created_date) >= ?', [$startDateRedeem]);
+        }
+        if ($endDateRedeem) {
+            $redeemQuery->whereRaw('DATE(tr.created_date) <= ?', [$endDateRedeem]);
+        }
+
+        // Apply sort
+        $sortRedeemMap = [
+            'tanggal' => 'tr.created_date',
+            'msisdn' => 'tr.msisdn',
+            'keyword_id' => 'tr.coupon',
+            'poin_redeem' => 'tr.poin_redeem',
+        ];
+
+        if ($sortRedeem && isset($sortRedeemMap[$sortRedeem])) {
+            $redeemQuery->orderBy($sortRedeemMap[$sortRedeem], strtolower($sortRedeemDir) === 'asc' ? 'asc' : 'desc');
+        } else {
+            $redeemQuery->orderBy('tr.created_date', 'desc');
+        }
+
+        $redeemPaginator = $redeemQuery->paginate(10, ['*'], 'redeem_page')
+            ->withQueryString();
+
         return view('history-all', [
             'merchant' => $merchant,
             'histories' => $historyPaginator,
             'keywordPaginator' => $keywordPaginator,
+            'redeemPaginator' => $redeemPaginator,
         ]);
     }
 

@@ -234,6 +234,45 @@ class ClickHistoryController extends Controller
         $merchants = Merchant::orderBy('nama_merchant')->get();
         $keywords = Keyword::orderBy('keyword_id')->get();
 
+        // ========================================
+        // REKAP TRX PER MERCHANT (berdasarkan keyword_id di tokodigi_tselpoin_redeem)
+        // Total Redeem = semua redeem yang masuk via keyword merchant
+        // ========================================
+        $rekapMerchant = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->join('merchants as m', 'k.merchant_key', '=', 'm.id')
+            ->where('tr.program', 'BLANJAPOIN')
+            ->groupBy('m.id', 'm.nama_merchant', 'm.daerah')
+            ->select(
+                'm.id as merchant_id',
+                'm.nama_merchant',
+                'm.daerah as merchant_city',
+                DB::raw('COUNT(DISTINCT tr.coupon) as total_keyword'),
+                DB::raw('COUNT(*) as total_redeem')
+            )
+            ->orderBy('total_redeem', 'desc')
+            ->get();
+
+        // ========================================
+        // REKAP TRX PER KEYWORD_ID (berdasarkan data di tokodigi_tselpoin_redeem)
+        // Group by keyword_id saja, karena stock per keyword_id sama
+        // ========================================
+        $rekapKeyword = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->leftJoin('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->leftJoin('merchants as m', 'k.merchant_key', '=', 'm.id')
+            ->where('tr.program', 'BLANJAPOIN')
+            ->groupBy('tr.coupon')
+            ->select(
+                'tr.coupon as keyword_id',
+                DB::raw('MIN(k.nama_produk) as nama_produk'),
+                DB::raw('MIN(m.nama_merchant) as nama_merchant'),
+                DB::raw('MIN(k.stock) as stock'),
+                DB::raw('MIN(k.sisa_stock) as sisa_stock'),
+                DB::raw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = tr.coupon AND program = "BLANJAPOIN") as total_redeem')
+            )
+            ->orderBy('total_redeem', 'desc')
+            ->get();
+
         // If AJAX request, return full page HTML (we'll extract table part in JS)
         // This is simpler than creating separate partials
 
@@ -244,6 +283,8 @@ class ClickHistoryController extends Controller
             'totalMatched' => $totalMatched,
             'totalUnmatched' => $totalUnmatched,
             'totalNotMatched' => $totalNotMatched,
+            'rekapMerchant' => $rekapMerchant,
+            'rekapKeyword' => $rekapKeyword,
             'filters' => [
                 'search' => $searchKeyword,
                 'merchant_id' => $merchantId,
