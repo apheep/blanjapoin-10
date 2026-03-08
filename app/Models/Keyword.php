@@ -50,7 +50,12 @@ class Keyword extends Model
         'status',
         'is_active',
         'is_special_promo',
+        'is_lock_longlat',
         'created_by',
+    ];
+
+    protected $casts = [
+        'is_lock_longlat' => 'boolean',
     ];
 
     public function merchant()

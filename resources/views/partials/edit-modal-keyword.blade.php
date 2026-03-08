@@ -221,7 +221,24 @@
                             <p id="editDateError" class="text-red-500 text-xs mt-1 hidden">Tanggal mulai tidak boleh melebihi tanggal berakhir</p>
                         </div>
                         
-                        <!-- Row 8: Images -->
+                        <!-- Row 8.5: Lock LongLat -->
+                        <div class="md:col-span-2">
+                            <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
+                                <i class="fas fa-map-marker-alt mr-1.5 text-orange-500"></i>
+                                Lock LongLat (Validasi Lokasi)
+                            </label>
+                            <div class="flex items-center gap-3 transition-all duration-300 ease-out transform translate-y-2 opacity-0">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="is_lock_longlat" value="0">
+                                    <input type="checkbox" name="is_lock_longlat" value="1" checked class="sr-only peer" id="editLockLonglatToggle">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                </label>
+                                <span class="text-sm text-gray-600" id="editLockLonglatLabel">Aktif (ikut lock radius merchant)</span>
+                            </div>
+                            <p class="mt-1.5 text-xs text-gray-500 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Jika aktif, keyword ini akan ikut validasi radius lokasi dari merchant. Nonaktifkan jika keyword ini tidak perlu lock lokasi.</p>
+                        </div>
+
+                        <!-- Row 9: Images -->
                         <div class="md:col-span-2">
                             <label class="block text-[15px] font-medium text-gray-700 mb-1 transition-all duration-300 ease-out transform translate-y-2 opacity-0">Images</label>
                             <div class="relative">
@@ -432,6 +449,16 @@ function openEditKeyword(id, keywordData, canEditFull = true, canEditStock = tru
         if (editStartDate) editStartDate.value = keywordData.start_date || '';
         if (editEndDate) editEndDate.value = keywordData.end_date || '';
         
+        // Set lock longlat toggle
+        const editLockLonglatToggle = document.getElementById('editLockLonglatToggle');
+        if (editLockLonglatToggle) {
+            editLockLonglatToggle.checked = keywordData.is_lock_longlat == 1 || keywordData.is_lock_longlat === true || keywordData.is_lock_longlat === undefined;
+            const label = document.getElementById('editLockLonglatLabel');
+            if (label) {
+                label.textContent = editLockLonglatToggle.checked ? 'Aktif (ikut lock radius merchant)' : 'Nonaktif (tidak ikut lock radius)';
+            }
+        }
+
         // Set stock management type
         const editStockTypeNormal = document.getElementById('editStockTypeNormal');
         const editStockTypeDailyReset = document.getElementById('editStockTypeDailyReset');

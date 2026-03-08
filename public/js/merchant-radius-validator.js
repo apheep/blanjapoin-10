@@ -382,6 +382,13 @@ function updateRedeemButtons() {
     const redeemButtons = document.querySelectorAll('[data-redeem-btn]');
     
     redeemButtons.forEach((btn) => {
+        // Skip buttons yang keyword-nya tidak ikut lock longlat (is_lock_longlat = false)
+        const lockLonglat = btn.getAttribute('data-lock-longlat');
+        if (lockLonglat === '0') {
+            // Keyword ini tidak ikut lock radius, selalu enable
+            return;
+        }
+
         if (!merchantValidator.isWithinRadius) {
             // Store original href and classes before converting to button
             const originalHref = btn.href || btn.getAttribute('href');

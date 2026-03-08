@@ -338,6 +338,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::patch('/api/keywords/{id}/toggle-status', [KeywordController::class, 'toggleStatus'])->name('keywords.toggle-status');
     Route::patch('/api/keywords/{id}/toggle-special-promo', [KeywordController::class, 'toggleSpecialPromo'])->name('keywords.toggle-special-promo');
+    Route::patch('/api/keywords/{id}/toggle-lock-longlat', [KeywordController::class, 'toggleLockLonglat'])->name('keywords.toggle-lock-longlat');
     Route::get('/api/keywords/by-merchant/{merchantId}', [KeywordController::class, 'getByMerchant'])->name('keywords.by-merchant');
     // Route /keywords/search sudah dipindahkan ke atas (sebelum route /keywords/{code}) untuk menghindari konflik
     Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
