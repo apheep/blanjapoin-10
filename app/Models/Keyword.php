@@ -109,21 +109,31 @@ class Keyword extends Model
 
         // Hitung trx: hanya MSISDN yang matched ke merchant pemilik keyword ini
         // (merchant_id di tokodigi_tselpoin_redeem harus sama dengan merchant_key keyword)
-        $trxCount = DB::table('tokodigi_tselpoin_redeem as tr')
+        $trxQuery = DB::table('tokodigi_tselpoin_redeem as tr')
             ->where('tr.coupon', $this->keyword_id)
             ->where('tr.program', 'BLANJAPOIN')
             ->whereNotNull('tr.merchant_id')
             ->whereNotNull('tr.clicked_date')
-            ->where('tr.merchant_id', $this->merchant_key)
-            ->distinct()
-            ->count('tr.msisdn');
+            ->where('tr.merchant_id', $this->merchant_key);
 
-        // Hitung sisa stock dari SEMUA redeem (matched maupun tidak)
-        $totalRedeem = DB::table('tokodigi_tselpoin_redeem')
+        // Filter by start_date: jangan hitung redeem dari periode/tahun sebelumnya
+        if ($this->start_date) {
+            $trxQuery->whereDate('tr.created_date', '>=', $this->start_date);
+        }
+
+        $trxCount = $trxQuery->distinct()->count('tr.msisdn');
+
+        // Hitung sisa stock dari SEMUA redeem dalam periode keyword (matched maupun tidak)
+        $redeemQuery = DB::table('tokodigi_tselpoin_redeem')
             ->where('coupon', $this->keyword_id)
-            ->where('program', 'BLANJAPOIN')
-            ->distinct()
-            ->count('msisdn');
+            ->where('program', 'BLANJAPOIN');
+
+        // Filter by start_date: jangan hitung redeem dari periode/tahun sebelumnya
+        if ($this->start_date) {
+            $redeemQuery->whereDate('created_date', '>=', $this->start_date);
+        }
+
+        $totalRedeem = $redeemQuery->distinct()->count('msisdn');
 
         // Hitung sisa stock: stock - semua redeem (minimal 0)
         $stock = (int)($this->stock ?? 0);
