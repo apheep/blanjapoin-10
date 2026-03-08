@@ -23,13 +23,6 @@ class KeywordController extends Controller
         
         $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id', 'desc')->paginate(10);
         
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-        
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
@@ -1018,14 +1011,6 @@ class KeywordController extends Controller
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
-        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
-        // Update ke database untuk setiap keyword
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-
         if ($request->ajax()) {
             try {
                 $html = view('partials.table-keyword', ['keywords' => $keywords])->render();

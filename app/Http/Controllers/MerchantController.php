@@ -366,14 +366,6 @@ class MerchantController extends Controller
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
-        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
-        // Update ke database untuk setiap keyword
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-            
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         
         // Get filtered cities based on user_level
@@ -449,13 +441,6 @@ class MerchantController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
-
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
 
         return view('merchant-detail', [
             'merchant' => $merchant,
@@ -1276,13 +1261,6 @@ class MerchantController extends Controller
             ->where('is_active', 1) // Validasi is_active keyword
             ->get();
 
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-
         // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
         // Use orderBy('order', 'asc') to respect admin-configured order
         // Check both merchant_key (legacy) and merchant_keys JSON array
@@ -1646,14 +1624,6 @@ class MerchantController extends Controller
             ->paginate(10, ['*'], 'keyword_page')
             ->withQueryString();
         
-        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
-        // Update ke database untuk setiap keyword
-        foreach ($keywordPaginator as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-
         // Query untuk Redeem History: semua data dari tokodigi_tselpoin_redeem berdasarkan keyword_id merchant
         // Ini menampilkan semua redeem yang mengurangi stock (berdasarkan keyword_id)
         $searchRedeem = $request->get('search_redeem');
@@ -1765,13 +1735,6 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10)
             ->withQueryString();
-
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
 
         return view('partials_dash.keywords-history', [
             'merchant' => $merchant,
