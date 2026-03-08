@@ -229,7 +229,7 @@ class IklanController extends Controller
             'upload_type' => ['required', 'in:manual,keyword'],
             'keyword_id' => ['required_if:upload_type,keyword', 'nullable', 'exists:keywords,id'],
             'image' => ['required_if:upload_type,manual', 'nullable', 'image', 'max:2048'],
-            'link_iklan' => ['required', 'url'],
+            'link_iklan' => ['nullable', 'string', 'max:500'],
             'territorial' => ['nullable', 'string'],
             'regional' => ['nullable', 'string'],
             'branch' => ['nullable', 'string'],
@@ -276,6 +276,9 @@ class IklanController extends Controller
             }
         } else {
             // Manual upload
+            // Ensure directory exists (some servers need this)
+            Storage::disk('public')->makeDirectory('iklan');
+
             $path = $request->file('image')->store('iklan', 'public');
 
             $link = $request->input('link_iklan');
@@ -325,19 +328,31 @@ class IklanController extends Controller
         // This allows negative values which will appear first when sorted ascending
         $newOrder = $minOrder - 1;
         
-        // Create iklan with merchant_keys as JSON array
-        $iklan = Iklan::create([
-            'image_path' => $path,
-            'link_iklan' => $link,
-            'territorial' => $territorial,
-            'regional' => $regional,
-            'branch' => $branch,
-            'cluster' => $cluster,
-            'merchant_key' => !empty($merchantKeys) ? $merchantKeys[0] : null, // Keep first merchant for backward compatibility
-            'merchant_keys' => !empty($merchantKeys) ? $merchantKeys : null, // Store as JSON array
-            'keyword_id' => $keywordId,
-            'order' => $newOrder,
-        ]);
+        try {
+            // Create iklan with merchant_keys as JSON array
+            Iklan::create([
+                'image_path' => $path,
+                'link_iklan' => $link,
+                'territorial' => $territorial,
+                'regional' => $regional,
+                'branch' => $branch,
+                'cluster' => $cluster,
+                'merchant_key' => !empty($merchantKeys) ? $merchantKeys[0] : null,
+                'merchant_keys' => !empty($merchantKeys) ? $merchantKeys : null,
+                'keyword_id' => $keywordId,
+                'order' => $newOrder,
+            ]);
+        } catch (\Exception $e) {
+            // Delete uploaded file if DB insert fails
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+            \Illuminate\Support\Facades\Log::error('Iklan store error: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->withErrors(['error' => 'Gagal menyimpan iklan: ' . $e->getMessage()])
+                ->withInput();
+        }
 
         return redirect()
             ->route('iklan.index')
