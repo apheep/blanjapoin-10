@@ -59,6 +59,7 @@ class KeywordController extends Controller
                 'stock'             => 'required|integer|min:0',
                 'stock_type'        => 'nullable|in:normal,daily_reset',
                 'daily_stock_limit' => 'nullable|integer|min:0',
+                'is_lock_longlat'   => 'nullable|in:0,1',
 
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
@@ -282,6 +283,7 @@ class KeywordController extends Controller
                 'is_daily_stock'   => $isDailyStock,
                 'daily_stock_limit' => $dailyStockLimit,
                 'status'           => $status,
+                'is_lock_longlat'  => $request->has('is_lock_longlat') ? (bool)$request->input('is_lock_longlat') : true,
             ];
             
             // Set created_by to current user if authenticated
@@ -681,6 +683,7 @@ class KeywordController extends Controller
                 'stock'             => 'nullable|integer|min:0',
                 'stock_type'        => 'nullable|in:normal,daily_reset',
                 'daily_stock_limit' => 'nullable|integer|min:0',
+                'is_lock_longlat'   => 'nullable|in:0,1',
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
                 'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
@@ -888,6 +891,7 @@ class KeywordController extends Controller
                     'image'             => $imagePath,
                     'stock'             => $request->stock,
                     'status'            => $status,
+                    'is_lock_longlat'   => $request->has('is_lock_longlat') ? (bool)$request->input('is_lock_longlat') : $keyword->is_lock_longlat,
                 ]);
                 
                 // Update diamond merchant jika subsidy_amount berubah
@@ -1276,6 +1280,27 @@ class KeywordController extends Controller
     /**
      * Toggle keyword status (is_active)
      */
+    public function toggleLockLonglat(Request $request, $id)
+    {
+        try {
+            $keyword = Keyword::findOrFail($id);
+            $keyword->is_lock_longlat = !$keyword->is_lock_longlat;
+            $keyword->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lock LongLat keyword berhasil diperbarui',
+                'is_lock_longlat' => (bool)$keyword->is_lock_longlat,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling keyword lock longlat: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui lock longlat'
+            ], 500);
+        }
+    }
+
     public function toggleStatus(Request $request, $id)
     {
         // Only admin with can_approve = 1 can access

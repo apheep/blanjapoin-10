@@ -337,7 +337,24 @@
                             <p id="dateError" class="text-red-500 text-xs mt-1 hidden">Tanggal mulai tidak boleh melebihi tanggal berakhir</p>
                         </div>
                         
-                        <!-- Row 8: Images -->
+                        <!-- Row 8.5: Lock LongLat -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                <i class="fas fa-map-marker-alt mr-1.5 text-orange-500"></i>
+                                Lock LongLat (Validasi Lokasi)
+                            </label>
+                            <div class="flex items-center gap-3">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="is_lock_longlat" value="0">
+                                    <input type="checkbox" name="is_lock_longlat" value="1" checked class="sr-only peer" id="lockLonglatToggle">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                </label>
+                                <span class="text-sm text-gray-600" id="lockLonglatLabel">Aktif (ikut lock radius merchant)</span>
+                            </div>
+                            <p class="mt-1.5 text-xs text-gray-500">Jika aktif, keyword ini akan ikut validasi radius lokasi dari merchant. Nonaktifkan jika keyword ini tidak perlu lock lokasi.</p>
+                        </div>
+
+                        <!-- Row 9: Images -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Images</label>
                             <div class="relative">
@@ -371,6 +388,28 @@
 @include('partials.upload-verification-modal')
 
 <script>
+// Lock LongLat toggle label updater
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('lockLonglatToggle');
+    if (toggle) {
+        toggle.addEventListener('change', function() {
+            const label = document.getElementById('lockLonglatLabel');
+            if (label) {
+                label.textContent = this.checked ? 'Aktif (ikut lock radius merchant)' : 'Nonaktif (tidak ikut lock radius)';
+            }
+        });
+    }
+    const editToggle = document.getElementById('editLockLonglatToggle');
+    if (editToggle) {
+        editToggle.addEventListener('change', function() {
+            const label = document.getElementById('editLockLonglatLabel');
+            if (label) {
+                label.textContent = this.checked ? 'Aktif (ikut lock radius merchant)' : 'Nonaktif (tidak ikut lock radius)';
+            }
+        });
+    }
+});
+
 function previewKeywordImages(input) {
     const preview = document.getElementById('keywordImagesPreview');
     const text = document.getElementById('keywordImagesText');
