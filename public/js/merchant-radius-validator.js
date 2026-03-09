@@ -414,16 +414,16 @@ function updateRedeemButtons() {
                 btn = button; // Update reference
             }
             
-            btn.disabled = true;
             btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'hover:from-orange-600', 'hover:to-red-600');
-            btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            btn.classList.add('bg-gray-400', 'cursor-pointer', 'hover:bg-gray-500');
             btn.innerHTML = '<i class="fas fa-map-marker-alt mr-1"></i>Harus ke Lokasi';
-            btn.title = merchantValidator.getErrorMessage() || 'Anda harus berada dalam radius yang ditentukan';
+            btn.title = 'Klik untuk melihat lokasi merchant';
             
-            // Prevent any click events (tidak menampilkan pesan error)
+            // Show location modal when clicked
             btn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+                showLocationsModal();
                 return false;
             };
         } else {
@@ -462,61 +462,125 @@ function updateRedeemButtons() {
 }
 
 /**
- * Show modal ketika user di luar radius
+ * Show modal with all merchant locations when user clicks "Harus ke Lokasi"
  */
-function showLocationErrorModal(message) {
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4';
-    
-    const locations = merchantValidator.getLocationsSortedByDistance();
-    const nearestLocation = locations[0];
-    
-    modal.innerHTML = `
-        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full">
-            <button onclick="this.closest('.fixed').remove()"
-                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times text-xl"></i>
-            </button>
+function showLocationsModal() {
+    if (!merchantValidator) return;
 
-            <div class="p-6 text-center">
-                <div class="w-20 h-20 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                    <i class="fas fa-exclamation-triangle text-3xl text-white"></i>
+    const locations = merchantValidator.gmapsLocations;
+    if (!locations || locations.length === 0) return;
+
+    // Build list sorted by distance if we have user location
+    const hasUserLocation = !!merchantValidator.userLocation;
+    let sortedLocations = locations.map((loc, i) => {
+        let distance = null;
+        let withinRadius = false;
+        if (hasUserLocation) {
+            const coords = merchantValidator.extractCoordinatesFromGmapsLink(loc.link);
+            if (coords) {
+                distance = merchantValidator.calculateDistance(
+                    merchantValidator.userLocation.lat,
+                    merchantValidator.userLocation.lng,
+                    coords.lat,
+                    coords.lng
+                );
+            }
+            withinRadius = !loc.radius || (distance !== null && distance <= loc.radius);
+        }
+        return { ...loc, index: i, distance, withinRadius };
+    });
+
+    if (hasUserLocation) {
+        sortedLocations.sort((a, b) => {
+            if (a.distance === null) return 1;
+            if (b.distance === null) return -1;
+            return a.distance - b.distance;
+        });
+    }
+
+    const locationCards = sortedLocations.map((loc, cardIdx) => {
+        const isNearest = cardIdx === 0 && hasUserLocation;
+        const distanceText = loc.distance !== null
+            ? merchantValidator.getFormattedDistance(loc.distance)
+            : null;
+        const radiusText = loc.radius ? loc.radius + ' m' : null;
+
+        // Status badge
+        let statusBadge = '';
+        if (hasUserLocation) {
+            if (loc.withinRadius) {
+                statusBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>Dalam Radius</span>`;
+            } else {
+                statusBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>Di Luar Radius</span>`;
+            }
+        }
+
+        const nearestBadge = isNearest
+            ? `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">📍 Terdekat</span>`
+            : '';
+
+        return `
+        <div class="rounded-2xl border ${ (hasUserLocation && loc.withinRadius) ? 'border-green-200 bg-green-50/50' : 'border-gray-200 bg-white' } p-4 shadow-sm">
+            <div class="flex items-start justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-rose-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <span class="font-bold text-gray-800 text-sm">Lokasi ${loc.index + 1}</span>
                 </div>
+                <div class="flex flex-wrap gap-1 justify-end">${nearestBadge}${statusBadge}</div>
+            </div>
 
-                <h3 class="text-xl font-bold text-gray-800 mb-3">Lokasi Terlalu Jauh! 🚫</h3>
+            <div class="flex flex-wrap gap-3 mb-3 text-xs text-gray-600">
+                ${distanceText ? `
+                <div class="flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Jarak: <strong class="text-gray-800">${distanceText}</strong></span>
+                </div>` : ''}
+                ${radiusText ? `
+                <div class="flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                    <span>Radius: <strong class="text-gray-800">${radiusText}</strong></span>
+                </div>` : ''}
+            </div>
 
-                <div class="text-sm text-gray-600 mb-6 space-y-2">
-                    <p class="font-medium text-red-600">${message}</p>
-                    ${nearestLocation ? `
-                        <p class="text-xs text-gray-500">
-                            Lokasi terdekat berjarak <strong>${merchantValidator.getFormattedDistance(nearestLocation.distance)}</strong>
-                        </p>
-                    ` : ''}
-                </div>
+            <a href="${loc.link}" target="_blank" rel="noopener noreferrer"
+               class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-semibold transition-all shadow-sm active:scale-95">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                Buka di Google Maps
+            </a>
+        </div>`;
+    }).join('');
 
-                <div class="space-y-3">
-                    ${merchantValidator.getPrimaryGmapsLink() ? `
-                        <a href="${merchantValidator.getPrimaryGmapsLink()}"
-                           target="_blank"
-                           class="w-full inline-block px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all shadow-lg">
-                            <i class="fas fa-map-marker-alt mr-2"></i>Lihat Lokasi Merchant
-                        </a>
-                    ` : ''}
-                    <button onclick="this.closest('.fixed').remove()"
-                            class="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg">
-                        <i class="fas fa-times mr-2"></i>Tutup
+    const headerNote = hasUserLocation
+        ? `<p class="text-xs text-gray-500 text-center mb-4">Kunjungi salah satu lokasi di bawah ini untuk dapat melakukan redeem.</p>`
+        : `<p class="text-xs text-gray-500 text-center mb-4">Aktifkan GPS agar kami bisa mendeteksi lokasi terdekat Anda.</p>`;
+
+    const contentHTML = `<div class="px-4 pb-6 pt-1">${headerNote}<div class="space-y-3">${locationCards}</div></div>`;
+
+    // Use existing openBottomSheet if available on the page
+    if (typeof openBottomSheet === 'function') {
+        openBottomSheet('📍 Lokasi Merchant', contentHTML);
+    } else {
+        // Fallback: standalone modal
+        const existing = document.getElementById('_locationsModal');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = '_locationsModal';
+        overlay.className = 'fixed inset-0 z-[10000] flex items-end md:items-center justify-center';
+        overlay.style.cssText = 'background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);';
+        overlay.innerHTML = `
+            <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden" style="max-height:85vh;">
+                <div class="bg-gradient-to-r from-orange-50 to-rose-50 px-5 py-4 flex items-center justify-between border-b border-neutral-100">
+                    <h3 class="text-lg font-bold text-gray-800">📍 Lokasi Merchant</h3>
+                    <button onclick="document.getElementById('_locationsModal').remove()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    
-    // Auto remove after 8 seconds
-    setTimeout(() => {
-        if (modal.parentNode) {
-            modal.remove();
-        }
-    }, 8000);
+                <div class="overflow-y-auto" style="max-height:calc(85vh - 64px);">${contentHTML}</div>
+            </div>`;
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+    }
 }
