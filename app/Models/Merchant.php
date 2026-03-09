@@ -88,11 +88,12 @@ class Merchant extends Model
     /**
      * Tambah Google Maps location baru
      */
-    public function addGmapsLocation($link, $radius = null)
+    public function addGmapsLocation($link, $radius = null, $name = null)
     {
         $locations = $this->getGmapsLocations();
         
         $locations[] = [
+            'name' => $name,
             'link' => $link,
             'radius' => $radius
         ];
@@ -104,12 +105,13 @@ class Merchant extends Model
     /**
      * Update Google Maps location berdasarkan index
      */
-    public function updateGmapsLocation($index, $link, $radius = null)
+    public function updateGmapsLocation($index, $link, $radius = null, $name = null)
     {
         $locations = $this->getGmapsLocations();
         
         if (isset($locations[$index])) {
             $locations[$index] = [
+                'name' => $name,
                 'link' => $link,
                 'radius' => $radius
             ];
