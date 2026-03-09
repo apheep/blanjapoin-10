@@ -851,9 +851,10 @@ function toggleEditFieldsByKategori(kategori) {
             const cityValue = document.getElementById('editCityValue');
             if (citySearch) citySearch.value = '';
             if (cityValue) cityValue.value = '';
-            document.querySelector('textarea[name="detail_alamat"]').value = '';
-            document.getElementById('editMerchantLinkGmap').value = '';
-            document.getElementById('editDaerahCombined').value = '';
+            const detailAlamatEl = document.getElementById('editMerchantDetailAlamat');
+            if (detailAlamatEl) detailAlamatEl.value = '';
+            const daerahCombinedEl = document.getElementById('editDaerahCombined');
+            if (daerahCombinedEl) daerahCombinedEl.value = '';
         } else {
             lokasiSection.style.display = 'block';
         }
