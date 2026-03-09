@@ -228,6 +228,52 @@ class MerchantController extends Controller
         return null;
     }
 
+    /**
+     * Batch-load total_trx, total_keyword, and keyword_aktif for all merchants
+     * on the current page using 3 GROUP BY queries instead of N×M×P per-merchant queries.
+     */
+    private function batchLoadMerchantStats($merchants): void
+    {
+        $merchantIds = $merchants->pluck('id')->toArray();
+        if (empty($merchantIds)) {
+            return;
+        }
+
+        // 1. total_trx: matched redemptions (merchant_id set by BEFORE INSERT trigger)
+        $trxMap = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->whereIn('k.merchant_key', $merchantIds)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->whereRaw('tr.merchant_id = k.merchant_key')
+            ->groupBy('k.merchant_key')
+            ->selectRaw('k.merchant_key, COUNT(*) as cnt')
+            ->pluck('cnt', 'k.merchant_key');
+
+        // 2. total_keyword: active keywords per merchant
+        $keywordMap = DB::table('keywords')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('is_active', 1)
+            ->groupBy('merchant_key')
+            ->selectRaw('merchant_key, COUNT(*) as cnt')
+            ->pluck('cnt', 'merchant_key');
+
+        // 3. keyword_aktif: keywords with at least one redemption
+        $aktifMap = DB::table('keywords as k')
+            ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
+            ->whereIn('k.merchant_key', $merchantIds)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->where('k.is_active', 1)
+            ->groupBy('k.merchant_key')
+            ->selectRaw('k.merchant_key, COUNT(DISTINCT k.id) as cnt')
+            ->pluck('cnt', 'k.merchant_key');
+
+        foreach ($merchants as $merchant) {
+            $merchant->total_trx     = (int)($trxMap[$merchant->id]     ?? 0);
+            $merchant->total_keyword = (int)($keywordMap[$merchant->id] ?? 0);
+            $merchant->keyword_aktif = (int)($aktifMap[$merchant->id]   ?? 0);
+        }
+    }
+
     public function qrList(Request $request)
     {
         $merchants = Merchant::whereNotNull('link_blanjapoin')
@@ -317,39 +363,8 @@ class MerchantController extends Controller
         $merchants = $merchantsQuery->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         
-        // Hitung total TRX, total keyword (toggle on), dan keyword aktif untuk setiap merchant
-        foreach ($merchants as $merchant) {
-            // Gunakan nilai dari subquery jika tersedia (untuk sorting), jika tidak hitung manual
-            if (isset($merchant->total_trx_calc)) {
-                $merchant->total_trx = (int)$merchant->total_trx_calc;
-            } else {
-                // Use new click tracking based calculation (anti-cheating system)
-                $merchant->total_trx = $merchant->calculateTotalTrx();
-            }
-            
-            if (isset($merchant->total_keyword_calc)) {
-                $merchant->total_keyword = (int)$merchant->total_keyword_calc;
-            } else {
-                $totalKeyword = DB::table('keywords')
-                    ->where('merchant_key', $merchant->id)
-                    ->where('is_active', 1)
-                    ->count();
-                $merchant->total_keyword = $totalKeyword;
-            }
-            
-            if (isset($merchant->keyword_aktif_calc)) {
-                $merchant->keyword_aktif = (int)$merchant->keyword_aktif_calc;
-            } else {
-                $keywordAktif = DB::table('keywords as k')
-                    ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
-                    ->where('k.merchant_key', $merchant->id)
-                    ->where('tr.program', 'BLANJAPOIN')
-                    ->where('k.is_active', 1)
-                    ->distinct('k.id')
-                    ->count('k.id');
-                $merchant->keyword_aktif = $keywordAktif;
-            }
-        }
+        // Batch-load stats: 3 queries total instead of N×M×P per merchant
+        $this->batchLoadMerchantStats($merchants);
             
         // Buat query params untuk appends, pastikan merchant_page tetap ada
         $keywordQueryParams = $request->query();
@@ -1146,39 +1161,8 @@ class MerchantController extends Controller
         $merchants = $merchantsQuery->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         
-        // Hitung total TRX, total keyword (toggle on), dan keyword aktif untuk setiap merchant
-        foreach ($merchants as $merchant) {
-            // Gunakan nilai dari subquery jika tersedia (untuk sorting), jika tidak hitung manual
-            if (isset($merchant->total_trx_calc)) {
-                $merchant->total_trx = (int)$merchant->total_trx_calc;
-            } else {
-                // Use new click tracking based calculation (anti-cheating system)
-                $merchant->total_trx = $merchant->calculateTotalTrx();
-            }
-            
-            if (isset($merchant->total_keyword_calc)) {
-                $merchant->total_keyword = (int)$merchant->total_keyword_calc;
-            } else {
-                $totalKeyword = DB::table('keywords')
-                    ->where('merchant_key', $merchant->id)
-                    ->where('is_active', 1)
-                    ->count();
-                $merchant->total_keyword = $totalKeyword;
-            }
-            
-            if (isset($merchant->keyword_aktif_calc)) {
-                $merchant->keyword_aktif = (int)$merchant->keyword_aktif_calc;
-            } else {
-                $keywordAktif = DB::table('keywords as k')
-                    ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
-                    ->where('k.merchant_key', $merchant->id)
-                    ->where('tr.program', 'BLANJAPOIN')
-                    ->where('k.is_active', 1)
-                    ->distinct('k.id')
-                    ->count('k.id');
-                $merchant->keyword_aktif = $keywordAktif;
-            }
-        }
+        // Batch-load stats: 3 queries total instead of N×M×P per merchant
+        $this->batchLoadMerchantStats($merchants);
         
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
