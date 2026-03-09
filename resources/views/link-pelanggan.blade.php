@@ -176,7 +176,7 @@
                 @if($hasCategoryData('merchandise'))
                     @include('merchant.merchandise')
                 @endif
-                
+
                 @if($hasCategoryData('paket_video'))
                     @include('merchant.paketvideo')
                 @endif
@@ -240,23 +240,6 @@
         if (merchantValidator) {
             updateRedeemButtons();
         }
-
-
-        
-        // Prevent click on "Harus ke Lokasi" buttons
-        document.addEventListener('click', function(e) {
-            const target = e.target.closest('[data-redeem-btn]');
-            if (target) {
-                // Check if button contains "Harus ke Lokasi" text or is disabled
-                const buttonText = target.textContent.trim();
-                if (buttonText.includes('Harus ke Lokasi') || target.disabled) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Tombol dinonaktifkan, tidak menampilkan pesan error
-                    return false;
-                }
-            }
-        }, true); // Use capture phase to catch before default behavior
         
         // Hide loading spinner when page loads and check location
         window.addEventListener('load', function() {
