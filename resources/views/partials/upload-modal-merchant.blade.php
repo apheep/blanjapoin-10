@@ -258,6 +258,24 @@
                                     <div class="gmap-field-group border border-gray-200 rounded-lg p-3 bg-gray-50" data-index="0">
                                         <div class="flex items-start gap-2">
                                             <div class="flex-1 space-y-2">
+                                                {{-- Nama Lokasi --}}
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                                                        <i class="fas fa-tag mr-1 text-orange-500"></i>
+                                                        Nama Lokasi (Opsional)
+                                                    </label>
+                                                    <input type="text"
+                                                           name="link_gmaps[0][name]"
+                                                           class="w-full px-4 h-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                                                           placeholder="Contoh: Cabang Sudirman, Outlet BSD"
+                                                           maxlength="200">
+                                                    <p class="mt-1 text-xs text-gray-500">
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        Kosongkan jika ingin tampil sebagai "Lokasi 1, 2, 3..."
+                                                    </p>
+                                                </div>
+                                                
+                                                {{-- Link Google Maps --}}
                                                 <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
                                                     <input type="url"
                                                            name="link_gmaps[0][link]"
@@ -1276,6 +1294,22 @@ function addGmapField() {
     newField.innerHTML = `
         <div class="flex items-start gap-2">
             <div class="flex-1 space-y-2">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-tag mr-1 text-orange-500"></i>
+                        Nama Lokasi (Opsional)
+                    </label>
+                    <input type="text"
+                           name="link_gmaps[${gmapFieldCounter}][name]"
+                           class="w-full px-4 h-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           placeholder="Contoh: Cabang Sudirman, Outlet BSD"
+                           maxlength="200">
+                    <p class="mt-1 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Kosongkan jika ingin tampil sebagai "Lokasi 1, 2, 3..."
+                    </p>
+                </div>
+                
                 <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
                     <input type="url"
                            name="link_gmaps[${gmapFieldCounter}][link]"

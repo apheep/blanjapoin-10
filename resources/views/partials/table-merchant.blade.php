@@ -387,9 +387,9 @@
                                            target="_blank" 
                                            rel="noopener noreferrer"
                                            class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 rounded"
-                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                           title="{{ $location['name'] ?? 'Lokasi ' . ($i + 1) }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
                                             <i class="fas fa-map-marker-alt text-xs"></i>
-                                            <span>{{ $i + 1 }}</span>
+                                            <span>{{ $location['name'] ?? ($i + 1) }}</span>
                                         </a>
                                     @endforeach
                                 </div>
@@ -760,9 +760,9 @@
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded"
-                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                           title="{{ $location['name'] ?? 'Lokasi ' . ($i + 1) }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
                                             <i class="fas fa-map-marker-alt text-[11px]"></i>
-                                            Lok {{ $i + 1 }}
+                                            {{ $location['name'] ?? 'Lok ' . ($i + 1) }}
                                         </a>
                                     @endforeach
                                 </div>

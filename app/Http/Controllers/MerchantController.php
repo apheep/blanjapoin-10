@@ -3190,6 +3190,7 @@ class MerchantController extends Controller
         }
 
         $validated = $request->validate([
+            'name' => 'nullable|string|max:200',
             'link_gmap' => 'required|string|max:500',
             'radius' => 'nullable|integer|min:0|max:100000',
         ]);
@@ -3203,7 +3204,7 @@ class MerchantController extends Controller
                 ], 400);
             }
 
-            $merchant->addGmapsLocation($link, $validated['radius'] ?? null);
+            $merchant->addGmapsLocation($link, $validated['radius'] ?? null, $validated['name'] ?? null);
 
             return response()->json([
                 'success' => true,
@@ -3235,6 +3236,7 @@ class MerchantController extends Controller
         }
 
         $validated = $request->validate([
+            'name' => 'nullable|string|max:200',
             'link_gmap' => 'required|string|max:500',
             'radius' => 'nullable|integer|min:0|max:100000',
         ]);
@@ -3248,7 +3250,7 @@ class MerchantController extends Controller
                 ], 400);
             }
 
-            $merchant->updateGmapsLocation($locationIndex, $link, $validated['radius'] ?? null);
+            $merchant->updateGmapsLocation($locationIndex, $link, $validated['radius'] ?? null, $validated['name'] ?? null);
 
             return response()->json([
                 'success' => true,
@@ -3313,6 +3315,7 @@ class MerchantController extends Controller
 
         $validated = $request->validate([
             'locations' => 'required|array',
+            'locations.*.name' => 'nullable|string|max:200',
             'locations.*.link' => 'required|string|max:500',
             'locations.*.radius' => 'nullable|integer|min:0|max:100000',
         ]);
@@ -3330,6 +3333,7 @@ class MerchantController extends Controller
                 }
 
                 $processedLocations[] = [
+                    'name' => $locationData['name'] ?? null,
                     'link' => $link,
                     'radius' => $locationData['radius'] ?? null
                 ];
