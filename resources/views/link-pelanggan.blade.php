@@ -172,6 +172,11 @@
                     };
                 @endphp
 
+
+                @if($hasCategoryData('merchandise'))
+                    @include('merchant.merchandise')
+                @endif
+                
                 @if($hasCategoryData('paket_video'))
                     @include('merchant.paketvideo')
                 @endif
@@ -184,9 +189,7 @@
                     @include('merchant.paketinternet')
                 @endif
                 
-                @if($hasCategoryData('merchandise'))
-                    @include('merchant.merchandise')
-                @endif
+              
 
                 @if($hasCategoryData('belanja'))
                     @include('merchant.shop')
