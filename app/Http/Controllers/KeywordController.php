@@ -273,6 +273,7 @@ class KeywordController extends Controller
                 'end_date'         => $endDate,
                 'image'            => $imagePath,
                 'stock'            => $stock,
+                'sisa_stock'       => $stock,
                 'is_daily_stock'   => $isDailyStock,
                 'daily_stock_limit' => $dailyStockLimit,
                 'status'           => $status,
