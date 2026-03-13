@@ -319,6 +319,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [MerchantController::class, 'index'])->name('dashboard');
     Route::get('/merchants/search', [MerchantController::class, 'search'])->name('merchants.search');
     Route::get('/merchants/export/excel', [MerchantController::class, 'exportExcel'])->name('merchants.export.excel');
+    Route::get('/api/merchants/qr-list', [MerchantController::class, 'qrList'])->name('merchants.qr-list');
     Route::get('/merchants/{merchant}/keywords/export/excel', [MerchantController::class, 'exportKeywordsExcel'])->name('merchants.keywords.export.excel');
 
     // Resource CRUD merchant (index sudah dipakai di atas)
@@ -326,6 +327,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/merchants/{merchant}', [MerchantController::class, 'show'])->name('merchants.show');
     Route::patch('/api/merchants/{id}/toggle-status', [MerchantController::class, 'toggleStatus'])->name('merchants.toggle-status');
     Route::patch('/api/merchants/{id}/toggle-link-status', [MerchantController::class, 'toggleLinkStatus'])->name('merchants.toggle-link-status');
+    Route::get('/merchants/{merchant}/logo/download', [MerchantController::class, 'downloadLogo'])->name('merchant.logo.download');
 
     // Keywords routes
     Route::get('/keywords', [KeywordController::class, 'index'])->name('keywords.index');
@@ -336,9 +338,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/keywords/{id}/reject', [KeywordController::class, 'reject'])->name('keywords.reject');
     Route::patch('/api/keywords/{id}/toggle-status', [KeywordController::class, 'toggleStatus'])->name('keywords.toggle-status');
     Route::patch('/api/keywords/{id}/toggle-special-promo', [KeywordController::class, 'toggleSpecialPromo'])->name('keywords.toggle-special-promo');
+    Route::patch('/api/keywords/{id}/toggle-lock-longlat', [KeywordController::class, 'toggleLockLonglat'])->name('keywords.toggle-lock-longlat');
     Route::get('/api/keywords/by-merchant/{merchantId}', [KeywordController::class, 'getByMerchant'])->name('keywords.by-merchant');
     // Route /keywords/search sudah dipindahkan ke atas (sebelum route /keywords/{code}) untuk menghindari konflik
     Route::get('/keywords/export/excel', [KeywordController::class, 'exportExcel'])->name('keywords.export.excel');
+    Route::get('/admin/keywords/{id}/download-image', [KeywordController::class, 'downloadImage'])->name('keyword.image.download');
 
     // Iklan management
     Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');

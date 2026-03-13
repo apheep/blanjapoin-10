@@ -23,13 +23,6 @@ class KeywordController extends Controller
         
         $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id', 'desc')->paginate(10);
         
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-        
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
@@ -59,6 +52,7 @@ class KeywordController extends Controller
                 'stock'             => 'required|integer|min:0',
                 'stock_type'        => 'nullable|in:normal,daily_reset',
                 'daily_stock_limit' => 'nullable|integer|min:0',
+                'is_lock_longlat'   => 'nullable|in:0,1',
 
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
@@ -279,9 +273,11 @@ class KeywordController extends Controller
                 'end_date'         => $endDate,
                 'image'            => $imagePath,
                 'stock'            => $stock,
+                'sisa_stock'       => $stock,
                 'is_daily_stock'   => $isDailyStock,
                 'daily_stock_limit' => $dailyStockLimit,
                 'status'           => $status,
+                'is_lock_longlat'  => $request->has('is_lock_longlat') ? (bool)$request->input('is_lock_longlat') : true,
             ];
             
             // Set created_by to current user if authenticated
@@ -681,6 +677,7 @@ class KeywordController extends Controller
                 'stock'             => 'nullable|integer|min:0',
                 'stock_type'        => 'nullable|in:normal,daily_reset',
                 'daily_stock_limit' => 'nullable|integer|min:0',
+                'is_lock_longlat'   => 'nullable|in:0,1',
                 'status'            => 'nullable|in:approve,pending,reject',
             ], [
                 'subsidy_amount.required_if' => 'Nominal subsidi wajib diisi jika Subsidi Diskon dipilih Yes',
@@ -888,6 +885,7 @@ class KeywordController extends Controller
                     'image'             => $imagePath,
                     'stock'             => $request->stock,
                     'status'            => $status,
+                    'is_lock_longlat'   => $request->has('is_lock_longlat') ? (bool)$request->input('is_lock_longlat') : $keyword->is_lock_longlat,
                 ]);
                 
                 // Update diamond merchant jika subsidy_amount berubah
@@ -1014,14 +1012,6 @@ class KeywordController extends Controller
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
-        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
-        // Update ke database untuk setiap keyword
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-
         if ($request->ajax()) {
             try {
                 $html = view('partials.table-keyword', ['keywords' => $keywords])->render();
@@ -1276,6 +1266,27 @@ class KeywordController extends Controller
     /**
      * Toggle keyword status (is_active)
      */
+    public function toggleLockLonglat(Request $request, $id)
+    {
+        try {
+            $keyword = Keyword::findOrFail($id);
+            $keyword->is_lock_longlat = !$keyword->is_lock_longlat;
+            $keyword->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Lock LongLat keyword berhasil diperbarui',
+                'is_lock_longlat' => (bool)$keyword->is_lock_longlat,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error toggling keyword lock longlat: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Gagal memperbarui lock longlat'
+            ], 500);
+        }
+    }
+
     public function toggleStatus(Request $request, $id)
     {
         // Only admin with can_approve = 1 can access
@@ -1332,5 +1343,49 @@ class KeywordController extends Controller
                 'message' => 'Gagal mengambil data keywords: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Download keyword image
+     */
+    public function downloadImage($id)
+    {
+        $keyword = Keyword::findOrFail($id);
+        
+        if (!$keyword->image) {
+            abort(404, 'Image tidak ditemukan');
+        }
+
+        $originalFileName = basename($keyword->image);
+        $filePath = public_path('storage/keywords/' . $originalFileName);
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'File image tidak ditemukan');
+        }
+        
+        // Create user-friendly filename
+        $extension = pathinfo($originalFileName, PATHINFO_EXTENSION);
+        $productName = preg_replace('/[^A-Za-z0-9\-_]/', '_', $keyword->nama_produk);
+        $fileName = 'Image_' . $productName . '.' . $extension;
+        
+        $fileSize = filesize($filePath);
+        $mimeType = mime_content_type($filePath);
+        
+        // Clear any output buffers to prevent corruption
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        return response()->stream(function() use ($filePath) {
+            $stream = fopen($filePath, 'rb');
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => $fileSize,
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Pragma' => 'public',
+        ]);
     }
 }

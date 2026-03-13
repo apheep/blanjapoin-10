@@ -228,6 +228,75 @@ class MerchantController extends Controller
         return null;
     }
 
+    /**
+     * Batch-load total_trx, total_keyword, and keyword_aktif for all merchants
+     * on the current page using 3 GROUP BY queries instead of N×M×P per-merchant queries.
+     */
+    private function batchLoadMerchantStats($merchants): void
+    {
+        $merchantIds = $merchants->pluck('id')->toArray();
+        if (empty($merchantIds)) {
+            return;
+        }
+
+        // 1. total_trx: matched redemptions (merchant_id set by BEFORE INSERT trigger)
+        $trxMap = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->whereIn('k.merchant_key', $merchantIds)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->whereRaw('tr.merchant_id = k.merchant_key')
+            ->groupBy('k.merchant_key')
+            ->selectRaw('k.merchant_key, COUNT(*) as cnt')
+            ->pluck('cnt', 'k.merchant_key');
+
+        // 2. total_keyword: active keywords per merchant
+        $keywordMap = DB::table('keywords')
+            ->whereIn('merchant_key', $merchantIds)
+            ->where('is_active', 1)
+            ->groupBy('merchant_key')
+            ->selectRaw('merchant_key, COUNT(*) as cnt')
+            ->pluck('cnt', 'merchant_key');
+
+        // 3. keyword_aktif: keywords with at least one redemption
+        $aktifMap = DB::table('keywords as k')
+            ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
+            ->whereIn('k.merchant_key', $merchantIds)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->where('k.is_active', 1)
+            ->groupBy('k.merchant_key')
+            ->selectRaw('k.merchant_key, COUNT(DISTINCT k.id) as cnt')
+            ->pluck('cnt', 'k.merchant_key');
+
+        foreach ($merchants as $merchant) {
+            $merchant->total_trx     = (int)($trxMap[$merchant->id]     ?? 0);
+            $merchant->total_keyword = (int)($keywordMap[$merchant->id] ?? 0);
+            $merchant->keyword_aktif = (int)($aktifMap[$merchant->id]   ?? 0);
+        }
+    }
+
+    public function qrList(Request $request)
+    {
+        $merchants = Merchant::whereNotNull('link_blanjapoin')
+            ->where('link_blanjapoin', '!=', '')
+            ->orderBy('nama_merchant', 'asc')
+            ->get(['id', 'nama_merchant', 'link_blanjapoin']);
+
+        $result = $merchants->map(function ($m) {
+            $cleanLink = preg_replace('#^https?://#', '', trim($m->link_blanjapoin));
+            $parts = explode('/', $cleanLink);
+            if (count($parts) >= 3 && $parts[1] === 'dash') {
+                $code = end($parts);
+                return [
+                    'name' => $m->nama_merchant,
+                    'url'  => route('link.pelanggan', $code),
+                ];
+            }
+            return null;
+        })->filter()->values();
+
+        return response()->json($result);
+    }
+
     public function index(Request $request)
     {
         // Buat query params untuk appends, pastikan keyword_page tetap ada
@@ -294,39 +363,8 @@ class MerchantController extends Controller
         $merchants = $merchantsQuery->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         
-        // Hitung total TRX, total keyword (toggle on), dan keyword aktif untuk setiap merchant
-        foreach ($merchants as $merchant) {
-            // Gunakan nilai dari subquery jika tersedia (untuk sorting), jika tidak hitung manual
-            if (isset($merchant->total_trx_calc)) {
-                $merchant->total_trx = (int)$merchant->total_trx_calc;
-            } else {
-                // Use new click tracking based calculation (anti-cheating system)
-                $merchant->total_trx = $merchant->calculateTotalTrx();
-            }
-            
-            if (isset($merchant->total_keyword_calc)) {
-                $merchant->total_keyword = (int)$merchant->total_keyword_calc;
-            } else {
-                $totalKeyword = DB::table('keywords')
-                    ->where('merchant_key', $merchant->id)
-                    ->where('is_active', 1)
-                    ->count();
-                $merchant->total_keyword = $totalKeyword;
-            }
-            
-            if (isset($merchant->keyword_aktif_calc)) {
-                $merchant->keyword_aktif = (int)$merchant->keyword_aktif_calc;
-            } else {
-                $keywordAktif = DB::table('keywords as k')
-                    ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
-                    ->where('k.merchant_key', $merchant->id)
-                    ->where('tr.program', 'BLANJAPOIN')
-                    ->where('k.is_active', 1)
-                    ->distinct('k.id')
-                    ->count('k.id');
-                $merchant->keyword_aktif = $keywordAktif;
-            }
-        }
+        // Batch-load stats: 3 queries total instead of N×M×P per merchant
+        $this->batchLoadMerchantStats($merchants);
             
         // Buat query params untuk appends, pastikan merchant_page tetap ada
         $keywordQueryParams = $request->query();
@@ -343,14 +381,6 @@ class MerchantController extends Controller
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
-        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
-        // Update ke database untuk setiap keyword
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-            
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         
         // Get filtered cities based on user_level
@@ -426,13 +456,6 @@ class MerchantController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
-
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
 
         return view('merchant-detail', [
             'merchant' => $merchant,
@@ -1138,39 +1161,8 @@ class MerchantController extends Controller
         $merchants = $merchantsQuery->paginate(10, ['*'], 'merchant_page')
             ->appends($merchantQueryParams);
         
-        // Hitung total TRX, total keyword (toggle on), dan keyword aktif untuk setiap merchant
-        foreach ($merchants as $merchant) {
-            // Gunakan nilai dari subquery jika tersedia (untuk sorting), jika tidak hitung manual
-            if (isset($merchant->total_trx_calc)) {
-                $merchant->total_trx = (int)$merchant->total_trx_calc;
-            } else {
-                // Use new click tracking based calculation (anti-cheating system)
-                $merchant->total_trx = $merchant->calculateTotalTrx();
-            }
-            
-            if (isset($merchant->total_keyword_calc)) {
-                $merchant->total_keyword = (int)$merchant->total_keyword_calc;
-            } else {
-                $totalKeyword = DB::table('keywords')
-                    ->where('merchant_key', $merchant->id)
-                    ->where('is_active', 1)
-                    ->count();
-                $merchant->total_keyword = $totalKeyword;
-            }
-            
-            if (isset($merchant->keyword_aktif_calc)) {
-                $merchant->keyword_aktif = (int)$merchant->keyword_aktif_calc;
-            } else {
-                $keywordAktif = DB::table('keywords as k')
-                    ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
-                    ->where('k.merchant_key', $merchant->id)
-                    ->where('tr.program', 'BLANJAPOIN')
-                    ->where('k.is_active', 1)
-                    ->distinct('k.id')
-                    ->count('k.id');
-                $merchant->keyword_aktif = $keywordAktif;
-            }
-        }
+        // Batch-load stats: 3 queries total instead of N×M×P per merchant
+        $this->batchLoadMerchantStats($merchants);
         
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -1252,13 +1244,6 @@ class MerchantController extends Controller
             ->where('status', 'approve')
             ->where('is_active', 1) // Validasi is_active keyword
             ->get();
-
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
 
         // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
         // Use orderBy('order', 'asc') to respect admin-configured order
@@ -1511,11 +1496,12 @@ class MerchantController extends Controller
         $sortKeywordDir = $request->get('sort_keyword_dir', 'desc');
 
         // Query untuk history transaksi: join tokodigi_tselpoin_redeem dengan keywords dan merchants
-        // Hanya tampilkan transaksi dari keyword yang sudah APPROVE
+        // Tampilkan semua transaksi dari keyword merchant yang sudah APPROVE
         $historyQuery = DB::table('tokodigi_tselpoin_redeem as tr')
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->join('merchants as m', 'k.merchant_key', '=', 'm.id')
             ->where('m.id', $merchant->id)
+            ->where('tr.merchant_id', $merchant->id)  // Filter: hanya yang matched ke merchant ini
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
             ->where('tr.program', 'BLANJAPOIN')
             ->select(
@@ -1622,18 +1608,77 @@ class MerchantController extends Controller
             ->paginate(10, ['*'], 'keyword_page')
             ->withQueryString();
         
-        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
-        // Update ke database untuk setiap keyword
-        foreach ($keywordPaginator as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
+        // Query untuk Redeem History: semua data dari tokodigi_tselpoin_redeem berdasarkan keyword_id merchant
+        // Ini menampilkan semua redeem yang mengurangi stock (berdasarkan keyword_id)
+        $searchRedeem = $request->get('search_redeem');
+        $startDateRedeem = $request->get('start_date_redeem');
+        $endDateRedeem = $request->get('end_date_redeem');
+        $sortRedeem = $request->get('sort_redeem');
+        $sortRedeemDir = $request->get('sort_redeem_dir', 'desc');
+
+        // Ambil keyword_ids milik merchant ini
+        $merchantKeywordIds = Keyword::where('merchant_key', $merchant->id)
+            ->whereNotNull('keyword_id')
+            ->pluck('keyword_id')
+            ->toArray();
+
+        $redeemQuery = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->whereIn('tr.coupon', $merchantKeywordIds)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->leftJoin('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
+            ->select(
+                'tr.created_date as tanggal',
+                'tr.msisdn',
+                'tr.coupon as keyword_id',
+                'tr.keyword_desc as product',
+                'tr.poin_redeem',
+                'tr.merchant_id as matched_merchant_id',
+                'tr.clicked_date',
+                'tr.diff_click',
+                'k.nama_produk',
+                'k.stock as keyword_stock',
+                DB::raw('(SELECT COUNT(DISTINCT t2.msisdn) FROM tokodigi_tselpoin_redeem t2 WHERE t2.coupon = tr.coupon AND t2.program = "BLANJAPOIN") as total_redeemed')
+            );
+
+        // Apply search filter
+        if ($searchRedeem) {
+            $redeemQuery->where(function($query) use ($searchRedeem) {
+                $query->where('tr.msisdn', 'like', '%' . $searchRedeem . '%')
+                      ->orWhere('tr.coupon', 'like', '%' . $searchRedeem . '%')
+                      ->orWhere('tr.keyword_desc', 'like', '%' . $searchRedeem . '%');
+            });
         }
+
+        // Apply date filter
+        if ($startDateRedeem) {
+            $redeemQuery->whereRaw('DATE(tr.created_date) >= ?', [$startDateRedeem]);
+        }
+        if ($endDateRedeem) {
+            $redeemQuery->whereRaw('DATE(tr.created_date) <= ?', [$endDateRedeem]);
+        }
+
+        // Apply sort
+        $sortRedeemMap = [
+            'tanggal' => 'tr.created_date',
+            'msisdn' => 'tr.msisdn',
+            'keyword_id' => 'tr.coupon',
+            'poin_redeem' => 'tr.poin_redeem',
+        ];
+
+        if ($sortRedeem && isset($sortRedeemMap[$sortRedeem])) {
+            $redeemQuery->orderBy($sortRedeemMap[$sortRedeem], strtolower($sortRedeemDir) === 'asc' ? 'asc' : 'desc');
+        } else {
+            $redeemQuery->orderBy('tr.created_date', 'desc');
+        }
+
+        $redeemPaginator = $redeemQuery->paginate(10, ['*'], 'redeem_page')
+            ->withQueryString();
 
         return view('history-all', [
             'merchant' => $merchant,
             'histories' => $historyPaginator,
             'keywordPaginator' => $keywordPaginator,
+            'redeemPaginator' => $redeemPaginator,
         ]);
     }
 
@@ -1674,13 +1719,6 @@ class MerchantController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10)
             ->withQueryString();
-
-        // Update trx dan sisa_stock untuk setiap keyword berdasarkan data dari tokodigi_tselpoin_redeem
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
 
         return view('partials_dash.keywords-history', [
             'merchant' => $merchant,
@@ -3152,6 +3190,7 @@ class MerchantController extends Controller
         }
 
         $validated = $request->validate([
+            'name' => 'nullable|string|max:200',
             'link_gmap' => 'required|string|max:500',
             'radius' => 'nullable|integer|min:0|max:100000',
         ]);
@@ -3165,7 +3204,7 @@ class MerchantController extends Controller
                 ], 400);
             }
 
-            $merchant->addGmapsLocation($link, $validated['radius'] ?? null);
+            $merchant->addGmapsLocation($link, $validated['radius'] ?? null, $validated['name'] ?? null);
 
             return response()->json([
                 'success' => true,
@@ -3197,6 +3236,7 @@ class MerchantController extends Controller
         }
 
         $validated = $request->validate([
+            'name' => 'nullable|string|max:200',
             'link_gmap' => 'required|string|max:500',
             'radius' => 'nullable|integer|min:0|max:100000',
         ]);
@@ -3210,7 +3250,7 @@ class MerchantController extends Controller
                 ], 400);
             }
 
-            $merchant->updateGmapsLocation($locationIndex, $link, $validated['radius'] ?? null);
+            $merchant->updateGmapsLocation($locationIndex, $link, $validated['radius'] ?? null, $validated['name'] ?? null);
 
             return response()->json([
                 'success' => true,
@@ -3275,6 +3315,7 @@ class MerchantController extends Controller
 
         $validated = $request->validate([
             'locations' => 'required|array',
+            'locations.*.name' => 'nullable|string|max:200',
             'locations.*.link' => 'required|string|max:500',
             'locations.*.radius' => 'nullable|integer|min:0|max:100000',
         ]);
@@ -3292,6 +3333,7 @@ class MerchantController extends Controller
                 }
 
                 $processedLocations[] = [
+                    'name' => $locationData['name'] ?? null,
                     'link' => $link,
                     'radius' => $locationData['radius'] ?? null
                 ];
@@ -3346,5 +3388,46 @@ class MerchantController extends Controller
             ], 500);
         }
     }
-}
 
+    /**
+     * Download merchant logo
+     */
+    public function downloadLogo(Merchant $merchant)
+    {
+        if (!$merchant->logo_merchant) {
+            abort(404, 'Logo tidak ditemukan');
+        }
+
+        $originalFileName = basename($merchant->logo_merchant);
+        $filePath = public_path('storage/merchants/' . $originalFileName);
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'File logo tidak ditemukan');
+        }
+        
+        // Create user-friendly filename
+        $extension = pathinfo($originalFileName, PATHINFO_EXTENSION);
+        $merchantName = preg_replace('/[^A-Za-z0-9\-_]/', '_', $merchant->nama_merchant);
+        $fileName = 'Logo_' . $merchantName . '.' . $extension;
+        
+        $fileSize = filesize($filePath);
+        $mimeType = mime_content_type($filePath);
+        
+        // Clear any output buffers to prevent corruption
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        return response()->stream(function() use ($filePath) {
+            $stream = fopen($filePath, 'rb');
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Length' => $fileSize,
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Pragma' => 'public',
+        ]);
+    }
+}

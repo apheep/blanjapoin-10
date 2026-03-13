@@ -99,10 +99,9 @@
                             <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
                         </div>
                     </th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Lock Lokasi</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Periode</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Image</th>
-                </tr>
-            </thead>
 
             <tbody class="bg-white divide-y divide-gray-200" id="keyword-table-body">
                 @forelse($keywordPaginator as $keyword)
@@ -302,6 +301,17 @@
                         <td class="px-4 py-4" data-sort-value="{{ $keyword->sisa_stock ?? 0 }}">
                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ $keyword->sisa_stock ?? 0 }}</span>
                         </td>
+                        {{-- Lock LongLat Toggle --}}
+                        <td class="px-4 py-4" data-sort-value="{{ $keyword->is_lock_longlat ? '1' : '0' }}">
+                            <label class="relative inline-flex items-center cursor-pointer" title="Toggle Lock Lokasi">
+                                <input type="checkbox" 
+                                       data-keyword-id="{{ $keyword->id }}" 
+                                       class="sr-only peer toggle-keyword-lock-longlat" 
+                                       {{ $keyword->is_lock_longlat ? 'checked' : '' }} />
+                                <div class="w-9 h-5 bg-gray-200 hover:bg-gray-300 peer-focus:outline-0 peer-focus:ring-transparent rounded-full peer transition-all ease-in-out duration-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500 hover:peer-checked:bg-orange-600"></div>
+                            </label>
+                        </td>
+
                         <td class="px-4 py-4 text-xs text-gray-500">
                             @if($keyword->start_date || $keyword->end_date)
                                 <div>{{ $keyword->start_date ? \Carbon\Carbon::parse($keyword->start_date)->format('d/m/Y') : '-' }}</div>
@@ -312,14 +322,21 @@
                         </td>
                         <td class="px-4 py-4">
                             @if($keyword->image)
-                                <a href="{{ asset('storage/' . $keyword->image) }}"
-                                   target="_blank"
-                                   rel="noreferrer"
-                                   class="group block w-24 h-12 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition duration-150 hover:border-gray-300 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
-                                    <img src="{{ asset('storage/' . $keyword->image) }}" 
-                                         alt="{{ $keyword->nama_produk }}" 
-                                         class="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105">
-                                </a>
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ asset('storage/' . $keyword->image) }}"
+                                       target="_blank"
+                                       rel="noreferrer"
+                                       class="group block w-24 h-12 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition duration-150 hover:border-gray-300 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
+                                        <img src="{{ asset('storage/' . $keyword->image) }}" 
+                                             alt="{{ $keyword->nama_produk }}" 
+                                             class="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105">
+                                    </a>
+                                    <a href="{{ route('keyword.image.download', $keyword->id) }}" 
+                                       class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                       title="Download Image">
+                                        <i class="fas fa-download text-xs"></i>
+                                    </a>
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -327,14 +344,14 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="17" class="px-4 py-4 text-center text-sm text-gray-500">
+                        <td colspan="18" class="px-4 py-4 text-center text-sm text-gray-500">
                             Belum ada data keyword.
                         </td>
                     </tr>
                 @endforelse
 
                 <tr id="keyword-filter-empty-row" class="hidden">
-                    <td colspan="17" class="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colspan="18" class="px-4 py-6 text-center text-sm text-gray-500">
                         Tidak ada keyword pada rentang tanggal yang dipilih.
                     </td>
                 </tr>
@@ -429,6 +446,48 @@
 </div>
 
 <script>
+    // Function to toggle keyword lock longlat
+    function toggleKeywordLockLonglat(keywordId) {
+        const checkbox = document.querySelector(`.toggle-keyword-lock-longlat[data-keyword-id="${keywordId}"]`);
+        if (!checkbox) return;
+
+        fetch(`/api/keywords/${keywordId}/toggle-lock-longlat`, {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => { throw new Error(data.error || 'Gagal memperbarui lock lokasi'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (checkbox) checkbox.checked = data.is_lock_longlat;
+        })
+        .catch(error => {
+            console.error('Error toggling keyword lock longlat:', error);
+            if (checkbox) checkbox.checked = !checkbox.checked;
+            alert('Gagal memperbarui lock lokasi: ' + error.message);
+        });
+    }
+
+    window.toggleKeywordLockLonglat = toggleKeywordLockLonglat;
+
+    if (!window.keywordLockLonglatHandlerAttached) {
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('toggle-keyword-lock-longlat')) {
+                const keywordId = e.target.getAttribute('data-keyword-id');
+                if (keywordId) toggleKeywordLockLonglat(keywordId);
+            }
+        });
+        window.keywordLockLonglatHandlerAttached = true;
+    }
+
     // Function to toggle keyword status - defined in global scope so it's available after AJAX reload
     function toggleKeywordStatus(keywordId) {
         const checkbox = document.querySelector(`.toggle-keyword-status[data-keyword-id="${keywordId}"]`);

@@ -31,14 +31,6 @@ class SpesialPromoController extends Controller
             ->orderBy('id', 'desc')
             ->get();
         
-        // Set trx dan sisa_stock untuk setiap keyword berdasarkan redeem_count
-        // Update ke database untuk setiap keyword
-        foreach ($keywords as $keyword) {
-            $keyword->updateTrxAndSisaStock();
-            // Reload untuk mendapatkan nilai terbaru
-            $keyword->refresh();
-        }
-
         return view('spesial-promo', compact('keywords'));
     }
 }

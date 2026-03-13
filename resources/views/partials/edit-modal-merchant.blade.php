@@ -851,9 +851,10 @@ function toggleEditFieldsByKategori(kategori) {
             const cityValue = document.getElementById('editCityValue');
             if (citySearch) citySearch.value = '';
             if (cityValue) cityValue.value = '';
-            document.querySelector('textarea[name="detail_alamat"]').value = '';
-            document.getElementById('editMerchantLinkGmap').value = '';
-            document.getElementById('editDaerahCombined').value = '';
+            const detailAlamatEl = document.getElementById('editMerchantDetailAlamat');
+            if (detailAlamatEl) detailAlamatEl.value = '';
+            const daerahCombinedEl = document.getElementById('editDaerahCombined');
+            if (daerahCombinedEl) daerahCombinedEl.value = '';
         } else {
             lokasiSection.style.display = 'block';
         }
@@ -1208,6 +1209,7 @@ function addEditGmapField(data = null) {
     
     // Default values
     const linkValue = data ? (data.link || data.link_gmap || '') : '';
+    const nameValue = data ? (data.name || '') : '';
     // Check if lock_radius is explicitly set, otherwise infer from radius presence
     const lockRadius = data ? (data.lock_radius !== undefined ? data.lock_radius : (data.radius ? true : false)) : false;
     const radiusValue = data ? (data.radius || '') : '';
@@ -1215,6 +1217,23 @@ function addEditGmapField(data = null) {
     newField.innerHTML = `
         <div class="flex items-start gap-2">
             <div class="flex-1 space-y-2">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">
+                        <i class="fas fa-tag mr-1 text-orange-500"></i>
+                        Nama Lokasi (Opsional)
+                    </label>
+                    <input type="text"
+                           name="link_gmaps[${index}][name]"
+                           class="w-full px-4 h-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm"
+                           placeholder="Contoh: Cabang Sudirman, Outlet BSD"
+                           maxlength="200"
+                           value="${nameValue}">
+                    <p class="mt-1 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Kosongkan jika ingin tampil sebagai "Lokasi 1, 2, 3..."
+                    </p>
+                </div>
+                
                 <div class="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
                     <input type="url"
                            name="link_gmaps[${index}][link]"

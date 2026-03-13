@@ -172,6 +172,11 @@
                     };
                 @endphp
 
+
+                @if($hasCategoryData('merchandise'))
+                    @include('merchant.merchandise')
+                @endif
+
                 @if($hasCategoryData('paket_video'))
                     @include('merchant.paketvideo')
                 @endif
@@ -184,9 +189,7 @@
                     @include('merchant.paketinternet')
                 @endif
                 
-                @if($hasCategoryData('merchandise'))
-                    @include('merchant.merchandise')
-                @endif
+              
 
                 @if($hasCategoryData('belanja'))
                     @include('merchant.shop')
@@ -237,23 +240,6 @@
         if (merchantValidator) {
             updateRedeemButtons();
         }
-
-
-        
-        // Prevent click on "Harus ke Lokasi" buttons
-        document.addEventListener('click', function(e) {
-            const target = e.target.closest('[data-redeem-btn]');
-            if (target) {
-                // Check if button contains "Harus ke Lokasi" text or is disabled
-                const buttonText = target.textContent.trim();
-                if (buttonText.includes('Harus ke Lokasi') || target.disabled) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Tombol dinonaktifkan, tidak menampilkan pesan error
-                    return false;
-                }
-            }
-        }, true); // Use capture phase to catch before default behavior
         
         // Hide loading spinner when page loads and check location
         window.addEventListener('load', function() {
@@ -300,9 +286,9 @@
             // Animate cards with intersection observer
             const cardObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
+                    if (entry.isIntersecting && entry.target.style.display !== 'none') {
+                        entry.target.classList.remove('opacity-0', 'translate-y-2');
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
                         cardObserver.unobserve(entry.target);
                     }
                 });
@@ -311,27 +297,30 @@
             // Observe all cards
             const cards = document.querySelectorAll('article[class*="opacity-0"]');
             cards.forEach((card, index) => {
-                // Immediately observe the card
+                // Skip cards hidden by see-more
+                if (card.style.display === 'none') return;
                 cardObserver.observe(card);
                 
                 // Fallback: animate cards that are already visible
                 setTimeout(() => {
+                    if (card.style.display === 'none') return;
                     const rect = card.getBoundingClientRect();
                     const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
-                    if (isInViewport && (card.style.opacity === '0' || !card.style.opacity)) {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
+                    if (isInViewport && card.classList.contains('opacity-0')) {
+                        card.classList.remove('opacity-0', 'translate-y-2');
+                        card.classList.add('opacity-100', 'translate-y-0');
                         cardObserver.unobserve(card);
                     }
                 }, 200 + (index * 50));
             });
             
-            // Final fallback: show all cards after 1 second if still hidden
+            // Final fallback: show all visible cards after 1 second if still hidden
             setTimeout(() => {
                 cards.forEach(card => {
-                    if (card.style.opacity === '0' || !card.style.opacity) {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
+                    if (card.style.display === 'none') return;
+                    if (card.classList.contains('opacity-0')) {
+                        card.classList.remove('opacity-0', 'translate-y-2');
+                        card.classList.add('opacity-100', 'translate-y-0');
                     }
                 });
             }, 1000);
@@ -580,7 +569,7 @@
 
     <!-- Floating WhatsApp CS Button -->
     <a
-        href="https://wa.me/628112500066?text=Halo%20CS%20BlanjaPoin%2C%20saya%20butuh%20bantuan."
+        href="https://wa.me/628113700040?text=Halo%20CS%20BlanjaPoin%2C%20saya%20butuh%20bantuan."
         class="cs-wa-btn"
         target="_blank"
         rel="noopener noreferrer"

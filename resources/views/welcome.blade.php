@@ -117,7 +117,7 @@
 
    /* Wave background height: lebih tinggi di mobile, tetap seperti semula di desktop */
    .wave-bg-mobile {
-    height: 1000px;
+    height: 800px;
    }
    @media (min-width: 600px) {
     .wave-bg-mobile {
@@ -131,7 +131,7 @@
    /* HP kecil */
    @media (max-width: 599px) {
     .wave-img-mobile {
-     height: 540px;
+     height: 400px;
     }
    }
    /* Tablet / hp lebar, tapi masih bukan desktop */
@@ -180,7 +180,7 @@
      </div>
 
      <section class="relative z-10 space-y-10 md:space-y-12"></section>
-     <div class="mt-1 md:mt-0">
+     <div class="mt-1 md:mt-0 relative z-30">
        @include('partials.spesial_promo', ['specialPromos' => $specialPromos ?? null])
       </div>
 
@@ -472,7 +472,7 @@
     </div>
     <!-- Floating WhatsApp CS Button -->
     <a
-    href="https://wa.me/628112500066?text=Halo%20CS%20BlanjaPoin%2C%20saya%20butuh%20bantuan."
+    href="https://wa.me/628113700040?text=Halo%20CS%20BlanjaPoin%2C%20saya%20butuh%20bantuan."
     class="cs-wa-btn"
     target="_blank"
     rel="noopener noreferrer"
@@ -543,188 +543,15 @@
      }
     });
     
-    // Remove animation classes from all cards to make them visible immediately (no animation for cards)
+    // Make visible cards (not hidden by see-more) show immediately without animation
     const cards = document.querySelectorAll('[data-voucher-card="true"]');
     cards.forEach(card => {
+     // Skip cards hidden by see-more (display: none)
+     if (card.style.display === 'none') return;
      card.classList.remove('opacity-0', 'translate-y-2');
-     card.style.opacity = '1';
-     card.style.transform = 'none';
+     card.classList.add('opacity-100', 'translate-y-0');
     });
    });
-
-   // Toggle Shop Cards
-   let shopCardsExpanded = false;
-   
-   function toggleShopCards() {
-    const extraCard = document.getElementById('extraShopCard');
-    const arrow = document.getElementById('shopSeeAllArrow');
-    const text = document.getElementById('shopSeeAllText');
-    
-    if (!shopCardsExpanded) {
-     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
-     extraCard.classList.remove('opacity-0', 'scale-y-0');
-     extraCard.classList.add('opacity-100', 'scale-y-100');
-     arrow.textContent = '↑';
-     text.textContent = 'Show Less';
-     arrow.classList.remove('group-hover:translate-y-1');
-     arrow.classList.add('group-hover:-translate-y-1');
-     shopCardsExpanded = true;
-    } else {
-     extraCard.style.maxHeight = '0px';
-     extraCard.classList.remove('opacity-100', 'scale-y-100');
-     extraCard.classList.add('opacity-0', 'scale-y-0');
-     arrow.textContent = '↓';
-     text.textContent = 'See All';
-     arrow.classList.remove('group-hover:-translate-y-1');
-     arrow.classList.add('group-hover:translate-y-1');
-     shopCardsExpanded = false;
-    }
-   }
-
-   // Toggle Food Cards
-   let foodCardsExpanded = false;
-   
-   function toggleFoodCards() {
-    const extraCard = document.getElementById('extraFoodCard');
-    const arrow = document.getElementById('foodSeeAllArrow');
-    const text = document.getElementById('foodSeeAllText');
-    
-    if (!foodCardsExpanded) {
-     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
-     extraCard.classList.remove('opacity-0', 'scale-y-0');
-     extraCard.classList.add('opacity-100', 'scale-y-100');
-     arrow.textContent = '↑';
-     text.textContent = 'Show Less';
-     arrow.classList.remove('group-hover:translate-y-1');
-     arrow.classList.add('group-hover:-translate-y-1');
-     foodCardsExpanded = true;
-    } else {
-     extraCard.style.maxHeight = '0px';
-     extraCard.classList.remove('opacity-100', 'scale-y-100');
-     extraCard.classList.add('opacity-0', 'scale-y-0');
-     arrow.textContent = '↓';
-     text.textContent = 'See All';
-     arrow.classList.remove('group-hover:-translate-y-1');
-     arrow.classList.add('group-hover:translate-y-1');
-     foodCardsExpanded = false;
-    }
-   }
-
-   // Toggle Telkomsel Cards
-   let telkomselCardsExpanded = false;
-   
-   function toggleTelkomselCards() {
-    const extraCard = document.getElementById('extraTelkomselCard');
-    const arrow = document.getElementById('telkomselSeeAllArrow');
-    const text = document.getElementById('telkomselSeeAllText');
-    
-    if (!telkomselCardsExpanded) {
-     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
-     extraCard.classList.remove('opacity-0', 'scale-y-0');
-     extraCard.classList.add('opacity-100', 'scale-y-100');
-     arrow.textContent = '↑';
-     text.textContent = 'Show Less';
-     arrow.classList.remove('group-hover:translate-y-1');
-     arrow.classList.add('group-hover:-translate-y-1');
-     telkomselCardsExpanded = true;
-    } else {
-     extraCard.style.maxHeight = '0px';
-     extraCard.classList.remove('opacity-100', 'scale-y-100');
-     extraCard.classList.add('opacity-0', 'scale-y-0');
-     arrow.textContent = '↓';
-     text.textContent = 'See All';
-     arrow.classList.remove('group-hover:-translate-y-1');
-     arrow.classList.add('group-hover:translate-y-1');
-     telkomselCardsExpanded = false;
-    }
-   }
-
-   // Toggle Entertain Cards
-   let entertainCardsExpanded = false;
-   
-   function toggleEntertainCards() {
-    const extraCard = document.getElementById('extraEntertainCard');
-    const arrow = document.getElementById('entertainSeeAllArrow');
-    const text = document.getElementById('entertainSeeAllText');
-    
-    if (!entertainCardsExpanded) {
-     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
-     extraCard.classList.remove('opacity-0', 'scale-y-0');
-     extraCard.classList.add('opacity-100', 'scale-y-100');
-     arrow.textContent = '↑';
-     text.textContent = 'Show Less';
-     arrow.classList.remove('group-hover:translate-y-1');
-     arrow.classList.add('group-hover:-translate-y-1');
-     entertainCardsExpanded = true;
-    } else {
-     extraCard.style.maxHeight = '0px';
-     extraCard.classList.remove('opacity-100', 'scale-y-100');
-     extraCard.classList.add('opacity-0', 'scale-y-0');
-     arrow.textContent = '↓';
-     text.textContent = 'See All';
-     arrow.classList.remove('group-hover:-translate-y-1');
-     arrow.classList.add('group-hover:translate-y-1');
-     entertainCardsExpanded = false;
-    }
-   }
-
-   // Toggle Vacation Cards
-   let vacationCardsExpanded = false;
-   
-   function toggleVacationCards() {
-    const extraCard = document.getElementById('extraVacationCard');
-    const arrow = document.getElementById('vacationSeeAllArrow');
-    const text = document.getElementById('vacationSeeAllText');
-    
-    if (!vacationCardsExpanded) {
-     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
-     extraCard.classList.remove('opacity-0', 'scale-y-0');
-     extraCard.classList.add('opacity-100', 'scale-y-100');
-     arrow.textContent = '↑';
-     text.textContent = 'Show Less';
-     arrow.classList.remove('group-hover:translate-y-1');
-     arrow.classList.add('group-hover:-translate-y-1');
-     vacationCardsExpanded = true;
-    } else {
-     extraCard.style.maxHeight = '0px';
-     extraCard.classList.remove('opacity-100', 'scale-y-100');
-     extraCard.classList.add('opacity-0', 'scale-y-0');
-     arrow.textContent = '↓';
-     text.textContent = 'See All';
-     arrow.classList.remove('group-hover:-translate-y-1');
-     arrow.classList.add('group-hover:translate-y-1');
-     vacationCardsExpanded = false;
-    }
-   }
-
-   // Toggle Beauty Cards
-   let beautyCardsExpanded = false;
-   
-   function toggleBeautyCards() {
-    const extraCard = document.getElementById('extraBeautyCard');
-    const arrow = document.getElementById('beautySeeAllArrow');
-    const text = document.getElementById('beautySeeAllText');
-    
-    if (!beautyCardsExpanded) {
-     extraCard.style.maxHeight = extraCard.scrollHeight + 'px';
-     extraCard.classList.remove('opacity-0', 'scale-y-0');
-     extraCard.classList.add('opacity-100', 'scale-y-100');
-     arrow.textContent = '↑';
-     text.textContent = 'Show Less';
-     arrow.classList.remove('group-hover:translate-y-1');
-     arrow.classList.add('group-hover:-translate-y-1');
-     beautyCardsExpanded = true;
-    } else {
-     extraCard.style.maxHeight = '0px';
-     extraCard.classList.remove('opacity-100', 'scale-y-100');
-     extraCard.classList.add('opacity-0', 'scale-y-0');
-     arrow.textContent = '↓';
-     text.textContent = 'See All';
-     arrow.classList.remove('group-hover:-translate-y-1');
-     arrow.classList.add('group-hover:translate-y-1');
-     beautyCardsExpanded = false;
-    }
-   }
 
    // Filter Category - Scroll to section
    function filterCategory(category) {
@@ -882,7 +709,16 @@
 
    // Location searchable select (combobox)
   const serverLocations = <?php echo $locationList->toJson(); ?>;
-   const locations = ['All', ...serverLocations];
+   // Remove duplicates case-insensitively
+   const uniqueLocations = serverLocations.reduce((acc, location) => {
+    const normalized = location.toLowerCase();
+    if (!acc.map.has(normalized)) {
+     acc.map.set(normalized, location);
+     acc.list.push(location);
+    }
+    return acc;
+   }, { map: new Map(), list: [] }).list;
+   const locations = ['All', ...uniqueLocations];
    const locationInput = document.getElementById('locationInput');
    const locationDropdown = document.getElementById('locationDropdown');
    const voucherSections = new Map();
@@ -919,7 +755,7 @@
      return;
     }
     dropdownElement.innerHTML = options.map(l => `
-     <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l}</div>
+     <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l.toUpperCase()}</div>
     `).join('');
    }
 
@@ -1163,7 +999,7 @@
     const f = q.trim().toLowerCase();
     const opts = locations.filter(l => f===''? true : l.toLowerCase().includes(f));
     holder.innerHTML = opts.map(l => `
-     <button type="button" class="w-full text-left px-6 py-4 text-base hover:bg-neutral-50" data-value="${l}">${l}</button>
+     <button type="button" class="w-full text-left px-6 py-4 text-base hover:bg-neutral-50" data-value="${l}">${l.toUpperCase()}</button>
     `).join('') || '<div class="px-6 py-4 text-neutral-500">Tidak ada hasil</div>';
    };
    renderList();
@@ -1306,17 +1142,17 @@
 
    // Initialize filters and sorting after DOM is ready
    function initializeFiltersAndSorting() {
-    // Remove animation classes from all cards to make them visible immediately
+    // Make visible cards (not hidden by see-more) show immediately
     const cards = document.querySelectorAll('[data-voucher-card="true"]');
     cards.forEach(card => {
+     // Skip cards hidden by see-more
+     if (card.style.display === 'none') return;
      card.classList.remove('opacity-0', 'translate-y-2');
-     card.style.opacity = '1';
-     card.style.transform = 'none';
+     card.classList.add('opacity-100', 'translate-y-0');
     });
     
     refreshVoucherCards();
     registerVoucherSections();
-    applyPointSort(currentPointSort);
    }
    
    // Run immediately and also after a short delay to catch any dynamically loaded content

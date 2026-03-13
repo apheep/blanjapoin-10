@@ -50,7 +50,12 @@ class Keyword extends Model
         'status',
         'is_active',
         'is_special_promo',
+        'is_lock_longlat',
         'created_by',
+    ];
+
+    protected $casts = [
+        'is_lock_longlat' => 'boolean',
     ];
 
     public function merchant()
@@ -102,64 +107,40 @@ class Keyword extends Model
             return false;
         }
 
-        // Get all redemptions for this keyword_id (include msisdn untuk prevent double counting)
-        // Group by MSISDN + keyword_code, ambil yang pertama (untuk mencegah duplicate entry)
-        $redemptions = DB::table('tokodigi_tselpoin_redeem')
-            ->where('coupon', $this->keyword_id)
-            ->where('program', 'BLANJAPOIN')
-            ->select('created_date', 'coupon as keyword_id', 'msisdn')
-            ->orderBy('created_date', 'asc') // Urutkan berdasarkan waktu untuk konsistensi
-            ->get();
+        // Hitung trx: hanya MSISDN yang matched ke merchant pemilik keyword ini
+        // (merchant_id di tokodigi_tselpoin_redeem harus sama dengan merchant_key keyword)
+        $trxQuery = DB::table('tokodigi_tselpoin_redeem as tr')
+            ->where('tr.coupon', $this->keyword_id)
+            ->where('tr.program', 'BLANJAPOIN')
+            ->whereNotNull('tr.merchant_id')
+            ->whereNotNull('tr.clicked_date')
+            ->where('tr.merchant_id', $this->merchant_key);
 
-        // Track kombinasi MSISDN + keyword_code yang sudah dihitung untuk merchant ini
-        // Ini mencegah double counting: 1 MSISDN + 1 keyword_code hanya dihitung 1 kali
-        $countedMsisdnKeyword = [];
-
-        // Count only redemptions that match THIS merchant (via click_history)
-        $trxCount = 0;
-        foreach ($redemptions as $redemption) {
-            // Buat unique key untuk kombinasi MSISDN + keyword_code
-            $uniqueKey = $redemption->msisdn . '_' . $redemption->keyword_id;
-            
-            // Skip jika kombinasi MSISDN + keyword_code ini sudah dihitung sebelumnya
-            // Ini mencegah double counting jika ada duplicate entry di database
-            if (isset($countedMsisdnKeyword[$uniqueKey])) {
-                continue;
-            }
-
-            // Find ALL matching clicks for this redemption (dari semua merchant)
-            // Ambil yang time diff paling kecil (paling sesuai) - ini menentukan merchant mana yang "menang"
-            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
-            $matchingClick = DB::table('click_history')
-                ->where('keyword_id', $redemption->keyword_id)
-                ->where('clicked_at', '<', $redemption->created_date)
-                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
-                ->select(
-                    'merchant_id',
-                    DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")
-                )
-                ->orderBy('time_diff_seconds', 'asc') // Paling dekat waktu = paling sesuai
-                ->first();
-
-            // Hanya hitung jika:
-            // 1. Ada matching click
-            // 2. Merchant dari click (yang paling sesuai/time diff terkecil) match dengan merchant keyword ini
-            // Ini memastikan 1 MSISDN + keyword_code hanya dihitung untuk 1 merchant (yang paling sesuai)
-            // Jika ada 2 merchant dengan keyword sama, hanya yang time diff terkecil yang menghitung
-            if ($matchingClick && $matchingClick->merchant_id == $this->merchant_key) {
-                $trxCount++;
-                // Mark kombinasi MSISDN + keyword_code ini sudah dihitung
-                $countedMsisdnKeyword[$uniqueKey] = true;
-            }
+        // Filter by start_date: jangan hitung redeem dari periode/tahun sebelumnya
+        if ($this->start_date) {
+            $trxQuery->whereDate('tr.created_date', '>=', $this->start_date);
         }
 
-        // Hitung sisa stock: stock - trx (minimal 0)
+        $trxCount = $trxQuery->distinct()->count('tr.msisdn');
+
+        // Hitung sisa stock dari SEMUA redeem dalam periode keyword (matched maupun tidak)
+        $redeemQuery = DB::table('tokodigi_tselpoin_redeem')
+            ->where('coupon', $this->keyword_id)
+            ->where('program', 'BLANJAPOIN');
+
+        // Filter by start_date: jangan hitung redeem dari periode/tahun sebelumnya
+        if ($this->start_date) {
+            $redeemQuery->whereDate('created_date', '>=', $this->start_date);
+        }
+
+        $totalRedeem = $redeemQuery->distinct()->count('msisdn');
+
+        // Hitung sisa stock: stock - semua redeem (minimal 0)
         $stock = (int)($this->stock ?? 0);
         $trx = (int)$trxCount;
-        $sisaStock = max(0, $stock - $trx);
+        $sisaStock = max(0, $stock - (int)$totalRedeem);
 
         // Update ke database
-        // trx disimpan sebagai string karena kolom di database adalah string
         $this->trx = (string)$trx;
         $this->sisa_stock = $sisaStock;
         $this->save();
@@ -209,54 +190,16 @@ class Keyword extends Model
             return 0;
         }
 
-        // Hitung jumlah trx hari ini untuk keyword ini yang sesuai dengan merchant ini
-        // Menggunakan logika yang sama dengan updateTrxAndSisaStock untuk mencegah double counting
+        // Hitung jumlah unique MSISDN yang redeem hari ini untuk keyword_id ini
+        // Tanpa perlu cek click match — stock berkurang berdasarkan keyword_id saja
         $today = Carbon::today()->format('Y-m-d');
         
-        $todayRedemptions = DB::table('tokodigi_tselpoin_redeem')
+        $todayTrxCount = DB::table('tokodigi_tselpoin_redeem')
             ->where('coupon', $this->keyword_id)
             ->where('program', 'BLANJAPOIN')
             ->whereRaw("DATE(created_date) = ?", [$today])
-            ->select('created_date', 'coupon as keyword_id', 'msisdn')
-            ->orderBy('created_date', 'asc')
-            ->get();
-
-        // Track kombinasi MSISDN + keyword_code yang sudah dihitung untuk merchant ini
-        $countedMsisdnKeyword = [];
-        $todayTrxCount = 0;
-
-        foreach ($todayRedemptions as $redemption) {
-            // Buat unique key untuk kombinasi MSISDN + keyword_code
-            $uniqueKey = $redemption->msisdn . '_' . $redemption->keyword_id;
-            
-            // Skip jika kombinasi MSISDN + keyword_code ini sudah dihitung sebelumnya
-            if (isset($countedMsisdnKeyword[$uniqueKey])) {
-                continue;
-            }
-
-            // Find ALL matching clicks for this redemption (dari semua merchant)
-            // Ambil yang time diff paling kecil (paling sesuai) - ini menentukan merchant mana yang "menang"
-            // Hanya dianggap match jika selisih waktu > 3 detik (karena proses klik, loading mytsel, sampai redeem sukses butuh waktu 3 detik lebih)
-            $matchingClick = DB::table('click_history')
-                ->where('keyword_id', $redemption->keyword_id)
-                ->where('clicked_at', '<', $redemption->created_date)
-                ->whereRaw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') > 3") // Hanya selisih > 3 detik yang dianggap match
-                ->select(
-                    'merchant_id',
-                    DB::raw("TIMESTAMPDIFF(SECOND, clicked_at, '{$redemption->created_date}') as time_diff_seconds")
-                )
-                ->orderBy('time_diff_seconds', 'asc') // Paling dekat waktu = paling sesuai
-                ->first();
-
-            // Hanya hitung jika:
-            // 1. Ada matching click
-            // 2. Merchant dari click (yang paling sesuai/time diff terkecil) match dengan merchant keyword ini
-            if ($matchingClick && $matchingClick->merchant_id == $this->merchant_key) {
-                $todayTrxCount++;
-                // Mark kombinasi MSISDN + keyword_code ini sudah dihitung
-                $countedMsisdnKeyword[$uniqueKey] = true;
-            }
-        }
+            ->distinct()
+            ->count('msisdn');
 
         // Daily stock limit = min(daily_stock_limit, sisa_stock) - trx_hari_ini
         // Jika sisa_stock < daily_stock_limit, maka gunakan sisa_stock sebagai batas

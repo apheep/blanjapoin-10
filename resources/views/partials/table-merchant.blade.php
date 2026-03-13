@@ -1,4 +1,4 @@
-@php
+﻿@php
     // Pastikan $merchants terdefinisi
     if (!isset($merchants) || !$merchants) {
         $merchants = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
@@ -195,7 +195,8 @@
                                 <button type="button"
                                         id="merchant-edit-btn-{{ $merchant->id }}"
                                         data-merchant-edit-id="{{ $merchant->id }}"
-                                        onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, {{ json_encode($merchant) }})"
+                                        data-merchant="{{ json_encode($merchant) }}"
+                                        onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, JSON.parse(this.dataset.merchant))"
                                         class="flex items-center justify-center h-6 w-6 hover:opacity-70 transition-opacity"
                                         title="Edit">
                                     <i class="fas fa-edit text-blue-600 text-lg leading-none"></i>
@@ -218,7 +219,7 @@
                                     <i class="fas fa-chevron-down view-trigger-chevron text-[10px]"></i>
                                 </button>
                                 <div id="merchant-quick-menu-{{ $merchant->id }}"
-                                     class="merchant-quick-menu hidden absolute left-1/2 top-full mt-2 w-44 -translate-x-1/2 bg-white border border-gray-200 rounded-2xl py-1 z-50 opacity-0 -translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out">
+                                     class="merchant-quick-menu hidden absolute left-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-2xl py-1 z-50 opacity-0 -translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out">
                                     <a href="{{ route('merchants.show', $merchant->id) }}"
                                        onclick="event.stopPropagation();"
                                        class="merchant-quick-option flex items-center gap-2 px-4 py-2 text-[12px] font-semibold text-gray-700">
@@ -387,9 +388,9 @@
                                            target="_blank" 
                                            rel="noopener noreferrer"
                                            class="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 rounded"
-                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                           title="{{ $location['name'] ?? 'Lokasi ' . ($i + 1) }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
                                             <i class="fas fa-map-marker-alt text-xs"></i>
-                                            <span>{{ $i + 1 }}</span>
+                                            <span>{{ $location['name'] ?? ($i + 1) }}</span>
                                         </a>
                                     @endforeach
                                 </div>
@@ -427,11 +428,11 @@
                                         <span class="truncate max-w-xs">Link</span>
                                     </a>
                                     <button type="button"
-                                            onclick="event.stopPropagation(); openQRCodeModal('{{ route('link.pelanggan', $codePelanggan) }}', '{{ $merchant->nama_merchant }}')"
-                                            class="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold text-white bg-gradient-to-r from-red-500 to-yellow-600 rounded-lg hover:from-red-600 hover:to-yellow-500 transition-colors shadow-sm hover:shadow-md"
-                                            title="Generate QR Code">
+                                            onclick="event.stopPropagation(); openQRCodeModal('{{ route('link.pelanggan', $codePelanggan) }}', '{{ addslashes($merchant->nama_merchant) }}')"
+                                            class="inline-flex items-center justify-center px-2 py-1 text-xs font-semibold text-white bg-gradient-to-r from-red-500 to-yellow-500 rounded-lg hover:from-red-600 hover:to-yellow-400 transition-all shadow-sm hover:shadow-md"
+                                            title="Preview QR Code">
                                         <i class="fas fa-qrcode text-xs"></i>
-                                        <span class="ml-1">QRCode</span>
+                                        <span class="ml-1">QR</span>
                                     </button>
                                 </div>
                             @else
@@ -458,15 +459,23 @@
                         {{-- Logo --}}
                         <td class="px-4 py-4 text-center text-sm text-gray-700">
                             @if($merchant->logo_merchant)
-                                <a href="{{ asset('storage/' . $merchant->logo_merchant) }}" 
-                                   onclick="event.stopPropagation();"
-                                   target="_blank" 
-                                   rel="noopener noreferrer"
-                                   class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
-                                    <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" 
-                                         alt="{{ $merchant->nama_merchant }}" 
-                                         class="h-full w-full object-cover">
-                                </a>
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ asset('storage/' . $merchant->logo_merchant) }}" 
+                                       onclick="event.stopPropagation();"
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center justify-center h-10 w-10 rounded-lg overflow-hidden border border-gray-300 hover:border-blue-500 transition-colors hover:shadow-md">
+                                        <img src="{{ asset('storage/' . $merchant->logo_merchant) }}" 
+                                             alt="{{ $merchant->nama_merchant }}" 
+                                             class="h-full w-full object-cover">
+                                    </a>
+                                    <a href="{{ route('merchant.logo.download', $merchant->id) }}" 
+                                       onclick="event.stopPropagation();"
+                                       class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                       title="Download Logo">
+                                        <i class="fas fa-download text-xs"></i>
+                                    </a>
+                                </div>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -564,7 +573,8 @@
                     <button type="button"
                             id="merchant-edit-btn-mobile-{{ $merchant->id }}"
                             data-merchant-edit-id="{{ $merchant->id }}"
-                            onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, {{ json_encode($merchant) }})"
+                            data-merchant="{{ json_encode($merchant) }}"
+                            onclick="event.stopPropagation(); openEditMerchant({{ $merchant->id }}, JSON.parse(this.dataset.merchant))"
                             class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-white border border-blue-100 text-blue-600 shadow-sm hover:bg-blue-50 transition-colors"
                             title="Edit">
                         <i class="fas fa-edit text-base"></i>
@@ -674,7 +684,7 @@
                             <i class="fas fa-chevron-down view-trigger-chevron text-[10px]"></i>
                         </button>
                         <div id="merchant-quick-menu-mobile-{{ $merchant->id }}"
-                             class="merchant-quick-menu hidden absolute left-1/2 top-full mt-2 w-44 -translate-x-1/2 bg-white border border-gray-200 rounded-2xl py-1 z-50 opacity-0 -translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out">
+                             class="merchant-quick-menu hidden absolute left-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-2xl py-1 z-50 opacity-0 -translate-y-1 scale-95 pointer-events-none transition-all duration-200 ease-out">
                             <a href="{{ route('merchants.show', $merchant->id) }}"
                                onclick="event.stopPropagation();"
                                class="merchant-quick-option flex items-center gap-2 px-4 py-2 text-[12px] font-semibold text-gray-700">
@@ -752,9 +762,9 @@
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded"
-                                           title="Lokasi {{ $i + 1 }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
+                                           title="{{ $location['name'] ?? 'Lokasi ' . ($i + 1) }}{{ $location['radius'] ? ' (Radius: ' . $location['radius'] . 'm)' : '' }}">
                                             <i class="fas fa-map-marker-alt text-[11px]"></i>
-                                            Lok {{ $i + 1 }}
+                                            {{ $location['name'] ?? 'Lok ' . ($i + 1) }}
                                         </a>
                                     @endforeach
                                 </div>
@@ -793,10 +803,10 @@
                                         Buka Link
                                     </a>
                                     <button type="button"
-                                            onclick="event.stopPropagation(); openQRCodeModal('{{ route('link.pelanggan', $codePelanggan) }}', '{{ $merchant->nama_merchant }}')"
-                                            class="inline-flex items-center justify-center px-2 py-1 text-[10px] font-semibold text-white bg-gradient-to-r from-red-500 to-yellow-400 rounded-lg hover:from-red-600 hover:to-yellow-500 transition-colors shadow-sm">
+                                            onclick="event.stopPropagation(); openQRCodeModal('{{ route('link.pelanggan', $codePelanggan) }}', '{{ addslashes($merchant->nama_merchant) }}')"
+                                            class="inline-flex items-center justify-center px-2 py-1 text-[10px] font-semibold text-white bg-gradient-to-r from-red-500 to-yellow-500 rounded-lg hover:from-red-600 hover:to-yellow-400 transition-all shadow-sm">
                                         <i class="fas fa-qrcode text-[10px]"></i>
-                                        <span class="ml-1">QRCode</span>
+                                        <span class="ml-1">QR</span>
                                     </button>
                                 </div>
                             @else
@@ -824,15 +834,23 @@
                         <div>
                             <p class="text-[10px] uppercase tracking-wide text-gray-500 font-semibold">Logo</p>
                             @if($merchant->logo_merchant)
-                                <a href="{{ asset('storage/' . $merchant->logo_merchant) }}"
-                                   onclick="event.stopPropagation();"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="mt-1 inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors">
-                                    <img src="{{ asset('storage/' . $merchant->logo_merchant) }}"
-                                         alt="{{ $merchant->nama_merchant }}"
-                                         class="h-full w-full object-cover">
-                                </a>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <a href="{{ asset('storage/' . $merchant->logo_merchant) }}"
+                                       onclick="event.stopPropagation();"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="inline-flex items-center justify-center h-12 w-12 rounded-xl overflow-hidden border border-gray-200 hover:border-blue-500 transition-colors">
+                                        <img src="{{ asset('storage/' . $merchant->logo_merchant) }}"
+                                             alt="{{ $merchant->nama_merchant }}"
+                                             class="h-full w-full object-cover">
+                                    </a>
+                                    <a href="{{ route('merchant.logo.download', $merchant->id) }}" 
+                                       onclick="event.stopPropagation();"
+                                       class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                       title="Download Logo">
+                                        <i class="fas fa-download text-xs"></i>
+                                    </a>
+                                </div>
                             @else
                                 <span class="text-xs text-gray-400 mt-1 inline-block">-</span>
                             @endif
@@ -1260,212 +1278,538 @@ window.updateMerchantSortIcons = updateMerchantSortIcons;
             alert('Gagal memperbarui link status: ' + error.message);
         }
     }
-    
-    // QR Code Modal Functions
-    function openQRCodeModal(linkUrl, merchantName) {
-        const modal = document.getElementById('qrcode-modal');
-        const overlay = document.getElementById('qrcode-modal-overlay');
-        const qrContainer = document.getElementById('qrcode-container');
-        const merchantTitle = document.getElementById('qrcode-merchant-name');
-        
-        if (!modal || !overlay || !qrContainer) return;
-        
-        // Set merchant name
-        if (merchantTitle) {
-            merchantTitle.textContent = merchantName || 'Merchant';
+
+    // ── QR Code Modal ──────────────────────────────────────────────
+    let _qrInstance = null;
+
+    function openQRCodeModal(url, name) {
+        const modal   = document.getElementById('qr-modal');
+        const content = document.getElementById('qr-modal-content');
+        const box     = document.getElementById('qr-box');
+        const title   = document.getElementById('qr-name');
+        const sub     = document.getElementById('qr-name-sub');
+        const linkEl  = document.getElementById('qr-link');
+        if (!modal || !box) return;
+
+        title.textContent  = 'QR Code Pelanggan';
+        sub.textContent    = name || 'Merchant';
+        linkEl.href        = url;
+        const linkSpan = document.getElementById('qr-link-text');
+        if (linkSpan) linkSpan.textContent = url;
+        box.innerHTML  = '';
+        _qrInstance    = null;
+        box.dataset.url  = url;
+        box.dataset.name = name || 'Merchant';
+
+        // Teleport to body so fixed positioning is never trapped by a parent transform/overflow
+        if (modal.parentNode !== document.body) {
+            document.body.appendChild(modal);
         }
-        
-        // Clear previous QR code
-        qrContainer.innerHTML = '';
-        
-        // Show modal
-        modal.classList.remove('hidden');
+
+        modal.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; top:0 !important; left:0 !important; width:100% !important; height:100% !important; z-index:99999 !important; background:rgba(0,0,0,0.5) !important; align-items:center !important; justify-content:center !important; padding:1rem !important;';
         document.body.style.overflow = 'hidden';
-        
-        // Generate QR code with responsive size
+
+        requestAnimationFrame(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        });
+
         setTimeout(() => {
-            if (typeof QRCode !== 'undefined') {
-                // Determine QR code size based on screen width
-                const isMobile = window.innerWidth < 640; // sm breakpoint
-                const qrSize = isMobile ? 150 : 200;
-                
-                new QRCode(qrContainer, {
-                    text: linkUrl,
-                    width: qrSize,
-                    height: qrSize,
-                    colorDark: '#000000',
-                    colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            } else {
-                qrContainer.innerHTML = '<p class="text-red-500 text-sm">QR Code library tidak tersedia. Silakan refresh halaman.</p>';
+            if (typeof QRCodeStyling === 'undefined') {
+                box.innerHTML = '<p class="text-red-500 text-sm">Library tidak tersedia, refresh halaman.</p>';
+                return;
             }
-        }, 100);
-        
-        // Store link URL for download
-        qrContainer.dataset.linkUrl = linkUrl;
-        qrContainer.dataset.merchantName = merchantName || 'Merchant';
+            _qrInstance = new QRCodeStyling({
+                width:  240,
+                height: 240,
+                type:   'canvas',
+                data:   url,
+                dotsOptions:          { color: '#111827', type: 'dots' },
+                cornersSquareOptions: { color: '#111827', type: 'extra-rounded' },
+                cornersDotOptions:    { color: '#111827', type: 'dot' },
+                backgroundOptions:    { color: '#ffffff' },
+                qrOptions:            { errorCorrectionLevel: 'H' }
+            });
+            _qrInstance.append(box);
+        }, 80);
     }
 
     function closeQRCodeModal() {
-        const modal = document.getElementById('qrcode-modal');
-        const qrContainer = document.getElementById('qrcode-container');
-        
+        const modal   = document.getElementById('qr-modal');
+        const content = document.getElementById('qr-modal-content');
         if (!modal) return;
-        
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-        
-        // Clear QR code
-        if (qrContainer) {
-            qrContainer.innerHTML = '';
-        }
-    }
-
-    function downloadQRCode() {
-        const qrContainer = document.getElementById('qrcode-container');
-        if (!qrContainer) return;
-        
-        const canvas = qrContainer.querySelector('canvas');
-        if (!canvas) {
-            alert('QR Code belum siap, silakan tunggu sebentar');
-            return;
-        }
-        
-        const link = document.createElement('a');
-        const merchantName = qrContainer.dataset.merchantName || 'Merchant';
-        const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
-        link.download = `qrcode-${merchantName.replace(/\s+/g, '-')}-${date}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    }
-
-    function printQRCode() {
-        const qrContainer = document.getElementById('qrcode-container');
-        const merchantTitle = document.getElementById('qrcode-merchant-name');
-        
-        if (!qrContainer) return;
-        
-        const canvas = qrContainer.querySelector('canvas');
-        if (!canvas) {
-            alert('QR Code belum siap, silakan tunggu sebentar');
-            return;
-        }
-
-        const dataUrl = canvas.toDataURL('image/png');
-        const merchantName = merchantTitle ? merchantTitle.textContent : 'Merchant';
-        const printWindow = window.open('', '_blank');
-        
-        if (!printWindow) {
-            alert('Tidak dapat membuka jendela baru untuk cetak.');
-            return;
-        }
-
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Print QR Code - ${merchantName}</title>
-                <style>
-                    body {
-                        margin: 0;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        min-height: 100vh;
-                        font-family: 'Poppins', sans-serif;
-                    }
-                    h1 {
-                        margin-bottom: 20px;
-                        color: #333;
-                    }
-                    img {
-                        border: 3px solid #14b8a6;
-                        border-radius: 10px;
-                        padding: 10px;
-                        background: white;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>${merchantName}</h1>
-                <img src="${dataUrl}" alt="QR Code" width="300" height="300" />
-                <p style="margin-top: 20px; color: #666;">Scan untuk akses link pelanggan</p>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
         setTimeout(() => {
-            printWindow.print();
-        }, 250);
+            modal.style.cssText = 'display:none !important;';
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            document.getElementById('qr-box').innerHTML = '';
+            _qrInstance = null;
+        }, 200);
     }
 
-    // Close modal when clicking overlay
-    document.addEventListener('DOMContentLoaded', function() {
-        const overlay = document.getElementById('qrcode-modal-overlay');
-        if (overlay) {
-            overlay.addEventListener('click', closeQRCodeModal);
-        }
-        
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
+    function downloadQR() {
+        const box = document.getElementById('qr-box');
+        if (!box || !box.dataset.url) { alert('QR belum siap, tunggu sebentar.'); return; }
+
+        const url  = box.dataset.url;
+        const name = box.dataset.name || 'merchant';
+
+        // Render a fresh high-res QR off-screen (1000×1000)
+        const hiRes = 1000;
+        const tmpDiv = document.createElement('div');
+        tmpDiv.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;';
+        document.body.appendChild(tmpDiv);
+
+        const hiQR = new QRCodeStyling({
+            width:  hiRes,
+            height: hiRes,
+            type:   'canvas',
+            data:   url,
+            dotsOptions:          { color: '#111827', type: 'dots' },
+            cornersSquareOptions: { color: '#111827', type: 'extra-rounded' },
+            cornersDotOptions:    { color: '#111827', type: 'dot' },
+            backgroundOptions:    { color: '#ffffff' },
+            qrOptions:            { errorCorrectionLevel: 'H' }
+        });
+        hiQR.append(tmpDiv);
+
+        setTimeout(() => {
+            const src = tmpDiv.querySelector('canvas');
+            if (!src) { document.body.removeChild(tmpDiv); alert('Gagal generate QR, coba lagi.'); return; }
+
+            const pad  = 80;
+            const txtH = 120;
+            const W    = src.width  + pad * 2;
+            const H    = src.height + pad * 2 + txtH;
+            const cv   = document.createElement('canvas');
+            cv.width   = W; cv.height = H;
+            const ctx  = cv.getContext('2d');
+
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+
+            // QR image
+            ctx.drawImage(src, pad, pad);
+
+            // Separator line
+            const textStartY = src.height + pad;
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(pad, textStartY + 18);
+            ctx.lineTo(W - pad, textStartY + 18);
+            ctx.stroke();
+
+            // Link URL — bold black
+            ctx.font         = '700 38px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle    = '#111827';
+            let disp = url;
+            while (ctx.measureText(disp).width > W - 80 && disp.length > 8)
+                disp = disp.slice(0, -4) + '...';
+            ctx.fillText(disp, W / 2, textStartY + 72);
+
+            const a   = document.createElement('a');
+            const nm  = name.replace(/\s+/g, '-');
+            const dt  = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            a.download = `qr-${nm}-${dt}.png`;
+            a.href     = cv.toDataURL('image/png', 1.0);
+            a.click();
+
+            document.body.removeChild(tmpDiv);
+        }, 300);
+    }
+
+    function printQR() {
+        const box = document.getElementById('qr-box');
+        const src = box ? box.querySelector('canvas') : null;
+        if (!src) { alert('QR belum siap, tunggu sebentar.'); return; }
+        const nm  = document.getElementById('qr-name-sub').textContent;
+        const url = box.dataset.url || '';
+        const w   = window.open('', '_blank');
+        if (!w) { alert('Pop-up diblokir browser.'); return; }
+        w.document.write(`<!DOCTYPE html><html><head><title>Print QR \u2013 ${nm}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>*{box-sizing:border-box}body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f3f4f6;font-family:Poppins,sans-serif}.card{background:#fff;border-radius:20px;padding:36px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.10)}h2{margin:0 0 20px;font-size:20px;color:#111}img{border-radius:12px}.url{margin-top:16px;font-size:12px;font-weight:600;color:#6b7280;word-break:break-all}.sub{margin-top:8px;font-size:11px;color:#9ca3af}</style>
+        </head><body><div class="card"><h2>${nm}</h2><img src="${src.toDataURL()}" width="260" height="260"><p class="url">${url}</p><p class="sub">Scan untuk akses link pelanggan</p></div></body></html>`);
+        w.document.close();
+        setTimeout(() => w.print(), 400);
+    }
+
+    function copyQRLink() {
+        const url = document.getElementById('qr-box')?.dataset.url || '';
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('qr-btn-copy');
+            if (!btn) return;
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>Tersalin!';
+            btn.classList.add('!bg-green-50', '!text-green-700', '!border-green-300');
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.classList.remove('!bg-green-50', '!text-green-700', '!border-green-300');
+            }, 2000);
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = url; document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
-                const modal = document.getElementById('qrcode-modal');
-                if (modal && !modal.classList.contains('hidden')) {
-                    closeQRCodeModal();
-                }
+                const m = document.getElementById('qr-modal');
+                if (m && m.style.display !== 'none') closeQRCodeModal();
             }
         });
     });
 </script>
 
 <!-- QR Code Modal -->
-<div id="qrcode-modal" class="fixed inset-0 z-[9999] hidden">
-    <div id="qrcode-modal-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"></div>
-    
-    <div class="absolute inset-0 flex items-center justify-center p-3 md:p-4">
-        <div class="relative bg-white rounded-2xl md:rounded-3xl shadow-2xl max-w-md w-full p-4 md:p-6 lg:p-8 transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
-            <!-- Close Button -->
-            <button onclick="closeQRCodeModal()" class="absolute top-2 right-2 md:top-4 md:right-4 text-gray-400 hover:text-gray-600 transition-colors z-10">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 md:w-6 md:h-6">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
+<div id="qr-modal" class="fixed z-[9999] hidden" style="display:none; inset:0; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; padding:1rem;">
+    <div class="w-full h-full absolute inset-0" onclick="closeQRCodeModal()"></div>
+    <div id="qr-modal-content" class="relative z-10 bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-red-100 to-orange-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-qrcode text-orange-600 text-lg"></i>
+                </div>
+                <div>
+                    <h3 id="qr-name" class="text-lg font-semibold text-gray-900">QR Code Pelanggan</h3>
+                    <p id="qr-name-sub" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+            <button onclick="closeQRCodeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
             </button>
-            
-            <!-- Header -->
-            <div class="text-center mb-4 md:mb-6">
-                <div class="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-red-500 to-yellow-400 rounded-xl md:rounded-2xl mb-3 md:mb-4">
-                    <i class="fas fa-qrcode text-lg md:text-2xl text-white"></i>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6">
+            <div class="flex flex-col items-center">
+                <!-- QR code -->
+                <div class="p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div id="qr-box" class="inline-block"></div>
                 </div>
-                <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">QR Code Pelanggan</h3>
-                <p id="qrcode-merchant-name" class="text-xs md:text-sm text-gray-600 font-semibold"></p>
+                <!-- link below QR -->
+                <a id="qr-link" href="#" target="_blank" rel="noopener noreferrer"
+                   class="mt-4 w-full flex items-center justify-center gap-2 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-4 py-2.5 rounded-lg break-all transition-colors no-underline">
+                    <i class="fas fa-link text-xs text-gray-400 flex-shrink-0"></i>
+                    <span id="qr-link-text" class="break-all text-xs"></span>
+                </a>
             </div>
-            
-            <!-- QR Code Display -->
-            <div class="flex justify-center mb-4 md:mb-6">
-                <div class="p-2 md:p-4 bg-white rounded-xl md:rounded-2xl shadow-lg border-2 border-gray-100">
-                    <div id="qrcode-container" class="inline-block"></div>
-                </div>
-            </div>
-            
-            <!-- Actions -->
-            <div class="flex flex-col sm:flex-row gap-2 md:gap-3">
-                <button onclick="downloadQRCode()" 
-                        class="flex-1 bg-gradient-to-r from-red-500 to-yellow-400 text-white hover:from-red-600 hover:to-yellow-500 py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-sm md:text-base font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
-                    <i class="fas fa-download text-sm md:text-base"></i>
-                    <span>Download</span>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl border-t border-gray-100">
+            <button id="qr-btn-copy" onclick="copyQRLink()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <i class="fas fa-copy text-xs"></i> Salin Link
+            </button>
+            <div class="flex gap-2">
+                <button onclick="printQR()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+                    <i class="fas fa-print text-xs"></i> Print
                 </button>
-                <button onclick="printQRCode()" 
-                        class="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200 py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-sm md:text-base font-semibold transition-all duration-200 flex items-center justify-center gap-2 border border-gray-300">
-                    <i class="fas fa-print text-sm md:text-base"></i>
-                    <span>Print</span>
+                <button onclick="downloadQR()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300 flex items-center gap-2">
+                    <i class="fas fa-download text-xs"></i> Download
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- QRCode.js Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<!-- Bulk QR Download Modal -->
+<div id="bulk-qr-modal" class="fixed z-[9999] hidden" style="display:none; inset:0; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; padding:1rem;">
+    <div class="w-full h-full absolute inset-0" onclick="closeBulkQRModal()"></div>
+    <div id="bulk-qr-modal-content" class="relative z-10 bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-95 opacity-0 flex flex-col" style="max-height:90vh;">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-qrcode text-orange-600 text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Bulk Download QR Code</h3>
+                    <p class="text-sm text-gray-500">Pilih merchant untuk download QR</p>
+                </div>
+            </div>
+            <button onclick="closeBulkQRModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Search & Select All -->
+        <div class="px-6 pt-4 pb-2 border-b border-gray-100 flex-shrink-0">
+            <div class="relative mb-3">
+                <input type="text" id="bulk-qr-search" placeholder="Cari merchant..."
+                       oninput="filterBulkQRList()"
+                       class="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-sm">
+                <div class="absolute left-3 top-2.5 text-gray-400">
+                    <i class="fas fa-search text-sm"></i>
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="bulk-qr-select-all" onchange="toggleBulkQRAll(this)"
+                           class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400 cursor-pointer">
+                    <span class="text-sm font-medium text-gray-700">Pilih Semua</span>
+                </label>
+                <span id="bulk-qr-count" class="text-xs font-semibold text-gray-500">0 dipilih</span>
+            </div>
+        </div>
+
+        <!-- Merchant List -->
+        <div class="flex-1 overflow-y-auto px-6 py-3 min-h-0" id="bulk-qr-list-wrapper">
+            <div id="bulk-qr-list" class="space-y-1">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between gap-3 px-6 py-4 bg-gray-50 rounded-b-2xl border-t border-gray-100 flex-shrink-0">
+            <button onclick="closeBulkQRModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <i class="fas fa-times text-xs"></i> Batal
+            </button>
+            <button id="bulk-qr-download-btn" onclick="bulkDownloadQR()" disabled
+                    class="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg hover:shadow-lg transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-download text-xs"></i>
+                <span id="bulk-qr-download-text">Download ZIP</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Bulk QR Modal ──────────────────────────────────────────────
+let _bulkQRMerchants = [];
+
+function openBulkQRModal() {
+    // Fetch all merchants with QR links from server
+    _bulkQRMerchants = [];
+
+    const listEl = document.getElementById('bulk-qr-list');
+    listEl.innerHTML = '<p class="text-sm text-gray-400 text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat data merchant...</p>';
+
+    // Show modal first (teleport to body)
+    const modal = document.getElementById('bulk-qr-modal');
+    const content = document.getElementById('bulk-qr-modal-content');
+    if (modal.parentNode !== document.body) document.body.appendChild(modal);
+    modal.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; top:0 !important; left:0 !important; width:100% !important; height:100% !important; z-index:99999 !important; background:rgba(0,0,0,0.5) !important; align-items:center !important; justify-content:center !important; padding:1rem !important;';
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+    });
+
+    fetch('{{ route("merchants.qr-list") }}')
+        .then(r => r.json())
+        .then(data => {
+            _bulkQRMerchants = data;
+            _buildBulkQRList();
+        })
+        .catch(() => {
+            listEl.innerHTML = '<p class="text-sm text-red-400 text-center py-6">Gagal memuat data. Coba lagi.</p>';
+        });
+
+    // Reset state early
+    document.getElementById('bulk-qr-search').value = '';
+    document.getElementById('bulk-qr-select-all').checked = false;
+    updateBulkQRSelection();
+}
+
+function _buildBulkQRList() {
+    const listEl = document.getElementById('bulk-qr-list');
+    listEl.innerHTML = '';
+    if (!_bulkQRMerchants || _bulkQRMerchants.length === 0) {
+        listEl.innerHTML = '<p class="text-sm text-gray-400 text-center py-6">Tidak ada merchant dengan link pelanggan.</p>';
+        return;
+    }
+    _bulkQRMerchants.forEach((m, i) => {
+        const item = document.createElement('label');
+        item.className = 'bulk-qr-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors';
+        item.dataset.search = m.name.toLowerCase();
+        item.innerHTML = `
+            <input type="checkbox" class="bulk-qr-cb w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400 cursor-pointer"
+                   data-idx="${i}" onchange="updateBulkQRSelection()">
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate">${escapeHtml(m.name)}</p>
+                <p class="text-xs text-gray-400 truncate">${escapeHtml(m.url)}</p>
+            </div>
+            <div class="flex-shrink-0 w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
+                <i class="fas fa-qrcode text-orange-400 text-sm"></i>
+            </div>
+        `;
+        listEl.appendChild(item);
+    });
+    updateBulkQRSelection();
+}
+
+function closeBulkQRModal() {
+    const modal = document.getElementById('bulk-qr-modal');
+    const content = document.getElementById('bulk-qr-modal-content');
+    if (!modal) return;
+    content.classList.remove('scale-100', 'opacity-100');
+    content.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        modal.style.cssText = 'display:none !important;';
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }, 200);
+}
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function filterBulkQRList() {
+    const q = document.getElementById('bulk-qr-search').value.toLowerCase().trim();
+    document.querySelectorAll('.bulk-qr-item').forEach(item => {
+        item.style.display = (!q || item.dataset.search.includes(q)) ? '' : 'none';
+    });
+}
+
+function toggleBulkQRAll(master) {
+    const visible = document.querySelectorAll('.bulk-qr-item:not([style*="display: none"]) .bulk-qr-cb');
+    visible.forEach(cb => cb.checked = master.checked);
+    updateBulkQRSelection();
+}
+
+function updateBulkQRSelection() {
+    const all = document.querySelectorAll('.bulk-qr-cb');
+    const checked = document.querySelectorAll('.bulk-qr-cb:checked');
+    const countEl = document.getElementById('bulk-qr-count');
+    const btn = document.getElementById('bulk-qr-download-btn');
+    const btnText = document.getElementById('bulk-qr-download-text');
+
+    countEl.textContent = checked.length + ' dipilih';
+    btn.disabled = checked.length === 0;
+    btnText.textContent = checked.length > 0 ? `Download ZIP (${checked.length})` : 'Download ZIP';
+
+    // Update select-all state
+    const visible = document.querySelectorAll('.bulk-qr-item:not([style*="display: none"]) .bulk-qr-cb');
+    const visChecked = document.querySelectorAll('.bulk-qr-item:not([style*="display: none"]) .bulk-qr-cb:checked');
+    document.getElementById('bulk-qr-select-all').checked = visible.length > 0 && visible.length === visChecked.length;
+}
+
+async function bulkDownloadQR() {
+    const checked = document.querySelectorAll('.bulk-qr-cb:checked');
+    if (checked.length === 0) return;
+
+    const btn = document.getElementById('bulk-qr-download-btn');
+    const btnText = document.getElementById('bulk-qr-download-text');
+    btn.disabled = true;
+    btnText.innerHTML = '<i class="fas fa-spinner fa-spin text-xs mr-1"></i> Generating...';
+
+    try {
+        const zip = new JSZip();
+        const qrFolder = zip.folder('qr-codes');
+        const total = checked.length;
+        let done = 0;
+
+        for (const cb of checked) {
+            const idx = parseInt(cb.dataset.idx);
+            const m = _bulkQRMerchants[idx];
+            if (!m) continue;
+
+            btnText.innerHTML = `<i class="fas fa-spinner fa-spin text-xs mr-1"></i> ${++done}/${total}`;
+
+            // Generate hi-res QR
+            const blob = await generateQRBlob(m.url, m.name);
+            const safeName = m.name.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '-').substring(0, 50) || 'merchant';
+            qrFolder.file(`qr-${safeName}.png`, blob);
+        }
+
+        btnText.innerHTML = '<i class="fas fa-spinner fa-spin text-xs mr-1"></i> Zipping...';
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const dt = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(zipBlob);
+        a.download = `bulk-qr-${dt}.zip`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+
+        btnText.textContent = `Download ZIP (${total})`;
+        btn.disabled = false;
+    } catch (err) {
+        console.error('Bulk QR error:', err);
+        alert('Gagal generate QR. Coba lagi.');
+        btnText.textContent = 'Download ZIP';
+        btn.disabled = false;
+    }
+}
+
+function generateQRBlob(url, name) {
+    return new Promise((resolve, reject) => {
+        const hiRes = 1000;
+        const tmpDiv = document.createElement('div');
+        tmpDiv.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden;';
+        document.body.appendChild(tmpDiv);
+
+        const hiQR = new QRCodeStyling({
+            width: hiRes, height: hiRes, type: 'canvas', data: url,
+            dotsOptions:          { color: '#111827', type: 'dots' },
+            cornersSquareOptions: { color: '#111827', type: 'extra-rounded' },
+            cornersDotOptions:    { color: '#111827', type: 'dot' },
+            backgroundOptions:    { color: '#ffffff' },
+            qrOptions:            { errorCorrectionLevel: 'H' }
+        });
+        hiQR.append(tmpDiv);
+
+        setTimeout(() => {
+            const src = tmpDiv.querySelector('canvas');
+            if (!src) { document.body.removeChild(tmpDiv); reject('Canvas not found'); return; }
+
+            const pad = 80, txtH = 120;
+            const W = src.width + pad * 2;
+            const H = src.height + pad * 2 + txtH;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(src, pad, pad);
+
+            // Separator line
+            const textStartY = src.height + pad;
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(pad, textStartY + 18);
+            ctx.lineTo(W - pad, textStartY + 18);
+            ctx.stroke();
+
+            // Link URL — bold black
+            ctx.font = '700 38px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#111827';
+            let disp = url;
+            while (ctx.measureText(disp).width > W - 80 && disp.length > 8)
+                disp = disp.slice(0, -4) + '...';
+            ctx.fillText(disp, W / 2, textStartY + 72);
+
+            cv.toBlob(blob => {
+                document.body.removeChild(tmpDiv);
+                if (blob) resolve(blob);
+                else reject('Failed to create blob');
+            }, 'image/png', 1.0);
+        }, 300);
+    });
+}
+</script>
