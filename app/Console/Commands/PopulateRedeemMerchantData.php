@@ -12,7 +12,7 @@ class PopulateRedeemMerchantData extends Command
      *
      * @var string
      */
-    protected $signature = 'redeem:populate-merchant-data {--limit=10000 : Jumlah records per batch}';
+    protected $signature = 'redeem:populate-merchant-data {--limit=10000 : Jumlah records per batch} {--from-date= : Filter redemption mulai tanggal ini (YYYY-MM-DD)}';
 
     /**
      * The description of the console command.
@@ -27,9 +27,18 @@ class PopulateRedeemMerchantData extends Command
     public function handle()
     {
         $limit = $this->option('limit');
+        $fromDate = $this->option('from-date');
+
+        if ($fromDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromDate)) {
+            $this->error('Format --from-date harus YYYY-MM-DD');
+            return self::FAILURE;
+        }
         
         $this->info('🔄 Mulai populate data redemption dengan merchant matching...');
         $this->info("📊 Batch size: {$limit} records");
+        if ($fromDate) {
+            $this->info("📅 Filter mulai tanggal: {$fromDate}");
+        }
         $this->newLine();
         
         $totalUpdated = 0;
@@ -37,8 +46,13 @@ class PopulateRedeemMerchantData extends Command
         
         while (true) {
             // Cek ada berapa records yang belum ter-fill
-            $pendingCount = DB::table('tokodigi_tselpoin_redeem')
-                ->where('program', 'BLANJAPOIN')
+            $pendingQuery = DB::table('tokodigi_tselpoin_redeem');
+
+            if ($fromDate) {
+                $pendingQuery->whereDate('created_date', '>=', $fromDate);
+            }
+
+            $pendingCount = $pendingQuery
                 ->where(function ($query) {
                     $query->whereNull('merchant_id')
                         ->orWhereNull('clicked_date')
@@ -54,8 +68,13 @@ class PopulateRedeemMerchantData extends Command
             $this->info("⏳ Batch #{$totalBatches}: Processing {$pendingCount} pending records...");
             
             // Get list of pending redemptions (use msisdn + coupon + created_date as unique key)
-            $redemptions = DB::table('tokodigi_tselpoin_redeem')
-                ->where('program', 'BLANJAPOIN')
+            $redemptionsQuery = DB::table('tokodigi_tselpoin_redeem');
+
+            if ($fromDate) {
+                $redemptionsQuery->whereDate('created_date', '>=', $fromDate);
+            }
+
+            $redemptions = $redemptionsQuery
                 ->where(function ($query) {
                     $query->whereNull('merchant_id')
                         ->orWhereNull('clicked_date')
@@ -83,7 +102,6 @@ class PopulateRedeemMerchantData extends Command
                         ->where('msisdn', $redemption->msisdn)
                         ->where('coupon', $redemption->coupon)
                         ->where('created_date', $redemption->created_date)
-                        ->where('program', 'BLANJAPOIN')
                         ->update([
                             'merchant_id' => $matchingClick->merchant_id,
                             'clicked_date' => $matchingClick->clicked_at,
@@ -109,14 +127,22 @@ class PopulateRedeemMerchantData extends Command
         $this->info("📈 Total: {$totalUpdated} records updated dalam {$totalBatches} batch");
         
         // Summary stats
-        $totalWithMerchant = DB::table('tokodigi_tselpoin_redeem')
-            ->where('program', 'BLANJAPOIN')
-            ->whereNotNull('merchant_id')
-            ->count();
+        $totalWithMerchantQuery = DB::table('tokodigi_tselpoin_redeem')
+            ->whereNotNull('merchant_id');
+
+        if ($fromDate) {
+            $totalWithMerchantQuery->whereDate('created_date', '>=', $fromDate);
+        }
+
+        $totalWithMerchant = $totalWithMerchantQuery->count();
         
-        $totalRedeems = DB::table('tokodigi_tselpoin_redeem')
-            ->where('program', 'BLANJAPOIN')
-            ->count();
+        $totalRedeemsQuery = DB::table('tokodigi_tselpoin_redeem');
+
+        if ($fromDate) {
+            $totalRedeemsQuery->whereDate('created_date', '>=', $fromDate);
+        }
+
+        $totalRedeems = $totalRedeemsQuery->count();
         
         $matchPercentage = $totalRedeems > 0 ? round(($totalWithMerchant / $totalRedeems) * 100, 2) : 0;
         
@@ -124,10 +150,12 @@ class PopulateRedeemMerchantData extends Command
         $this->table(
             ['Metric', 'Value'],
             [
-                ['Total Redemptions (BLANJAPOIN)', $totalRedeems],
+                ['Total Redemptions', $totalRedeems],
                 ['Redemptions dengan Merchant Match', $totalWithMerchant],
                 ['Match Percentage', "{$matchPercentage}%"],
             ]
         );
+
+        return self::SUCCESS;
     }
 }
