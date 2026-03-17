@@ -17,7 +17,7 @@
             if (typeof recaptchaWidgetId === 'undefined') {
                 try {
                     recaptchaWidgetId = grecaptcha.render('recaptcha-container', {
-                        'sitekey': '{{ config('services.recaptcha.site_key') }}',
+                        'sitekey': '{{ config("services.recaptcha.site_key") }}',
                         'size': 'invisible', // KEMBALIKAN KE INVISIBLE
                         // 'badge': 'bottomright', // Badge tidak dipakai di mode normal
                         'callback': function(token) {
@@ -100,6 +100,10 @@
             }, 2000);
 
             const originalUrl = btn.href;
+            const requiresLocation = btn.dataset.lockLonglat === '1';
+            const opensInNewTab = btn.target === '_blank';
+            let pendingTab = null;
+            let hasRedirected = false;
 
             // 1. Check Desktop (Allow only Mobile & Tablet)
             // Logic:
@@ -129,6 +133,10 @@
                 return;
             }
 
+            if (opensInNewTab) {
+                pendingTab = window.open('', '_blank');
+            }
+
             // 2. Get Location & ReCAPTCHA
             // Save original content
             if (!btn.hasAttribute('data-original-text')) {
@@ -138,7 +146,11 @@
             btn.style.pointerEvents = 'none';
 
             // Hard Limit untuk mencegah banjir tab
-            let lastRedirectTime = 0;
+            const closePendingTab = function() {
+                if (pendingTab && !pendingTab.closed) {
+                    pendingTab.close();
+                }
+            };
 
             // Helper untuk reset tombol otomatis jika macet
             window.resetButtonState = function() {
@@ -150,33 +162,30 @@
             }
 
             const doRedirect = (token, lat, lng) => {
-                 // CEK WAKTU: Jika redirect terakhir kurang dari 3 detik lalu, STOP.
-                 const now = Date.now();
-                 if (now - lastRedirectTime < 3000) {
-                     console.warn('Redirect diblokir: Terlalu cepat (Spam/Loop protection)');
-                     resetButtonState();
+                 if (hasRedirected) {
                      return;
                  }
-                 lastRedirectTime = now;
 
-                 const separator = originalUrl.includes('?') ? '&' : '?';
-                 let newUrl = `${originalUrl}${separator}`;
-                 if (token) newUrl += `g_recaptcha_response=${token}`;
-                 if (lat && lng) {
-                     newUrl += `&lat=${lat}&long=${lng}`;
+                 hasRedirected = true;
+                 window.lastRedeemRedirectTime = Date.now();
+
+                 const redirectUrl = new URL(originalUrl, window.location.origin);
+
+                 if (token) {
+                     redirectUrl.searchParams.set('g_recaptcha_response', token);
                  }
-                 
-                 // Detect iOS (iPhone/iPad) & Mac to fix popup blocker issues
-                 // iPadOS 13+ often pretends to be Macintosh, so we include that too.
-                 const isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                 
-                 // On Apple devices (Safari/WebKit), window.open inside async callbacks is often blocked.
-                 // We use window.location.href to ensure redirect happens.
-                 if (isApple) {
-                     window.location.href = newUrl;
+
+                 if (lat !== null && lat !== undefined && lng !== null && lng !== undefined) {
+                     redirectUrl.searchParams.set('lat', lat);
+                     redirectUrl.searchParams.set('long', lng);
+                 }
+
+                 const finalUrl = redirectUrl.toString();
+
+                 if (pendingTab && !pendingTab.closed) {
+                     pendingTab.location.replace(finalUrl);
                  } else {
-                     // For Android/Windows, try opening in new tab
-                     window.open(newUrl, '_blank');
+                     window.location.href = finalUrl;
                  }
                  
                  // Reset button
@@ -247,10 +256,15 @@
             setTimeout(() => {
                 resetButtonState();
                 window.isRedeemGlobalProcessing = false;
+                if (!hasRedirected) {
+                    closePendingTab();
+                }
             }, 5000);
 
             // Get Location first
-            if (navigator.geolocation) {
+            if (!requiresLocation) {
+                 runRedeemFlow(null, null);
+            } else if (navigator.geolocation) {
                  navigator.geolocation.getCurrentPosition(
                      (position) => {
                          runRedeemFlow(position.coords.latitude, position.coords.longitude);
@@ -258,6 +272,11 @@
                      (error) => {
                          console.warn('Location denied or error:', error);
                          runRedeemFlow(null, null);
+                     },
+                     {
+                         enableHighAccuracy: false,
+                         timeout: 3000,
+                         maximumAge: 60000,
                      }
                  );
             } else {
