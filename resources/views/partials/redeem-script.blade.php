@@ -100,6 +100,26 @@
             }, 2000);
 
             const originalUrl = btn.href;
+            const shouldOpenNewTab = (btn.getAttribute('target') || '').toLowerCase() === '_blank';
+            const shouldRequireLocation = btn.getAttribute('data-lock-longlat') === '1';
+            let pendingWindow = null;
+
+            function closePendingWindow() {
+                if (!pendingWindow || pendingWindow.closed) {
+                    pendingWindow = null;
+                    return;
+                }
+
+                try {
+                    if (pendingWindow.location.href === 'about:blank') {
+                        pendingWindow.close();
+                    }
+                } catch (error) {
+                    // Ignore cross-origin access errors after redirect.
+                }
+
+                pendingWindow = null;
+            }
 
             // 1. Check Desktop (Allow only Mobile & Tablet)
             // Logic:
@@ -129,6 +149,10 @@
                 return;
             }
 
+            if (shouldOpenNewTab) {
+                pendingWindow = window.open('about:blank', '_blank');
+            }
+
             // 2. Get Location & ReCAPTCHA
             // Save original content
             if (!btn.hasAttribute('data-original-text')) {
@@ -154,6 +178,7 @@
                  const now = Date.now();
                  if (now - lastRedirectTime < 3000) {
                      console.warn('Redirect diblokir: Terlalu cepat (Spam/Loop protection)');
+                     closePendingWindow();
                      resetButtonState();
                      return;
                  }
@@ -165,18 +190,17 @@
                  if (lat && lng) {
                      newUrl += `&lat=${lat}&long=${lng}`;
                  }
-                 
-                 // Detect iOS (iPhone/iPad) & Mac to fix popup blocker issues
-                 // iPadOS 13+ often pretends to be Macintosh, so we include that too.
-                 const isApple = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                 
-                 // On Apple devices (Safari/WebKit), window.open inside async callbacks is often blocked.
-                 // We use window.location.href to ensure redirect happens.
-                 if (isApple) {
-                     window.location.href = newUrl;
+
+                 if (pendingWindow && !pendingWindow.closed) {
+                     pendingWindow.location.replace(newUrl);
+                     pendingWindow = null;
+                 } else if (shouldOpenNewTab) {
+                     const fallbackWindow = window.open(newUrl, '_blank');
+                     if (!fallbackWindow) {
+                         window.location.href = newUrl;
+                     }
                  } else {
-                     // For Android/Windows, try opening in new tab
-                     window.open(newUrl, '_blank');
+                     window.location.href = newUrl;
                  }
                  
                  // Reset button
@@ -245,12 +269,13 @@
 
             // Safety Valve: Apapun yang terjadi, tombol harus kembali aktif dalam 5 detik
             setTimeout(() => {
+                closePendingWindow();
                 resetButtonState();
                 window.isRedeemGlobalProcessing = false;
             }, 5000);
 
             // Get Location first
-            if (navigator.geolocation) {
+            if (shouldRequireLocation && navigator.geolocation) {
                  navigator.geolocation.getCurrentPosition(
                      (position) => {
                          runRedeemFlow(position.coords.latitude, position.coords.longitude);
@@ -258,6 +283,11 @@
                      (error) => {
                          console.warn('Location denied or error:', error);
                          runRedeemFlow(null, null);
+                     },
+                     {
+                         enableHighAccuracy: true,
+                         timeout: 4000,
+                         maximumAge: 60000,
                      }
                  );
             } else {
