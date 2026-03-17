@@ -2537,7 +2537,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+    *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByRegional($location)
@@ -2679,9 +2679,9 @@ class MerchantController extends Controller
 
     /**
      * Show merchants by branch
-     * Route: GET /branch/{location}
+        * Route: GET /poin-tsel/{location}
      * Logic:
-     *   - URL menggunakan nama branch langsung (contoh: /branch/malang)
+        *   - URL menggunakan nama branch langsung (contoh: /poin-tsel/malang)
      *   - Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
      *   - Cari semua kota di DimTeritorialNational yang branch-nya = 'Malang'
      *   - Tampilkan semua merchant dari semua kota tersebut
@@ -2689,7 +2689,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+        *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByBranch($location)
@@ -2833,7 +2833,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+    *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByCluster($location)
