@@ -172,29 +172,26 @@
                     };
                 @endphp
 
-
-                @if($hasCategoryData('merchandise'))
-                    @include('merchant.merchandise')
-                @endif
-
                 @if($hasCategoryData('paket_video'))
                     @include('merchant.paketvideo')
                 @endif
-
-                @if($hasCategoryData('paket_games'))
-                    @include('merchant.paketgames')
-                @endif
-
-                @if($hasCategoryData('paket_internet'))
-                    @include('merchant.paketinternet')
-                @endif
-                
-              
 
                 @if($hasCategoryData('belanja'))
                     @include('merchant.shop')
                 @endif
 
+                @if($hasCategoryData('merchandise'))
+                    @include('merchant.merchandise')
+                @endif
+                
+                @if($hasCategoryData('paket_internet'))
+                    @include('merchant.paketinternet')
+                @endif
+
+                @if($hasCategoryData('paket_games'))
+                    @include('merchant.paketgames')
+                @endif
+                
                 @if($hasCategoryData('kuliner'))
                     @include('merchant.food')
                 @endif
