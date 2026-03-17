@@ -239,15 +239,12 @@ class MerchantController extends Controller
             return;
         }
 
-        // 1. total_trx: matched redemptions (merchant_id set by BEFORE INSERT trigger)
-        $trxMap = DB::table('tokodigi_tselpoin_redeem as tr')
-            ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
-            ->whereIn('k.merchant_key', $merchantIds)
-            ->where('tr.program', 'BLANJAPOIN')
-            ->whereRaw('tr.merchant_id = k.merchant_key')
-            ->groupBy('k.merchant_key')
-            ->selectRaw('k.merchant_key, COUNT(*) as cnt')
-            ->pluck('cnt', 'k.merchant_key');
+        // 1. total_trx: jumlah transaksi dari tabel keywords untuk merchant ini
+        $trxMap = DB::table('keywords')
+            ->whereIn('merchant_key', $merchantIds)
+            ->groupBy('merchant_key')
+            ->selectRaw('merchant_key, SUM(trx) as cnt')
+            ->pluck('cnt', 'merchant_key');
 
         // 2. total_keyword: active keywords per merchant
         $keywordMap = DB::table('keywords')
@@ -314,20 +311,10 @@ class MerchantController extends Controller
         
         // Apply sorting
         if ($sortBy === 'total_trx') {
-            // Untuk sorting, gunakan subquery yang match dengan sistem click tracking
-            // Hanya count redemptions yang ada matching click dari merchant ini
+            // Sorting berdasarkan jumlah transaksi dari tabel keywords
             $merchantsQuery->select('merchants.*')
-                ->selectRaw('(SELECT COUNT(DISTINCT tr.coupon) 
-                    FROM tokodigi_tselpoin_redeem as tr 
-                    JOIN keywords as k ON tr.coupon = k.keyword_id 
-                    WHERE k.merchant_key = merchants.id 
-                    AND tr.program = "BLANJAPOIN"
-                    AND EXISTS (
-                        SELECT 1 FROM click_history ch 
-                        WHERE ch.keyword_id = tr.coupon 
-                        AND ch.merchant_id = merchants.id
-                        AND ch.clicked_at < tr.created_date
-                    )) as total_trx_calc')
+                ->selectRaw('(SELECT SUM(trx) FROM keywords
+                    WHERE merchant_key = merchants.id) as total_trx_calc')
                 ->orderBy('total_trx_calc', $sortDir);
         } elseif ($sortBy === 'total_keyword') {
             $merchantsQuery->select('merchants.*')
@@ -2550,7 +2537,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+    *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByRegional($location)
@@ -2692,9 +2679,9 @@ class MerchantController extends Controller
 
     /**
      * Show merchants by branch
-     * Route: GET /branch/{location}
+        * Route: GET /poin-tsel/{location}
      * Logic:
-     *   - URL menggunakan nama branch langsung (contoh: /branch/malang)
+        *   - URL menggunakan nama branch langsung (contoh: /poin-tsel/malang)
      *   - Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
      *   - Cari semua kota di DimTeritorialNational yang branch-nya = 'Malang'
      *   - Tampilkan semua merchant dari semua kota tersebut
@@ -2702,7 +2689,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+        *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByBranch($location)
@@ -2846,7 +2833,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+    *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByCluster($location)

@@ -136,9 +136,13 @@ Route::get('/city/{location}', [MerchantController::class, 'showByTerritorial'])
 Route::get('/reg/{location}', [MerchantController::class, 'showByRegional'])->name('regional.show');
 
 // Route untuk menampilkan merchant berdasarkan branch
-// Format: /branch/{location} (contoh: /branch/jakarta-barat)
+// Format: /poin-tsel/{location} (contoh: /poin-tsel/jakarta-barat)
 // Route ini PUBLIC, tidak perlu login
-Route::get('/branch/{location}', [MerchantController::class, 'showByBranch'])->name('branch.show');
+Route::redirect('/branch', '/poin-tsel', 301)->name('branch.legacy');
+Route::get('/branch/{location}', function ($location) {
+    return redirect()->route('branch.show', ['location' => $location], 301);
+})->name('branch.legacy.show');
+Route::get('/poin-tsel/{location}', [MerchantController::class, 'showByBranch'])->name('branch.show');
 
 // Route untuk menampilkan merchant berdasarkan cluster
 // Format: /cluster/{location} (contoh: /cluster/jakarta-cluster-1)
