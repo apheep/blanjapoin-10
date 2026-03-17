@@ -101,8 +101,6 @@
 
             const originalUrl = btn.href;
             const requiresLocation = btn.dataset.lockLonglat === '1';
-            const opensInNewTab = btn.target === '_blank';
-            let pendingTab = null;
             let hasRedirected = false;
 
             // 1. Check Desktop (Allow only Mobile & Tablet)
@@ -133,10 +131,6 @@
                 return;
             }
 
-            if (opensInNewTab) {
-                pendingTab = window.open('', '_blank');
-            }
-
             // 2. Get Location & ReCAPTCHA
             // Save original content
             if (!btn.hasAttribute('data-original-text')) {
@@ -146,12 +140,6 @@
             btn.style.pointerEvents = 'none';
 
             // Hard Limit untuk mencegah banjir tab
-            const closePendingTab = function() {
-                if (pendingTab && !pendingTab.closed) {
-                    pendingTab.close();
-                }
-            };
-
             // Helper untuk reset tombol otomatis jika macet
             window.resetButtonState = function() {
                  if (btn.hasAttribute('data-original-text')) {
@@ -181,12 +169,7 @@
                  }
 
                  const finalUrl = redirectUrl.toString();
-
-                 if (pendingTab && !pendingTab.closed) {
-                     pendingTab.location.replace(finalUrl);
-                 } else {
-                     window.location.href = finalUrl;
-                 }
+                 window.location.href = finalUrl;
                  
                  // Reset button
                  resetButtonState();
@@ -256,9 +239,6 @@
             setTimeout(() => {
                 resetButtonState();
                 window.isRedeemGlobalProcessing = false;
-                if (!hasRedirected) {
-                    closePendingTab();
-                }
             }, 5000);
 
             // Get Location first
