@@ -102,6 +102,10 @@
             const originalUrl = btn.href;
             const shouldOpenNewTab = (btn.getAttribute('target') || '').toLowerCase() === '_blank';
             const shouldRequireLocation = btn.getAttribute('data-lock-longlat') === '1';
+            const lastClickTime = sessionStorage.getItem('lastRedeemClickTime');
+            const now = Date.now();
+            const isSpamming = lastClickTime && (now - parseInt(lastClickTime, 10) < 5000);
+            sessionStorage.setItem('lastRedeemClickTime', now);
             let pendingWindow = null;
 
             function closePendingWindow() {
@@ -149,7 +153,7 @@
                 return;
             }
 
-            if (shouldOpenNewTab) {
+            if (shouldOpenNewTab && (shouldRequireLocation || isSpamming)) {
                 pendingWindow = window.open('about:blank', '_blank');
             }
 
@@ -217,11 +221,6 @@
                 // LOGIKA PRODUCTION:
                 // Cek interval klik. Jika user klik santai (> 5 detik), anggap aman (bypass reCAPTCHA).
                 // Jika spamming (< 5 detik), baru panggil reCAPTCHA.
-                
-                const lastClickTime = sessionStorage.getItem('lastRedeemClickTime');
-                const now = Date.now();
-                const isSpamming = lastClickTime && (now - parseInt(lastClickTime) < 5000); // 5 detik threshold
-                sessionStorage.setItem('lastRedeemClickTime', now);
 
                 // Set callbacks for this specific click
                 window.currentRedeemCallback = function(token) {
