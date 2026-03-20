@@ -12,14 +12,14 @@ class SyncPastTselpoinData extends Command
      *
      * @var string
      */
-    protected $signature = 'sync:past-tselpoin';
+    protected $signature = 'sync:past-tselpoin {--coupon=A3EVOINDORAFI2026003 : Coupon yang akan disync}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sync past data from IGX_TSELPOIN to tokodigi_tselpoin_redeem since March 6, 2026';
+    protected $description = 'Sync past data from IGX_TSELPOIN ke tokodigi_tselpoin_redeem sejak 6 Maret 2026, bisa difilter per coupon';
 
     /**
      * Execute the console command.
@@ -27,7 +27,10 @@ class SyncPastTselpoinData extends Command
     public function handle()
     {
         $db = DB::connection()->getDatabaseName();
-        $this->info("Starting data sync...");
+        $coupon = (string) $this->option('coupon');
+
+        $this->info('Starting data sync...');
+        $this->info("Coupon filter: {$coupon}");
 
         $query = "
             INSERT INTO {$db}.tokodigi_tselpoin_redeem (
@@ -49,11 +52,12 @@ class SyncPastTselpoinData extends Command
             LEFT JOIN {$db}.tokodigi_tselpoin_redeem t 
                 ON t.coupon = i.coupon AND t.program = i.program
             WHERE i.created_date >= '2026-03-06 00:00:00'
+            AND i.coupon = ?
             AND t.coupon IS NULL
         ";
 
-        DB::unprepared($query);
+        $inserted = DB::affectingStatement($query, [$coupon]);
 
-        $this->info('Data from March 6, 2026 synced successfully!');
+        $this->info("Data from March 6, 2026 synced successfully! Inserted: {$inserted}");
     }
 }
