@@ -59,6 +59,21 @@ class User extends Authenticatable
     ];
 
     /**
+     * Get the can_approve attribute dynamically if overridden in a user session.
+     * Overrides the persistent DB value for bypass testing.
+     */
+    public function getCanApproveAttribute($value)
+    {
+        try {
+            if (app()->bound('request') && request()->hasSession() && request()->session()->has('bypass_can_approve')) {
+                return request()->session()->get('bypass_can_approve');
+            }
+        } catch (\Throwable $e) {}
+        
+        return $value;
+    }
+
+    /**
      * Scope to get last login time
      */
     public function getLastLoginAttribute()

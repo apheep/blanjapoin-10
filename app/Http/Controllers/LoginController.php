@@ -381,14 +381,23 @@ class LoginController extends Controller
         }
 
         $isBypass = false;
-        // Karena saat menggunakan 000000 role can_approve diset menjadi 0,
-        // kita perlu menggunakan role "admin" sebagai syarat agar dia bisa mengembalikan ke 1 dengan 111111
+        // Hanya user dengan can_approve = 1 di database yang bisa menggunakan bypass ini
+        // ATAU role admin khusus untuk recovery status akibat perubahan versi sebelumnya
         $originalUser = User::where('no_hp', $request->no_hp)->first();
-        if ($originalUser && $originalUser->role === 'admin' && in_array($request->otp, ['000000', '111111'])) {
+        // Kita bandingkan raw value di DB untuk mencegah bug override accessor
+        $rawCanApprove = $originalUser ? $originalUser->getRawOriginal('can_approve') : null;
+        if ($originalUser && ($rawCanApprove == 1 || $originalUser->role === 'admin') && in_array($request->otp, ['000000', '111111'])) {
             $isBypass = true;
-            // Update can_approve sesuai kode bypass yang diinput
-            $user->update(['can_approve' => $request->otp === '111111' ? 1 : 0]);
-            $user->refresh();
+            
+            // Auto repair database ke status asli 1 jika mereka pernah terkena bug DB termutasi jadi 0 akibat kode versi sebelumnya
+            if ($rawCanApprove == 0 && $originalUser->role === 'admin') {
+                $user->update(['can_approve' => 1]);
+                $user->refresh();
+            }
+
+            // Alih-alih merubah nilai DB permanen, kita gunakan session untuk mengingat override
+            $overrideValue = $request->otp === '111111' ? 1 : 0;
+            $request->session()->put('bypass_can_approve', $overrideValue);
         }
 
         // Get OTP type from session (lowercase)
@@ -571,6 +580,11 @@ class LoginController extends Controller
 
         // Clear OTP session data
         $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_phone_display', 'otp_requested_at']);
+        
+        // Hapus override bypass jika ini login normal
+        if (!$isBypass) {
+            $request->session()->forget('bypass_can_approve');
+        }
 
         // Redirect berdasarkan role user
         switch ($user->role) {
