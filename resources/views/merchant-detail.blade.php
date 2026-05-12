@@ -440,7 +440,8 @@
             const container = document.getElementById('keyword-table-container-detail');
             if (!container) return;
 
-            container.querySelectorAll('.keyword-pagination-link').forEach(link => {
+            // Handle all links in pagination nav (page numbers, prev, next)
+            container.querySelectorAll('nav[aria-label="Pagination"] a').forEach(link => {
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
                     
