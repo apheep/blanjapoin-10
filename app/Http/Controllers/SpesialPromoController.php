@@ -21,7 +21,7 @@ class SpesialPromoController extends Controller
         // Pastikan merchant juga aktif jika ada
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
-            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id ) as redeem_count')
             ->where('is_special_promo', 1)
             ->where('is_active', 1)
             ->where('status', 'approve')

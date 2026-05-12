@@ -256,7 +256,7 @@ class Merchant extends Model
             // Get all redemptions for this keyword_id
             $redemptions = \DB::table('tokodigi_tselpoin_redeem')
                 ->where('coupon', $keyword->keyword_id)
-                ->where('program', 'BLANJAPOIN')
+                
                 ->get();
             
             foreach ($redemptions as $redemption) {
