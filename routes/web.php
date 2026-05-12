@@ -183,23 +183,23 @@ Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])
 // Route ini dipindahkan dari dalam group middleware auth ke sini, tapi tetap menggunakan middleware auth
 Route::middleware(['auth'])->get('/keywords/search', [KeywordController::class, 'search'])->name('keywords.search');
 
-// Route untuk link keywords (wajib login portal)
+// Route untuk link keywords (auth konsisten dengan dashboard merchant)
 // Constraint: code tidak boleh "search", "export", atau path admin lainnya
-Route::middleware('portal.auth')->get('/keywords/{code}', [MerchantController::class, 'linkKeywords'])
+Route::middleware('merchant.email.auth')->get('/keywords/{code}', [MerchantController::class, 'linkKeywords'])
     ->where('code', '^(?!search|export|excel).*$')
     ->name('link.keywords');
 
-// Route untuk link reedem (wajib login portal)
-Route::middleware('portal.auth')->get('/reedem/{code}', [MerchantController::class, 'linkReedem'])->name('link.reedem');
+// Route untuk link reedem (auth konsisten dengan dashboard merchant)
+Route::middleware('merchant.email.auth')->get('/reedem/{code}', [MerchantController::class, 'linkReedem'])->name('link.reedem');
 
-// Route untuk link history-withdraw (wajib login portal)
-Route::middleware('portal.auth')->get('/history-withdraw/{code}', [MerchantController::class, 'linkHistoryWithdraw'])->name('link.history-withdraw');
+// Route untuk link history-withdraw (auth konsisten dengan dashboard merchant)
+Route::middleware('merchant.email.auth')->get('/history-withdraw/{code}', [MerchantController::class, 'linkHistoryWithdraw'])->name('link.history-withdraw');
 
 // Route untuk submit withdraw request (wajib login portal)
 Route::middleware('portal.auth')->post('/withdraw/submit', [MerchantController::class, 'submitWithdraw'])->name('withdraw.submit');
 
-// Route untuk link trx-history (wajib login portal)
-Route::middleware('portal.auth')->get('/trx-history/{code}', [MerchantController::class, 'linkTrxHistory'])->name('link.trx-history');
+// Route untuk link trx-history (auth konsisten dengan dashboard merchant)
+Route::middleware('merchant.email.auth')->get('/trx-history/{code}', [MerchantController::class, 'linkTrxHistory'])->name('link.trx-history');
 
 // Routes untuk tamu (belum login)
 Route::middleware(['guest'])->group(function () {
@@ -407,5 +407,4 @@ Route::middleware(['auth'])->group(function () {
     // Logout
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
-
 

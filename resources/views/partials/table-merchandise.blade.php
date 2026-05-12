@@ -248,19 +248,24 @@
     </div>
 
     <!-- Pagination Desktop -->
-    <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-4 border-t border-gray-200">
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="text-sm text-gray-700">
-                Showing <span class="font-semibold text-gray-900">1</span> to <span class="font-semibold text-gray-900">5</span> of
-                <span class="font-semibold text-gray-900">20</span> results
-            </div>
-            <nav class="flex items-center gap-1" aria-label="Pagination">
-                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all"><i class="fas fa-chevron-left text-xs"></i></a>
-                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border-2 border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 text-sm text-orange-600 font-semibold shadow-sm">1</a>
-                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all">2</a>
-                <span class="inline-flex items-center justify-center w-9 h-9 text-gray-500">...</span>
-                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all">10</a>
-                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all"><i class="fas fa-chevron-right text-xs"></i></a>
+    <div class="bg-white px-6 py-4 border-t border-gray-200 rounded-b-xl">
+        <div class="flex items-center justify-center">
+            <nav class="flex items-center justify-center gap-2" aria-label="Pagination">
+                <!-- Previous -->
+                <a href="#" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200">
+                    <i class="fas fa-chevron-left text-sm"></i>
+                </a>
+                <!-- Pages -->
+                <a href="#" class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-sm font-semibold text-white shadow-md">1</a>
+                <a href="#" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200">2</a>
+                <div class="inline-flex items-center justify-center w-10 h-10 text-gray-400">
+                    <span class="text-lg leading-none">…</span>
+                </div>
+                <a href="#" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200">10</a>
+                <!-- Next -->
+                <a href="#" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200">
+                    <i class="fas fa-chevron-right text-sm"></i>
+                </a>
             </nav>
         </div>
     </div>
@@ -317,19 +322,20 @@
     @endforeach
 
     <!-- Pagination Mobile -->
-    <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-4 border-t border-gray-200 rounded-xl">
+    <div class="bg-white px-4 py-4 border-t border-gray-200 rounded-b-xl">
         <div class="flex flex-col items-center justify-center gap-3">
-            <div class="text-sm text-gray-700">
-                Showing <span class="font-semibold text-gray-900">1</span> to <span class="font-semibold text-gray-900">5</span> of
-                <span class="font-semibold text-gray-900">20</span> results
-            </div>
-            <nav class="flex items-center gap-1" aria-label="Pagination">
-                <a href="#" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all"><i class="fas fa-chevron-left text-xs"></i></a>
-                <a href="#" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border-2 border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 text-xs font-semibold text-orange-600 shadow-sm">1</a>
-                <a href="#" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all">2</a>
-                <span class="inline-flex items-center justify-center w-8 h-8 text-gray-500 text-xs">...</span>
-                <a href="#" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all">10</a>
-                <a href="#" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:text-orange-600 transition-all"><i class="fas fa-chevron-right text-xs"></i></a>
+            <nav class="flex items-center justify-center gap-2" aria-label="Pagination">
+                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200"><i class="fas fa-chevron-left text-xs"></i></a>
+                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-xs font-semibold text-white shadow-md">1</a>
+                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200">2</a>
+                <div class="inline-flex items-center justify-center w-9 h-9 text-gray-400 text-xs">
+                    <span class="leading-none">…</span>
+                </div>
+                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200">10</a>
+                <a href="#" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 hover:border-orange-300 hover:text-orange-600 transition-all duration-200"><i class="fas fa-chevron-right text-xs"></i></a>
+            </nav>
+        </div>
+    </div>
             </nav>
         </div>
     </div>
