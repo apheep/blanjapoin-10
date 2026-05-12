@@ -1328,9 +1328,16 @@ class MerchantController extends Controller
             $showDiamond = $portalUser !== null;
         }
 
-        // Generate link pelanggan
-        $linkPelanggan = route('link.pelanggan', $decodedCode);
-        $linkPelangganFull = url($linkPelanggan);
+        // Gunakan code route asli agar URL tetap valid untuk karakter spesial.
+        $routeCode = $code;
+
+        $linkPelanggan = route('link.pelanggan', $routeCode);
+        $linkKeywords = route('link.keywords', $routeCode);
+        $linkHistoryAll = route('link.history.all', $routeCode);
+        $linkHistoryAllRedeem = route('link.history.all', [
+            'code' => $routeCode,
+            'tab' => 'redeem',
+        ]);
 
         // Ambil semua history keyword untuk merchant ini (semua status, diurutkan dari terbaru)
         $keywords = Keyword::with('merchant')
@@ -1369,14 +1376,12 @@ class MerchantController extends Controller
             $merchant->save();
         }
 
-        // Generate link history (trx-history)
-        $linkHistory = route('link.trx-history', $decodedCode);
-        $linkHistoryFull = url($linkHistory);
-
         return view('link-dashboard', [
             'merchant' => $merchant,
-            'linkPelanggan' => $linkPelangganFull,
-            'linkHistory' => $linkHistoryFull,
+            'linkPelanggan' => $linkPelanggan,
+            'linkKeywords' => $linkKeywords,
+            'linkHistoryAll' => $linkHistoryAll,
+            'linkHistoryAllRedeem' => $linkHistoryAllRedeem,
             'keywords' => $keywords,
             'showDiamond' => $showDiamond,
             'totalDiamond' => $totalDiamond,

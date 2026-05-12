@@ -148,10 +148,6 @@
                 </div>
 
                 <!-- Links Grid -->
-                @php
-                    $code = request()->route('code');
-                    $decodedCode = $code ? urldecode($code) : '';
-                @endphp
                 <div class="flex flex-col xl:flex-row gap-4 items-stretch">
                     <div class="grid grid-cols-3 sm:grid-cols-5 gap-4 flex-1">
                         <!-- Link Pelanggan Button -->
@@ -167,7 +163,7 @@
 
                         <!-- List Keywords Button -->
                         <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
-                            <a href="{{ route('link.keywords', $decodedCode) }}"
+                            <a href="{{ $linkKeywords }}"
                                class="w-12 h-12 rounded-2xl bg-green-600 hover:bg-green-700 text-white flex items-center justify-center shadow-lg transition-all duration-200"
                                title="Lihat daftar keywords">
                                 <i class="fas fa-list text-lg"></i>
@@ -178,7 +174,7 @@
 
                         <!-- History Button -->
                         <div class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
-                            <a href="{{ $linkHistory }}"
+                            <a href="{{ $linkHistoryAll }}"
                                class="w-12 h-12 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center shadow-lg transition-all duration-200"
                                title="Kunjungi link riwayat transaksi">
                                 <i class="fas fa-history text-lg"></i>
@@ -189,9 +185,9 @@
 
                         <!-- Reedem Button -->
                         <div class="stat-card bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl shadow-lg p-4 border border-gray-100 flex flex-col items-center gap-3">
-                            <a href="{{ route('link.reedem', $decodedCode) }}"
+                            <a href="{{ $linkHistoryAllRedeem }}"
                                class="w-12 h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-lg transition-all duration-200"
-                               title="Lihat halaman reedem">
+                               title="Lihat history redeem">
                                 <i class="fas fa-gift text-lg"></i>
                                 <span class="sr-only">Reedem</span>
                             </a>
