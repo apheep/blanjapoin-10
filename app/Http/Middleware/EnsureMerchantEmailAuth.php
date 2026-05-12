@@ -56,14 +56,15 @@ class EnsureMerchantEmailAuth
             
             // Cari merchant berdasarkan code
             $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                    $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                    $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                          
+                    if ($escapedCode !== $escapedDecodedCode) {
+                        $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                    }
                 })
                 ->whereNotNull('link_blanjapoin')
                 ->first();

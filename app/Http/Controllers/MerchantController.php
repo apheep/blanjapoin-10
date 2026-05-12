@@ -1191,12 +1191,17 @@ class MerchantController extends Controller
         // Coba dengan code yang sudah di-decode dan juga dengan yang masih encoded
         // Note: Tidak ada validasi is_active merchant, semua merchant bisa diakses
         $merchant = Merchant::where(function($query) use ($decodedCode, $code) {
-                // Cari dengan code yang sudah di-decode
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $decodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '%')
-                      // Juga coba dengan code yang masih encoded (jika berbeda)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $code)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '%');
+                // Cari dengan code yang sudah di-decode dan tidak membolehkan partial match (misal evoucherdls match dengan evoucherdls2026)
+                $query->where('link_blanjapoin', 'like', '%dash/' . $decodedCode) // Match persis di akhir string
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '/%') // Match jika ada trailing slash
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '?%'); // Match jika ada query parameters
+                      
+                if ($code !== $decodedCode) {
+                    // Juga coba dengan code yang masih encoded jika berbeda
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $code)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             // Tidak ada filter is_active merchant - semua merchant bisa diakses
@@ -1292,14 +1297,15 @@ class MerchantController extends Controller
             $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
             
             $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                    $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                    $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                          
+                    if ($escapedCode !== $escapedDecodedCode) {
+                        $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                    }
                 })
                 ->whereNotNull('link_blanjapoin')
                 ->first();
@@ -1393,14 +1399,15 @@ class MerchantController extends Controller
         
         // Cari merchant berdasarkan code dari link_blanjapoin
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1452,14 +1459,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1680,14 +1688,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1724,14 +1733,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1779,14 +1789,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -2057,14 +2068,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
