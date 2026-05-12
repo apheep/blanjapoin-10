@@ -258,7 +258,6 @@ class MerchantController extends Controller
         $aktifMap = DB::table('keywords as k')
             ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
             ->whereIn('k.merchant_key', $merchantIds)
-            ->where('tr.program', 'BLANJAPOIN')
             ->where('k.is_active', 1)
             ->groupBy('k.merchant_key')
             ->selectRaw('k.merchant_key, COUNT(DISTINCT k.id) as cnt')
@@ -327,7 +326,7 @@ class MerchantController extends Controller
                 ->selectRaw('(SELECT COUNT(DISTINCT k.id) FROM keywords as k 
                     JOIN tokodigi_tselpoin_redeem as tr ON k.keyword_id = tr.coupon 
                     WHERE k.merchant_key = merchants.id 
-                    AND tr.program = "BLANJAPOIN" 
+                     
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
         } elseif ($sortBy === 'link_gmaps') {
@@ -363,7 +362,7 @@ class MerchantController extends Controller
         // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
-            // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
+            // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id ) as redeem_count')
             ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
@@ -1107,7 +1106,7 @@ class MerchantController extends Controller
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
                     AND k.is_active = 1 
-                    AND tr.program = "BLANJAPOIN"
+                    
                     AND EXISTS (
                         SELECT 1 FROM click_history ch 
                         WHERE ch.keyword_id = tr.coupon 
@@ -1126,7 +1125,7 @@ class MerchantController extends Controller
                 ->selectRaw('(SELECT COUNT(DISTINCT k.id) FROM keywords as k 
                     JOIN tokodigi_tselpoin_redeem as tr ON k.keyword_id = tr.coupon 
                     WHERE k.merchant_key = merchants.id 
-                    AND tr.program = "BLANJAPOIN" 
+                     
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
         } elseif ($sortBy === 'link_gmaps') {
@@ -1351,7 +1350,7 @@ class MerchantController extends Controller
         $transactionData = DB::table('tokodigi_tselpoin_redeem as tr')
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->where('k.merchant_key', $merchant->id)
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->whereNotNull('k.subsidy_amount')
             ->where('k.subsidy_amount', '>', 0)
             ->select('k.keyword_id', 'k.subsidy_amount', DB::raw('COUNT(*) as trx_count'))
@@ -1432,7 +1431,7 @@ class MerchantController extends Controller
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->where('k.merchant_key', $merchant->id)
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->select(
                 'tr.created_date as created_at',
                 'tr.msisdn',
@@ -1503,7 +1502,7 @@ class MerchantController extends Controller
             ->where('m.id', $merchant->id)
             ->where('tr.merchant_id', $merchant->id)  // Filter: hanya yang matched ke merchant ini
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->select(
                 'tr.created_date as tanggal',
                 'tr.msisdn',
@@ -1560,7 +1559,7 @@ class MerchantController extends Controller
         // Query untuk keyword history dengan menghitung TRX dan sisa stock
         $keywordQuery = Keyword::with('merchant')
             ->select('keywords.*')
-            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id ) as redeem_count')
             ->where('merchant_key', $merchant->id);
 
         // Apply search filter for keywords
@@ -1624,7 +1623,7 @@ class MerchantController extends Controller
 
         $redeemQuery = DB::table('tokodigi_tselpoin_redeem as tr')
             ->whereIn('tr.coupon', $merchantKeywordIds)
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->leftJoin('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->select(
                 'tr.created_date as tanggal',
@@ -2101,7 +2100,7 @@ class MerchantController extends Controller
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->where('k.merchant_key', $merchant->id)
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->select(
                 'tr.created_date as created_at',
                 'tr.msisdn',
