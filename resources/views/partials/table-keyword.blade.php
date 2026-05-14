@@ -464,18 +464,6 @@
         window.keywordToggleHandlerAttached = true;
     }
 
-    // Also attach directly for initial load (backup)
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
-            toggle.addEventListener('change', function(e) {
-                const keywordId = e.target.getAttribute('data-keyword-id');
-                if (keywordId) {
-                    toggleKeywordStatus(keywordId);
-                }
-            });
-        });
-    });
-
     // Function to show SKB detail in modal
     function showSKBDetail(skbText, productName, merchantName, promoText) {
         // Create modal overlay
