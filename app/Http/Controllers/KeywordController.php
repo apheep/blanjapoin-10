@@ -18,9 +18,7 @@ class KeywordController extends Controller
 {
     public function index()
     {
-        // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
-        
         $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id', 'desc')->paginate(10);
         
         $merchants = Merchant::orderBy('id')->paginate(10);
