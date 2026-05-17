@@ -48,7 +48,7 @@ class RecalculateMerchantDiamond extends Command
             $transactionData = \DB::table('tokodigi_tselpoin_redeem as tr')
                 ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
                 ->where('k.merchant_key', $merchant->id)
-                ->where('tr.program', 'BLANJAPOIN')
+                
                 ->whereNotNull('k.subsidy_amount')
                 ->where('k.subsidy_amount', '>', 0)
                 ->select('k.keyword_id', 'k.subsidy_amount', \DB::raw('COUNT(*) as trx_count'))

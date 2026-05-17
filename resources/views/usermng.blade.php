@@ -240,65 +240,7 @@
       <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-t">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="text-sm text-gray-700">Showing <span class="font-semibold" id="showing-from">{{ $showFrom }}</span> to <span class="font-semibold" id="showing-to">{{ $showTo }}</span> of <span class="font-semibold" id="showing-total">{{ $showTotal }}</span> users</div>
-          <nav class="flex items-center gap-1" aria-label="Pagination" id="pagination">
-            @if($isPaginator && $users->hasPages())
-              {{-- Previous Page Link --}}
-              @if ($users->onFirstPage())
-                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                  <i class="fas fa-chevron-left"></i>
-                </button>
-              @else
-                <a href="{{ $users->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <i class="fas fa-chevron-left"></i>
-                </a>
-              @endif
-
-              {{-- Pagination Elements --}}
-              @php
-                $currentPage = $users->currentPage();
-                $lastPage = $users->lastPage();
-                $startPage = max(1, $currentPage - 2);
-                $endPage = min($lastPage, $currentPage + 2);
-              @endphp
-
-              @if($startPage > 1)
-                <a href="{{ $users->url(1) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">1</a>
-                @if($startPage > 2)
-                  <span class="px-2 text-gray-400">...</span>
-                @endif
-              @endif
-
-              @for ($page = $startPage; $page <= $endPage; $page++)
-                @if ($page == $currentPage)
-                  <button disabled class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                    {{ $page }}
-                  </button>
-                @else
-                  <a href="{{ $users->url($page) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    {{ $page }}
-                  </a>
-                @endif
-              @endfor
-
-              @if($endPage < $lastPage)
-                @if($endPage < $lastPage - 1)
-                  <span class="px-2 text-gray-400">...</span>
-                @endif
-                <a href="{{ $users->url($lastPage) }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $lastPage }}</a>
-              @endif
-
-              {{-- Next Page Link --}}
-              @if ($users->hasMorePages())
-                <a href="{{ $users->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <i class="fas fa-chevron-right"></i>
-                </a>
-              @else
-                <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                  <i class="fas fa-chevron-right"></i>
-                </button>
-              @endif
-            @endif
-          </nav>
+          <x-pagination :paginator="$users" class="bg-white px-6 py-4 border-t border-gray-200 rounded-b-xl" />
         </div>
       </div>
     </section>

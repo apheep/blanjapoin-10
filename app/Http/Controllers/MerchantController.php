@@ -258,7 +258,6 @@ class MerchantController extends Controller
         $aktifMap = DB::table('keywords as k')
             ->join('tokodigi_tselpoin_redeem as tr', 'k.keyword_id', '=', 'tr.coupon')
             ->whereIn('k.merchant_key', $merchantIds)
-            ->where('tr.program', 'BLANJAPOIN')
             ->where('k.is_active', 1)
             ->groupBy('k.merchant_key')
             ->selectRaw('k.merchant_key, COUNT(DISTINCT k.id) as cnt')
@@ -327,7 +326,7 @@ class MerchantController extends Controller
                 ->selectRaw('(SELECT COUNT(DISTINCT k.id) FROM keywords as k 
                     JOIN tokodigi_tselpoin_redeem as tr ON k.keyword_id = tr.coupon 
                     WHERE k.merchant_key = merchants.id 
-                    AND tr.program = "BLANJAPOIN" 
+                     
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
         } elseif ($sortBy === 'link_gmaps') {
@@ -363,7 +362,7 @@ class MerchantController extends Controller
         // Let Laravel automatically read the page number from the request using the page name
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
-            // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
+            // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id ) as redeem_count')
             ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
@@ -1107,7 +1106,7 @@ class MerchantController extends Controller
                     JOIN keywords as k ON tr.coupon = k.keyword_id 
                     WHERE k.merchant_key = merchants.id 
                     AND k.is_active = 1 
-                    AND tr.program = "BLANJAPOIN"
+                    
                     AND EXISTS (
                         SELECT 1 FROM click_history ch 
                         WHERE ch.keyword_id = tr.coupon 
@@ -1126,7 +1125,7 @@ class MerchantController extends Controller
                 ->selectRaw('(SELECT COUNT(DISTINCT k.id) FROM keywords as k 
                     JOIN tokodigi_tselpoin_redeem as tr ON k.keyword_id = tr.coupon 
                     WHERE k.merchant_key = merchants.id 
-                    AND tr.program = "BLANJAPOIN" 
+                     
                     AND k.is_active = 1) as keyword_aktif_calc')
                 ->orderBy('keyword_aktif_calc', $sortDir);
         } elseif ($sortBy === 'link_gmaps') {
@@ -1191,12 +1190,17 @@ class MerchantController extends Controller
         // Coba dengan code yang sudah di-decode dan juga dengan yang masih encoded
         // Note: Tidak ada validasi is_active merchant, semua merchant bisa diakses
         $merchant = Merchant::where(function($query) use ($decodedCode, $code) {
-                // Cari dengan code yang sudah di-decode
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $decodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '%')
-                      // Juga coba dengan code yang masih encoded (jika berbeda)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $code)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '%');
+                // Cari dengan code yang sudah di-decode dan tidak membolehkan partial match (misal evoucherdls match dengan evoucherdls2026)
+                $query->where('link_blanjapoin', 'like', '%dash/' . $decodedCode) // Match persis di akhir string
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '/%') // Match jika ada trailing slash
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '?%'); // Match jika ada query parameters
+                      
+                if ($code !== $decodedCode) {
+                    // Juga coba dengan code yang masih encoded jika berbeda
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $code)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $code . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             // Tidak ada filter is_active merchant - semua merchant bisa diakses
@@ -1292,14 +1296,15 @@ class MerchantController extends Controller
             $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
             
             $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                    $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                          ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                    $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                          
+                    if ($escapedCode !== $escapedDecodedCode) {
+                        $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                    }
                 })
                 ->whereNotNull('link_blanjapoin')
                 ->first();
@@ -1323,9 +1328,16 @@ class MerchantController extends Controller
             $showDiamond = $portalUser !== null;
         }
 
-        // Generate link pelanggan
-        $linkPelanggan = route('link.pelanggan', $decodedCode);
-        $linkPelangganFull = url($linkPelanggan);
+        // Gunakan code route asli agar URL tetap valid untuk karakter spesial.
+        $routeCode = $code;
+
+        $linkPelanggan = route('link.pelanggan', $routeCode);
+        $linkKeywords = route('link.keywords', $routeCode);
+        $linkHistoryAll = route('link.history.all', $routeCode);
+        $linkHistoryAllRedeem = route('link.history.all', [
+            'code' => $routeCode,
+            'tab' => 'redeem',
+        ]);
 
         // Ambil semua history keyword untuk merchant ini (semua status, diurutkan dari terbaru)
         $keywords = Keyword::with('merchant')
@@ -1338,7 +1350,7 @@ class MerchantController extends Controller
         $transactionData = DB::table('tokodigi_tselpoin_redeem as tr')
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->where('k.merchant_key', $merchant->id)
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->whereNotNull('k.subsidy_amount')
             ->where('k.subsidy_amount', '>', 0)
             ->select('k.keyword_id', 'k.subsidy_amount', DB::raw('COUNT(*) as trx_count'))
@@ -1364,14 +1376,12 @@ class MerchantController extends Controller
             $merchant->save();
         }
 
-        // Generate link history (trx-history)
-        $linkHistory = route('link.trx-history', $decodedCode);
-        $linkHistoryFull = url($linkHistory);
-
         return view('link-dashboard', [
             'merchant' => $merchant,
-            'linkPelanggan' => $linkPelangganFull,
-            'linkHistory' => $linkHistoryFull,
+            'linkPelanggan' => $linkPelanggan,
+            'linkKeywords' => $linkKeywords,
+            'linkHistoryAll' => $linkHistoryAll,
+            'linkHistoryAllRedeem' => $linkHistoryAllRedeem,
             'keywords' => $keywords,
             'showDiamond' => $showDiamond,
             'totalDiamond' => $totalDiamond,
@@ -1393,14 +1403,15 @@ class MerchantController extends Controller
         
         // Cari merchant berdasarkan code dari link_blanjapoin
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1420,7 +1431,7 @@ class MerchantController extends Controller
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->where('k.merchant_key', $merchant->id)
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->select(
                 'tr.created_date as created_at',
                 'tr.msisdn',
@@ -1452,14 +1463,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1490,7 +1502,7 @@ class MerchantController extends Controller
             ->where('m.id', $merchant->id)
             ->where('tr.merchant_id', $merchant->id)  // Filter: hanya yang matched ke merchant ini
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->select(
                 'tr.created_date as tanggal',
                 'tr.msisdn',
@@ -1547,7 +1559,7 @@ class MerchantController extends Controller
         // Query untuk keyword history dengan menghitung TRX dan sisa stock
         $keywordQuery = Keyword::with('merchant')
             ->select('keywords.*')
-            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id AND program = "BLANJAPOIN") as redeem_count')
+            ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id ) as redeem_count')
             ->where('merchant_key', $merchant->id);
 
         // Apply search filter for keywords
@@ -1611,7 +1623,7 @@ class MerchantController extends Controller
 
         $redeemQuery = DB::table('tokodigi_tselpoin_redeem as tr')
             ->whereIn('tr.coupon', $merchantKeywordIds)
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->leftJoin('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->select(
                 'tr.created_date as tanggal',
@@ -1680,14 +1692,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1724,14 +1737,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -1779,14 +1793,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -2057,14 +2072,15 @@ class MerchantController extends Controller
         $escapedCode = str_replace(['%', '_'], ['\%', '\_'], $code);
 
         $merchant = Merchant::where(function($query) use ($escapedDecodedCode, $escapedCode) {
-                $query->where('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
-                      ->orWhere('link_blanjapoin', 'like', '%/dash/' . $escapedCode . '%')
-                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '%');
+                $query->where('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode)
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '/%')
+                      ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedDecodedCode . '?%');
+                      
+                if ($escapedCode !== $escapedDecodedCode) {
+                    $query->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $escapedCode . '?%');
+                }
             })
             ->whereNotNull('link_blanjapoin')
             ->first();
@@ -2084,7 +2100,7 @@ class MerchantController extends Controller
             ->join('keywords as k', 'tr.coupon', '=', 'k.keyword_id')
             ->where('k.merchant_key', $merchant->id)
             ->where('k.status', 'approve')  // Filter: hanya keyword yang sudah approve
-            ->where('tr.program', 'BLANJAPOIN')
+            
             ->select(
                 'tr.created_date as created_at',
                 'tr.msisdn',
@@ -2537,7 +2553,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+    *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByRegional($location)
@@ -2679,9 +2695,9 @@ class MerchantController extends Controller
 
     /**
      * Show merchants by branch
-     * Route: GET /branch/{location}
+        * Route: GET /poin-tsel/{location}
      * Logic:
-     *   - URL menggunakan nama branch langsung (contoh: /branch/malang)
+        *   - URL menggunakan nama branch langsung (contoh: /poin-tsel/malang)
      *   - Semua data regional, branch, cluster, city diambil dari DimTeritorialNational
      *   - Cari semua kota di DimTeritorialNational yang branch-nya = 'Malang'
      *   - Tampilkan semua merchant dari semua kota tersebut
@@ -2689,7 +2705,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+        *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByBranch($location)
@@ -2833,7 +2849,7 @@ class MerchantController extends Controller
      *     sehingga card Blitar akan tampil di:
      *     - /city/blitar
      *     - /cluster/tulungagung
-     *     - /branch/malang
+    *     - /poin-tsel/malang
      *     - /reg/jatim
      */
     public function showByCluster($location)

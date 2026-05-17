@@ -360,87 +360,8 @@
     </div>
     
     @if($keywordPaginator->hasPages())
-        <div class="keyword-pagination-container bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
-            <div class="text-sm text-gray-600">
-                Menampilkan <span class="font-semibold">{{ $keywordPaginator->firstItem() }}</span> hingga <span class="font-semibold">{{ $keywordPaginator->lastItem() }}</span> dari <span class="font-semibold">{{ $keywordPaginator->total() }}</span> data
-            </div>
-            
-            <div class="flex items-center space-x-2">
-                {{-- Previous Page Link --}}
-                @if ($keywordPaginator->onFirstPage())
-                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                @else
-                    <a href="{{ $keywordPaginator->previousPageUrl() }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                @endif
-
-                {{-- Pagination Elements --}}
-                @php
-                    $current = $keywordPaginator->currentPage();
-                    $last    = $keywordPaginator->lastPage();
-
-                    $range = 2; // kiri/kanan dari current
-
-                    $start = max(1, $current - $range);
-                    $end   = min($last, $current + $range);
-                @endphp
-
-                {{-- First Page (muncul hanya kalau window tidak mulai dari 1) --}}
-                @if ($start > 1)
-                    <a href="{{ $keywordPaginator->url(1) }}"
-                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        1
-                    </a>
-                @endif
-
-                {{-- Left Ellipsis --}}
-                @if ($start > 2)
-                    <span class="px-2 text-gray-400">…</span>
-                @endif
-
-                {{-- Middle Pages --}}
-                @for ($page = $start; $page <= $end; $page++)
-                    @if ($page == $current)
-                        <button disabled
-                                class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#F81611] to-[#F0B100] rounded-lg">
-                            {{ $page }}
-                        </button>
-                    @else
-                        <a href="{{ $keywordPaginator->url($page) }}"
-                        class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            {{ $page }}
-                        </a>
-                    @endif
-                @endfor
-
-                {{-- Right Ellipsis --}}
-                @if ($end < $last - 1)
-                    <span class="px-2 text-gray-400">…</span>
-                @endif
-
-                {{-- Last Page (muncul hanya kalau window tidak berakhir di last) --}}
-                @if ($end < $last)
-                    <a href="{{ $keywordPaginator->url($last) }}"
-                    class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        {{ $last }}
-                    </a>
-                @endif
-
-
-                {{-- Next Page Link --}}
-                @if ($keywordPaginator->hasMorePages())
-                    <a href="{{ $keywordPaginator->nextPageUrl() }}" class="keyword-pagination-link px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                @else
-                    <button disabled class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 rounded-lg cursor-not-allowed">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                @endif
-            </div>
+        <div class="keyword-pagination-container bg-white px-6 py-4 border-t border-gray-200 rounded-b-xl">
+            <x-pagination :paginator="$keywordPaginator" :show-info="true" />
         </div>
     @endif
 </div>
@@ -542,18 +463,6 @@
         });
         window.keywordToggleHandlerAttached = true;
     }
-
-    // Also attach directly for initial load (backup)
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.toggle-keyword-status').forEach(toggle => {
-            toggle.addEventListener('change', function(e) {
-                const keywordId = e.target.getAttribute('data-keyword-id');
-                if (keywordId) {
-                    toggleKeywordStatus(keywordId);
-                }
-            });
-        });
-    });
 
     // Function to show SKB detail in modal
     function showSKBDetail(skbText, productName, merchantName, promoText) {

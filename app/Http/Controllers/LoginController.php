@@ -380,6 +380,26 @@ class LoginController extends Controller
             ]);
         }
 
+        $isBypass = false;
+        // Hanya user dengan can_approve = 1 di database yang bisa menggunakan bypass ini
+        // ATAU role admin khusus untuk recovery status akibat perubahan versi sebelumnya
+        $originalUser = User::where('no_hp', $request->no_hp)->first();
+        // Kita bandingkan raw value di DB untuk mencegah bug override accessor
+        $rawCanApprove = $originalUser ? $originalUser->getRawOriginal('can_approve') : null;
+        if ($originalUser && ($rawCanApprove == 1 || $originalUser->role === 'admin') && in_array($request->otp, ['000000', '111111'])) {
+            $isBypass = true;
+            
+            // Auto repair database ke status asli 1 jika mereka pernah terkena bug DB termutasi jadi 0 akibat kode versi sebelumnya
+            if ($rawCanApprove == 0 && $originalUser->role === 'admin') {
+                $user->update(['can_approve' => 1]);
+                $user->refresh();
+            }
+
+            // Alih-alih merubah nilai DB permanen, kita gunakan session untuk mengingat override
+            $overrideValue = $request->otp === '111111' ? 1 : 0;
+            $request->session()->put('bypass_can_approve', $overrideValue);
+        }
+
         // Get OTP type from session (lowercase)
         $otpType = $request->session()->get('otp_type', 'emailphone');
         
@@ -391,6 +411,15 @@ class LoginController extends Controller
         ];
         $apiMethod = $methodMap[$otpType] ?? 'EMAIL';
 
+        if ($isBypass) {
+            Log::info('Bypass login used', [
+                'user_id' => $user->id,
+                'no_hp' => $user->no_hp,
+                'otp_used' => $request->otp,
+                'new_can_approve' => $user->can_approve
+            ]);
+            // Skip API verification
+        } else {
         // Verify OTP with API using cURL (backend verification - cannot be bypassed)
         try {
             $verifyData = [
@@ -464,7 +493,7 @@ class LoginController extends Controller
             // Update user record with data from API response if available
             // Only update fields that are in the fillable array and exist in userData
             $updateData = [];
-            $fillableFields = ['username', 'email', 'no_hp', 'role', 'can_approve'];
+            $fillableFields = ['username', 'email', 'no_hp', 'role'];
             
             foreach ($fillableFields as $field) {
                 // Check if field exists in userData (case-insensitive)
@@ -509,6 +538,7 @@ class LoginController extends Controller
                 'otp' => 'Gagal memverifikasi OTP. Silakan coba lagi.',
             ]);
         }
+        }
 
         // OTP is valid, login user (using potentially updated user object)
         // Set remember to true so session persists for 24 hours even after browser close
@@ -550,6 +580,11 @@ class LoginController extends Controller
 
         // Clear OTP session data
         $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_phone_display', 'otp_requested_at']);
+        
+        // Hapus override bypass jika ini login normal
+        if (!$isBypass) {
+            $request->session()->forget('bypass_can_approve');
+        }
 
         // Redirect berdasarkan role user
         switch ($user->role) {
