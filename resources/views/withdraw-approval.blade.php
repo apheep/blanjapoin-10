@@ -313,7 +313,7 @@
                     </button>
                 @endif
             </div>
-            <div class="flex-shrink-0 overflow-visible" style="position: relative; z-index: 50;">
+            <div class="flex-shrink-0 overflow-visible" style="position: relative; z-index: 40;">
                 @include('partials.date-withdraw', ['filterId' => 'withdrawApprovalDateFilter'])
             </div>
             @if(request()->has('q') || request()->has('date'))
