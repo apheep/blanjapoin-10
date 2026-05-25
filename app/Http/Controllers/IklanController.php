@@ -230,6 +230,7 @@ class IklanController extends Controller
             'keyword_id' => ['required_if:upload_type,keyword', 'nullable', 'exists:keywords,id'],
             'image' => ['required_if:upload_type,manual', 'nullable', 'image', 'max:2048'],
             'link_iklan' => ['nullable', 'string', 'max:500'],
+            'is_active' => ['nullable', 'boolean'],
             'territorial' => ['nullable', 'string'],
             'regional' => ['nullable', 'string'],
             'branch' => ['nullable', 'string'],
@@ -243,6 +244,7 @@ class IklanController extends Controller
         $path = null;
         $link = null;
         $merchantKeys = [];
+        $isActive = $request->boolean('is_active', true);
 
         if ($uploadType === 'keyword') {
             // Keyword-based ad
@@ -333,6 +335,7 @@ class IklanController extends Controller
             Iklan::create([
                 'image_path' => $path,
                 'link_iklan' => $link,
+                'is_active' => $isActive,
                 'territorial' => $territorial,
                 'regional' => $regional,
                 'branch' => $branch,
@@ -357,6 +360,47 @@ class IklanController extends Controller
         return redirect()
             ->route('iklan.index')
             ->with('success', 'Iklan berhasil ditambahkan.');
+    }
+
+    /**
+     * Update the specified iklan.
+     */
+    public function update(Request $request, Iklan $iklan): RedirectResponse
+    {
+        $request->validate([
+            'image' => ['nullable', 'image', 'max:2048'],
+            'link_iklan' => ['nullable', 'string', 'max:500'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $newImagePath = $iklan->image_path;
+
+        if ($request->hasFile('image')) {
+            Storage::disk('public')->makeDirectory('iklan');
+            $uploadedPath = $request->file('image')->store('iklan', 'public');
+
+            if ($iklan->image_path) {
+                Storage::disk('public')->delete($iklan->image_path);
+            }
+
+            $newImagePath = $uploadedPath;
+        }
+
+        $link = $request->input('link_iklan');
+        $link = is_string($link) ? trim($link) : null;
+        if ($link === '') {
+            $link = null;
+        }
+
+        $iklan->update([
+            'image_path' => $newImagePath,
+            'link_iklan' => $link,
+            'is_active' => $request->boolean('is_active', false),
+        ]);
+
+        return redirect()
+            ->route('iklan.index')
+            ->with('success', 'Iklan berhasil diperbarui.');
     }
 
     /**

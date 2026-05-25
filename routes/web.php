@@ -36,6 +36,7 @@ Route::get('/', function () {
         ->whereNull('regional')
         ->whereNull('branch')
         ->whereNull('cluster')
+        ->where('is_active', 1)
         ->orderBy('order', 'asc')
         ->get();
     
@@ -228,6 +229,7 @@ Route::middleware(['auth'])->group(function () {
             ->get();
         // Get iklans - only show iklans without territorial (null) for home page
     $iklans = Iklan::whereNull('territorial')
+        ->where('is_active', 1)
         ->orderBy('order', 'asc')
         ->get();
         
@@ -351,6 +353,7 @@ Route::middleware(['auth'])->group(function () {
     // Iklan management
     Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');
     Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
+    Route::patch('/iklan/{iklan}', [IklanController::class, 'update'])->name('iklan.update');
     Route::post('/iklan/reorder', [IklanController::class, 'updateOrder'])->name('iklan.reorder');
     Route::delete('/iklan/{iklan}', [IklanController::class, 'destroy'])->name('iklan.destroy');
 
