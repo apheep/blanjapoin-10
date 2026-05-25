@@ -1247,6 +1247,7 @@ class MerchantController extends Controller
             ->whereNull('regional')
             ->whereNull('branch')
             ->whereNull('cluster')
+            ->where('is_active', 1)
             ->orderBy('order', 'asc')
             ->get();
         
@@ -1265,6 +1266,7 @@ class MerchantController extends Controller
                           ->orWhere('merchant_keys', '[]')
                           ->orWhere('merchant_keys', '');
                 })
+                ->where('is_active', 1)
                 ->orderBy('order', 'asc')
                 ->get();
         }
@@ -2488,6 +2490,7 @@ class MerchantController extends Controller
             ->whereNull('regional')
             ->whereNull('branch')
             ->whereNull('cluster')
+            ->where('is_active', 1)
             ->orderBy('order', 'asc')
             ->get()
             ->filter(function($iklan) use ($locationSlug) {
@@ -2504,6 +2507,7 @@ class MerchantController extends Controller
                 ->whereNull('regional')
                 ->whereNull('branch')
                 ->whereNull('cluster')
+                ->where('is_active', 1)
                 ->orderBy('order', 'asc')
                 ->get();
         }
@@ -2663,6 +2667,7 @@ class MerchantController extends Controller
             ->whereNull('territorial')
             ->whereNull('branch')
             ->whereNull('cluster')
+            ->where('is_active', 1)
             ->orderBy('order', 'asc')
             ->get()
             ->filter(function($iklan) use ($locationSlug) {
@@ -2679,6 +2684,7 @@ class MerchantController extends Controller
                 ->whereNull('regional')
                 ->whereNull('branch')
                 ->whereNull('cluster')
+                ->where('is_active', 1)
                 ->orderBy('order', 'asc')
                 ->get();
         }
@@ -2807,6 +2813,7 @@ class MerchantController extends Controller
             ->whereNull('territorial')
             ->whereNull('regional')
             ->whereNull('cluster')
+            ->where('is_active', 1)
             ->orderBy('order', 'asc')
             ->get()
             ->filter(function($iklan) use ($locationSlug) {
@@ -2823,6 +2830,7 @@ class MerchantController extends Controller
                 ->whereNull('regional')
                 ->whereNull('branch')
                 ->whereNull('cluster')
+                ->where('is_active', 1)
                 ->orderBy('order', 'asc')
                 ->get();
         }
@@ -2951,6 +2959,7 @@ class MerchantController extends Controller
             ->whereNull('territorial')
             ->whereNull('regional')
             ->whereNull('branch')
+            ->where('is_active', 1)
             ->orderBy('order', 'asc')
             ->get()
             ->filter(function($iklan) use ($locationSlug) {
@@ -2967,6 +2976,7 @@ class MerchantController extends Controller
                 ->whereNull('regional')
                 ->whereNull('branch')
                 ->whereNull('cluster')
+                ->where('is_active', 1)
                 ->orderBy('order', 'asc')
                 ->get();
         }
