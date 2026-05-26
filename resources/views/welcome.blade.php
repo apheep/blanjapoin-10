@@ -724,6 +724,102 @@
    const voucherSections = new Map();
    let voucherCards = [];
 
+  const provinceLocationAliases = new Set([
+   'jateng',
+   'jateng diy',
+   'jateng-diy',
+   'jatengdiy',
+   'jatim',
+   'jawa timur',
+   'bali nusra',
+   'bali-nusra',
+   'balnus',
+   'balinusra'
+  ]);
+
+  const preferredProvinceOrder = [
+   'Jateng-DIY',
+   'Jatim',
+   'Bali Nusra'
+  ];
+
+  const defaultProvinceLocations = preferredProvinceOrder.slice();
+
+  function isAllLocation(location) {
+   return normalizeQuery(location) === 'all';
+  }
+
+  function isProvinceLocation(location) {
+   return provinceLocationAliases.has(normalizeQuery(location));
+  }
+
+  function isExcludedLocation(location) {
+   return normalizeQuery(location) === 'area';
+  }
+
+  function getGroupedLocationSections(filter = '') {
+   const term = normalizeQuery(filter);
+   const visibleLocations = locations.filter(location => {
+    if (isExcludedLocation(location)) {
+    return false;
+    }
+
+    if (term === '') {
+    return true;
+    }
+
+    return normalizeQuery(location).includes(term);
+   });
+
+   const sections = [];
+
+    const provinceLocations = defaultProvinceLocations.filter(location => {
+     if (term === '') {
+      return true;
+     }
+
+     return normalizeQuery(location).includes(term);
+    });
+   if (provinceLocations.length > 0) {
+     sections.push({ title: 'Provinsi', items: provinceLocations });
+   }
+
+   const cityLocations = visibleLocations.filter(location => !isAllLocation(location) && !isProvinceLocation(location));
+   if (cityLocations.length > 0) {
+    sections.push({ title: 'Kota/Kab', items: cityLocations });
+   }
+
+   return sections;
+  }
+
+  function buildGroupedLocationListHtml(filter = '') {
+   const sections = getGroupedLocationSections(filter);
+    const allLocation = locations.find(location => isAllLocation(location) && !isExcludedLocation(location));
+    const allButtonHtml = allLocation ? `
+     <div class="border-b border-neutral-100">
+      <button type="button" class="w-full text-left px-6 py-4 text-base font-medium text-neutral-800 hover:bg-neutral-50" data-value="${allLocation}">${allLocation}</button>
+     </div>
+    ` : '';
+
+    if (!allButtonHtml && sections.length === 0) {
+    return '<div class="px-6 py-4 text-sm text-neutral-500">Tidak ada hasil</div>';
+   }
+
+    return `
+     ${allButtonHtml}
+     ${sections.map((section, sectionIndex) => `
+      <div class="${sectionIndex > 0 || allButtonHtml ? 'border-t border-neutral-100' : ''}">
+       <div class="px-6 pt-4 pb-2 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">${section.title}</div>
+       <div class="pb-2">
+      ${section.items.map(location => `
+       <button type="button" class="w-full text-left px-6 py-4 text-base text-neutral-800 hover:bg-neutral-50" data-value="${location}">${section.title === 'Provinsi' ? location.toUpperCase() : location}</button>
+      `).join('')}
+       </div>
+      </div>
+     `).join('')}
+    `;
+  }
+
    function refreshVoucherCards() {
     voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
    }
@@ -748,15 +844,7 @@
    let mobilePointFilter = 'Lowest';
 
    function renderLocationOptions(filter = '', dropdownElement, inputElement) {
-    const f = filter.trim().toLowerCase();
-    const options = locations.filter(l => f === '' ? true : l.toLowerCase().includes(f));
-    if (options.length === 0) {
-     dropdownElement.innerHTML = '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>';
-     return;
-    }
-    dropdownElement.innerHTML = options.map(l => `
-     <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l.toUpperCase()}</div>
-    `).join('');
+    dropdownElement.innerHTML = buildGroupedLocationListHtml(filter);
    }
 
    function openLocationDropdown(dropdownElement) {
@@ -996,11 +1084,7 @@
    openBottomSheet('Pilih Lokasi', listHtml);
    const renderList = (q='') => {
     const holder = document.getElementById(listId);
-    const f = q.trim().toLowerCase();
-    const opts = locations.filter(l => f===''? true : l.toLowerCase().includes(f));
-    holder.innerHTML = opts.map(l => `
-     <button type="button" class="w-full text-left px-6 py-4 text-base hover:bg-neutral-50" data-value="${l}">${l.toUpperCase()}</button>
-    `).join('') || '<div class="px-6 py-4 text-neutral-500">Tidak ada hasil</div>';
+    holder.innerHTML = buildGroupedLocationListHtml(q);
    };
    renderList();
    const search = document.getElementById(searchId);
