@@ -1217,10 +1217,9 @@
     if (!locationSlug) {
      return;
     }
-    
-    // Redirect to city.show route (territorial page)
-    // Using url() helper to build the base URL
-    const baseUrl = "{{ url('/city') }}";
+    // Redirect: provinces should go to /reg, cities to /city
+    const targetIsProvince = isProvinceLocation(normalizedLocation);
+    const baseUrl = targetIsProvince ? "{{ url('/reg') }}" : "{{ url('/city') }}";
     window.location.href = `${baseUrl}/${locationSlug}`;
    }
 
