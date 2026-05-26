@@ -170,7 +170,168 @@
                     Temukan merchant dan promo menarik di {{ $locationName }}
                 </p>
             </div>
-            
+
+            @php
+                $allDaerah = \App\Models\Merchant::query()
+                    ->whereNotNull('daerah')
+                    ->where('daerah', '!=', '')
+                    ->distinct()
+                    ->pluck('daerah');
+                
+                $locationList = collect($allDaerah->map(function($daerah) {
+                    return extractKabupatenKota($daerah);
+                })
+                ->filter()
+                ->unique()
+                ->values());
+            @endphp
+
+            <!-- Category Section -->
+            <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-1 md:pt-2 mt-4 md:mt-8" id="categorySection">
+                <!-- Mobile Version: 5 columns (4 categories + See All) -->
+                <div class="grid grid-cols-5 gap-2 md:hidden">
+                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
+                    </button>
+                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-indigo-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
+                    </button>
+                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
+                    </button>
+                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-pink-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
+                    </button>
+                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-orange-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
+                    </button>
+                </div>
+
+                <!-- Desktop Version: 6 columns (5 categories + See All) -->
+                <div class="hidden md:grid grid-cols-6 gap-4">
+                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
+                    </button>
+                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
+                    </button>
+                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
+                    </button>
+                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
+                    </button>
+                    <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/shop.png') }}" alt="Shop" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Belanja</span>
+                    </button>
+                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <section class="mt-4 md:mt-6 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
+                <!-- Mobile Version -->
+                <div class="md:hidden flex items-center gap-2">
+                    <div class="flex-1 rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
+                        <div class="flex items-center gap-2 text-neutral-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-neutral-400">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input id="mobileSearchInput" class="w-full bg-transparent text-xs outline-none placeholder:text-neutral-400 font-semibold" placeholder="Search Product" />
+                        </div>
+                    </div>
+                    <button onclick="openMobileLocationSheet()" id="mobileLocationBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+                            <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <button onclick="openMobilePointSheet()" id="mobilePointBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+                            <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Desktop Version -->
+                <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl" style="overflow: visible !important; position: relative; z-index: 10;">
+                    <div class="flex-1 rounded-lg md:rounded-xl bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
+                        <div class="flex items-center gap-2 text-neutral-500">
+                            <span class="text-base md:text-lg">🔍</span>
+                            <input id="desktopSearchInput" class="w-full bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold" placeholder="Cari produk atau voucher..." />
+                        </div>
+                    </div>
+                    <div class="relative rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md">
+                        <div class="flex items-center gap-2 text-neutral-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-400">
+                                <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                            </svg>
+                            <input id="locationInput" autocomplete="off" class="bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold w-32" placeholder="Location" />
+                        </div>
+                        <div id="locationDropdown" class="absolute left-0 right-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-56 overflow-auto hidden backdrop-blur-sm"></div>
+                    </div>
+                    <div class="relative z-10" style="z-index: 10 !important; position: relative; overflow: visible !important;">
+                        <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px] relative z-10" style="z-index: 10 !important; position: relative;">
+                            <span id="sortSelectedText">According To Your Point</span>
+                            <svg id="sortDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-neutral-500 transition-transform duration-300">
+                                <path d="M7 10l5 5 5-5z"/>
+                            </svg>
+                        </button>
+                        <div id="sortDropdown" class="absolute left-0 right-0 mt-1 w-full rounded-lg md:rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top transition-all duration-300 ease-out z-[60] backdrop-blur-sm pointer-events-none" style="z-index: 60 !important; position: absolute !important;">
+                            <div class="py-1">
+                                <button onclick="selectSortOption('Lowest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative z-10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-green-500 pointer-events-none">
+                                        <path d="M7 14l5-5 5 5z"/>
+                                    </svg>
+                                    <span class="pointer-events-none">Lowest</span>
+                                </button>
+                                <button type="button" onclick="selectSortOption('Highest'); return false;" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative" style="pointer-events: auto !important; position: relative; z-index: 60 !important;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-red-500 pointer-events-none" style="pointer-events: none;">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                    <span class="pointer-events-none" style="pointer-events: none;">Highest</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {{-- <!-- Spesial Promo Section -->
             <div class="mt-0 md:mt-1 -mb-6 md:-mb-8">
                 <style>
@@ -430,6 +591,59 @@
         }
 
 
+
+        // === Location Page Filter: Search + Sort + Category ===
+        (function() {
+            let locCurrentSort = 'Lowest', locSortOpen = false;
+            const locVoucherSections = new Map();
+            let locVoucherCards = [];
+            function locRefreshCards() { locVoucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]')); }
+            function locRegisterSections() {
+                locVoucherSections.clear(); let idx = 0;
+                document.querySelectorAll('[data-voucher-container="true"]').forEach(container => {
+                    const key = container.dataset.voucherSection || `c-${idx++}`;
+                    if (!locVoucherSections.has(key)) locVoucherSections.set(key, []);
+                    locVoucherSections.get(key).push({ element: container, slotCount: container.querySelectorAll('[data-voucher-card="true"]').length });
+                });
+            }
+            function locApplySearch(q) {
+                const query = (q || '').toLowerCase().trim();
+                locVoucherCards.forEach(card => { const name = (card.dataset.searchName || '').toLowerCase(); card.style.display = (query === '' || name.includes(query)) ? '' : 'none'; });
+            }
+            function locApplySort(order) {
+                locCurrentSort = order === 'Highest' ? 'Highest' : 'Lowest';
+                if (locVoucherSections.size === 0) locRegisterSections();
+                locVoucherSections.forEach(infos => {
+                    const cards = []; infos.forEach(info => cards.push(...info.element.querySelectorAll('[data-voucher-card="true"]'))); if (!cards.length) return;
+                    const sorted = cards.slice().sort((a, b) => { const ap = parseFloat((a.dataset.point||'0').replace(/[^\d.-]/g,''))||0; const bp = parseFloat((b.dataset.point||'0').replace(/[^\d.-]/g,''))||0; return locCurrentSort==='Lowest'?ap-bp:bp-ap; });
+                    let cur = 0; infos.forEach(info => { const slice = sorted.slice(cur, cur+info.slotCount); cur+=info.slotCount; info.element.innerHTML=''; slice.forEach(c=>info.element.appendChild(c)); });
+                }); locRefreshCards();
+            }
+            window.toggleLocSortDropdown = function() {
+                const dd=document.getElementById('locSortDropdown'),arrow=document.getElementById('locSortDropdownArrow');
+                if(!locSortOpen){dd.classList.remove('opacity-0','invisible','scale-95','pointer-events-none');dd.classList.add('opacity-100','visible','scale-100','pointer-events-auto');arrow.classList.add('rotate-180');locSortOpen=true;}
+                else{dd.classList.remove('opacity-100','visible','scale-100','pointer-events-auto');dd.classList.add('opacity-0','invisible','scale-95','pointer-events-none');arrow.classList.remove('rotate-180');locSortOpen=false;}
+            };
+            window.selectLocSortOption = function(option) {
+                document.getElementById('locSortSelectedText').textContent=option;
+                const dd=document.getElementById('locSortDropdown'),arrow=document.getElementById('locSortDropdownArrow');
+                dd.classList.remove('opacity-100','visible','scale-100','pointer-events-auto');dd.classList.add('opacity-0','invisible','scale-95','pointer-events-none');
+                arrow.classList.remove('rotate-180');locSortOpen=false;locApplySort(option);
+            };
+            window.locFilterCategory = function(cat) {
+                const el=document.getElementById('section-'+cat);
+                if(el){const nb=document.getElementById('navbar');const offset=nb?nb.offsetHeight:0;window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-offset-20,behavior:'smooth'});}
+            };
+            document.addEventListener('click',function(e){
+                const dd=document.getElementById('locSortDropdown'),btn=document.getElementById('locSortDropdownBtn');
+                if(dd&&btn&&!btn.contains(e.target)&&!dd.contains(e.target)&&locSortOpen){dd.classList.remove('opacity-100','visible','scale-100','pointer-events-auto');dd.classList.add('opacity-0','invisible','scale-95','pointer-events-none');document.getElementById('locSortDropdownArrow').classList.remove('rotate-180');locSortOpen=false;}
+            });
+            document.addEventListener('DOMContentLoaded',function(){
+                locRefreshCards();locRegisterSections();
+                const inp=document.getElementById('locationSearchInput');
+                if(inp)inp.addEventListener('input',e=>locApplySearch(e.target.value));
+            });
+        })();
 
         // Territorial Description Bottom Sheet Function
         function openTerritorialDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {
