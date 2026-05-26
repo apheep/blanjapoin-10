@@ -139,6 +139,11 @@
                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
                                required>
                     </label>
+                    <label class="inline-flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 bg-neutral-50">
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="h-4 w-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500">
+                        <span class="text-sm font-semibold text-neutral-700">Iklan aktif</span>
+                        <span class="text-xs text-neutral-500">Banner hanya tampil jika status ini aktif.</span>
+                    </label>
                     <label class="block">
                         <span class="text-sm font-semibold text-neutral-700">Target Lokasi <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
                         <div class="mt-2 relative">
@@ -405,6 +410,7 @@
                         <th class="py-3 px-2 md:px-0 text-left pl-3 md:pl-0">No</th>
                         <th class="py-3 px-2 md:px-0 text-center">Preview</th>
                         <th class="py-3 px-2 md:px-3 text-center">Link</th>
+                        <th class="py-3 px-2 md:px-3 text-center">Status</th>
                         <th class="py-3 px-2 md:px-3 text-center">Lokasi</th>
                         <th class="py-3 px-2 md:px-3 text-center">Aksi</th>
                         </tr>
@@ -492,6 +498,13 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-2 md:px-3 text-center text-xs">
+                                    @php $bannerIsActive = (int) ($iklan->is_active ?? 1) === 1; @endphp
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg font-medium {{ $bannerIsActive ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500' }}">
+                                        <i class="fas {{ $bannerIsActive ? 'fa-circle-check' : 'fa-circle-xmark' }} text-[10px]"></i>
+                                        {{ $bannerIsActive ? 'Aktif' : 'Nonaktif' }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-2 md:px-3 text-center text-xs">
                                     @if ($locationType === 'general')
                                         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-100 text-neutral-600 font-medium">
                                             General
@@ -520,18 +533,30 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-2 md:px-3 text-center">
-                                    <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 md:w-10 md:h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
-                                            <i class="fas fa-trash-alt"></i>
+                                    <div class="inline-flex items-center gap-2">
+                                        <button type="button"
+                                                class="inline-flex items-center justify-center w-10 h-10 md:w-10 md:h-10 rounded-lg text-orange-600 font-semibold hover:bg-orange-50 transition text-xs editTrigger"
+                                                title="Edit"
+                                                data-update-url="{{ route('iklan.update', $iklan) }}"
+                                                data-image-url="{{ asset('storage/' . $iklan->image_path) }}"
+                                                data-link="{{ $iklan->link_iklan ?? '' }}"
+                                                data-active="{{ $bannerIsActive ? '1' : '0' }}"
+                                                data-location="{{ $locationType === 'merchant' ? ($locationDisplay . ' - ' . $locationName) : ($locationDisplay ?? 'General') }}">
+                                            <i class="fas fa-pen"></i>
                                         </button>
-                                    </form>
+                                        <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 md:w-10 md:h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                            <td colspan="6" class="py-6 text-center text-neutral-500 font-medium">
+                            <td colspan="7" class="py-6 text-center text-neutral-500 font-medium">
                                     Belum ada data iklan. Tambahkan gambar melalui form di atas.
                                 </td>
                             </tr>
@@ -641,6 +666,65 @@
     </div>
 </div>
 
+<div id="editConfirmationModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
+    <div id="editModalContent" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] transform transition-all duration-300 scale-95 opacity-0 flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center">
+                <div class="w-10 h-10 mr-4 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 flex items-center justify-center">
+                    <i class="fas fa-pen text-orange-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-neutral-900">Edit Iklan</h3>
+                    <p class="text-sm text-neutral-500" id="editLocationText">Perbarui detail banner dan status aktif.</p>
+                </div>
+            </div>
+            <button type="button" class="text-neutral-400 hover:text-neutral-600 transition" data-close-edit-modal>
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="editForm" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1">
+            @csrf
+            @method('PATCH')
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <p class="text-xs font-semibold text-neutral-600 mb-2">Preview saat ini</p>
+                    <div class="flex items-start gap-4">
+                        <div class="w-28 h-16 rounded-lg overflow-hidden bg-neutral-200 flex-shrink-0">
+                            <img id="editImagePreview" src="" alt="Preview Iklan" class="w-full h-full object-cover">
+                        </div>
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <p class="text-sm font-semibold text-neutral-800 truncate" id="editLocationValue">-</p>
+                            <p class="text-xs text-neutral-500">Gambar baru opsional. Jika tidak diubah, banner lama tetap dipakai.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="block">
+                    <span class="text-sm font-semibold text-neutral-700">Ganti Gambar <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
+                    <input id="editImageInput" type="file" name="image" accept="image/*"
+                           class="mt-2 block w-full text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer">
+                </label>
+
+                <label class="block">
+                    <span class="text-sm font-semibold text-neutral-700">CTA Link</span>
+                    <input id="editLinkInput" type="url" name="link_iklan" placeholder="https://contoh.com/promo"
+                           class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                </label>
+
+                <label class="inline-flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 bg-neutral-50 w-full">
+                    <input id="editIsActiveInput" type="checkbox" name="is_active" value="1" class="h-4 w-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500">
+                    <span class="text-sm font-semibold text-neutral-700">Iklan aktif</span>
+                </label>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-6 py-4 bg-neutral-50 rounded-b-2xl border-t border-neutral-100 flex-shrink-0">
+                <button type="button" data-close-edit-modal class="px-4 py-2 text-sm font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-100 transition">Batal</button>
+                <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-rose-500 rounded-lg hover:shadow-lg transition">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // Script khusus halaman iklan
 // Merchant data for multiple selection
@@ -673,12 +757,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const uploadModalContent = document.getElementById('uploadModalContent');
     const deleteModal = document.getElementById('deleteConfirmationModal');
     const deleteModalContent = document.getElementById('deleteModalContent');
+    const editModal = document.getElementById('editConfirmationModal');
+    const editModalContent = document.getElementById('editModalContent');
+    const editForm = document.getElementById('editForm');
+    const editImagePreview = document.getElementById('editImagePreview');
+    const editImageInput = document.getElementById('editImageInput');
+    const editLinkInput = document.getElementById('editLinkInput');
+    const editIsActiveInput = document.getElementById('editIsActiveInput');
+    const editLocationText = document.getElementById('editLocationText');
+    const editLocationValue = document.getElementById('editLocationValue');
     const openConfirmBtn = document.getElementById('openConfirmModal');
     const confirmUploadBtn = document.getElementById('confirmUploadBtn');
     const closeUploadButtons = document.querySelectorAll('[data-close-upload]');
+    const editButtons = document.querySelectorAll('.editTrigger');
     const deleteButtons = document.querySelectorAll('.deleteTrigger');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const closeDeleteButtons = document.querySelectorAll('[data-close-delete]');
+    const closeEditButtons = document.querySelectorAll('[data-close-edit-modal]');
     let pendingDeleteForm = null;
 
     // Upload type handling
@@ -1565,6 +1660,65 @@ document.addEventListener('DOMContentLoaded', function () {
             if (event.target === deleteModal) {
                 closeModal(deleteModal, deleteModalContent);
             }
+        });
+    }
+
+    editButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const updateUrl = button.getAttribute('data-update-url') || '';
+            const imageUrl = button.getAttribute('data-image-url') || '';
+            const linkValue = button.getAttribute('data-link') || '';
+            const activeValue = button.getAttribute('data-active') === '1';
+            const locationValue = button.getAttribute('data-location') || '-';
+
+            if (editForm) {
+                editForm.setAttribute('action', updateUrl);
+            }
+            if (editImagePreview && imageUrl) {
+                editImagePreview.src = imageUrl;
+            }
+            if (editLinkInput) {
+                editLinkInput.value = linkValue;
+            }
+            if (editIsActiveInput) {
+                editIsActiveInput.checked = activeValue;
+            }
+            if (editLocationText) {
+                editLocationText.textContent = 'Edit iklan untuk ' + locationValue;
+            }
+            if (editLocationValue) {
+                editLocationValue.textContent = locationValue;
+            }
+            if (editImageInput) {
+                editImageInput.value = '';
+            }
+
+            openModal(editModal, editModalContent);
+        });
+    });
+
+    closeEditButtons.forEach(btn => {
+        btn.addEventListener('click', () => closeModal(editModal, editModalContent));
+    });
+
+    if (editModal) {
+        editModal.addEventListener('click', (event) => {
+            if (event.target === editModal) {
+                closeModal(editModal, editModalContent);
+            }
+        });
+    }
+
+    if (editImageInput && editImagePreview) {
+        editImageInput.addEventListener('change', () => {
+            const file = editImageInput.files && editImageInput.files[0];
+            if (!file) {
+                return;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            editImagePreview.src = objectUrl;
+            editImagePreview.onload = () => URL.revokeObjectURL(objectUrl);
         });
     }
 

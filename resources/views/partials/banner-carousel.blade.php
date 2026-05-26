@@ -1,5 +1,8 @@
 @php
     $bannerItems = collect($iklans ?? [])
+        ->filter(function ($iklan) {
+            return (int) ($iklan->is_active ?? 1) === 1;
+        })
         ->map(function ($iklan) {
             $imagePath = $iklan?->image_path;
             if (!$imagePath) {
