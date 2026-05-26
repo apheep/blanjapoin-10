@@ -25,6 +25,89 @@ use Maatwebsite\Excel\Facades\Excel;
 class MerchantController extends Controller
 {
     /**
+     * Normalize a location string for fuzzy comparison.
+     */
+    private function normalizeLocationMatch($value)
+    {
+        $value = strtolower(trim((string) $value));
+        $value = str_replace(['-', '_'], ' ', $value);
+        $value = preg_replace('/[^a-z0-9\s]/', '', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return trim($value);
+    }
+
+    /**
+     * Find the closest matching location from a list of candidates.
+     * Returns null if the match is too weak to trust.
+     */
+    private function findClosestLocationMatch($location, array $candidates)
+    {
+        $needle = $this->normalizeLocationMatch($location);
+
+        if (strlen($needle) < 3) {
+            return null;
+        }
+
+        $bestCandidate = null;
+        $bestScore = 0;
+
+        foreach ($candidates as $candidate) {
+            $candidate = trim((string) $candidate);
+            if ($candidate === '') {
+                continue;
+            }
+
+            $haystack = $this->normalizeLocationMatch($candidate);
+            if ($haystack === '') {
+                continue;
+            }
+
+            if ($haystack === $needle) {
+                return $candidate;
+            }
+
+            $score = 0;
+
+            if (str_starts_with($haystack, $needle) || str_starts_with($needle, $haystack)) {
+                $score = 95;
+            } else {
+                similar_text($needle, $haystack, $similarityPercent);
+                $score = max($score, (float) $similarityPercent);
+
+                $levenshteinDistance = levenshtein($needle, $haystack);
+                if ($levenshteinDistance >= 0) {
+                    $maxLength = max(strlen($needle), strlen($haystack));
+                    if ($maxLength > 0) {
+                        $score = max($score, max(0, 100 - (($levenshteinDistance / $maxLength) * 100)));
+                    }
+                }
+            }
+
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestCandidate = $candidate;
+            }
+        }
+
+        return $bestScore >= 60 ? $bestCandidate : null;
+    }
+
+    /**
+     * Resolve a canonical slug for a route from fuzzy input.
+     */
+    private function resolveCanonicalLocationSlug($location, array $candidates)
+    {
+        $matchedLocation = $this->findClosestLocationMatch($location, $candidates);
+
+        if (!$matchedLocation) {
+            return null;
+        }
+
+        return territorialSlugGeneric($matchedLocation);
+    }
+
+    /**
      * Convert Google Maps URL to coordinate format
      * Handles goo.gl short URLs and converts them to coordinate format
      */
@@ -2451,8 +2534,26 @@ class MerchantController extends Controller
      */
     public function showByTerritorial($location)
     {
+        $allDaerah = Merchant::query()
+            ->where('is_active', 1)
+            ->whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->distinct()
+            ->pluck('daerah');
+
+        $territoryCandidates = $allDaerah->map(function($daerah) {
+            return extractKabupatenKota($daerah);
+        })->filter(function($territorial) {
+            return !empty(trim($territorial));
+        })->unique()->values()->toArray();
+
+        $resolvedSlug = $this->resolveCanonicalLocationSlug($location, $territoryCandidates);
+        if ($resolvedSlug && strtolower($resolvedSlug) !== strtolower(territorialSlug($location))) {
+            return redirect()->route('city.show', ['location' => $resolvedSlug], 301);
+        }
+
         // Convert slug back to readable name
-        $locationName = territorialName($location);
+        $locationName = territorialName($resolvedSlug ?? $location);
         
         // Get all active merchants
         $allMerchants = Merchant::query()
@@ -2562,11 +2663,24 @@ class MerchantController extends Controller
      */
     public function showByRegional($location)
     {
+        $regionalCandidates = DimTeritorialNational::query()
+            ->whereNotNull('regional')
+            ->where('regional', '!=', '')
+            ->distinct()
+            ->pluck('regional')
+            ->toArray();
+
+        $resolvedSlug = $this->resolveCanonicalLocationSlug($location, $regionalCandidates);
+
         // Convert alias atau slug ke nama regional yang sebenarnya
         // Support alias seperti: balnus, bali-nusra -> Bali Nusra
         //                      jatengdiy, jateng-diy -> Jateng DIY
         //                      jatim -> Jatim
-        $locationName = getRegionalNameFromAlias($location);
+        $locationName = getRegionalNameFromAlias($resolvedSlug ?? $location);
+
+        if ($resolvedSlug && strtolower($resolvedSlug) !== strtolower(territorialSlugGeneric($location))) {
+            return redirect()->route('regional.show', ['location' => $resolvedSlug], 301);
+        }
         
         // Get all cities that belong to this regional from DimTeritorialNational
         // Query: SELECT DISTINCT city FROM dim_teritorial_national WHERE LOWER(regional) = LOWER('Jatim')
@@ -2716,8 +2830,20 @@ class MerchantController extends Controller
      */
     public function showByBranch($location)
     {
+        $branchCandidates = DimTeritorialNational::query()
+            ->whereNotNull('branch')
+            ->where('branch', '!=', '')
+            ->distinct()
+            ->pluck('branch')
+            ->toArray();
+
+        $resolvedSlug = $this->resolveCanonicalLocationSlug($location, $branchCandidates);
+        if ($resolvedSlug && strtolower($resolvedSlug) !== strtolower(territorialSlugGeneric($location))) {
+            return redirect()->route('branch.show', ['location' => $resolvedSlug], 301);
+        }
+
         // Convert slug back to readable name (location adalah nama branch langsung)
-        $locationName = territorialNameGeneric($location);
+        $locationName = territorialNameGeneric($resolvedSlug ?? $location);
         
         // Get all cities that belong to this branch from DimTeritorialNational
         // Query: SELECT DISTINCT city FROM dim_teritorial_national WHERE LOWER(branch) = LOWER('Malang')
@@ -2862,8 +2988,20 @@ class MerchantController extends Controller
      */
     public function showByCluster($location)
     {
+        $clusterCandidates = DimTeritorialNational::query()
+            ->whereNotNull('cluster')
+            ->where('cluster', '!=', '')
+            ->distinct()
+            ->pluck('cluster')
+            ->toArray();
+
+        $resolvedSlug = $this->resolveCanonicalLocationSlug($location, $clusterCandidates);
+        if ($resolvedSlug && strtolower($resolvedSlug) !== strtolower(territorialSlugGeneric($location))) {
+            return redirect()->route('cluster.show', ['location' => $resolvedSlug], 301);
+        }
+
         // Convert slug back to readable name (location adalah nama cluster langsung)
-        $locationName = territorialNameGeneric($location);
+        $locationName = territorialNameGeneric($resolvedSlug ?? $location);
         
         // Get all cities that belong to this cluster from DimTeritorialNational
         // Query: SELECT DISTINCT city FROM dim_teritorial_national WHERE LOWER(cluster) = LOWER('Tulungagung')

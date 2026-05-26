@@ -134,6 +134,7 @@ Route::get('/city/{location}', [MerchantController::class, 'showByTerritorial'])
 // Route untuk menampilkan merchant berdasarkan regional
 // Format: /reg/{location} (contoh: /reg/jakarta)
 // Route ini PUBLIC, tidak perlu login
+Route::redirect('/reg/jateng', '/reg/jateng-diy', 301)->name('regional.jateng.legacy');
 Route::get('/reg/{location}', [MerchantController::class, 'showByRegional'])->name('regional.show');
 
 // Route untuk menampilkan merchant berdasarkan branch
