@@ -118,6 +118,10 @@ class LoginController extends Controller
             return 'tg://msg_url' . ($queryString !== '' ? ('?' . $queryString) : '');
         }
 
+        if (!empty($query['text'])) {
+            return $url;
+        }
+
         if ($first === 'joinchat' && $second !== '') {
             return 'tg://join?invite=' . rawurlencode($second);
         }

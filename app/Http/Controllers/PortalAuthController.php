@@ -16,6 +16,134 @@ class PortalAuthController extends Controller
 {
     private $apiBaseUrl = 'https://mynami.id/obc/api/user/code';
     private $apiVerifyUrl = 'https://mynami.id/obc/api/user/checkcode';
+
+    /**
+     * Convert external web URLs to app deep links for better mobile UX.
+     */
+    private function buildAppDeepLink(?string $url, string $channel): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        $channel = strtolower($channel);
+        if ($channel === 'whatsapp') {
+            return $this->toWhatsAppDeepLink($url);
+        }
+
+        if ($channel === 'telegram') {
+            return $this->toTelegramDeepLink($url);
+        }
+
+        return $url;
+    }
+
+    private function toWhatsAppDeepLink(string $url): string
+    {
+        $parts = parse_url($url);
+        if (!$parts) {
+            return $url;
+        }
+
+        $scheme = strtolower($parts['scheme'] ?? '');
+        if ($scheme === 'whatsapp') {
+            return $url;
+        }
+
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return $url;
+        }
+
+        $host = strtolower($parts['host'] ?? '');
+        $path = trim($parts['path'] ?? '', '/');
+        parse_str($parts['query'] ?? '', $query);
+
+        $phone = $query['phone'] ?? null;
+        $text = $query['text'] ?? null;
+
+        if ($host === 'wa.me' && $path !== '' && $path !== 'send') {
+            $phone = $phone ?? explode('/', $path)[0];
+        }
+
+        if (
+            in_array($host, ['api.whatsapp.com', 'wa.me', 'www.wa.me', 'www.whatsapp.com'], true)
+            || str_contains($host, 'whatsapp.com')
+        ) {
+            $params = array_filter([
+                'phone' => $phone,
+                'text' => $text,
+            ], static fn ($value) => $value !== null && $value !== '');
+
+            $queryString = http_build_query($params);
+            return 'whatsapp://send' . ($queryString !== '' ? ('?' . $queryString) : '');
+        }
+
+        return $url;
+    }
+
+    private function toTelegramDeepLink(string $url): string
+    {
+        $parts = parse_url($url);
+        if (!$parts) {
+            return $url;
+        }
+
+        $scheme = strtolower($parts['scheme'] ?? '');
+        if ($scheme === 'tg') {
+            return $url;
+        }
+
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return $url;
+        }
+
+        $host = strtolower($parts['host'] ?? '');
+        if (!in_array($host, ['t.me', 'www.t.me', 'telegram.me', 'www.telegram.me'], true)) {
+            return $url;
+        }
+
+        $path = trim($parts['path'] ?? '', '/');
+        if ($path === '') {
+            return $url;
+        }
+
+        parse_str($parts['query'] ?? '', $query);
+        $segments = explode('/', $path);
+        $first = $segments[0] ?? '';
+        $second = $segments[1] ?? '';
+
+        if ($first === 'share' && $second === 'url') {
+            $params = array_filter([
+                'url' => $query['url'] ?? null,
+                'text' => $query['text'] ?? null,
+            ], static fn ($value) => $value !== null && $value !== '');
+
+            $queryString = http_build_query($params);
+            return 'tg://msg_url' . ($queryString !== '' ? ('?' . $queryString) : '');
+        }
+
+        if (!empty($query['text'])) {
+            return $url;
+        }
+
+        if ($first === 'joinchat' && $second !== '') {
+            return 'tg://join?invite=' . rawurlencode($second);
+        }
+
+        if (str_starts_with($first, '+')) {
+            return 'tg://join?invite=' . rawurlencode(substr($first, 1));
+        }
+
+        $params = array_filter([
+            'domain' => $first,
+            'start' => $query['start'] ?? null,
+            'startgroup' => $query['startgroup'] ?? null,
+            'post' => ctype_digit($second) ? $second : null,
+        ], static fn ($value) => $value !== null && $value !== '');
+
+        $queryString = http_build_query($params);
+        return 'tg://resolve' . ($queryString !== '' ? ('?' . $queryString) : '');
+    }
     
     /**
      * Make cURL request to external API
@@ -258,10 +386,16 @@ class PortalAuthController extends Controller
                     'otp_type' => $request->otp_type,
                 ])->with('success', 'OTP telah dikirim ke email Anda. Silakan cek inbox atau folder spam.');
             } elseif ($request->otp_type === 'whatsapp') {
-                $redirectUrl = $responseData['whatsapp'] ?? $responseData['redirect_url'] ?? $responseData['redirect'] ?? $responseData['link'] ?? null;
+                $rawRedirectUrl = $responseData['whatsapp'] ?? $responseData['redirect_url'] ?? $responseData['redirect'] ?? $responseData['link'] ?? null;
+                $redirectUrl = $this->buildAppDeepLink($rawRedirectUrl, 'whatsapp');
                 
                 if ($redirectUrl) {
                     $request->session()->put('portal_otp_redirect_url', $redirectUrl);
+
+                    Log::info('Portal OTP WhatsApp redirect transformed', [
+                        'raw_url' => $rawRedirectUrl,
+                        'app_url' => $redirectUrl,
+                    ]);
 
                     return back()->withInput([
                         'wa_pic' => $request->wa_pic,
@@ -281,10 +415,16 @@ class PortalAuthController extends Controller
                     ])->with('success', 'OTP telah dikirim. Silakan cek aplikasi WhatsApp Anda.');
                 }
             } elseif ($request->otp_type === 'telegram') {
-                $redirectUrl = $responseData['telegram'] ?? $responseData['redirect_url'] ?? $responseData['redirect'] ?? $responseData['link'] ?? null;
+                $rawRedirectUrl = $responseData['telegram'] ?? $responseData['redirect_url'] ?? $responseData['redirect'] ?? $responseData['link'] ?? null;
+                $redirectUrl = $this->buildAppDeepLink($rawRedirectUrl, 'telegram');
                 
                 if ($redirectUrl) {
                     $request->session()->put('portal_otp_redirect_url', $redirectUrl);
+
+                    Log::info('Portal OTP Telegram redirect transformed', [
+                        'raw_url' => $rawRedirectUrl,
+                        'app_url' => $redirectUrl,
+                    ]);
 
                     return back()->withInput([
                         'wa_pic' => $request->wa_pic,
