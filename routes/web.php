@@ -352,6 +352,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/keywords/{id}/download-image', [KeywordController::class, 'downloadImage'])->name('keyword.image.download');
 
     // Iklan management
+    Route::get('/merchant/{merchant}/keywords-for-banner', [MerchantController::class, 'keywordsForBanner'])->name('merchant.keywords-for-banner');
     Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');
     Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
     Route::patch('/iklan/{iklan}', [IklanController::class, 'update'])->name('iklan.update');

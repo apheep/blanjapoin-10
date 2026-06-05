@@ -108,6 +108,122 @@ class MerchantController extends Controller
     }
 
     /**
+     * Resolve iklans dengan fallback hierarchy:
+     * merchant spesifik → territorial (city) → branch → regional → general
+     *
+     * Setiap level dicoba satu per satu; level pertama yang ada banner-nya dipakai.
+     * Banner dengan apply_scope='all_branch' / 'all_regional' diperlakukan sama
+     * dengan banner spesifik di level tersebut — keduanya qualify untuk fallback.
+     */
+    private function resolveIklansWithFallback(
+        ?string $cityName = null,
+        ?string $branchName = null,
+        ?string $regionalName = null,
+        ?int $merchantId = null
+    ) {
+        // 1. Banner spesifik merchant
+        if ($merchantId) {
+            $iklans = Iklan::where(function ($q) use ($merchantId) {
+                $q->where('merchant_key', $merchantId)
+                  ->orWhereJsonContains('merchant_keys', $merchantId);
+            })->whereNull('territorial')->whereNull('regional')
+              ->whereNull('branch')->whereNull('cluster')
+              ->where('is_active', 1)->orderBy('order')->get();
+            if ($iklans->isNotEmpty()) return $iklans;
+        }
+
+        // 2. Banner territorial (city)
+        if ($cityName) {
+            $citySlug = territorialSlug($cityName);
+            $iklans = Iklan::whereNotNull('territorial')
+                ->whereNull('regional')->whereNull('branch')->whereNull('cluster')
+                ->where('is_active', 1)->orderBy('order')->get()
+                ->filter(fn($i) => strtolower(territorialSlug($i->territorial)) === strtolower($citySlug));
+            if ($iklans->isNotEmpty()) return $iklans->values();
+        }
+
+        // 3. Banner branch (specific atau apply_scope=all_branch)
+        if ($branchName) {
+            $branchSlug = territorialSlugGeneric($branchName);
+            $iklans = Iklan::whereNotNull('branch')
+                ->whereNull('territorial')->whereNull('cluster')
+                ->where('is_active', 1)->orderBy('order')->get()
+                ->filter(fn($i) => strtolower(territorialSlugGeneric($i->branch)) === strtolower($branchSlug));
+            if ($iklans->isNotEmpty()) return $iklans->values();
+        }
+
+        // 4. Banner regional (specific atau apply_scope=all_regional)
+        if ($regionalName) {
+            $regionalSlug = territorialSlugGeneric($regionalName);
+            $iklans = Iklan::whereNotNull('regional')
+                ->whereNull('territorial')->whereNull('branch')
+                ->where('is_active', 1)->orderBy('order')->get()
+                ->filter(fn($i) => strtolower(territorialSlugGeneric($i->regional)) === strtolower($regionalSlug));
+            if ($iklans->isNotEmpty()) return $iklans->values();
+        }
+
+        // 5. General fallback
+        return Iklan::whereNull('territorial')->whereNull('regional')
+            ->whereNull('branch')->whereNull('cluster')
+            ->whereNull('merchant_key')
+            ->where(function ($q) {
+                $q->whereNull('merchant_keys')
+                  ->orWhere('merchant_keys', '[]')
+                  ->orWhere('merchant_keys', '');
+            })
+            ->whereNull('keyword_id')
+            ->where('is_active', 1)->orderBy('order')->get();
+    }
+
+    /**
+     * Cari branch dan regional untuk sebuah city dari DimTeritorialNational.
+     * Menggunakan 3-level lookup agar lebih toleran terhadap perbedaan format:
+     *   1. Exact match pada kolom city (case-insensitive)
+     *   2. Match daerah mentah ke kolom branch (untuk merchant yang daerahnya berupa nama branch)
+     *   3. Partial/contains match pada kolom city
+     *
+     * Return ['branch' => string|null, 'regional' => string|null]
+     */
+    private function getCityParentLocations(string $cityName): array
+    {
+        $empty = ['branch' => null, 'regional' => null];
+
+        if (empty(trim($cityName))) {
+            return $empty;
+        }
+
+        $cityLower = strtolower(trim($cityName));
+
+        // 1. Exact match pada kolom city
+        $row = DimTeritorialNational::whereRaw('LOWER(TRIM(city)) = ?', [$cityLower])->first();
+        if ($row) {
+            return ['branch' => $row->branch ?? null, 'regional' => $row->regional ?? null];
+        }
+
+        // Ambil semua baris sekali untuk lookup berikutnya
+        $allRows = DimTeritorialNational::whereNotNull('city')->where('city', '!=', '')
+            ->whereNotNull('branch')->where('branch', '!=', '')
+            ->get(['city', 'branch', 'regional']);
+
+        // 2. Match daerah mentah ke kolom branch (kasus merchant.daerah = nama branch)
+        foreach ($allRows as $r) {
+            if (strtolower(trim($r->branch ?? '')) === $cityLower) {
+                return ['branch' => $r->branch ?? null, 'regional' => $r->regional ?? null];
+            }
+        }
+
+        // 3. Partial / contains match pada kolom city
+        foreach ($allRows as $r) {
+            $key = strtolower(trim($r->city ?? ''));
+            if (str_contains($key, $cityLower) || str_contains($cityLower, $key)) {
+                return ['branch' => $r->branch ?? null, 'regional' => $r->regional ?? null];
+            }
+        }
+
+        return $empty;
+    }
+
+    /**
      * Convert Google Maps URL to coordinate format
      * Handles goo.gl short URLs and converts them to coordinate format
      */
@@ -731,7 +847,7 @@ class MerchantController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'data' => $merchantData
             ]);
-            
+
         //     // Jika request dari AJAX, return JSON error
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -739,12 +855,19 @@ class MerchantController extends Controller
                     'message' => 'Gagal menyimpan merchant: ' . $e->getMessage()
                 ], 500);
             }
-            
+
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['error' => 'Gagal menyimpan merchant: ' . $e->getMessage()]);
         }
-    
+
+        // =====================
+        //  HANDLE TOP BANNER (keyword mode)
+        // =====================
+        $bannerMode    = $request->input('banner_mode', 'general');
+        $bannerKeyIds  = array_filter(explode(',', $request->input('banner_keyword_ids', '')));
+        $this->syncMerchantBanners($merchant, $bannerMode, array_map('intval', $bannerKeyIds));
+
         // Jika request dari AJAX, return JSON
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -753,7 +876,7 @@ class MerchantController extends Controller
                 'merchant' => $merchant
             ], 201);
         }
-    
+
         return redirect()->route('admin')->with('success', 'Merchant berhasil ditambahkan!');
     }
     
@@ -1100,6 +1223,13 @@ class MerchantController extends Controller
                 }
             }
             
+            // =====================
+            //  HANDLE TOP BANNER (keyword mode)
+            // =====================
+            $bannerMode   = $request->input('banner_mode', 'general');
+            $bannerKeyIds = array_filter(explode(',', $request->input('banner_keyword_ids', '')));
+            $this->syncMerchantBanners($merchant, $bannerMode, array_map('intval', $bannerKeyIds));
+
             // Jika request dari AJAX, return JSON
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
@@ -1108,9 +1238,9 @@ class MerchantController extends Controller
                     'merchant' => $merchant
                 ], 200);
             }
-        
+
             return redirect()->route('admin')->with('success', 'Merchant berhasil diupdate!');
-            
+
         } catch (\Exception $e) {
             Log::error('Error updating merchant:', [
                 'message' => $e->getMessage(),
@@ -1319,40 +1449,22 @@ class MerchantController extends Controller
             ->where('is_active', 1) // Validasi is_active keyword
             ->get();
 
-        // Get iklans - only show general iklans (all location fields are null) for link pelanggan page
-        // Use orderBy('order', 'asc') to respect admin-configured order
-        // Check both merchant_key (legacy) and merchant_keys JSON array
-        $specificIklans = Iklan::where(function($query) use ($merchant) {
-                $query->where('merchant_key', $merchant->id)
-                      ->orWhereJsonContains('merchant_keys', $merchant->id);
-            })
-            ->whereNull('territorial')
-            ->whereNull('regional')
-            ->whereNull('branch')
-            ->whereNull('cluster')
-            ->where('is_active', 1)
-            ->orderBy('order', 'asc')
-            ->get();
-        
-        // If specific merchant iklans found, use them. Otherwise, use general iklans
-        if ($specificIklans->isNotEmpty()) {
-            $iklans = $specificIklans;
-        } else {
-            // Get general iklans (all location fields are null and merchant_key/merchant_keys are null or empty)
-            $iklans = Iklan::whereNull('territorial')
-                ->whereNull('regional')
-                ->whereNull('branch')
-                ->whereNull('cluster')
-                ->whereNull('merchant_key')
-                ->where(function($query) {
-                    $query->whereNull('merchant_keys')
-                          ->orWhere('merchant_keys', '[]')
-                          ->orWhere('merchant_keys', '');
-                })
-                ->where('is_active', 1)
-                ->orderBy('order', 'asc')
-                ->get();
-        }
+        // Resolve iklans dengan fallback hierarchy:
+        // merchant spesifik → territorial (city) → branch → regional → general
+        $merchantDaerah = trim($merchant->daerah ?? '');
+        $merchantCity   = trim(extractKabupatenKota($merchantDaerah));
+        // Jika extractKabupatenKota tidak berhasil, coba dengan daerah mentah
+        // (getCityParentLocations sudah punya 3-level lookup: exact city, branch match, partial)
+        $lookupCity = $merchantCity ?: $merchantDaerah;
+        $parentLocations = $lookupCity
+            ? $this->getCityParentLocations($lookupCity)
+            : ['branch' => null, 'regional' => null];
+        $iklans = $this->resolveIklansWithFallback(
+            $merchantCity ?: null,
+            $parentLocations['branch'],
+            $parentLocations['regional'],
+            $merchant->id
+        );
 
         return view('link-pelanggan', [
             'merchant' => $merchant,
@@ -2582,36 +2694,14 @@ class MerchantController extends Controller
             // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
-        // Get iklans - prioritize specific territorial banner, fallback to general
-        // Normalize comparison by converting both to slug format for consistency
-        $locationSlug = territorialSlug($location);
-        
-        // First, try to get iklans that match this territorial
-        $specificIklans = Iklan::whereNotNull('territorial')
-            ->whereNull('regional')
-            ->whereNull('branch')
-            ->whereNull('cluster')
-            ->where('is_active', 1)
-            ->orderBy('order', 'asc')
-            ->get()
-            ->filter(function($iklan) use ($locationSlug) {
-                $storedSlug = territorialSlug($iklan->territorial);
-                return strtolower($storedSlug) === strtolower($locationSlug);
-            });
-        
-        // If specific iklans found, use them. Otherwise, use general iklans
-        if ($specificIklans->isNotEmpty()) {
-            $iklans = $specificIklans->values();
-        } else {
-            // Get general iklans (all location fields are null)
-            $iklans = Iklan::whereNull('territorial')
-                ->whereNull('regional')
-                ->whereNull('branch')
-                ->whereNull('cluster')
-                ->where('is_active', 1)
-                ->orderBy('order', 'asc')
-                ->get();
-        }
+        // Resolve iklans dengan fallback hierarchy:
+        // territorial spesifik → branch → regional → general
+        $parentLocations = $this->getCityParentLocations($locationName);
+        $iklans = $this->resolveIklansWithFallback(
+            $locationName,
+            $parentLocations['branch'],
+            $parentLocations['regional']
+        );
         
         // Get all available territories for filter
         $allDaerah = Merchant::query()
@@ -2931,35 +3021,11 @@ class MerchantController extends Controller
             // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
-        // Get iklans - prioritize specific branch banner, fallback to general
-        $locationSlug = territorialSlugGeneric($location);
-        
-        // First, try to get iklans that match this branch
-        $specificIklans = Iklan::whereNotNull('branch')
-            ->whereNull('territorial')
-            ->whereNull('regional')
-            ->whereNull('cluster')
-            ->where('is_active', 1)
-            ->orderBy('order', 'asc')
-            ->get()
-            ->filter(function($iklan) use ($locationSlug) {
-                $storedSlug = territorialSlugGeneric($iklan->branch);
-                return strtolower($storedSlug) === strtolower($locationSlug);
-            });
-        
-        // If specific iklans found, use them. Otherwise, use general iklans
-        if ($specificIklans->isNotEmpty()) {
-            $iklans = $specificIklans->values();
-        } else {
-            // Get general iklans (all location fields are null)
-            $iklans = Iklan::whereNull('territorial')
-                ->whereNull('regional')
-                ->whereNull('branch')
-                ->whereNull('cluster')
-                ->where('is_active', 1)
-                ->orderBy('order', 'asc')
-                ->get();
-        }
+        // Resolve iklans dengan fallback hierarchy:
+        // branch spesifik → regional → general
+        $regionalRow = DimTeritorialNational::whereRaw('LOWER(TRIM(branch)) = ?', [strtolower(trim($locationName))])->first();
+        $regionalName = $regionalRow ? $regionalRow->regional : null;
+        $iklans = $this->resolveIklansWithFallback(null, $locationName, $regionalName);
         
         return view('branch', [
             'location' => $location,
@@ -3089,34 +3155,25 @@ class MerchantController extends Controller
             // Removed whereHas('merchant') filter to allow keywords to show even if merchant is inactive
             ->get();
         
-        // Get iklans - prioritize specific cluster banner, fallback to general
+        // Resolve iklans dengan fallback hierarchy:
+        // cluster spesifik → branch → regional → general
+        // Untuk cluster, tidak ada "territorial" step — langsung naik ke branch
+        $clusterParent = DimTeritorialNational::whereRaw('LOWER(TRIM(cluster)) = ?', [strtolower(trim($locationName))])->first();
+        $clusterBranch   = $clusterParent ? $clusterParent->branch   : null;
+        $clusterRegional = $clusterParent ? $clusterParent->regional : null;
+
+        // Ambil banner cluster spesifik dulu
         $locationSlug = territorialSlugGeneric($location);
-        
-        // First, try to get iklans that match this cluster
         $specificIklans = Iklan::whereNotNull('cluster')
-            ->whereNull('territorial')
-            ->whereNull('regional')
-            ->whereNull('branch')
-            ->where('is_active', 1)
-            ->orderBy('order', 'asc')
-            ->get()
-            ->filter(function($iklan) use ($locationSlug) {
-                $storedSlug = territorialSlugGeneric($iklan->cluster);
-                return strtolower($storedSlug) === strtolower($locationSlug);
-            });
-        
-        // If specific iklans found, use them. Otherwise, use general iklans
+            ->whereNull('territorial')->whereNull('regional')->whereNull('branch')
+            ->where('is_active', 1)->orderBy('order')->get()
+            ->filter(fn($i) => strtolower(territorialSlugGeneric($i->cluster)) === strtolower($locationSlug));
+
         if ($specificIklans->isNotEmpty()) {
             $iklans = $specificIklans->values();
         } else {
-            // Get general iklans (all location fields are null)
-            $iklans = Iklan::whereNull('territorial')
-                ->whereNull('regional')
-                ->whereNull('branch')
-                ->whereNull('cluster')
-                ->where('is_active', 1)
-                ->orderBy('order', 'asc')
-                ->get();
+            // Fallback ke branch → regional → general
+            $iklans = $this->resolveIklansWithFallback(null, $clusterBranch, $clusterRegional);
         }
         
         return view('cluster', [
@@ -3580,5 +3637,81 @@ class MerchantController extends Controller
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
             'Pragma' => 'public',
         ]);
+    }
+
+    /**
+     * Return keyword list untuk merchant — dipakai oleh section "Top Banner" di form edit merchant.
+     * Route: GET /merchant/{merchant}/keywords-for-banner
+     */
+    public function keywordsForBanner(Merchant $merchant): \Illuminate\Http\JsonResponse
+    {
+        $keywords = Keyword::where('merchant_key', $merchant->id)
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->orderBy('nama_produk')
+            ->get()
+            ->map(function($k) {
+                return [
+                    'id'          => $k->id,
+                    'nama_produk' => $k->nama_produk,
+                    'image'       => $k->image,
+                    'cta_link'    => $k->cta_link,
+                ];
+            });
+
+        $existingBannerKeywordIds = Iklan::where('merchant_key', $merchant->id)
+            ->whereNotNull('keyword_id')
+            ->where('is_active', 1)
+            ->pluck('keyword_id')
+            ->toArray();
+
+        return response()->json([
+            'keywords'                 => $keywords,
+            'existingBannerKeywordIds' => $existingBannerKeywordIds,
+        ]);
+    }
+
+    /**
+     * Buat/hapus iklans secara otomatis dari keyword terpilih saat add/edit merchant.
+     * banner_mode = 'keyword' → buat iklan dari keyword_ids (max 5), hapus yang lama
+     * banner_mode = 'general' → hapus semua iklan spesifik merchant (fallback ke general)
+     */
+    private function syncMerchantBanners(Merchant $merchant, string $bannerMode, array $keywordIds): void
+    {
+        Iklan::where('merchant_key', $merchant->id)
+            ->whereNotNull('keyword_id')
+            ->delete();
+
+        if ($bannerMode !== 'keyword' || empty($keywordIds)) {
+            return;
+        }
+
+        $keywords = Keyword::whereIn('id', array_slice($keywordIds, 0, 5))
+            ->where('merchant_key', $merchant->id)
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->get();
+
+        foreach ($keywords as $idx => $keyword) {
+            if (!$keyword->image || !\Illuminate\Support\Facades\Storage::disk('public')->exists($keyword->image)) {
+                continue;
+            }
+            $extension = pathinfo($keyword->image, PATHINFO_EXTENSION);
+            $filename  = 'iklan_keyword_' . $keyword->id . '_' . time() . '_' . $idx . '.' . $extension;
+            $path      = 'iklan/' . $filename;
+            \Illuminate\Support\Facades\Storage::disk('public')->copy($keyword->image, $path);
+
+            $newOrder = (Iklan::min('order') ?? 0) - 1;
+            Iklan::create([
+                'image_path'    => $path,
+                'link_iklan'    => $keyword->cta_link,
+                'is_active'     => true,
+                'merchant_key'  => $merchant->id,
+                'merchant_keys' => [$merchant->id],
+                'keyword_id'    => $keyword->id,
+                'apply_scope'   => 'specific',
+                'order'         => $newOrder,
+            ]);
+        }
     }
 }
