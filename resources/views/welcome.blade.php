@@ -153,7 +153,7 @@
    </div>
   </div>
   <div class="w-full bg-white relative overflow-hidden"></div>
-  <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none block md:block"
+  <div class="absolute inset-y-0 left-0 w-1/2 pointer-events-none block md:block -z-10"
      style="background-image: url('{{ asset('dot_background.png') }}');
             background-repeat: repeat;
             background-size: cover;
