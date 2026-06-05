@@ -516,8 +516,145 @@ class IklanController extends Controller
 
         $allLocations = $allLocations->unique('filter_value')->sortBy('name')->values();
 
+        // Build grouped location list for the new list-view UI
+        // Each entry = one "link/lokasi" row dengan semua iklan-nya
+        $locationGroups = collect();
+
+        // General group
+        $generalIklans = $iklans->filter(fn($i) =>
+            !$i->territorial && !$i->regional && !$i->branch && !$i->cluster &&
+            !$i->merchant_key && empty($i->merchant_keys)
+        )->values();
+        if ($generalIklans->isNotEmpty()) {
+            $locationGroups->push([
+                'key'     => 'general',
+                'type'    => 'general',
+                'name'    => 'General',
+                'display' => 'General',
+                'url'     => null,
+                'count'   => $generalIklans->count(),
+                'iklans'  => $generalIklans,
+            ]);
+        }
+
+        // Territorial groups
+        foreach ($allTerritories as $territory) {
+            $groupIklans = $iklans->filter(fn($i) =>
+                $i->territorial && strtolower($i->territorial) === strtolower($territory['slug'])
+            )->values();
+            if ($groupIklans->isNotEmpty()) {
+                $locationGroups->push([
+                    'key'     => 'territorial:' . $territory['slug'],
+                    'type'    => 'territorial',
+                    'name'    => $territory['name'],
+                    'display' => 'city/' . $territory['slug'],
+                    'url'     => route('city.show', $territory['slug']),
+                    'count'   => $groupIklans->count(),
+                    'iklans'  => $groupIklans,
+                ]);
+            }
+        }
+
+        // Regional groups
+        foreach ($allRegions as $region) {
+            $groupIklans = $iklans->filter(fn($i) =>
+                $i->regional && strtolower($i->regional) === strtolower($region['slug'])
+            )->values();
+            if ($groupIklans->isNotEmpty()) {
+                $locationGroups->push([
+                    'key'     => 'regional:' . $region['slug'],
+                    'type'    => 'regional',
+                    'name'    => $region['name'],
+                    'display' => 'reg/' . $region['slug'],
+                    'url'     => route('regional.show', $region['slug']),
+                    'count'   => $groupIklans->count(),
+                    'iklans'  => $groupIklans,
+                ]);
+            }
+        }
+
+        // Branch groups
+        foreach ($allBranches as $branch) {
+            $groupIklans = $iklans->filter(fn($i) =>
+                $i->branch && strtolower($i->branch) === strtolower($branch['slug'])
+            )->values();
+            if ($groupIklans->isNotEmpty()) {
+                $locationGroups->push([
+                    'key'     => 'branch:' . $branch['slug'],
+                    'type'    => 'branch',
+                    'name'    => $branch['name'],
+                    'display' => 'poin-tsel/' . $branch['slug'],
+                    'url'     => route('branch.show', $branch['slug']),
+                    'count'   => $groupIklans->count(),
+                    'iklans'  => $groupIklans,
+                ]);
+            }
+        }
+
+        // Cluster groups
+        foreach ($allClusters as $cluster) {
+            $groupIklans = $iklans->filter(fn($i) =>
+                $i->cluster && strtolower($i->cluster) === strtolower($cluster['slug'])
+            )->values();
+            if ($groupIklans->isNotEmpty()) {
+                $locationGroups->push([
+                    'key'     => 'cluster:' . $cluster['slug'],
+                    'type'    => 'cluster',
+                    'name'    => $cluster['name'],
+                    'display' => 'cluster/' . $cluster['slug'],
+                    'url'     => route('cluster.show', $cluster['slug']),
+                    'count'   => $groupIklans->count(),
+                    'iklans'  => $groupIklans,
+                ]);
+            }
+        }
+
+        // Merchant groups — satu group per merchant yang unik
+        $merchantIklans = $iklans->filter(fn($i) => $i->merchant_key || !empty($i->merchant_keys));
+        $merchantGroupKeys = collect();
+        foreach ($merchantIklans as $iklan) {
+            $ids = !empty($iklan->merchant_keys) ? $iklan->merchant_keys : [$iklan->merchant_key];
+            foreach ($ids as $mid) {
+                if ($mid && !$merchantGroupKeys->contains($mid)) {
+                    $merchantGroupKeys->push($mid);
+                }
+            }
+        }
+        $merchantObjs = Merchant::whereIn('id', $merchantGroupKeys->all())->get()->keyBy('id');
+        foreach ($merchantGroupKeys as $mid) {
+            $m = $merchantObjs->get($mid);
+            if (!$m) continue;
+            $groupIklans = $iklans->filter(fn($i) =>
+                $i->merchant_key == $mid ||
+                (!empty($i->merchant_keys) && in_array($mid, $i->merchant_keys))
+            )->values();
+            $locationGroups->push([
+                'key'     => 'merchant:' . $mid,
+                'type'    => 'merchant',
+                'name'    => $m->nama_merchant,
+                'display' => 'Merchant: ' . $m->nama_merchant,
+                'url'     => null,
+                'count'   => $groupIklans->count(),
+                'iklans'  => $groupIklans,
+            ]);
+        }
+
         $merchants = Merchant::orderBy('nama_merchant')->get()
-            ->map(fn($m) => ['id' => $m->id, 'name' => $m->nama_merchant])->values();
+            ->map(function($m) {
+                $city     = trim(extractKabupatenKota($m->daerah ?? ''));
+                $citySlug = $city ? territorialSlug($city) : null;
+                // Cari branch & regional dari DimTeritorialNational berdasarkan city
+                $dim = $city ? \App\Models\DimTeritorialNational::whereRaw(
+                    'LOWER(TRIM(city)) = ?', [strtolower($city)]
+                )->first() : null;
+                return [
+                    'id'       => $m->id,
+                    'name'     => $m->nama_merchant,
+                    'city'     => $citySlug,
+                    'branch'   => $dim ? territorialSlugGeneric(trim($dim->branch ?? ''))   : null,
+                    'regional' => $dim ? territorialSlugGeneric(trim($dim->regional ?? '')) : null,
+                ];
+            })->values();
 
         $keywords = Keyword::with('merchant')->whereNotNull('image')->where('image', '!=', '')
             ->orderBy('nama_produk')->get()
@@ -534,7 +671,7 @@ class IklanController extends Controller
         return view('iklan', compact(
             'iklans', 'territories', 'regions', 'branches', 'clusters',
             'allLocations', 'hasGeneral', 'merchants', 'keywords',
-            'isUserMaha', 'userScope', 'allowedLocTypes'
+            'isUserMaha', 'userScope', 'allowedLocTypes', 'locationGroups'
         ));
     }
 
@@ -562,6 +699,7 @@ class IklanController extends Controller
             'cluster'         => ['nullable', 'string'],
             'merchant_keys'   => ['nullable', 'array'],
             'merchant_keys.*' => ['integer', 'exists:merchants,id'],
+            'apply_scope'     => ['nullable', 'in:specific,all_regional,all_branch'],
         ]);
 
         $uploadType   = $request->input('upload_type', 'manual');
@@ -620,6 +758,14 @@ class IklanController extends Controller
 
         $newOrder = (Iklan::min('order') ?? 0) - 1;
 
+        // apply_scope hanya relevan untuk regional/branch; default ke 'specific'
+        $applyScope = 'specific';
+        if ($regional && $request->input('apply_scope') === 'all_regional') {
+            $applyScope = 'all_regional';
+        } elseif ($branch && $request->input('apply_scope') === 'all_branch') {
+            $applyScope = 'all_branch';
+        }
+
         try {
             Iklan::create([
                 'image_path'    => $path,
@@ -632,6 +778,7 @@ class IklanController extends Controller
                 'merchant_key'  => !empty($merchantKeys) ? $merchantKeys[0] : null,
                 'merchant_keys' => !empty($merchantKeys) ? $merchantKeys : null,
                 'keyword_id'    => $keywordId,
+                'apply_scope'   => $applyScope,
                 'order'         => $newOrder,
             ]);
         } catch (\Exception $e) {

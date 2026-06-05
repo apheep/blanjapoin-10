@@ -443,6 +443,44 @@
                 </div>
             </div>
 
+                {{-- Section 6: Top Banner --}}
+                <div id="topBannerSection">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Top Banner</h4>
+                    <p class="text-sm text-gray-500 mb-4">Atur banner yang tampil di halaman link merchant ini.</p>
+
+                    <div class="space-y-3">
+                        {{-- Opsi mode banner --}}
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="banner_mode" value="general" checked
+                                   class="mt-0.5 h-4 w-4 text-orange-600 border-neutral-300 focus:ring-orange-500">
+                            <div>
+                                <span class="text-sm font-semibold text-neutral-800">Ikut General</span>
+                                <p class="text-xs text-neutral-500 mt-0.5">Banner mengikuti city, branch, atau regional di mana merchant ini berada.</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="banner_mode" value="keyword"
+                                   id="bannerModeKeyword"
+                                   class="mt-0.5 h-4 w-4 text-orange-600 border-neutral-300 focus:ring-orange-500">
+                            <div>
+                                <span class="text-sm font-semibold text-neutral-800">Otomatis dari Keyword</span>
+                                <p class="text-xs text-neutral-500 mt-0.5">Pilih maks 5 keyword aktif merchant ini. Banner dibuat otomatis dari gambar keyword.</p>
+                            </div>
+                        </label>
+
+                        {{-- Keyword checklist (muncul kalau mode = keyword) --}}
+                        <div id="bannerKeywordSection" class="hidden pl-1">
+                            <p class="text-xs font-semibold text-neutral-600 mb-2">Pilih Keyword (maks 5):</p>
+                            <div id="bannerKeywordList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                <p class="text-xs text-neutral-400 italic">Simpan merchant terlebih dahulu untuk memilih keyword.</p>
+                            </div>
+                            <input type="hidden" name="banner_keyword_ids" id="bannerKeywordIds" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Footer dengan tombol --}}
             <div class="sticky bottom-0 z-10 flex justify-end items-center gap-3 px-6 py-4 border-t bg-white">
                 <button type="button"
@@ -1990,4 +2028,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Top Banner — toggle keyword section
+(function() {
+    const modeKeyword = document.getElementById('bannerModeKeyword');
+    const keywordSec  = document.getElementById('bannerKeywordSection');
+    document.querySelectorAll('input[name="banner_mode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (modeKeyword && modeKeyword.checked) {
+                keywordSec?.classList.remove('hidden');
+            } else {
+                keywordSec?.classList.add('hidden');
+            }
+        });
+    });
+})();
 </script>
