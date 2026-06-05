@@ -312,6 +312,42 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Section 6: Top Banner --}}
+                <div id="editTopBannerSection">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Top Banner</h4>
+                    <p class="text-sm text-gray-500 mb-4">Atur banner yang tampil di halaman link merchant ini.</p>
+
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="banner_mode" value="general" checked
+                                   id="editBannerModeGeneral"
+                                   class="mt-0.5 h-4 w-4 text-orange-600 border-neutral-300 focus:ring-orange-500">
+                            <div>
+                                <span class="text-sm font-semibold text-neutral-800">Ikut General</span>
+                                <p class="text-xs text-neutral-500 mt-0.5">Banner mengikuti city, branch, atau regional merchant ini.</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="banner_mode" value="keyword"
+                                   id="editBannerModeKeyword"
+                                   class="mt-0.5 h-4 w-4 text-orange-600 border-neutral-300 focus:ring-orange-500">
+                            <div>
+                                <span class="text-sm font-semibold text-neutral-800">Otomatis dari Keyword</span>
+                                <p class="text-xs text-neutral-500 mt-0.5">Pilih maks 5 keyword aktif. Banner dibuat otomatis dari gambar keyword.</p>
+                            </div>
+                        </label>
+
+                        <div id="editBannerKeywordSection" class="hidden pl-1">
+                            <p class="text-xs font-semibold text-neutral-600 mb-2">Pilih Keyword (maks 5):</p>
+                            <div id="editBannerKeywordList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                <p class="text-xs text-neutral-400 italic">Memuat keyword...</p>
+                            </div>
+                            <input type="hidden" name="banner_keyword_ids" id="editBannerKeywordIds" value="">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Footer dengan tombol --}}
@@ -689,6 +725,28 @@ function openEditMerchant(id, merchantData) {
             // Update WA PIC setelah modal terbuka
             updateEditWaPic();
         }, 50);
+
+        // Load keyword untuk top banner section
+        if (typeof window.loadBannerKeywordsForEdit === 'function') {
+            // Reset radio ke General dulu
+            const modeGeneral = document.getElementById('editBannerModeGeneral');
+            const modeKeyword = document.getElementById('editBannerModeKeyword');
+            const keywordSec  = document.getElementById('editBannerKeywordSection');
+            if (modeGeneral) modeGeneral.checked = true;
+            if (modeKeyword) modeKeyword.checked = false;
+            if (keywordSec)  keywordSec.classList.add('hidden');
+
+            // Parse existing banner keyword IDs
+            let existingKwIds = [];
+            if (merchantData.banner_keyword_ids) {
+                existingKwIds = String(merchantData.banner_keyword_ids)
+                    .split(',')
+                    .map(s => parseInt(s.trim()))
+                    .filter(n => !isNaN(n) && n > 0);
+            }
+
+            window.loadBannerKeywordsForEdit(id, existingKwIds);
+        }
     });
 }
 
@@ -1478,4 +1536,89 @@ async function geocodeGmapUrl(url) {
 }
 
 
+
+// ============================================================
+// TOP BANNER — edit modal
+// ============================================================
+(function() {
+    const modeGeneral  = document.getElementById('editBannerModeGeneral');
+    const modeKeyword  = document.getElementById('editBannerModeKeyword');
+    const keywordSec   = document.getElementById('editBannerKeywordSection');
+    const keywordList  = document.getElementById('editBannerKeywordList');
+    const keywordIds   = document.getElementById('editBannerKeywordIds');
+
+    function toggleKeywordSection() {
+        if (modeKeyword && modeKeyword.checked) {
+            keywordSec?.classList.remove('hidden');
+        } else {
+            keywordSec?.classList.add('hidden');
+        }
+    }
+
+    modeGeneral?.addEventListener('change', toggleKeywordSection);
+    modeKeyword?.addEventListener('change', toggleKeywordSection);
+
+    // Load keywords saat edit merchant dibuka — dipanggil dari fungsi openEditMerchant
+    window.loadBannerKeywordsForEdit = function(merchantId, _unused) {
+        if (!keywordList) return;
+        keywordList.innerHTML = '<p class="text-xs text-neutral-400 italic">Memuat...</p>';
+
+        fetch('/merchant/' + merchantId + '/keywords-for-banner')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.keywords || data.keywords.length === 0) {
+                    keywordList.innerHTML = '<p class="text-xs text-neutral-400 italic">Tidak ada keyword aktif.</p>';
+                    return;
+                }
+
+                // Ambil existing IDs dari API (bukan dari parameter)
+                const existing = (data.existingBannerKeywordIds || []).map(Number);
+
+                keywordList.innerHTML = '';
+                data.keywords.forEach(kw => {
+                    const isChecked = existing.includes(Number(kw.id));
+                    const div = document.createElement('label');
+                    div.className = 'flex items-center gap-2 p-2 rounded-lg border border-neutral-100 hover:bg-neutral-50 cursor-pointer';
+                    div.innerHTML = `
+                        <input type="checkbox" value="${kw.id}" ${isChecked ? 'checked' : ''}
+                               class="banner-kw-check h-4 w-4 rounded border-neutral-300 text-orange-600">
+                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                            ${kw.image ? `<img src="/storage/${kw.image}" class="w-10 h-7 object-cover rounded flex-shrink-0">` : ''}
+                            <span class="text-xs text-neutral-700 truncate">${kw.nama_produk}</span>
+                        </div>`;
+                    keywordList.appendChild(div);
+                });
+
+                // Sync hidden input
+                updateKeywordIds();
+
+                // Set mode ke 'keyword' jika sudah ada existing banner keyword
+                if (existing.length > 0 && modeKeyword) {
+                    modeKeyword.checked = true;
+                    if (modeGeneral) modeGeneral.checked = false;
+                    toggleKeywordSection();
+                }
+
+                keywordList.querySelectorAll('.banner-kw-check').forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        // Max 5
+                        const allChecked = Array.from(keywordList.querySelectorAll('.banner-kw-check:checked'));
+                        if (allChecked.length > 5) {
+                            this.checked = false;
+                            return;
+                        }
+                        updateKeywordIds();
+                    });
+                });
+            })
+            .catch(() => {
+                keywordList.innerHTML = '<p class="text-xs text-rose-500">Gagal memuat keyword.</p>';
+            });
+
+        function updateKeywordIds() {
+            const checked = Array.from(keywordList.querySelectorAll('.banner-kw-check:checked'));
+            if (keywordIds) keywordIds.value = checked.map(c => c.value).join(',');
+        }
+    };
+})();
 </script>

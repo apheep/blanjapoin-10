@@ -1,4 +1,4 @@
-<nav id="navbar" class="fixed top-0 left-0 right-0 z-[100] bg-white transition-shadow duration-300 w-full" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100; width: 100%;">
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-[30] bg-white transition-shadow duration-300 w-full" style="position: fixed; top: 0; left: 0; right: 0; z-index: 30; width: 100%;">
     <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
      <div class="flex items-center justify-between">
   <div class="flex items-center gap-4 md:gap-6">

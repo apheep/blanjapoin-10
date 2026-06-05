@@ -25,6 +25,7 @@ class Iklan extends Model
         'merchant_key',
         'merchant_keys',
         'keyword_id',
+        'apply_scope',
         'order',
     ];
 
