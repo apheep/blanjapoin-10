@@ -136,7 +136,7 @@
         // Auto redirect untuk WhatsApp/Telegram
         if (shouldAutoRedirect && redirectUrl) {
             setTimeout(function() {
-                window.open(redirectUrl, '_blank');
+                window.location.href = redirectUrl;
             }, 1000);
         }
 

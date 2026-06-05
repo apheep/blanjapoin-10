@@ -170,7 +170,168 @@
                     Temukan merchant dan promo menarik di {{ $locationName }}
                 </p>
             </div>
-            
+
+            @php
+                $allDaerah = \App\Models\Merchant::query()
+                    ->whereNotNull('daerah')
+                    ->where('daerah', '!=', '')
+                    ->distinct()
+                    ->pluck('daerah');
+                
+                $locationList = collect($allDaerah->map(function($daerah) {
+                    return extractKabupatenKota($daerah);
+                })
+                ->filter()
+                ->unique()
+                ->values());
+            @endphp
+
+            <!-- Category Section -->
+            <div class="opacity-0 translate-y-8 transition-all duration-700 ease-out delay-200 pt-1 md:pt-2 mt-4 md:mt-8" id="categorySection">
+                <!-- Mobile Version: 5 columns (4 categories + See All) -->
+                <div class="grid grid-cols-5 gap-2 md:hidden">
+                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-rose-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
+                    </button>
+                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-indigo-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
+                    </button>
+                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-purple-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
+                    </button>
+                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-pink-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
+                    </button>
+                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-1.5 rounded-xl bg-white p-2.5 text-center shadow-md drop-shadow-sm ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-105 hover:ring-orange-300 active:scale-95">
+                        <span class="grid h-10 w-10 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-[9px] font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
+                    </button>
+                </div>
+
+                <!-- Desktop Version: 6 columns (5 categories + See All) -->
+                <div class="hidden md:grid grid-cols-6 gap-4">
+                    <button onclick="filterCategory('food')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-rose-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/food.png') }}" alt="Food" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-rose-600 transition-colors leading-tight">Kuliner</span>
+                    </button>
+                    <button onclick="filterCategory('entertain')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-indigo-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/entertain.png') }}" alt="Entertain" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-indigo-600 transition-colors leading-tight">Hiburan</span>
+                    </button>
+                    <button onclick="filterCategory('vacation')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-purple-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/vacation.png') }}" alt="Vacation" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-purple-600 transition-colors leading-tight">Liburan</span>
+                    </button>
+                    <button onclick="filterCategory('beauty')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-xl hover:scale-110 hover:ring-pink-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/beauty.png') }}" alt="Beauty" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-pink-600 transition-colors leading-tight">Kecantikan</span>
+                    </button>
+                    <button onclick="filterCategory('shop')" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/shop.png') }}" alt="Shop" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Belanja</span>
+                    </button>
+                    <button onclick="openCategorySheet()" class="group flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center shadow-lg drop-shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-2xl hover:drop-shadow-xl hover:scale-110 hover:ring-orange-300 hover:-translate-y-1 active:scale-95">
+                        <span class="grid h-16 w-16 place-items-center rounded-full bg-white transition-transform group-hover:scale-125 group-hover:rotate-12">
+                            <img src="{{ asset('images/categories/all.png') }}" alt="Lihat Semua" class="w-full h-full object-contain">
+                        </span>
+                        <span class="text-xs font-bold text-neutral-700 group-hover:text-orange-600 transition-colors leading-tight">Lihat Semua</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <section class="mt-4 md:mt-6 opacity-0 translate-y-8 transition-all duration-700 ease-out delay-400 relative" id="searchSection" style="overflow: visible !important; z-index: 10;">
+                <!-- Mobile Version -->
+                <div class="md:hidden flex items-center gap-2">
+                    <div class="flex-1 rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
+                        <div class="flex items-center gap-2 text-neutral-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-neutral-400">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input id="mobileSearchInput" class="w-full bg-transparent text-xs outline-none placeholder:text-neutral-400 font-semibold" placeholder="Search Product" />
+                        </div>
+                    </div>
+                    <button onclick="openMobileLocationSheet()" id="mobileLocationBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+                            <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <button onclick="openMobilePointSheet()" id="mobilePointBtn" class="rounded-lg bg-white px-3 py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all hover:shadow-lg active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-500">
+                            <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Desktop Version -->
+                <div class="hidden md:flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 max-w-3xl" style="overflow: visible !important; position: relative; z-index: 10;">
+                    <div class="flex-1 rounded-lg md:rounded-xl bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md ring-1 ring-neutral-200/50 transition-all focus-within:ring-2 focus-within:ring-orange-400 focus-within:shadow-lg">
+                        <div class="flex items-center gap-2 text-neutral-500">
+                            <span class="text-base md:text-lg">🔍</span>
+                            <input id="desktopSearchInput" class="w-full bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold" placeholder="Cari produk atau voucher..." />
+                        </div>
+                    </div>
+                    <div class="relative rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 shadow-md">
+                        <div class="flex items-center gap-2 text-neutral-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-neutral-400">
+                                <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                            </svg>
+                            <input id="locationInput" autocomplete="off" class="bg-transparent text-xs md:text-sm outline-none placeholder:text-neutral-400 font-semibold w-32" placeholder="Location" />
+                        </div>
+                        <div id="locationDropdown" class="absolute left-0 right-0 mt-1 z-50 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-56 overflow-auto hidden backdrop-blur-sm"></div>
+                    </div>
+                    <div class="relative z-10" style="z-index: 10 !important; position: relative; overflow: visible !important;">
+                        <button onclick="toggleSortDropdown()" id="sortDropdownBtn" class="flex items-center justify-between w-full rounded-lg md:rounded-xl border border-neutral-200 bg-white px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold shadow-md transition-all hover:shadow-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 outline-none cursor-pointer min-w-[180px] relative z-10" style="z-index: 10 !important; position: relative;">
+                            <span id="sortSelectedText">According To Your Point</span>
+                            <svg id="sortDropdownArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-neutral-500 transition-transform duration-300">
+                                <path d="M7 10l5 5 5-5z"/>
+                            </svg>
+                        </button>
+                        <div id="sortDropdown" class="absolute left-0 right-0 mt-1 w-full rounded-lg md:rounded-xl bg-white shadow-xl ring-1 ring-neutral-200 overflow-hidden opacity-0 invisible scale-95 origin-top transition-all duration-300 ease-out z-[60] backdrop-blur-sm pointer-events-none" style="z-index: 60 !important; position: absolute !important;">
+                            <div class="py-1">
+                                <button onclick="selectSortOption('Lowest')" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative z-10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-green-500 pointer-events-none">
+                                        <path d="M7 14l5-5 5 5z"/>
+                                    </svg>
+                                    <span class="pointer-events-none">Lowest</span>
+                                </button>
+                                <button type="button" onclick="selectSortOption('Highest'); return false;" class="w-full text-left px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold text-neutral-700 hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center gap-2 cursor-pointer pointer-events-auto relative" style="pointer-events: auto !important; position: relative; z-index: 60 !important;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 text-red-500 pointer-events-none" style="pointer-events: none;">
+                                        <path d="M7 10l5 5 5-5z"/>
+                                    </svg>
+                                    <span class="pointer-events-none" style="pointer-events: none;">Highest</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {{-- <!-- Spesial Promo Section -->
             <div class="mt-0 md:mt-1 -mb-6 md:-mb-8">
                 <style>
@@ -430,6 +591,332 @@
         }
 
 
+
+        // === Location Page Filter: Search + Sort + Category (Welcome Style) ===
+        (function() {
+            // Location searchable select (combobox)
+            const serverLocations = <?php echo $locationList->toJson(); ?>;
+            const uniqueLocations = serverLocations.reduce((acc, location) => {
+                const normalized = location.toLowerCase();
+                if (!acc.map.has(normalized)) {
+                    acc.map.set(normalized, location);
+                    acc.list.push(location);
+                }
+                return acc;
+            }, { map: new Map(), list: [] }).list;
+            const locations = ['All', ...uniqueLocations];
+
+            const locationInput = document.getElementById('locationInput');
+            const locationDropdown = document.getElementById('locationDropdown');
+            const mobileSearchInput = document.getElementById('mobileSearchInput');
+            const desktopSearchInput = document.getElementById('desktopSearchInput');
+
+            let voucherSections = new Map();
+            let voucherCards = [];
+            let currentLocationFilter = '';
+            let currentPointSort = 'Lowest';
+            let mobilePointFilter = 'Lowest';
+
+            function refreshVoucherCards() {
+                voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
+            }
+
+            function registerVoucherSections() {
+                voucherSections.clear();
+                let fallbackIndex = 0;
+                document.querySelectorAll('[data-voucher-container="true"]').forEach(container => {
+                    const sectionKey = container.dataset.voucherSection || `container-${fallbackIndex++}`;
+                    if (!voucherSections.has(sectionKey)) {
+                        voucherSections.set(sectionKey, []);
+                    }
+                    voucherSections.get(sectionKey).push({
+                        element: container,
+                        slotCount: container.querySelectorAll('[data-voucher-card="true"]').length
+                    });
+                });
+            }
+
+            function cardPointValue(card) {
+                const pointValue = card?.dataset?.point ?? '0';
+                return pointValue.toString().replace(/[^\d.-]/g, '') || '0';
+            }
+
+            // Real-time client-side search by name
+            function applyClientSearch(q) {
+                const query = (q || '').toLowerCase().trim();
+                const locationQuery = (currentLocationFilter || '').toLowerCase().trim();
+                
+                voucherCards.forEach(card => {
+                    const name = (card.dataset.searchName || '').toLowerCase();
+                    const cardLocation = (card.dataset.searchLocation || '').toLowerCase();
+                    const matchesName = query === '' || name.includes(query);
+                    const matchesLocation = locationQuery === '' || cardLocation.includes(locationQuery);
+                    card.style.display = (matchesName && matchesLocation) ? '' : 'none';
+                });
+            }
+
+            function updateLocationFilter(value) {
+                const normalizedValue = (value ?? '').toString().toLowerCase().trim();
+                currentLocationFilter = normalizedValue === 'all' ? '' : normalizedValue;
+                const searchQ = (mobileSearchInput && mobileSearchInput.value) || (desktopSearchInput && desktopSearchInput.value) || '';
+                applyClientSearch(searchQ);
+            }
+
+            window.applyPointSort = function(order = 'Lowest') {
+                currentPointSort = order === 'Highest' ? 'Highest' : 'Lowest';
+                if (voucherSections.size === 0) registerVoucherSections();
+
+                voucherSections.forEach(containerInfos => {
+                    const cards = [];
+                    containerInfos.forEach(info => cards.push(...info.element.querySelectorAll('[data-voucher-card="true"]')));
+                    if (cards.length === 0) return;
+
+                    const sortedCards = cards.slice().sort((a, b) => {
+                        const aPoint = parseFloat(cardPointValue(a)) || 0;
+                        const bPoint = parseFloat(cardPointValue(b)) || 0;
+                        return currentPointSort === 'Lowest' ? aPoint - bPoint : bPoint - aPoint;
+                    });
+
+                    let cursor = 0;
+                    containerInfos.forEach(info => {
+                        const slice = sortedCards.slice(cursor, cursor + info.slotCount);
+                        cursor += info.slotCount;
+                        info.element.innerHTML = '';
+                        slice.forEach(card => info.element.appendChild(card));
+                    });
+                });
+
+                refreshVoucherCards();
+                const searchQ = (mobileSearchInput && mobileSearchInput.value) || (desktopSearchInput && desktopSearchInput.value) || '';
+                applyClientSearch(searchQ);
+            }
+
+            // --- Dropdowns & Selection ---
+            let sortDropdownOpen = false;
+            window.toggleSortDropdown = function() {
+                const dropdown = document.getElementById('sortDropdown');
+                const arrow = document.getElementById('sortDropdownArrow');
+                if (!sortDropdownOpen) {
+                    dropdown.classList.remove('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+                    dropdown.style.zIndex = '60';
+                    dropdown.style.display = 'block';
+                    dropdown.style.visibility = 'visible';
+                    dropdown.style.opacity = '1';
+                    dropdown.style.position = 'absolute';
+                    dropdown.classList.add('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+                    arrow.classList.add('rotate-180');
+                    sortDropdownOpen = true;
+                } else {
+                    dropdown.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+                    dropdown.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+                    dropdown.style.opacity = '0';
+                    dropdown.style.visibility = 'hidden';
+                    arrow.classList.remove('rotate-180');
+                    sortDropdownOpen = false;
+                }
+            }
+
+            window.selectSortOption = function(option) {
+                document.getElementById('sortSelectedText').textContent = option;
+                mobilePointFilter = option;
+                applyPointSort(option);
+                const dropdown = document.getElementById('sortDropdown');
+                const arrow = document.getElementById('sortDropdownArrow');
+                dropdown.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+                dropdown.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+                dropdown.style.opacity = '0';
+                dropdown.style.visibility = 'hidden';
+                arrow.classList.remove('rotate-180');
+                sortDropdownOpen = false;
+            }
+
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('sortDropdown');
+                const button = document.getElementById('sortDropdownBtn');
+                const arrow = document.getElementById('sortDropdownArrow');
+                if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target) && sortDropdownOpen) {
+                    dropdown.classList.remove('opacity-100', 'visible', 'scale-100', 'pointer-events-auto');
+                    dropdown.classList.add('opacity-0', 'invisible', 'scale-95', 'pointer-events-none');
+                    dropdown.style.opacity = '0';
+                    dropdown.style.visibility = 'hidden';
+                    arrow.classList.remove('rotate-180');
+                    sortDropdownOpen = false;
+                }
+                if (locationDropdown && !locationDropdown.contains(event.target) && event.target !== locationInput) {
+                    locationDropdown.classList.add('hidden');
+                }
+            });
+
+            // Location searchable input logic
+            function renderLocationOptions(filter = '') {
+                const f = filter.trim().toLowerCase();
+                const options = locations.filter(l => f === '' ? true : l.toLowerCase().includes(f));
+                if (options.length === 0) {
+                    locationDropdown.innerHTML = '<div class="px-3 py-2 text-sm text-neutral-500">No results</div>';
+                    return;
+                }
+                locationDropdown.innerHTML = options.map(l => `
+                    <div class="px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer" data-value="${l}">${l.toUpperCase()}</div>
+                `).join('');
+            }
+
+            // Client side Search Input listener
+            const searchPageUrl = "{{ route('merchant.search') }}";
+            window.goToSearchPage = function(query) {
+                const trimmedQuery = (query || '').trim();
+                if (trimmedQuery.length === 0) return;
+                window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
+            }
+
+            if (mobileSearchInput) {
+                mobileSearchInput.addEventListener('input', (e) => applyClientSearch(e.target.value));
+                mobileSearchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); goToSearchPage(e.target.value); }
+                });
+            }
+
+            if (desktopSearchInput) {
+                desktopSearchInput.addEventListener('input', (e) => applyClientSearch(e.target.value));
+                desktopSearchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); goToSearchPage(e.target.value); }
+                });
+            }
+
+            // Animation and Initialization
+            document.addEventListener('DOMContentLoaded', function() {
+                const sections = ['categorySection', 'searchSection'];
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+                
+                sections.forEach(id => {
+                    const section = document.getElementById(id);
+                    if (section) observer.observe(section);
+                });
+
+                refreshVoucherCards();
+                registerVoucherSections();
+            });
+
+            // Category and Sheet logic
+            window.filterCategory = function(category) {
+                const selectedSection = document.getElementById('section-' + category);
+                if (selectedSection) {
+                    const navbar = document.getElementById('navbar');
+                    const navbarHeight = navbar ? navbar.offsetHeight : 0;
+                    window.scrollTo({ top: selectedSection.getBoundingClientRect().top + window.pageYOffset - navbarHeight - 20, behavior: 'smooth' });
+                }
+            }
+
+            function buildRadioList(options, selectedValue) {
+                return `
+                    <div class="py-2">
+                        ${options.map(o => `
+                            <button type="button" class="w-full flex items-center justify-between px-6 py-4 text-base text-neutral-800 hover:bg-neutral-50" data-value="${o}">
+                                <span>${o}</span>
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full border ${o===selectedValue? 'border-green-600':'border-neutral-300'}">
+                                    <span class="w-3 h-3 rounded-full ${o===selectedValue? 'bg-green-600':'bg-transparent'}"></span>
+                                </span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            window.openMobilePointSheet = function() {
+                const options = ['Lowest','Highest'];
+                const html = buildRadioList(options, mobilePointFilter);
+                openBottomSheet('Filter Poin', html);
+                const holder = document.getElementById('bottomSheetContent');
+                holder.addEventListener('click', function onClick(e){
+                    const btn = e.target.closest('[data-value]');
+                    if (!btn) return;
+                    const val = btn.getAttribute('data-value');
+                    mobilePointFilter = val;
+                    const dt = document.getElementById('sortSelectedText');
+                    if (dt) dt.textContent = val;
+                    applyPointSort(val);
+                    closeBottomSheet();
+                    holder.removeEventListener('click', onClick);
+                });
+            }
+
+            window.openMobileLocationSheet = function() {
+                const searchId = 'mobileLocationSearchField';
+                const listId = 'mobileLocationListHolder';
+                const listHtml = `
+                    <div class="p-4">
+                        <div class="flex items-center gap-2 rounded-xl border border-neutral-200 px-4 py-2.5">
+                            <span>🔍</span>
+                            <input id="${searchId}" class="w-full bg-transparent outline-none text-sm" placeholder="Cari lokasi" />
+                        </div>
+                    </div>
+                    <div id="${listId}" class="pb-4"></div>
+                `;
+                openBottomSheet('Pilih Lokasi', listHtml);
+                const renderList = (q='') => {
+                    const holder = document.getElementById(listId);
+                    const f = q.trim().toLowerCase();
+                    const opts = locations.filter(l => f===''? true : l.toLowerCase().includes(f));
+                    holder.innerHTML = opts.map(l => `
+                        <button type="button" class="w-full text-left px-6 py-4 text-base hover:bg-neutral-50" data-value="${l}">${l.toUpperCase()}</button>
+                    `).join('') || '<div class="px-6 py-4 text-neutral-500">Tidak ada hasil</div>';
+                };
+                renderList();
+                const search = document.getElementById(searchId);
+                search?.addEventListener('input', (e) => renderList(e.target.value));
+                const content = document.getElementById('bottomSheetContent');
+                content.addEventListener('click', function onClick(e){
+                    const item = e.target.closest('[data-value]');
+                    if (!item) return;
+                    const selectedLocation = item.getAttribute('data-value');
+                    if (locationInput) locationInput.value = selectedLocation;
+                    window.location.href = `{{ url('/city') }}/${selectedLocation.trim().replace(/^(Kota|Kabupaten)\s+/i, '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}`;
+                    closeBottomSheet();
+                    content.removeEventListener('click', onClick);
+                });
+            }
+
+            window.openCategorySheet = function() {
+                const baseAssetPath = '{{ asset("images/categories") }}';
+                const categories = [
+                    { id: 'food', name: 'Kuliner', icon: 'food.png', color: 'rose' },
+                    { id: 'entertain', name: 'Lifestyle', icon: 'entertain.png', color: 'indigo' },
+                    { id: 'vacation', name: 'Liburan', icon: 'vacation.png', color: 'purple' },
+                    { id: 'beauty', name: 'Kesehatan & Kecantikan', icon: 'beauty.png', color: 'pink' },
+                    { id: 'shop', name: 'Belanja', icon: 'shop.png', color: 'orange' },
+                    { id: 'telkomsel', name: 'Telkomsel Data', icon: 'telkomsel.png', color: 'red' },
+                    { id: 'merchandise', name: 'Merchandise', icon: 'merchandise.png', color: 'blue' },
+                    { id: 'paketvideo', name: 'Paket Video', icon: 'paketvideo.png', color: 'purple' },
+                    { id: 'paketgames', name: 'Paket Games', icon: 'paketgames.png', color: 'green' }
+                ];
+                
+                const categoryHtml = `
+                    <div class="grid grid-cols-3 gap-3 p-4">
+                        ${categories.map(cat => `
+                            <button onclick="selectCategoryFromSheet('${cat.id}')" class="group flex flex-col items-center gap-2 rounded-xl bg-white p-4 text-center shadow-md ring-1 ring-neutral-100/50 transition-all hover:shadow-lg hover:scale-105 hover:ring-${cat.color}-300 active:scale-95">
+                                <span class="grid h-14 w-14 place-items-center rounded-full bg-white transition-transform group-hover:scale-110">
+                                    <img src="${baseAssetPath}/${cat.icon}" alt="${cat.name}" class="${cat.id==='telkomsel' ? 'w-17 h-17' : 'w-full h-full'} object-contain">
+                                </span>
+                                <span class="text-[10px] font-bold text-neutral-700 group-hover:text-${cat.color}-600 transition-colors leading-tight text-center">${cat.name}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                openBottomSheet('Kategori Merchant', categoryHtml);
+            }
+
+            window.selectCategoryFromSheet = function(category) {
+                closeBottomSheet();
+                setTimeout(() => filterCategory(category), 300);
+            }
+        })();
 
         // Territorial Description Bottom Sheet Function
         function openTerritorialDescriptionSheet(keywordId, merchantName, productName, skb, diskon) {

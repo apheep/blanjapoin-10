@@ -1,4 +1,4 @@
-<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-white transition-shadow duration-300 w-full" style="position: fixed; top: 0; left: 0; right: 0; z-index: 50; width: 100%;">
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-[100] bg-white transition-shadow duration-300 w-full" style="position: fixed; top: 0; left: 0; right: 0; z-index: 100; width: 100%;">
     <div class="mx-auto max-w-7xl px-2 sm:px-4 md:px-6 lg:px-8 py-4 md:py-5 lg:py-6 relative">
      <div class="flex items-center justify-between">
   <div class="flex items-center gap-4 md:gap-6">
@@ -6,14 +6,14 @@
   </div>
 
       <div class="hidden md:flex items-center gap-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      @if(Auth::check() && Auth::user()->can_approve == 1) 
-        <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
         <a href="{{ route('iklan.index') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Top Banner</a>
-        <a href="{{ route('spesial-promo.form') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Best Offer</a>
-        <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>           
-        <a href="{{ route('withdraw.approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Withdraw Approval</a>  
-        <a href="{{ route('click.history.index') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Redeem History</a>        
-         @endif
+        @if(Auth::check() && Auth::user()->can_approve == 1) 
+          <a href="{{ route('admin') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Home</a>
+          <a href="{{ route('spesial-promo.form') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Best Offer</a>
+          <a href="{{ route('user.management') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">User Management</a>           
+          <a href="{{ route('withdraw.approval') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Withdraw Approval</a>  
+          <a href="{{ route('click.history.index') }}" class="text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] bg-clip-text text-transparent hover:opacity-80 transition-opacity">Redeem History</a>        
+        @endif
       </div>
 
        <div class="relative" style="overflow: visible;">
@@ -75,6 +75,10 @@
 
     <!-- Menu Items -->
     <div class="flex-1 overflow-y-auto py-2">
+      <a href="{{ route('iklan.index') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="fa-solid fa-image w-5 text-gray-500"></i>
+        <span class="font-medium">Top Banner</span>
+      </a>
       @if(Auth::check() && Auth::user()->can_approve == 1)
         <a href="{{ route('admin') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="fa-solid fa-home w-5 text-gray-500"></i>
@@ -83,10 +87,6 @@
         <a href="{{ route('user.management') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="fa-solid fa-users w-5 text-gray-500"></i>
           <span class="font-medium">User Management</span>
-        </a>
-        <a href="{{ route('iklan.index') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-image w-5 text-gray-500"></i>
-          <span class="font-medium">Iklan</span>
         </a>
         <a href="{{ route('withdraw.approval') }}" class="flex items-center gap-3 px-4 py-3 mx-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="fa-solid fa-money-bill-transfer w-5 text-gray-500"></i>

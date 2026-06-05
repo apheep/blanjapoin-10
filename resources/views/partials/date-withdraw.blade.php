@@ -1,4 +1,4 @@
-<div class="relative inline-block" style="z-index: 50;">
+<div class="relative inline-block" style="z-index: 40;">
     <button type="button" onclick="toggleWithdrawDateFilter('{{ $filterId }}', event); return false;" class="flex items-center px-3 py-2 text-sm rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200">
         <i class="fas fa-calendar-alt mr-2 text-xs"></i>
         <span>Date</span>

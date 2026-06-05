@@ -67,7 +67,7 @@ class TselepoinRedeem extends Model
      */
     public function scopeBlanjapoin($query)
     {
-        return $query->where('program', 'BLANJAPOIN');
+        return $query;
     }
 
     /**

@@ -1,6 +1,6 @@
 <section id="section-shop" class="mt-14 md:mt-24 mb-10 md:mb-14">
      <div class="mb-4 md:mb-6 flex items-center justify-between">
-      <h2 class="text-xl md:text-3xl font-black text-neutral-900">🛍️​ Belanja</h2>
+      <h2 class="text-xl md:text-3xl font-black text-neutral-900" style="color: #111827 !important;">🛍️​ Belanja</h2>
      </div>
      @php
        $shopCategory = 'belanja';

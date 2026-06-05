@@ -34,10 +34,37 @@
             </div>
         @endif
 
+        @php
+            $canAddIklan = $isUserMaha || ($userScope['type'] !== 'none');
+        @endphp
+
+        @if(!$isUserMaha)
+        <div class="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3">
+            <i class="fas fa-shield-alt text-amber-500 mt-0.5 flex-shrink-0"></i>
+            <div class="text-sm text-amber-800">
+                <span class="font-semibold">Akses Terbatas.</span>
+                Anda hanya dapat mengelola iklan sesuai teritorial Anda
+                @if($userScope['type'] === 'regional') <span class="font-semibold">(Regional: {{ $userScope['value'] }})</span>
+                @elseif($userScope['type'] === 'branch') <span class="font-semibold">(Branch: {{ $userScope['value'] }})</span>
+                @elseif($userScope['type'] === 'city') <span class="font-semibold">(Kota: {{ $userScope['value'] }})</span>
+                @elseif($userScope['type'] === 'area') <span class="font-semibold">(Area)</span>
+                @elseif($userScope['type'] === 'national') <span class="font-semibold">(Semua wilayah – non-general)</span>
+                @elseif($userScope['type'] === 'none') <span class="font-semibold text-rose-700">(Wilayah tidak diatur, hubungi admin)</span>
+                @endif
+            </div>
+        </div>
+        @endif
+
         <div class="grid md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-lg p-6 border border-neutral-100">
                 <h2 class="text-xl font-semibold text-neutral-800 mb-1">Tambah Iklan Baru</h2>
                 <p class="text-sm text-neutral-500 mb-5">Unggah file gambar dengan format 5:1 aspect ratio (JPG, PNG, maksimal 2 MB). </p>
+                @if(!$canAddIklan)
+                <div class="rounded-xl bg-rose-50 border border-rose-200 px-4 py-4 flex items-center gap-3">
+                    <i class="fas fa-lock text-rose-400"></i>
+                    <p class="text-sm text-rose-700 font-medium">Wilayah Anda belum diatur. Hubungi Admin Pusat untuk mengatur teritorial akun Anda.</p>
+                </div>
+                @else
                 <form id="uploadForm" action="{{ route('iklan.store') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
                     @csrf
                     
@@ -139,19 +166,43 @@
                                class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
                                required>
                     </label>
+                    <label class="inline-flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 bg-neutral-50">
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="h-4 w-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500">
+                        <span class="text-sm font-semibold text-neutral-700">Iklan aktif</span>
+                        <span class="text-xs text-neutral-500">Banner hanya tampil jika status ini aktif.</span>
+                    </label>
                     <label class="block">
-                        <span class="text-sm font-semibold text-neutral-700">Target Lokasi <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
+                        <span class="text-sm font-semibold text-neutral-700">Target Lokasi
+                            @if(!$isUserMaha)
+                                <span class="text-xs font-normal text-amber-600"><i class="fas fa-lock text-xs mr-1"></i>Dibatasi sesuai teritorial Anda</span>
+                            @else
+                                <span class="text-xs text-neutral-400 font-normal">(Opsional)</span>
+                            @endif
+                        </span>
                         <div class="mt-2 relative">
                             <select id="locationTypeInput" class="hidden">
-                                <option value="general" {{ old('location_type') === 'general' || (!old('location_type') && !old('territorial') && !old('regional') && !old('branch') && !old('cluster') && !old('merchant_key')) ? 'selected' : '' }}>General (Tampil di semua halaman jika tidak ada banner spesifik)</option>
-                                <option value="territorial" {{ old('location_type') === 'territorial' ? 'selected' : '' }}>Teritorial</option>
-                                <option value="regional" {{ old('location_type') === 'regional' ? 'selected' : '' }}>Regional</option>
-                                <option value="branch" {{ old('location_type') === 'branch' ? 'selected' : '' }}>Branch</option>
-                                <option value="cluster" {{ old('location_type') === 'cluster' ? 'selected' : '' }}>Cluster</option>
-                                <option value="merchant" {{ old('location_type') === 'merchant' ? 'selected' : '' }}>Merchant/Program</option>
+                                @foreach(['general'=>'General (Tampil di semua halaman jika tidak ada banner spesifik)','territorial'=>'Teritorial','regional'=>'Regional','branch'=>'Branch','cluster'=>'Cluster','merchant'=>'Merchant/Program'] as $locVal => $locLabel)
+                                    @if(in_array($locVal, $allowedLocTypes))
+                                        <option value="{{ $locVal }}"
+                                            {{ old('location_type') === $locVal ? 'selected'
+                                               : ($locVal === 'general' && $isUserMaha && !old('location_type') && !old('territorial') && !old('regional') && !old('branch') && !old('cluster') && !old('merchant_key') ? 'selected' : '') }}>
+                                            {{ $locLabel }}
+                                        </option>
+                                    @endif
+                                @endforeach
                             </select>
                             <button type="button" id="locationTypeBtn" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 text-left flex items-center justify-between bg-white hover:border-neutral-300 transition">
-                                <span id="locationTypeText">General (Tampil di semua halaman jika tidak ada banner spesifik)</span>
+                                <span id="locationTypeText">
+                                    @if($isUserMaha)
+                                        General (Tampil di semua halaman jika tidak ada banner spesifik)
+                                    @elseif(in_array('territorial', $allowedLocTypes) && count($allowedLocTypes) === 1)
+                                        Teritorial
+                                    @elseif($allowedLocTypes[0] ?? false)
+                                        {{ ['general'=>'General','territorial'=>'Teritorial','regional'=>'Regional','branch'=>'Branch','cluster'=>'Cluster','merchant'=>'Merchant/Program'][$allowedLocTypes[0]] ?? '-- Pilih Tipe Lokasi --' }}
+                                    @else
+                                        -- Pilih Tipe Lokasi --
+                                    @endif
+                                </span>
                                 <i class="fas fa-chevron-down text-neutral-400 text-xs"></i>
                             </button>
                             <div id="locationTypeDropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
@@ -159,16 +210,19 @@
                                     <input type="text" id="locationTypeSearch" placeholder="Cari tipe lokasi..." class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-400">
                                 </div>
                                 <div id="locationTypeOptions" class="overflow-y-auto max-h-48">
-                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="general">General (Tampil di semua halaman jika tidak ada banner spesifik)</div>
-                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="territorial">Teritorial</div>
-                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="regional">Regional</div>
-                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="branch">Branch</div>
-                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="cluster">Cluster</div>
-                                    <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="merchant">Merchant/Program</div>
+                                    @foreach(['general'=>'General (Tampil di semua halaman jika tidak ada banner spesifik)','territorial'=>'Teritorial','regional'=>'Regional','branch'=>'Branch','cluster'=>'Cluster','merchant'=>'Merchant/Program'] as $locVal => $locLabel)
+                                        @if(in_array($locVal, $allowedLocTypes))
+                                        <div class="location-type-option px-3 py-2 text-sm hover:bg-neutral-100 cursor-pointer rounded-lg" data-value="{{ $locVal }}">{{ $locLabel }}</div>
+                                        @endif
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
+                        @if($isUserMaha)
                         <p class="text-xs text-neutral-500 mt-1">Pilih General untuk banner default, atau pilih lokasi spesifik. Banner spesifik akan muncul di lokasi tersebut, banner general akan muncul jika tidak ada banner spesifik.</p>
+                        @else
+                        <p class="text-xs text-amber-600 mt-1"><i class="fas fa-info-circle mr-1"></i>Hanya tipe lokasi dalam cakupan teritorial Anda yang tersedia. Pilihan kota/branch/cluster sudah difilter sesuai wilayah Anda.</p>
+                        @endif
                     </label>
                     <label class="block hidden" id="territorialLabel">
                         <span class="text-sm font-semibold text-neutral-700">Pilih Teritorial</span>
@@ -300,6 +354,7 @@
                         Simpan Iklan
                     </button>
                 </form>
+                @endif
             </div>
 
             <div class="bg-white rounded-2xl shadow-lg p-6 border border-neutral-100">
@@ -401,10 +456,13 @@
                 <table class="min-w-full divide-y divide-neutral-100 text-sm">
                     <thead class="text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">
                         <tr>
+                        @if($isUserMaha)
                         <th class="py-3 text-center w-12 md:w-12 pr-3 md:pr-0"></th>
+                        @endif
                         <th class="py-3 px-2 md:px-0 text-left pl-3 md:pl-0">No</th>
                         <th class="py-3 px-2 md:px-0 text-center">Preview</th>
                         <th class="py-3 px-2 md:px-3 text-center">Link</th>
+                        <th class="py-3 px-2 md:px-3 text-center">Status</th>
                         <th class="py-3 px-2 md:px-3 text-center">Lokasi</th>
                         <th class="py-3 px-2 md:px-3 text-center">Aksi</th>
                         </tr>
@@ -444,9 +502,7 @@
                                     $locationRoute = route('cluster.show', $iklan->cluster);
                                 } elseif ($iklan->merchant_keys || $iklan->merchant_key) {
                                     $locationType = 'merchant';
-                                    // Get merchants from merchant_keys JSON or fallback to merchant_key
-                                    $merchantsList = $iklan->merchants; // Use accessor
-                                    
+                                    $merchantsList = $iklan->merchants;
                                     if ($merchantsList->isNotEmpty()) {
                                         $merchantNames = $merchantsList->pluck('nama_merchant')->toArray();
                                         $locationName = implode(', ', $merchantNames);
@@ -457,22 +513,62 @@
                                         $locationSlug = '';
                                     }
                                     $locationDisplay = 'Merchant/Program';
-                                    $locationRoute = null; // Multiple merchants, no single route
+                                    $locationRoute = null;
                                 } else {
                                     $locationType = 'general';
                                     $locationDisplay = 'General';
                                 }
                                 
                                 $filterValue = $locationType === 'general' ? 'general' : ($locationType . ':' . $locationSlug);
+
+                                // Determine if current user can manage this specific iklan
+                                // Uses the same hierarchical logic as the controller's getAllowedSlugsForScope()
+                                $canManageThisIklan = $isUserMaha;
+                                if (!$isUserMaha && $locationType !== 'general') {
+                                    switch ($userScope['type']) {
+                                        case 'national':
+                                            $canManageThisIklan = ($locationType !== 'general');
+                                            break;
+                                        case 'area':
+                                            // All types within the area are allowed
+                                            $canManageThisIklan = in_array($locationType, $allowedLocTypes);
+                                            break;
+                                        case 'regional':
+                                            // Own regional, plus any branch/cluster/city within their regional
+                                            if ($locationType === 'regional') {
+                                                $canManageThisIklan = ($iklan->regional === $userScope['slug']);
+                                            } elseif (in_array($locationType, ['branch','cluster','territorial'])) {
+                                                // The territories/branches/clusters dropdown is already filtered to this regional
+                                                // We just check the type is allowed
+                                                $canManageThisIklan = in_array($locationType, $allowedLocTypes);
+                                            }
+                                            break;
+                                        case 'branch':
+                                            // Own branch, plus cluster/city within their branch
+                                            if ($locationType === 'branch') {
+                                                $canManageThisIklan = ($iklan->branch === $userScope['slug']);
+                                            } elseif (in_array($locationType, ['cluster','territorial'])) {
+                                                $canManageThisIklan = in_array($locationType, $allowedLocTypes);
+                                            }
+                                            break;
+                                        case 'city':
+                                            $canManageThisIklan = ($locationType === 'territorial' && $iklan->territorial === $userScope['slug']);
+                                            break;
+                                        default:
+                                            $canManageThisIklan = false;
+                                    }
+                                }
                             @endphp
                             <tr data-iklan-id="{{ $iklan->id }}" 
                                 data-location="{{ $filterValue }}"
-                                class="cursor-move hover:bg-neutral-50 transition-all duration-300 ease-in-out draggable-row iklan-row">
+                                class="{{ $isUserMaha ? 'cursor-move draggable-row' : '' }} hover:bg-neutral-50 transition-all duration-300 ease-in-out iklan-row {{ !$canManageThisIklan ? 'opacity-60' : '' }}">
+                                @if($isUserMaha)
                                 <td class="py-3 text-center pr-3 md:pr-0">
                                     <div class="flex items-center justify-center cursor-grab active:cursor-grabbing">
                                         <i class="fas fa-grip-vertical text-neutral-400 hover:text-neutral-600 transition-colors"></i>
                                     </div>
                                 </td>
+                                @endif
                                 <td class="py-3 px-2 md:px-0 text-left pl-3 md:pl-0">
                                     {{ $loop->iteration }}
                                 </td>
@@ -490,6 +586,13 @@
                                     @else
                                         <span class="text-neutral-400 font-medium">-</span>
                                     @endif
+                                </td>
+                                <td class="py-3 px-2 md:px-3 text-center text-xs">
+                                    @php $bannerIsActive = (int) ($iklan->is_active ?? 1) === 1; @endphp
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg font-medium {{ $bannerIsActive ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500' }}">
+                                        <i class="fas {{ $bannerIsActive ? 'fa-circle-check' : 'fa-circle-xmark' }} text-[10px]"></i>
+                                        {{ $bannerIsActive ? 'Aktif' : 'Nonaktif' }}
+                                    </span>
                                 </td>
                                 <td class="py-3 px-2 md:px-3 text-center text-xs">
                                     @if ($locationType === 'general')
@@ -520,18 +623,38 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-2 md:px-3 text-center">
-                                    <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 md:w-10 md:h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
-                                            <i class="fas fa-trash-alt"></i>
+                                    <div class="inline-flex items-center gap-2">
+                                        @if($canManageThisIklan)
+                                        <button type="button"
+                                                class="inline-flex items-center justify-center w-10 h-10 md:w-10 md:h-10 rounded-lg text-orange-600 font-semibold hover:bg-orange-50 transition text-xs editTrigger"
+                                                title="Edit"
+                                                data-update-url="{{ route('iklan.update', $iklan) }}"
+                                                data-image-url="{{ asset('storage/' . $iklan->image_path) }}"
+                                                data-link="{{ $iklan->link_iklan ?? '' }}"
+                                                data-active="{{ $bannerIsActive ? '1' : '0' }}"
+                                                data-location="{{ $locationType === 'merchant' ? ($locationDisplay . ' - ' . $locationName) : ($locationDisplay ?? 'General') }}">
+                                            <i class="fas fa-pen"></i>
                                         </button>
-                                    </form>
+                                        @else
+                                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-neutral-300 text-xs" title="Di luar teritorial Anda">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        @endif
+                                        @if($canManageThisIklan)
+                                        <form id="deleteForm-{{ $iklan->id }}" action="{{ route('iklan.destroy', $iklan) }}" method="POST" class="inline-flex">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" data-delete-form="deleteForm-{{ $iklan->id }}" class="inline-flex items-center justify-center w-10 h-10 md:w-10 md:h-10 rounded-lg text-rose-600 font-semibold hover:bg-rose-50 transition text-xs deleteTrigger" title="Hapus">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                            <td colspan="6" class="py-6 text-center text-neutral-500 font-medium">
+                            <td colspan="7" class="py-6 text-center text-neutral-500 font-medium">
                                     Belum ada data iklan. Tambahkan gambar melalui form di atas.
                                 </td>
                             </tr>
@@ -641,6 +764,65 @@
     </div>
 </div>
 
+<div id="editConfirmationModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
+    <div id="editModalContent" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] transform transition-all duration-300 scale-95 opacity-0 flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center">
+                <div class="w-10 h-10 mr-4 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 flex items-center justify-center">
+                    <i class="fas fa-pen text-orange-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-neutral-900">Edit Iklan</h3>
+                    <p class="text-sm text-neutral-500" id="editLocationText">Perbarui detail banner dan status aktif.</p>
+                </div>
+            </div>
+            <button type="button" class="text-neutral-400 hover:text-neutral-600 transition" data-close-edit-modal>
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="editForm" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1">
+            @csrf
+            @method('PATCH')
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <p class="text-xs font-semibold text-neutral-600 mb-2">Preview saat ini</p>
+                    <div class="flex items-start gap-4">
+                        <div class="w-28 h-16 rounded-lg overflow-hidden bg-neutral-200 flex-shrink-0">
+                            <img id="editImagePreview" src="" alt="Preview Iklan" class="w-full h-full object-cover">
+                        </div>
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <p class="text-sm font-semibold text-neutral-800 truncate" id="editLocationValue">-</p>
+                            <p class="text-xs text-neutral-500">Gambar baru opsional. Jika tidak diubah, banner lama tetap dipakai.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="block">
+                    <span class="text-sm font-semibold text-neutral-700">Ganti Gambar <span class="text-xs text-neutral-400 font-normal">(Opsional)</span></span>
+                    <input id="editImageInput" type="file" name="image" accept="image/*"
+                           class="mt-2 block w-full text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer">
+                </label>
+
+                <label class="block">
+                    <span class="text-sm font-semibold text-neutral-700">CTA Link</span>
+                    <input id="editLinkInput" type="url" name="link_iklan" placeholder="https://contoh.com/promo"
+                           class="mt-2 block w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100">
+                </label>
+
+                <label class="inline-flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 bg-neutral-50 w-full">
+                    <input id="editIsActiveInput" type="checkbox" name="is_active" value="1" class="h-4 w-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500">
+                    <span class="text-sm font-semibold text-neutral-700">Iklan aktif</span>
+                </label>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-6 py-4 bg-neutral-50 rounded-b-2xl border-t border-neutral-100 flex-shrink-0">
+                <button type="button" data-close-edit-modal class="px-4 py-2 text-sm font-semibold text-neutral-600 bg-white border border-neutral-200 rounded-lg hover:bg-neutral-100 transition">Batal</button>
+                <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-rose-500 rounded-lg hover:shadow-lg transition">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // Script khusus halaman iklan
 // Merchant data for multiple selection
@@ -673,12 +855,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const uploadModalContent = document.getElementById('uploadModalContent');
     const deleteModal = document.getElementById('deleteConfirmationModal');
     const deleteModalContent = document.getElementById('deleteModalContent');
+    const editModal = document.getElementById('editConfirmationModal');
+    const editModalContent = document.getElementById('editModalContent');
+    const editForm = document.getElementById('editForm');
+    const editImagePreview = document.getElementById('editImagePreview');
+    const editImageInput = document.getElementById('editImageInput');
+    const editLinkInput = document.getElementById('editLinkInput');
+    const editIsActiveInput = document.getElementById('editIsActiveInput');
+    const editLocationText = document.getElementById('editLocationText');
+    const editLocationValue = document.getElementById('editLocationValue');
     const openConfirmBtn = document.getElementById('openConfirmModal');
     const confirmUploadBtn = document.getElementById('confirmUploadBtn');
     const closeUploadButtons = document.querySelectorAll('[data-close-upload]');
+    const editButtons = document.querySelectorAll('.editTrigger');
     const deleteButtons = document.querySelectorAll('.deleteTrigger');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const closeDeleteButtons = document.querySelectorAll('[data-close-delete]');
+    const closeEditButtons = document.querySelectorAll('[data-close-edit-modal]');
     let pendingDeleteForm = null;
 
     // Upload type handling
@@ -1565,6 +1758,65 @@ document.addEventListener('DOMContentLoaded', function () {
             if (event.target === deleteModal) {
                 closeModal(deleteModal, deleteModalContent);
             }
+        });
+    }
+
+    editButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const updateUrl = button.getAttribute('data-update-url') || '';
+            const imageUrl = button.getAttribute('data-image-url') || '';
+            const linkValue = button.getAttribute('data-link') || '';
+            const activeValue = button.getAttribute('data-active') === '1';
+            const locationValue = button.getAttribute('data-location') || '-';
+
+            if (editForm) {
+                editForm.setAttribute('action', updateUrl);
+            }
+            if (editImagePreview && imageUrl) {
+                editImagePreview.src = imageUrl;
+            }
+            if (editLinkInput) {
+                editLinkInput.value = linkValue;
+            }
+            if (editIsActiveInput) {
+                editIsActiveInput.checked = activeValue;
+            }
+            if (editLocationText) {
+                editLocationText.textContent = 'Edit iklan untuk ' + locationValue;
+            }
+            if (editLocationValue) {
+                editLocationValue.textContent = locationValue;
+            }
+            if (editImageInput) {
+                editImageInput.value = '';
+            }
+
+            openModal(editModal, editModalContent);
+        });
+    });
+
+    closeEditButtons.forEach(btn => {
+        btn.addEventListener('click', () => closeModal(editModal, editModalContent));
+    });
+
+    if (editModal) {
+        editModal.addEventListener('click', (event) => {
+            if (event.target === editModal) {
+                closeModal(editModal, editModalContent);
+            }
+        });
+    }
+
+    if (editImageInput && editImagePreview) {
+        editImageInput.addEventListener('change', () => {
+            const file = editImageInput.files && editImageInput.files[0];
+            if (!file) {
+                return;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            editImagePreview.src = objectUrl;
+            editImagePreview.onload = () => URL.revokeObjectURL(objectUrl);
         });
     }
 

@@ -271,6 +271,7 @@ if (!function_exists('getRegionalNameFromAlias')) {
             'bali nusra' => 'Bali Nusra',
             
             // Jateng DIY
+            'jateng' => 'Jateng DIY',
             'jatengdiy' => 'Jateng DIY',
             'jateng-diy' => 'Jateng DIY',
             'jateng diy' => 'Jateng DIY',
