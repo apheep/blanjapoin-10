@@ -1129,10 +1129,13 @@ class KeywordController extends Controller
 
     public function spesialPromoForm(Request $request)
     {
-        // Query SEMUA keyword dengan status approve, termasuk yang sudah ada di database
-        // Tidak ada batasan apapun kecuali status = 'approve'
+        // Query hanya keyword yang muncul di halaman welcome: aktif, status approve, dan merchant aktif
         $query = Keyword::with('merchant')
-            ->where('status', 'approve');
+            ->where('is_active', 1)
+            ->where('status', 'approve')
+            ->whereHas('merchant', function ($q) {
+                $q->where('is_active', 1);
+            });
         
         // Search filter - hanya aktif jika ada search term
         $searchTerm = trim($request->get('q', ''));
@@ -1201,7 +1204,11 @@ class KeywordController extends Controller
         
         // Hitung jumlah keyword yang sudah aktif sebagai spesial promo
         $activeSpecialPromoCount = Keyword::where('is_special_promo', 1)
+            ->where('is_active', 1)
             ->where('status', 'approve')
+            ->whereHas('merchant', function ($q) {
+                $q->where('is_active', 1);
+            })
             ->count();
         
         return view('spesial-promo-form', compact('keywords', 'activeSpecialPromoCount'));
