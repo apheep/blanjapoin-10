@@ -177,15 +177,50 @@ class MerchantController extends Controller
 
     /**
      * Cari branch dan regional untuk sebuah city dari DimTeritorialNational.
+     * Menggunakan 3-level lookup agar lebih toleran terhadap perbedaan format:
+     *   1. Exact match pada kolom city (case-insensitive)
+     *   2. Match daerah mentah ke kolom branch (untuk merchant yang daerahnya berupa nama branch)
+     *   3. Partial/contains match pada kolom city
+     *
      * Return ['branch' => string|null, 'regional' => string|null]
      */
     private function getCityParentLocations(string $cityName): array
     {
-        $row = DimTeritorialNational::whereRaw('LOWER(TRIM(city)) = ?', [strtolower(trim($cityName))])->first();
-        return [
-            'branch'   => $row ? $row->branch   : null,
-            'regional' => $row ? $row->regional : null,
-        ];
+        $empty = ['branch' => null, 'regional' => null];
+
+        if (empty(trim($cityName))) {
+            return $empty;
+        }
+
+        $cityLower = strtolower(trim($cityName));
+
+        // 1. Exact match pada kolom city
+        $row = DimTeritorialNational::whereRaw('LOWER(TRIM(city)) = ?', [$cityLower])->first();
+        if ($row) {
+            return ['branch' => $row->branch ?? null, 'regional' => $row->regional ?? null];
+        }
+
+        // Ambil semua baris sekali untuk lookup berikutnya
+        $allRows = DimTeritorialNational::whereNotNull('city')->where('city', '!=', '')
+            ->whereNotNull('branch')->where('branch', '!=', '')
+            ->get(['city', 'branch', 'regional']);
+
+        // 2. Match daerah mentah ke kolom branch (kasus merchant.daerah = nama branch)
+        foreach ($allRows as $r) {
+            if (strtolower(trim($r->branch ?? '')) === $cityLower) {
+                return ['branch' => $r->branch ?? null, 'regional' => $r->regional ?? null];
+            }
+        }
+
+        // 3. Partial / contains match pada kolom city
+        foreach ($allRows as $r) {
+            $key = strtolower(trim($r->city ?? ''));
+            if (str_contains($key, $cityLower) || str_contains($cityLower, $key)) {
+                return ['branch' => $r->branch ?? null, 'regional' => $r->regional ?? null];
+            }
+        }
+
+        return $empty;
     }
 
     /**
@@ -1416,8 +1451,14 @@ class MerchantController extends Controller
 
         // Resolve iklans dengan fallback hierarchy:
         // merchant spesifik → territorial (city) → branch → regional → general
-        $merchantCity   = trim(extractKabupatenKota($merchant->daerah ?? ''));
-        $parentLocations = $merchantCity ? $this->getCityParentLocations($merchantCity) : ['branch' => null, 'regional' => null];
+        $merchantDaerah = trim($merchant->daerah ?? '');
+        $merchantCity   = trim(extractKabupatenKota($merchantDaerah));
+        // Jika extractKabupatenKota tidak berhasil, coba dengan daerah mentah
+        // (getCityParentLocations sudah punya 3-level lookup: exact city, branch match, partial)
+        $lookupCity = $merchantCity ?: $merchantDaerah;
+        $parentLocations = $lookupCity
+            ? $this->getCityParentLocations($lookupCity)
+            : ['branch' => null, 'regional' => null];
         $iklans = $this->resolveIklansWithFallback(
             $merchantCity ?: null,
             $parentLocations['branch'],

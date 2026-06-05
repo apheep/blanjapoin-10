@@ -194,14 +194,87 @@ class IklanController extends Controller
                 return ['territorial', 'regional', 'branch', 'cluster', 'merchant'];
             case 'area':
             case 'regional':
-                return ['territorial', 'regional', 'branch', 'cluster'];
+                return ['territorial', 'regional', 'branch', 'cluster', 'merchant'];
             case 'branch':
-                return ['territorial', 'branch', 'cluster'];
+                return ['territorial', 'branch', 'cluster', 'merchant'];
             case 'city':
-                return ['territorial'];
+                return ['territorial', 'merchant'];
             default:
                 return [];
         }
+    }
+
+    /**
+     * Periksa apakah sebuah merchant ID berada dalam territorial scope user.
+     * Merchant dianggap dalam scope jika city/branch/regional-nya cocok dengan allowed slugs.
+     * Maha admin selalu boleh memilih semua merchant.
+     */
+    private function isMerchantInScope(int $merchantId): bool
+    {
+        if ($this->isUserMaha()) {
+            return true;
+        }
+
+        $scope = $this->getUserTerritorialScope();
+        if ($scope['type'] === 'national') {
+            return true;
+        }
+        if ($scope['type'] === 'none') {
+            return false;
+        }
+
+        $merchant = Merchant::find($merchantId);
+        if (!$merchant) {
+            return false;
+        }
+
+        $allowed = $this->getAllowedSlugsForScope();
+
+        // Resolve city/branch/regional merchant dari daerah-nya
+        $daerah   = trim($merchant->daerah ?? '');
+        $city     = trim(extractKabupatenKota($daerah));
+        $citySlug = $city ? territorialSlug($city) : null;
+
+        // Cari data dim untuk mendapatkan branch & regional
+        $dimRow = null;
+        if ($city) {
+            $dimRow = DimTeritorialNational::whereRaw('LOWER(TRIM(city)) = ?', [strtolower($city)])->first();
+        }
+        if (!$dimRow && $daerah) {
+            $dimRow = DimTeritorialNational::whereRaw('LOWER(TRIM(branch)) = ?', [strtolower($daerah)])->first();
+        }
+        if (!$dimRow && $city) {
+            $dimRow = DimTeritorialNational::whereRaw(
+                'LOWER(TRIM(city)) LIKE ? OR LOWER(?) LIKE CONCAT(\'%\', LOWER(TRIM(city)), \'%\')',
+                ['%' . strtolower($city) . '%', strtolower($city)]
+            )->first();
+        }
+
+        $branchSlug   = $dimRow ? territorialSlugGeneric(trim($dimRow->branch ?? ''))   : null;
+        $regionalSlug = $dimRow ? territorialSlugGeneric(trim($dimRow->regional ?? '')) : null;
+
+        // Cek city
+        if ($citySlug && $allowed['territorial'] !== null) {
+            if (in_array($citySlug, $allowed['territorial'])) return true;
+        } elseif ($citySlug && $allowed['territorial'] === null) {
+            return true;
+        }
+
+        // Cek branch
+        if ($branchSlug && $allowed['branch'] !== null) {
+            if (in_array($branchSlug, $allowed['branch'])) return true;
+        } elseif ($branchSlug && $allowed['branch'] === null) {
+            return true;
+        }
+
+        // Cek regional
+        if ($regionalSlug && $allowed['regional'] !== null) {
+            if (in_array($regionalSlug, $allowed['regional'])) return true;
+        } elseif ($regionalSlug && $allowed['regional'] === null) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -239,9 +312,14 @@ class IklanController extends Controller
                 || in_array($iklan->cluster, $allowed['cluster']);
         }
         if ($iklan->merchant_key || !empty($iklan->merchant_keys)) {
-            // Merchant iklan: allowed for national scope (can_approve=0) and above
-            $scope = $this->getUserTerritorialScope();
-            return in_array($scope['type'], ['national']);
+            // Merchant iklan: cek apakah setidaknya satu merchant dalam iklan berada di scope user
+            $ids = !empty($iklan->merchant_keys) ? $iklan->merchant_keys : [$iklan->merchant_key];
+            foreach ($ids as $mid) {
+                if ($mid && $this->isMerchantInScope((int)$mid)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         return false;
@@ -308,7 +386,14 @@ class IklanController extends Controller
             return $allowed['cluster'] === null || in_array($slug, $allowed['cluster']);
         }
         if (!empty($merchantKeys)) {
-            return in_array('merchant', $allowedTypes);
+            if (!in_array('merchant', $allowedTypes)) return false;
+            // Validasi setiap merchant harus dalam territorial scope user
+            foreach ($merchantKeys as $mid) {
+                if (!$this->isMerchantInScope((int)$mid)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         return false;
@@ -639,14 +724,51 @@ class IklanController extends Controller
             ]);
         }
 
+        // Pre-load semua DimTeritorialNational sekaligus — hindari N+1 query
+        $dimRows = \App\Models\DimTeritorialNational::whereNotNull('city')
+            ->where('city', '!=', '')
+            ->whereNotNull('branch')
+            ->where('branch', '!=', '')
+            ->get(['city', 'branch', 'regional']);
+
+        // Buat lookup map: city_lowercase => {branch, regional}
+        $dimByCityLower = [];
+        // Buat lookup map: branch_lowercase => {branch, regional}
+        $dimByBranchLower = [];
+        foreach ($dimRows as $row) {
+            $cityKey   = strtolower(trim($row->city));
+            $branchKey = strtolower(trim($row->branch ?? ''));
+            $dimByCityLower[$cityKey]     = $row;
+            if ($branchKey && !isset($dimByBranchLower[$branchKey])) {
+                $dimByBranchLower[$branchKey] = $row;
+            }
+        }
+
         $merchants = Merchant::orderBy('nama_merchant')->get()
-            ->map(function($m) {
-                $city     = trim(extractKabupatenKota($m->daerah ?? ''));
+            ->map(function($m) use ($dimByCityLower, $dimByBranchLower) {
+                $daerah   = trim($m->daerah ?? '');
+                $city     = trim(extractKabupatenKota($daerah));
                 $citySlug = $city ? territorialSlug($city) : null;
-                // Cari branch & regional dari DimTeritorialNational berdasarkan city
-                $dim = $city ? \App\Models\DimTeritorialNational::whereRaw(
-                    'LOWER(TRIM(city)) = ?', [strtolower($city)]
-                )->first() : null;
+
+                // Lookup 1: exact match city
+                $dim = isset($dimByCityLower[strtolower($city)]) ? $dimByCityLower[strtolower($city)] : null;
+
+                // Lookup 2: jika gagal, coba match daerah ke kolom branch
+                if (!$dim && !empty($daerah)) {
+                    $dim = isset($dimByBranchLower[strtolower($daerah)]) ? $dimByBranchLower[strtolower($daerah)] : null;
+                }
+
+                // Lookup 3: jika masih gagal, coba partial match city
+                if (!$dim && !empty($city)) {
+                    $cityLower = strtolower($city);
+                    foreach ($dimByCityLower as $key => $row) {
+                        if (str_contains($key, $cityLower) || str_contains($cityLower, $key)) {
+                            $dim = $row;
+                            break;
+                        }
+                    }
+                }
+
                 return [
                     'id'       => $m->id,
                     'name'     => $m->nama_merchant,
@@ -655,6 +777,34 @@ class IklanController extends Controller
                     'regional' => $dim ? territorialSlugGeneric(trim($dim->regional ?? '')) : null,
                 ];
             })->values();
+
+        // Filter merchants berdasarkan territorial scope user
+        // Maha & national: tampilkan semua merchant
+        // Regional/branch/city: hanya merchant yang city/branch/regional-nya dalam scope
+        if (!$isUserMaha && $userScope['type'] !== 'national') {
+            $allowedSlugs = $this->getAllowedSlugsForScope();
+            $merchants = $merchants->filter(function($m) use ($allowedSlugs, $userScope) {
+                // Jika semua null (scope luas), loloskan semua
+                if ($allowedSlugs['territorial'] === null) return true;
+
+                // Cek city
+                if ($m['city'] && $allowedSlugs['territorial'] !== null
+                    && in_array($m['city'], $allowedSlugs['territorial'])) {
+                    return true;
+                }
+                // Cek branch
+                if ($m['branch'] && $allowedSlugs['branch'] !== null
+                    && in_array($m['branch'], $allowedSlugs['branch'])) {
+                    return true;
+                }
+                // Cek regional
+                if ($m['regional'] && $allowedSlugs['regional'] !== null
+                    && in_array($m['regional'], $allowedSlugs['regional'])) {
+                    return true;
+                }
+                return false;
+            })->values();
+        }
 
         $keywords = Keyword::with('merchant')->whereNotNull('image')->where('image', '!=', '')
             ->orderBy('nama_produk')->get()
