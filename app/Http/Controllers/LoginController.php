@@ -241,7 +241,7 @@ class LoginController extends Controller
         ]);
 
         if (!$user) {
-            return back()->withInput([
+            return redirect()->route('login')->withInput([
                 'no_hp' => $request->no_hp,
                 'otp_type' => $request->otp_type,
             ])->withErrors([
@@ -345,7 +345,7 @@ class LoginController extends Controller
                     'url' => $apiUrl,
                 ]);
 
-                return back()->withInput([
+                return redirect()->route('login')->withInput([
                     'no_hp' => $request->no_hp,
                     'otp_type' => $request->otp_type,
                 ])->withErrors([
@@ -369,8 +369,9 @@ class LoginController extends Controller
 
             // Handle response based on type (lowercase)
             if ($request->otp_type === 'emailphone') {
-                // emailphone: Response should be "Verification code sent to email."
-                return back()->withInput([
+                // emailphone: Store as persistent session for reliable display
+                $request->session()->put('otp_success_message', 'OTP telah dikirim ke email Anda. Silakan cek inbox atau folder spam.');
+                return redirect()->route('login')->withInput([
                     'no_hp' => $request->no_hp,
                     'otp_type' => $request->otp_type,
                 ])->with('success', 'OTP telah dikirim ke email Anda. Silakan cek inbox atau folder spam.');
@@ -387,7 +388,7 @@ class LoginController extends Controller
                         'app_url' => $redirectUrl,
                     ]);
 
-                    return back()->withInput([
+                    return redirect()->route('login')->withInput([
                         'no_hp' => $request->no_hp,
                         'otp_type' => $request->otp_type,
                     ])->with([
@@ -399,7 +400,7 @@ class LoginController extends Controller
                     Log::warning('No whatsapp URL in response', [
                         'response' => $responseData,
                     ]);
-                    return back()->withInput([
+                    return redirect()->route('login')->withInput([
                         'no_hp' => $request->no_hp,
                         'otp_type' => $request->otp_type,
                     ])->with('success', 'OTP telah dikirim. Silakan cek aplikasi WhatsApp Anda.');
@@ -417,7 +418,7 @@ class LoginController extends Controller
                         'app_url' => $redirectUrl,
                     ]);
 
-                    return back()->withInput([
+                    return redirect()->route('login')->withInput([
                         'no_hp' => $request->no_hp,
                         'otp_type' => $request->otp_type,
                     ])->with([
@@ -429,14 +430,14 @@ class LoginController extends Controller
                     Log::warning('No telegram URL in response', [
                         'response' => $responseData,
                     ]);
-                    return back()->withInput([
+                    return redirect()->route('login')->withInput([
                         'no_hp' => $request->no_hp,
                         'otp_type' => $request->otp_type,
                     ])->with('success', 'OTP telah dikirim. Silakan cek aplikasi Telegram Anda.');
                 }
             }
 
-            return back()->withInput([
+            return redirect()->route('login')->withInput([
                 'no_hp' => $request->no_hp,
                 'otp_type' => $request->otp_type,
             ])->with('success', 'OTP telah dikirim.');
@@ -449,7 +450,7 @@ class LoginController extends Controller
                 'type' => $request->otp_type,
             ]);
 
-            return back()->withInput([
+            return redirect()->route('login')->withInput([
                 'no_hp' => $request->no_hp,
                 'otp_type' => $request->otp_type,
             ])->withErrors([
@@ -460,10 +461,18 @@ class LoginController extends Controller
 
     public function authenticate(Request $request)
     {
-        $request->validate([
-            'no_hp' => ['required', 'string'],
-            'otp' => ['required', 'string', 'size:6'],
-        ]);
+        try {
+            $request->validate([
+                'no_hp' => ['required', 'string'],
+                'otp' => ['required', 'string', 'size:6'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $otpType = $request->session()->get('otp_type');
+            return back()->withInput([
+                'no_hp' => $request->no_hp,
+                'otp_type' => $otpType,
+            ])->withErrors($e->errors());
+        }
 
         $user = User::where('no_hp', $request->no_hp)->first();
 
@@ -585,27 +594,27 @@ class LoginController extends Controller
             ]);
 
             if (!$verifyResponse['success']) {
-                $errorMessage = 'OTP tidak valid.';
-                
-                try {
-                    $errorData = json_decode($verifyResponse['body'], true);
-                    if (isset($errorData['message'])) {
+                $errorMessage = 'OTP yang Anda masukkan salah atau tidak valid.';
+
+                $errorData = json_decode($verifyResponse['body'], true);
+                if (is_array($errorData)) {
+                    if (!empty($errorData['message'])) {
                         $errorMessage = $errorData['message'];
-                    } elseif (isset($errorData['error'])) {
+                    } elseif (!empty($errorData['error'])) {
                         $errorMessage = $errorData['error'];
                     }
-                } catch (\Exception $e) {
-                    // Use default error message
                 }
 
                 Log::error('OTP Verification Failed', [
                     'status' => $verifyResponse['status'],
-                    'body' => $verifyResponse['body'],
-                    'phone' => $phone,
+                    'body'   => $verifyResponse['body'],
+                    'phone'  => $phone,
                 ]);
 
+                $otpType = $request->session()->get('otp_type');
                 return back()->withInput([
-                    'no_hp' => $request->no_hp,
+                    'no_hp'    => $request->no_hp,
+                    'otp_type' => $otpType,
                 ])->withErrors([
                     'otp' => $errorMessage,
                 ]);
@@ -613,15 +622,17 @@ class LoginController extends Controller
 
             // OTP is valid, get user data from API response
             $userData = json_decode($verifyResponse['body'], true);
-            
-            if (!$userData) {
+
+            if (!is_array($userData)) {
                 Log::error('Invalid user data from OTP verification', [
                     'response_body' => $verifyResponse['body'],
                 ]);
+                $otpType = $request->session()->get('otp_type');
                 return back()->withInput([
-                    'no_hp' => $request->no_hp,
+                    'no_hp'    => $request->no_hp,
+                    'otp_type' => $otpType,
                 ])->withErrors([
-                    'otp' => 'Gagal mendapatkan data user dari API.',
+                    'otp' => 'OTP yang Anda masukkan salah atau tidak valid.',
                 ]);
             }
             
@@ -719,7 +730,7 @@ class LoginController extends Controller
         ]);
 
         // Clear OTP session data
-        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_phone_display', 'otp_requested_at']);
+        $request->session()->forget(['otp_redirect_url', 'otp_type', 'otp_phone', 'otp_phone_display', 'otp_requested_at', 'otp_success_message']);
         
         // Hapus override bypass jika ini login normal
         if (!$isBypass) {
