@@ -695,7 +695,7 @@
     </div>
 </div>
 
-<div id="editConfirmationModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
+<div id="editConfirmationModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-[80] flex items-center justify-center p-4">
     <div id="editModalContent" class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] transform transition-all duration-300 scale-95 opacity-0 flex flex-col">
         <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
             <div class="flex items-center">
@@ -830,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function () {
             keywordUploadBtn.classList.remove('border-orange-500', 'bg-orange-50', 'text-orange-700');
             keywordUploadBtn.classList.add('border-neutral-200', 'bg-white', 'text-neutral-600');
             
-            // Show manual upload, hide keyword selection
+            // Show manual upload, hide keyword selection (tanpa hapus state)
             manualImageLabel.classList.remove('hidden');
             keywordMerchantLabel.classList.add('hidden');
             keywordSelectionLabel.classList.add('hidden');
@@ -839,16 +839,9 @@ document.addEventListener('DOMContentLoaded', function () {
             linkInput.removeAttribute('readonly');
             linkInput.classList.remove('bg-neutral-50');
             
-            // Clear keyword and merchant selection
+            // JANGAN hapus keywordMerchantInput / keywordMerchantText
+            // Hanya reset selectedMerchantId lokal (dipakai mode manual)
             selectedMerchantId = null;
-            const keywordInput = document.getElementById('keywordInput');
-            if (keywordInput) keywordInput.value = '';
-            const keywordText = document.getElementById('keywordText');
-            if (keywordText) keywordText.textContent = '-- Pilih Merchant Terlebih Dahulu --';
-            const keywordMerchantInput = document.getElementById('keywordMerchantInput');
-            if (keywordMerchantInput) keywordMerchantInput.value = '';
-            const keywordMerchantText = document.getElementById('keywordMerchantText');
-            if (keywordMerchantText) keywordMerchantText.textContent = '-- Pilih Merchant/Program --';
         } else {
             keywordUploadBtn.classList.remove('border-neutral-200', 'bg-white', 'text-neutral-600');
             keywordUploadBtn.classList.add('border-orange-500', 'bg-orange-50', 'text-orange-700');
@@ -862,6 +855,11 @@ document.addEventListener('DOMContentLoaded', function () {
             
             // Clear manual image
             if (imageInput) imageInput.value = '';
+
+            // Restore state: jika sudah ada 1 merchant terpilih, re-apply auto-set
+            // (fungsi autoSetKeywordMerchantIfSingle didefinisikan lebih bawah,
+            //  dipanggil via setTimeout agar definisi sudah tersedia)
+            setTimeout(() => { if (typeof autoSetKeywordMerchantIfSingle === 'function') autoSetKeywordMerchantIfSingle(); }, 0);
         }
     }
     
@@ -1530,6 +1528,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     updateMerchantDisplay();
                     updateMerchantHiddenInputs();
                     updateSelectedCount();
+                    // Re-evaluate lock state setelah hapus tag
+                    autoSetKeywordMerchantIfSingle();
                 });
                 
                 selectedMerchantsDisplay.appendChild(merchantTag);
@@ -1549,6 +1549,69 @@ document.addEventListener('DOMContentLoaded', function () {
             input.value = merchantId;
             merchantHiddenInputs.appendChild(input);
         });
+    }
+
+    /**
+     * Jika hanya 1 merchant dipilih:
+     *   - Otomatis isi dropdown "Pilih Program" di Dari Keyword dengan merchant tsb.
+     *   - Kunci button dropdown (disabled styling) agar tidak bisa diganti.
+     *   - Langsung tampilkan keyword section.
+     * Jika >1 atau 0 merchant:
+     *   - Unlock kembali dropdown "Pilih Program".
+     */
+    function autoSetKeywordMerchantIfSingle() {
+        const kmInput    = document.getElementById('keywordMerchantInput');
+        const kmBtn      = document.getElementById('keywordMerchantBtn');
+        const kmText     = document.getElementById('keywordMerchantText');
+        const kmLabel    = document.getElementById('keywordMerchantLabel');
+        const kwSelLabel = document.getElementById('keywordSelectionLabel');
+
+        if (!kmInput || !kmBtn) return;
+
+        if (selectedMerchants.length === 1) {
+            const merchantId = selectedMerchants[0];
+            const merchant   = merchantsData.find(m => m.id == merchantId);
+            if (!merchant) return;
+
+            // Isi dan kunci dropdown Pilih Program
+            kmInput.value       = merchantId;
+            kmText.textContent  = merchant.name;
+
+            // Visual: disabled
+            kmBtn.disabled = true;
+            kmBtn.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+            kmBtn.setAttribute('title', 'Program dikunci sesuai merchant yang dipilih');
+
+            // Tampilkan label keywordMerchant jika mode keyword aktif
+            if (currentUploadType === 'keyword') {
+                kmLabel?.classList.remove('hidden');
+            }
+
+            // Langsung populate keywords (hanya jika mode keyword aktif)
+            if (currentUploadType === 'keyword') {
+                populateKeywordsForMerchant(merchantId);
+                kwSelLabel?.classList.remove('hidden');
+            }
+
+        } else {
+            // Reset: unlock dropdown Pilih Program
+            kmInput.value      = '';
+            kmText.textContent = '-- Pilih Program --';
+            kmBtn.disabled     = false;
+            kmBtn.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+            kmBtn.removeAttribute('title');
+
+            // Sembunyikan keyword section jika tidak ada merchant yang dipilih
+            if (selectedMerchants.length === 0) {
+                kwSelLabel?.classList.add('hidden');
+                const keywordPreviewEl = document.getElementById('keywordPreview');
+                keywordPreviewEl?.classList.add('hidden');
+                const kInput = document.getElementById('keywordInput');
+                if (kInput) kInput.value = '';
+                const kText = document.getElementById('keywordText');
+                if (kText) kText.textContent = '-- Pilih Merchant Terlebih Dahulu --';
+            }
+        }
     }
     
     function openMerchantModal() {
@@ -1588,6 +1651,8 @@ document.addEventListener('DOMContentLoaded', function () {
             updateMerchantDisplay();
             updateMerchantHiddenInputs();
             closeMerchantModal();
+            // Auto-set Pilih Program jika hanya 1 merchant dipilih
+            autoSetKeywordMerchantIfSingle();
         });
     }
     
@@ -1660,6 +1725,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (el) el.addEventListener('change', function() {
             const locType = document.getElementById('locationTypeInput')?.value || '';
             filterKeywordMerchantsByLocationType(locType);
+        });
+    });
+
+    // Pastikan filter juga terpanggil langsung saat opsi di-klik (backup, menghindari race condition)
+    ['branchOptions', 'regionalOptions', 'territorialOptions'].forEach(optId => {
+        const container = document.getElementById(optId);
+        if (!container) return;
+        container.addEventListener('click', function(e) {
+            const option = e.target.closest('[data-value]');
+            if (!option) return;
+            // Tunggu sebentar agar select.value sudah diset oleh initSearchableDropdown
+            setTimeout(() => {
+                const locType = document.getElementById('locationTypeInput')?.value || '';
+                filterKeywordMerchantsByLocationType(locType);
+            }, 10);
         });
     });
 

@@ -131,6 +131,14 @@ function confirmEdit() {
             if (editDataType === 'Merchant') {
                 const form = document.getElementById('formEditMerchant');
                 if (form) {
+                    // Sync banner_keyword_ids dari checkbox yang ter-check sebelum kirim form
+                    const kwList  = document.getElementById('editBannerKeywordList');
+                    const kwIds   = document.getElementById('editBannerKeywordIds');
+                    if (kwList && kwIds) {
+                        const checked = Array.from(kwList.querySelectorAll('.banner-kw-check:checked'));
+                        kwIds.value = checked.map(c => c.value).join(',');
+                    }
+
                     // Update link blanjapoin dan daerah sebelum membuat FormData baru
                     if (typeof updateEditLinkBlanjapoin === 'function') {
                         updateEditLinkBlanjapoin();
@@ -151,8 +159,7 @@ function confirmEdit() {
                         freshFormData.append('_token', csrfToken);
                     }
                     
-                    // Add _method for PUT request
-                    freshFormData.append('_method', 'PUT');
+                    // _method PUT sudah ada dari @method('PUT') di form, tidak perlu append lagi
                     
                     // Debug: Log form data yang akan dikirim
                     console.log('Sending edit merchant form data:');

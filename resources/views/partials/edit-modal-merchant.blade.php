@@ -725,6 +725,28 @@ function openEditMerchant(id, merchantData) {
             // Update WA PIC setelah modal terbuka
             updateEditWaPic();
         }, 50);
+
+        // Load keyword untuk top banner section
+        if (typeof window.loadBannerKeywordsForEdit === 'function') {
+            // Reset radio ke General dulu
+            const modeGeneral = document.getElementById('editBannerModeGeneral');
+            const modeKeyword = document.getElementById('editBannerModeKeyword');
+            const keywordSec  = document.getElementById('editBannerKeywordSection');
+            if (modeGeneral) modeGeneral.checked = true;
+            if (modeKeyword) modeKeyword.checked = false;
+            if (keywordSec)  keywordSec.classList.add('hidden');
+
+            // Parse existing banner keyword IDs
+            let existingKwIds = [];
+            if (merchantData.banner_keyword_ids) {
+                existingKwIds = String(merchantData.banner_keyword_ids)
+                    .split(',')
+                    .map(s => parseInt(s.trim()))
+                    .filter(n => !isNaN(n) && n > 0);
+            }
+
+            window.loadBannerKeywordsForEdit(id, existingKwIds);
+        }
     });
 }
 
@@ -1537,7 +1559,7 @@ async function geocodeGmapUrl(url) {
     modeKeyword?.addEventListener('change', toggleKeywordSection);
 
     // Load keywords saat edit merchant dibuka — dipanggil dari fungsi openEditMerchant
-    window.loadBannerKeywordsForEdit = function(merchantId, existingBannerKeywordIds) {
+    window.loadBannerKeywordsForEdit = function(merchantId, _unused) {
         if (!keywordList) return;
         keywordList.innerHTML = '<p class="text-xs text-neutral-400 italic">Memuat...</p>';
 
@@ -1548,15 +1570,17 @@ async function geocodeGmapUrl(url) {
                     keywordList.innerHTML = '<p class="text-xs text-neutral-400 italic">Tidak ada keyword aktif.</p>';
                     return;
                 }
-                const existing = existingBannerKeywordIds || [];
-                let selected = [...existing];
+
+                // Ambil existing IDs dari API (bukan dari parameter)
+                const existing = (data.existingBannerKeywordIds || []).map(Number);
+
                 keywordList.innerHTML = '';
                 data.keywords.forEach(kw => {
-                    const checked = existing.includes(kw.id) ? 'checked' : '';
+                    const isChecked = existing.includes(Number(kw.id));
                     const div = document.createElement('label');
                     div.className = 'flex items-center gap-2 p-2 rounded-lg border border-neutral-100 hover:bg-neutral-50 cursor-pointer';
                     div.innerHTML = `
-                        <input type="checkbox" value="${kw.id}" ${checked}
+                        <input type="checkbox" value="${kw.id}" ${isChecked ? 'checked' : ''}
                                class="banner-kw-check h-4 w-4 rounded border-neutral-300 text-orange-600">
                         <div class="flex items-center gap-2 flex-1 min-w-0">
                             ${kw.image ? `<img src="/storage/${kw.image}" class="w-10 h-7 object-cover rounded flex-shrink-0">` : ''}
@@ -1564,13 +1588,22 @@ async function geocodeGmapUrl(url) {
                         </div>`;
                     keywordList.appendChild(div);
                 });
+
+                // Sync hidden input
                 updateKeywordIds();
+
+                // Set mode ke 'keyword' jika sudah ada existing banner keyword
+                if (existing.length > 0 && modeKeyword) {
+                    modeKeyword.checked = true;
+                    if (modeGeneral) modeGeneral.checked = false;
+                    toggleKeywordSection();
+                }
 
                 keywordList.querySelectorAll('.banner-kw-check').forEach(cb => {
                     cb.addEventListener('change', function() {
                         // Max 5
-                        const checked = Array.from(keywordList.querySelectorAll('.banner-kw-check:checked'));
-                        if (checked.length > 5) {
+                        const allChecked = Array.from(keywordList.querySelectorAll('.banner-kw-check:checked'));
+                        if (allChecked.length > 5) {
                             this.checked = false;
                             return;
                         }
@@ -1585,12 +1618,6 @@ async function geocodeGmapUrl(url) {
         function updateKeywordIds() {
             const checked = Array.from(keywordList.querySelectorAll('.banner-kw-check:checked'));
             if (keywordIds) keywordIds.value = checked.map(c => c.value).join(',');
-        }
-
-        // Set mode jika sudah ada keyword banner
-        if (existingBannerKeywordIds && existingBannerKeywordIds.length > 0 && modeKeyword) {
-            modeKeyword.checked = true;
-            toggleKeywordSection();
         }
     };
 })();
