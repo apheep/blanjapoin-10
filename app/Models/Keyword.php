@@ -122,21 +122,10 @@ class Keyword extends Model
 
         $trxCount = $trxQuery->distinct()->count('tr.msisdn');
 
-        // Hitung sisa stock dari SEMUA redeem dalam periode keyword (matched maupun tidak)
-        $redeemQuery = DB::table('tokodigi_tselpoin_redeem')
-            ->where('coupon', $this->keyword_id);
-
-        // Filter by start_date: jangan hitung redeem dari periode/tahun sebelumnya
-        if ($this->start_date) {
-            $redeemQuery->whereDate('created_date', '>=', $this->start_date);
-        }
-
-        $totalRedeem = $redeemQuery->distinct()->count('msisdn');
-
-        // Hitung sisa stock: stock - semua redeem (minimal 0)
+        // Hitung sisa stock: stock - trx (matched redeems)
         $stock = (int)($this->stock ?? 0);
         $trx = (int)$trxCount;
-        $sisaStock = max(0, $stock - (int)$totalRedeem);
+        $sisaStock = max(0, $stock - $trx);
 
         // Update ke database
         $this->trx = (string)$trx;
@@ -163,6 +152,42 @@ class Keyword extends Model
         }
 
         return $updatedCount;
+    }
+
+    /**
+     * Refresh trx dan sisa_stock untuk SEMUA keyword sekaligus via single bulk SQL.
+     * Lebih efisien daripada loop per keyword.
+     * 
+     * Rumus:
+     *   trx        = COUNT DISTINCT msisdn yang matched (merchant_id match + clicked_date not null)
+     *   sisa_stock = MAX(0, stock - trx)
+     */
+    public static function refreshAllTrxAndSisaStock()
+    {
+        DB::statement("
+            UPDATE keywords k
+            SET
+                trx = (
+                    SELECT COUNT(DISTINCT tr.msisdn)
+                    FROM tokodigi_tselpoin_redeem tr
+                    WHERE tr.coupon     = k.keyword_id
+                      AND tr.merchant_id IS NOT NULL
+                      AND tr.clicked_date IS NOT NULL
+                      AND tr.merchant_id = k.merchant_key
+                      AND (k.start_date IS NULL OR DATE(tr.created_date) >= k.start_date)
+                ),
+                sisa_stock = GREATEST(0, k.stock - (
+                    SELECT COUNT(DISTINCT tr.msisdn)
+                    FROM tokodigi_tselpoin_redeem tr
+                    WHERE tr.coupon     = k.keyword_id
+                      AND tr.merchant_id IS NOT NULL
+                      AND tr.clicked_date IS NOT NULL
+                      AND tr.merchant_id = k.merchant_key
+                      AND (k.start_date IS NULL OR DATE(tr.created_date) >= k.start_date)
+                ))
+            WHERE k.keyword_id IS NOT NULL
+              AND k.deleted_at IS NULL
+        ");
     }
 
     /**
