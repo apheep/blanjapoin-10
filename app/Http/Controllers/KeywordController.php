@@ -19,6 +19,7 @@ class KeywordController extends Controller
     public function index()
     {
         Keyword::autoDisableExpiredKeywords();
+        Keyword::refreshAllTrxAndSisaStock(); // Refresh TRX & sisa_stock dari tabel redeem
         $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id', 'desc')->paginate(10);
         
         $merchants = Merchant::orderBy('id')->paginate(10);
@@ -969,6 +970,8 @@ class KeywordController extends Controller
     {
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
+        // Refresh TRX & sisa_stock dari tabel redeem
+        Keyword::refreshAllTrxAndSisaStock();
         
         $searchTerm = trim($request->get('q', ''));
         $status = $request->get('status');
