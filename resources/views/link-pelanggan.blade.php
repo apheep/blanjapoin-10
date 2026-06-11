@@ -172,10 +172,6 @@
                     };
                 @endphp
 
-                @if($hasCategoryData('paket_video'))
-                    @include('merchant.paketvideo')
-                @endif
-
                 @if($hasCategoryData('belanja'))
                     @include('merchant.shop')
                 @endif
@@ -194,6 +190,10 @@
                 
                 @if($hasCategoryData('kuliner'))
                     @include('merchant.food')
+                @endif
+
+                @if($hasCategoryData('paket_video'))
+                    @include('merchant.paketvideo')
                 @endif
 
                 @if($hasCategoryData('telkomsel'))
