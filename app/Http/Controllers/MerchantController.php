@@ -571,6 +571,8 @@ class MerchantController extends Controller
         // Get filtered cities based on user_level
         $cities = $this->getFilteredCities();
         
+        Keyword::refreshAllTrxAndSisaStock(); // Refresh TRX & sisa_stock dari tabel redeem
+        
         return view('admin', compact('merchants', 'keywords', 'allMerchants', 'cities'));
     }
     
@@ -633,6 +635,8 @@ class MerchantController extends Controller
     {
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
+        // Refresh TRX & sisa_stock dari tabel redeem
+        Keyword::refreshAllTrxAndSisaStock();
         
         $keywords = Keyword::with(['merchant', 'creator'])
             ->where('merchant_key', $merchant->id)
