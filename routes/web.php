@@ -228,8 +228,18 @@ Route::middleware(['auth'])->group(function () {
                 $query->where('is_active', 1);
             })
             ->get();
-        // Get iklans - only show iklans without territorial (null) for home page
+        // Get iklans - only show general iklans (all location fields are null) for home page
     $iklans = Iklan::whereNull('territorial')
+        ->whereNull('regional')
+        ->whereNull('branch')
+        ->whereNull('cluster')
+        ->whereNull('merchant_key')
+        ->where(function ($q) {
+            $q->whereNull('merchant_keys')
+              ->orWhere('merchant_keys', '[]')
+              ->orWhere('merchant_keys', '');
+        })
+        ->whereNull('keyword_id')
         ->where('is_active', 1)
         ->orderBy('order', 'asc')
         ->get();
