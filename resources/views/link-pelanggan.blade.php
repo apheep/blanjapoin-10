@@ -172,45 +172,11 @@
                     };
                 @endphp
 
-                @if($hasCategoryData('belanja'))
-                    @include('merchant.shop')
-                @endif
-
-                @if($hasCategoryData('merchandise'))
-                    @include('merchant.merchandise')
-                @endif
-                
-                @if($hasCategoryData('paket_internet'))
-                    @include('merchant.paketinternet')
-                @endif
-
-                @if($hasCategoryData('paket_games'))
-                    @include('merchant.paketgames')
-                @endif
-                
-                @if($hasCategoryData('kuliner'))
-                    @include('merchant.food')
-                @endif
-
-                @if($hasCategoryData('paket_video'))
-                    @include('merchant.paketvideo')
-                @endif
-
-                @if($hasCategoryData('telkomsel'))
-                    @include('merchant.telkomsel')
-                @endif
-
-                @if($hasCategoryData('hiburan'))
-                    @include('merchant.entertain')
-                @endif
-
-                @if($hasCategoryData('liburan'))
-                    @include('merchant.vacation')
-                @endif
-
-                @if($hasCategoryData('kecantikan'))
-                    @include('merchant.beautyncare')
-                @endif
+                @foreach($orderedCategories as $cat)
+                    @if($hasCategoryData($cat['key']))
+                        @include($cat['view'])
+                    @endif
+                @endforeach
             </div>
 
 
