@@ -130,4 +130,140 @@ class CategoryOrderController extends Controller
 
         return response()->json($values);
     }
+
+    /**
+     * GET /api/category-order/{routeType}/available-categories?value=xxx
+     *
+     * Returns which category keys actually have active keyword data
+     * for the given route type + value. Used by the admin editor to
+     * show only relevant categories.
+     *
+     * For route_type = 'default' or empty value → check all active keywords (no location filter).
+     * For route_type = 'city'  + value → filter keywords whose merchant.daerah matches the city slug.
+     * For route_type = 'u'     + value → filter keywords for the merchant whose link code = value.
+     * For route_type = 'reg' / 'poin-tsel' / 'cluster' → filter by DimTeritorialNational hierarchy.
+     *   (Falls back to returning all active categories when filter is too complex / not resolvable.)
+     */
+    public function availableCategories(Request $request, string $routeType): JsonResponse
+    {
+        if (!array_key_exists($routeType, CategoryOrder::routeTypes())) {
+            return response()->json(['error' => 'Route type tidak valid.'], 422);
+        }
+
+        $routeValue = trim($request->query('value', ''));
+        $allDefs    = CategoryOrder::allCategories();
+
+        // Base query: active & approved keywords with their merchant
+        $query = \App\Models\Keyword::with('merchant')
+            ->where('status', 'approve')
+            ->where('is_active', 1)
+            ->whereHas('merchant', fn($q) => $q->where('is_active', 1));
+
+        // Apply location filter when a specific value is provided
+        if ($routeValue !== '') {
+            switch ($routeType) {
+                case 'u':
+                    // Link pelanggan: filter by merchant whose link code matches
+                    $query->whereHas('merchant', function ($q) use ($routeValue) {
+                        $q->where('link_blanjapoin', 'like', '%dash/' . $routeValue)
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $routeValue . '/%')
+                          ->orWhere('link_blanjapoin', 'like', '%dash/' . $routeValue . '?%');
+                    });
+                    break;
+
+                case 'city':
+                    // City page: match merchants whose daerah slug matches routeValue
+                    $query->whereHas('merchant', function ($q) use ($routeValue) {
+                        $q->whereNotNull('daerah')->where('daerah', '!=', '');
+                    });
+                    // We'll filter in PHP since slug matching requires a helper function
+                    $keywords = $query->get();
+                    $available = $keywords->map(function ($kw) {
+                        return !empty($kw->kategori_keyword)
+                            ? $kw->kategori_keyword
+                            : ($kw->merchant->kategori ?? null);
+                    })->filter(function ($cat) use ($allDefs, $routeValue) {
+                        // Also apply city slug filter in PHP
+                        return $cat !== null;
+                    });
+
+                    // Re-filter: only include keyword whose merchant city slug matches
+                    $available = $keywords->filter(function ($kw) use ($routeValue) {
+                        $daerah = trim($kw->merchant->daerah ?? '');
+                        $city   = trim(extractKabupatenKota($daerah));
+                        return strtolower(territorialSlug($city)) === strtolower($routeValue);
+                    })->map(function ($kw) {
+                        return !empty($kw->kategori_keyword)
+                            ? $kw->kategori_keyword
+                            : ($kw->merchant->kategori ?? null);
+                    })->filter()->unique()->values();
+
+                    return response()->json([
+                        'available' => $available->intersect(array_keys($allDefs))->values(),
+                    ]);
+
+                case 'reg':
+                    // Regional: filter by merchants whose regional matches
+                    $cities = \App\Models\DimTeritorialNational::where('regional', 'like', '%' . $routeValue . '%')
+                        ->pluck('city')->filter()->unique()->map('strtolower')->toArray();
+                    if (!empty($cities)) {
+                        $query->whereHas('merchant', function ($q) use ($cities) {
+                            $q->whereNotNull('daerah')->where('daerah', '!=', '');
+                        });
+                        $keywords = $query->get()->filter(function ($kw) use ($cities) {
+                            $daerah = trim($kw->merchant->daerah ?? '');
+                            $city   = strtolower(trim(extractKabupatenKota($daerah)));
+                            return in_array($city, $cities);
+                        });
+                        $available = $keywords->map(function ($kw) {
+                            return !empty($kw->kategori_keyword) ? $kw->kategori_keyword : ($kw->merchant->kategori ?? null);
+                        })->filter()->unique()->values();
+                        return response()->json(['available' => $available->intersect(array_keys($allDefs))->values()]);
+                    }
+                    break;
+
+                case 'poin-tsel':
+                    // Branch: filter by branch name
+                    $cities = \App\Models\DimTeritorialNational::whereRaw("REPLACE(LOWER(branch), ' ', '-') = ?", [strtolower($routeValue)])
+                        ->orWhereRaw("REPLACE(LOWER(branch), ' ', '-') LIKE ?", ['%' . strtolower($routeValue) . '%'])
+                        ->pluck('city')->filter()->unique()->map('strtolower')->toArray();
+                    if (!empty($cities)) {
+                        $keywords = $query->get()->filter(function ($kw) use ($cities) {
+                            $city = strtolower(trim(extractKabupatenKota(trim($kw->merchant->daerah ?? ''))));
+                            return in_array($city, $cities);
+                        });
+                        $available = $keywords->map(fn($kw) => !empty($kw->kategori_keyword) ? $kw->kategori_keyword : ($kw->merchant->kategori ?? null))
+                            ->filter()->unique()->values();
+                        return response()->json(['available' => $available->intersect(array_keys($allDefs))->values()]);
+                    }
+                    break;
+
+                case 'cluster':
+                    // Cluster: filter by cluster name
+                    $cities = \App\Models\DimTeritorialNational::whereRaw("REPLACE(LOWER(cluster), ' ', '-') = ?", [strtolower($routeValue)])
+                        ->orWhereRaw("REPLACE(LOWER(cluster), ' ', '-') LIKE ?", ['%' . strtolower($routeValue) . '%'])
+                        ->pluck('city')->filter()->unique()->map('strtolower')->toArray();
+                    if (!empty($cities)) {
+                        $keywords = $query->get()->filter(function ($kw) use ($cities) {
+                            $city = strtolower(trim(extractKabupatenKota(trim($kw->merchant->daerah ?? ''))));
+                            return in_array($city, $cities);
+                        });
+                        $available = $keywords->map(fn($kw) => !empty($kw->kategori_keyword) ? $kw->kategori_keyword : ($kw->merchant->kategori ?? null))
+                            ->filter()->unique()->values();
+                        return response()->json(['available' => $available->intersect(array_keys($allDefs))->values()]);
+                    }
+                    break;
+            }
+        }
+
+        // Default / fallback: return all categories that have any active data
+        $keywords  = $query->get();
+        $available = $keywords->map(function ($kw) {
+            return !empty($kw->kategori_keyword) ? $kw->kategori_keyword : ($kw->merchant->kategori ?? null);
+        })->filter()->unique()->values();
+
+        return response()->json([
+            'available' => $available->intersect(array_keys($allDefs))->values(),
+        ]);
+    }
 }

@@ -403,6 +403,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/category-order/reset', [CategoryOrderController::class, 'reset'])->name('category-order.reset');
     Route::get('/api/category-order/{routeType}', [CategoryOrderController::class, 'getByRouteType'])->name('category-order.get');
     Route::get('/api/category-order/{routeType}/saved-values', [CategoryOrderController::class, 'savedValues'])->name('category-order.saved-values');
+    Route::get('/api/category-order/{routeType}/available-categories', [CategoryOrderController::class, 'availableCategories'])->name('category-order.available-categories');
 
     // History All (requires login)
     Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');

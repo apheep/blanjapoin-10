@@ -369,55 +369,11 @@
                 };
             @endphp
 
-            <!-- shop Section -->
-            @if($hasCategoryData('belanja'))
-                @include('merchant.shop')
-            @endif
-
-            <!-- food Section -->
-            @if($hasCategoryData('kuliner'))
-                @include('merchant.food')
-            @endif
-
-            <!-- telkomsel Section -->
-            @if($hasCategoryData('telkomsel'))
-                @include('merchant.telkomsel')
-            @endif
-
-            <!-- entertain Section -->
-            @if($hasCategoryData('hiburan'))
-                @include('merchant.entertain')
-            @endif
-
-            <!-- vacation Section -->
-            @if($hasCategoryData('liburan'))
-                @include('merchant.vacation')
-            @endif
-
-            <!-- beauty Section -->
-            @if($hasCategoryData('kecantikan'))
-                @include('merchant.beautyncare')
-            @endif
-
-            <!-- merchandise Section -->
-            @if($hasCategoryData('merchandise'))
-                @include('merchant.merchandise')
-            @endif
-
-            <!-- paketvideo Section -->
-            @if($hasCategoryData('paket_video'))
-                @include('merchant.paketvideo')
-            @endif
-
-            <!-- paketgames Section -->
-            @if($hasCategoryData('paket_games'))
-                @include('merchant.paketgames')
-            @endif
-
-            <!-- paketinternet Section -->
-            @if($hasCategoryData('paket_internet'))
-                @include('merchant.paketinternet')
-            @endif
+            @foreach($orderedCategories as $cat)
+                @if($hasCategoryData($cat['key']))
+                    @include($cat['view'])
+                @endif
+            @endforeach
 
 
 
