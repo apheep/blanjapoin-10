@@ -13,6 +13,7 @@ use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PortalAuthController;
 use App\Http\Controllers\KeywordController;
+use App\Http\Controllers\CategoryOrderController;
 use App\Http\Controllers\SpesialPromoController;
 use App\Models\Keyword;
 use App\Models\Merchant;
@@ -395,6 +396,13 @@ Route::middleware(['auth'])->group(function () {
 
     // Spesial Promo Form
     Route::get('/spesial-promo-form', [KeywordController::class, 'spesialPromoForm'])->name('spesial-promo.form');
+
+    // Urutan Kategori (hanya maha admin)
+    Route::get('/category-order', [CategoryOrderController::class, 'index'])->name('category-order.index');
+    Route::post('/category-order/save', [CategoryOrderController::class, 'save'])->name('category-order.save');
+    Route::post('/category-order/reset', [CategoryOrderController::class, 'reset'])->name('category-order.reset');
+    Route::get('/api/category-order/{routeType}', [CategoryOrderController::class, 'getByRouteType'])->name('category-order.get');
+    Route::get('/api/category-order/{routeType}/saved-values', [CategoryOrderController::class, 'savedValues'])->name('category-order.saved-values');
 
     // History All (requires login)
     Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');
