@@ -95,6 +95,15 @@
             color: #fff;
             border-color: transparent;
         }
+        /* Kategori tidak tersedia di route ini */
+        .cat-item.cat-unavailable {
+            opacity: .3;
+            pointer-events: none;
+        }
+        /* Info banner available filter */
+        #availableFilterNotice {
+            transition: all .2s ease;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
@@ -212,6 +221,12 @@
             <p id="inheritanceText" class="opacity-80"></p>
         </div>
 
+        {{-- Available-filter notice (shown when specific value is entered) --}}
+        <div id="availableFilterNotice" class="hidden mb-3 px-4 py-3 rounded-xl bg-blue-50 ring-1 ring-blue-200 text-xs text-blue-800 leading-relaxed">
+            <p class="font-semibold mb-0.5"><i class="fa-solid fa-filter mr-1.5"></i>Menampilkan kategori sesuai data aktual</p>
+            <p id="availableFilterText" class="opacity-80"></p>
+        </div>
+
         {{-- Skeleton --}}
         <div id="skeletonLoader" class="hidden space-y-3">
             @for($i = 0; $i < 6; $i++)
@@ -245,6 +260,7 @@
     let currentRoute = null;       // e.g. 'u'
     let currentValue = '';         // e.g. 'sector1' or ''
     let currentCategories = [];
+    let availableKeys = null;      // null = no filter, Array = keys with actual data
     let draggedEl = null;
 
     // ── Alert ─────────────────────────────────────────────────────────────────
@@ -346,26 +362,60 @@
         document.getElementById('skeletonLoader').classList.remove('hidden');
         document.getElementById('dragHint').classList.add('hidden');
         document.getElementById('inheritanceNotice').classList.add('hidden');
+        document.getElementById('availableFilterNotice').classList.add('hidden');
         document.getElementById('editorActions').classList.add('hidden');
+        availableKeys = null; // reset filter
 
-        const url = `/api/category-order/${currentRoute}?value=${encodeURIComponent(currentValue)}`;
+        const orderUrl     = `/api/category-order/${currentRoute}?value=${encodeURIComponent(currentValue)}`;
+        const availableUrl = `/api/category-order/${currentRoute}/available-categories?value=${encodeURIComponent(currentValue)}`;
 
-        fetch(url, { headers: { 'X-CSRF-TOKEN': CSRF } })
-            .then(r => r.json())
-            .then(data => {
-                const categories = Array.isArray(data) ? data : (data.categories ?? []);
-                const inherited  = data.inherited ?? false;
-                currentCategories = categories;
-                document.getElementById('skeletonLoader').classList.add('hidden');
-                document.getElementById('editorActions').classList.remove('hidden');
-                renderList(categories);
-                document.getElementById('dragHint').classList.remove('hidden');
-                showInheritanceNotice(inherited);
-            })
-            .catch(() => {
-                document.getElementById('skeletonLoader').classList.add('hidden');
-                showAlert('Gagal memuat data. Coba refresh halaman ini.', 'error');
-            });
+        // Fetch category order + available categories in parallel
+        Promise.all([
+            fetch(orderUrl,     { headers: { 'X-CSRF-TOKEN': CSRF } }).then(r => r.json()),
+            // Only fetch available-categories when a specific value is entered
+            currentValue !== ''
+                ? fetch(availableUrl, { headers: { 'X-CSRF-TOKEN': CSRF } }).then(r => r.json())
+                : Promise.resolve(null),
+        ])
+        .then(([orderData, availData]) => {
+            const categories = Array.isArray(orderData) ? orderData : (orderData.categories ?? []);
+            const inherited  = orderData.inherited ?? false;
+            currentCategories = categories;
+
+            // Set available filter when specific value is used
+            if (availData && Array.isArray(availData.available)) {
+                availableKeys = availData.available;
+            } else {
+                availableKeys = null;
+            }
+
+            document.getElementById('skeletonLoader').classList.add('hidden');
+            document.getElementById('editorActions').classList.remove('hidden');
+            renderList(categories);
+            document.getElementById('dragHint').classList.remove('hidden');
+            showInheritanceNotice(inherited);
+            showAvailableFilterNotice();
+        })
+        .catch(() => {
+            document.getElementById('skeletonLoader').classList.add('hidden');
+            showAlert('Gagal memuat data. Coba refresh halaman ini.', 'error');
+        });
+    }
+
+    function showAvailableFilterNotice() {
+        const notice = document.getElementById('availableFilterNotice');
+        const text   = document.getElementById('availableFilterText');
+        if (!availableKeys || currentValue === '') {
+            notice.classList.add('hidden');
+            return;
+        }
+        const count = availableKeys.length;
+        if (count === 0) {
+            text.textContent = `Tidak ada kategori yang punya data untuk "/${currentRoute}/${currentValue}". Semua kategori ditampilkan sebagai referensi.`;
+        } else {
+            text.textContent = `Hanya ${count} kategori yang punya merchant/keyword aktif di "/${currentRoute}/${currentValue}". Kategori lainnya tidak akan tampil di halaman tersebut.`;
+        }
+        notice.classList.remove('hidden');
     }
 
     function buildScopeLabel() {
@@ -399,7 +449,13 @@
     function renderList(categories) {
         const list = document.getElementById('categoryList');
         list.innerHTML = '';
-        categories.forEach((cat, idx) => list.appendChild(createItem(cat, idx)));
+        // If availableKeys filter is active, only show categories that have actual data
+        const toRender = (availableKeys && availableKeys.length > 0)
+            ? categories.filter(cat => availableKeys.includes(cat.key))
+            : categories;
+        // If filter produced zero results (e.g. no data at all), fall back to showing all
+        const finalList = (availableKeys && availableKeys.length === 0) ? categories : toRender;
+        finalList.forEach((cat, idx) => list.appendChild(createItem(cat, idx)));
         initDragDrop();
     }
 

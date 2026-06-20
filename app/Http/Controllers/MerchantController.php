@@ -1470,12 +1470,16 @@ class MerchantController extends Controller
             $merchant->id
         );
 
+        // Get ordered categories untuk route /u/{code}
+        $orderedCategories = \App\Models\CategoryOrder::getOrderedCategories('u', $code);
+
         return view('link-pelanggan', [
             'merchant' => $merchant,
             'keywords' => $keywords,
             'merchantKeywords' => $merchantKeywords,
             'iklans' => $iklans,
             'isLinkPelanggan' => true, // Flag untuk skip validasi merchant->is_active di view
+            'orderedCategories' => $orderedCategories,
         ]);
     }
 
@@ -2897,6 +2901,9 @@ class MerchantController extends Controller
                 ->get();
         }
         
+        // Get ordered categories untuk route /reg/{location}
+        $orderedCategories = \App\Models\CategoryOrder::getOrderedCategories('reg', $location);
+
         return view('regional', [
             'location' => $location,
             'locationName' => $displayName,
@@ -2904,6 +2911,7 @@ class MerchantController extends Controller
             'keywords' => $keywords,
             'iklans' => $iklans,
             'isRegional' => true, // Flag untuk skip validasi merchant->is_active
+            'orderedCategories' => $orderedCategories,
         ]);
     }
 
@@ -3031,6 +3039,9 @@ class MerchantController extends Controller
         $regionalName = $regionalRow ? $regionalRow->regional : null;
         $iklans = $this->resolveIklansWithFallback(null, $locationName, $regionalName);
         
+        // Get ordered categories untuk route /poin-tsel/{location}
+        $orderedCategories = \App\Models\CategoryOrder::getOrderedCategories('poin-tsel', $location);
+
         return view('branch', [
             'location' => $location,
             'locationName' => $displayName,
@@ -3038,6 +3049,7 @@ class MerchantController extends Controller
             'keywords' => $keywords,
             'iklans' => $iklans,
             'isBranch' => true, // Flag untuk skip validasi merchant->is_active
+            'orderedCategories' => $orderedCategories,
         ]);
     }
 
@@ -3180,6 +3192,9 @@ class MerchantController extends Controller
             $iklans = $this->resolveIklansWithFallback(null, $clusterBranch, $clusterRegional);
         }
         
+        // Get ordered categories untuk route /cluster/{location}
+        $orderedCategories = \App\Models\CategoryOrder::getOrderedCategories('cluster', $location);
+
         return view('cluster', [
             'location' => $location,
             'locationName' => $displayName,
@@ -3187,6 +3202,7 @@ class MerchantController extends Controller
             'keywords' => $keywords,
             'iklans' => $iklans,
             'isCluster' => true, // Flag untuk skip validasi merchant->is_active
+            'orderedCategories' => $orderedCategories,
         ]);
     }
 
