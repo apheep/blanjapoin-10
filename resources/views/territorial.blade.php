@@ -354,71 +354,36 @@
 
             <!-- Category Sections -->
             @php
-                // Helper function to check if category has data
                 $isTerritorial = $isTerritorial ?? false;
+
+                // Determine route type and specific value for category ordering
+                $routeSegment = request()->segment(1);
+                $routeTypeMap = ['u' => 'u', 'reg' => 'reg', 'poin-tsel' => 'poin-tsel', 'cluster' => 'cluster', 'city' => 'city'];
+                $currentRouteType  = $routeTypeMap[$routeSegment] ?? 'default';
+                $currentRouteValue = ($currentRouteType !== 'default') ? (request()->segment(2) ?? '') : '';
+
+                // Get ordered category list from DB (falls back: specific → generic → default → hardcoded)
+                $orderedCategories = \App\Models\CategoryOrder::getOrderedCategories($currentRouteType, $currentRouteValue);
+
+                // Helper: check if a category has displayable data
                 $hasCategoryData = function($category) use ($keywords, $isTerritorial) {
                     return $keywords->filter(function ($keyword) use ($category, $isTerritorial) {
                         $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
                         $baseCondition = $keyword->merchant && $keywordCategory === $category
                             && $keyword->status === 'approve'
                             && $keyword->is_active == 1;
-                        // Skip validasi merchant->is_active jika di halaman territorial
-                        return $isTerritorial 
-                            ? $baseCondition 
+                        return $isTerritorial
+                            ? $baseCondition
                             : ($baseCondition && $keyword->merchant->is_active == 1);
                     })->isNotEmpty();
                 };
             @endphp
 
-            <!-- shop Section -->
-            @if($hasCategoryData('belanja'))
-                @include('merchant.shop')
-            @endif
-
-            <!-- food Section -->
-            @if($hasCategoryData('kuliner'))
-                @include('merchant.food')
-            @endif
-
-            <!-- telkomsel Section -->
-            @if($hasCategoryData('telkomsel'))
-                @include('merchant.telkomsel')
-            @endif
-
-            <!-- entertain Section -->
-            @if($hasCategoryData('hiburan'))
-                @include('merchant.entertain')
-            @endif
-
-            <!-- vacation Section -->
-            @if($hasCategoryData('liburan'))
-                @include('merchant.vacation')
-            @endif
-
-            <!-- beauty Section -->
-            @if($hasCategoryData('kecantikan'))
-                @include('merchant.beautyncare')
-            @endif
-
-            <!-- merchandise Section -->
-            @if($hasCategoryData('merchandise'))
-                @include('merchant.merchandise')
-            @endif
-
-            <!-- paketvideo Section -->
-            @if($hasCategoryData('paket_video'))
-                @include('merchant.paketvideo')
-            @endif
-
-            <!-- paketgames Section -->
-            @if($hasCategoryData('paket_games'))
-                @include('merchant.paketgames')
-            @endif
-
-            <!-- paketinternet Section -->
-            @if($hasCategoryData('paket_internet'))
-                @include('merchant.paketinternet')
-            @endif
+            @foreach($orderedCategories as $cat)
+                @if($hasCategoryData($cat['key']))
+                    @include($cat['view'])
+                @endif
+            @endforeach
 
 
 
