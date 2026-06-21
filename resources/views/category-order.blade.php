@@ -150,13 +150,26 @@
         /* hide drag handle dots on touch devices */
         @media (pointer: coarse) { .drag-handle { display: none; } }
 
+        /* ── Sticky save bar ── */
+        #stickyBar {
+            transform: translateY(110%);
+            opacity: 0;
+            transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
+            pointer-events: none;
+        }
+        #stickyBar.bar-visible {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
 
 @include('partials.navbar-admin')
 
-<main class="max-w-3xl mx-auto px-4 py-8" style="padding-top: 100px;">
+<main class="max-w-3xl mx-auto px-4 py-8 pb-28" style="padding-top: 100px;">
 
     {{-- Header --}}
     <div class="mb-8">
@@ -249,17 +262,12 @@
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Langkah 3 — Susun Urutan Kategori</p>
                 <p class="text-xs text-gray-500 mt-0.5" id="editorSubtitle">Pilih jenis halaman di atas untuk mulai mengatur.</p>
             </div>
-            <div id="editorActions" class="hidden flex gap-2 flex-shrink-0">
+            <div id="editorActions" class="hidden flex-shrink-0">
                 <button
                     onclick="resetScope()"
                     class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 transition"
                     title="Hapus pengaturan ini dan kembali ke urutan default / pengaturan yang lebih umum."
                 >↺ Reset ke Default</button>
-                <button
-                    onclick="saveOrder()"
-                    id="saveBtn"
-                    class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white shadow hover:opacity-90 transition"
-                >Simpan</button>
             </div>
         </div>
 
@@ -310,6 +318,22 @@
 
 </main>
 
+{{-- Sticky unsaved-changes bar --}}
+<div id="stickyBar" class="fixed bottom-0 left-0 right-0 z-50 px-3 pb-3 sm:px-4 sm:pb-4">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex items-center justify-between gap-2 bg-gray-900 text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-xl ring-1 ring-white/10">
+            <div class="flex items-center gap-2 min-w-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 animate-pulse"></span>
+                <span class="text-xs sm:text-sm font-medium truncate">Belum disimpan</span>
+            </div>
+            <button
+                onclick="saveOrder()"
+                class="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white shadow hover:opacity-90 active:scale-95 transition"
+            >Simpan</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const ROUTE_TYPES = @json($routeTypes);
     const CSRF        = document.querySelector('meta[name="csrf-token"]').content;
@@ -319,6 +343,34 @@
     let currentCategories = [];
     let availableKeys = null;      // null = no filter, Array = keys with actual data
     let draggedEl = null;
+    let isDirty          = false;
+    let originalSnapshot = null; // snapshot of state as loaded from server
+
+    // ── Dirty state / Sticky bar ──────────────────────────────────────────────
+    function takeSnapshot(categories) {
+        return categories.map(c => ({ key: c.key, is_visible: !!c.is_visible }));
+    }
+
+    function isStateDirty() {
+        if (!originalSnapshot || originalSnapshot.length !== currentCategories.length) return false;
+        return currentCategories.some((cat, i) =>
+            cat.key !== originalSnapshot[i].key ||
+            !!cat.is_visible !== originalSnapshot[i].is_visible
+        );
+    }
+
+    function checkDirty() {
+        if (isStateDirty()) { markDirty(); } else { markClean(); }
+    }
+
+    function markDirty() {
+        isDirty = true;
+        document.getElementById('stickyBar').classList.add('bar-visible');
+    }
+    function markClean() {
+        isDirty = false;
+        document.getElementById('stickyBar').classList.remove('bar-visible');
+    }
 
     // ── Alert ─────────────────────────────────────────────────────────────────
     function showAlert(msg, type = 'success') {
@@ -414,6 +466,7 @@
         document.getElementById('editorSubtitle').textContent = `Sedang menampilkan urutan untuk: ${scopeLabel}`;
 
         // Show skeleton
+        markClean();
         document.getElementById('emptyState').classList.add('hidden');
         document.getElementById('categoryList').innerHTML = '';
         document.getElementById('skeletonLoader').classList.remove('hidden');
@@ -437,7 +490,8 @@
         .then(([orderData, availData]) => {
             const categories = Array.isArray(orderData) ? orderData : (orderData.categories ?? []);
             const inherited  = orderData.inherited ?? false;
-            currentCategories = categories;
+            currentCategories  = categories;
+            originalSnapshot   = takeSnapshot(categories);
 
             // Set available filter when specific value is used
             if (availData && Array.isArray(availData.available)) {
@@ -526,8 +580,8 @@
 
         const badgeNum  = isHidden ? '—' : (idx + 1);
         const hideLabel = isHidden ? 'Tampilkan' : 'Sembunyikan';
-        const hideIcon  = isHidden ? 'fa-eye' : 'fa-eye-slash';
-        const hideColor = isHidden ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-red-500';
+        const hideIcon  = isHidden ? 'fa-eye-slash' : 'fa-eye';
+        const hideColor = isHidden ? 'text-green-500 hover:text-green-600' : 'text-gray-400 hover:text-red-500';
 
         li.innerHTML = `
             <span class="cat-badge">${badgeNum}</span>
@@ -560,9 +614,9 @@
         const cat = currentCategories.find(c => c.key === key);
         if (!cat) return;
         cat.is_visible = !cat.is_visible;
-        // Re-render to update numbering and styles
         syncCurrentOrder();
         renderList(currentCategories);
+        checkDirty();
     }
 
     // Re-number badges after drag
@@ -610,6 +664,7 @@
         document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('drag-over'));
         syncCurrentOrder();
         refreshBadges();
+        checkDirty();
     }
     function onDragOver(e) {
         e.preventDefault();
@@ -670,6 +725,7 @@
         syncCurrentOrder();
         refreshBadges();
         clearTouchSelection();
+        checkDirty();
     }
 
     function selectTouchItem(item) {
@@ -702,9 +758,8 @@
         if (!currentRoute) return;
         syncCurrentOrder();
 
-        const btn = document.getElementById('saveBtn');
-        btn.disabled = true;
-        btn.textContent = 'Menyimpan...';
+        const stickyBtn = document.querySelector('#stickyBar button');
+        if (stickyBtn) { stickyBtn.disabled = true; stickyBtn.textContent = 'Menyimpan...'; }
 
         fetch('/category-order/save', {
             method: 'POST',
@@ -719,15 +774,15 @@
         .then(data => {
             if (data.success) {
                 showAlert(data.message, 'success');
+                markClean();
                 document.getElementById('inheritanceNotice').classList.add('hidden');
-                // Refresh saved value pills
                 if (currentRoute !== 'default') loadSavedValues(currentRoute);
             } else {
                 showAlert(data.error || 'Gagal menyimpan.', 'error');
             }
         })
         .catch(() => showAlert('Gagal menyimpan. Coba lagi atau refresh halaman.', 'error'))
-        .finally(() => { btn.disabled = false; btn.textContent = 'Simpan'; });
+        .finally(() => { if (stickyBtn) { stickyBtn.disabled = false; stickyBtn.textContent = 'Simpan'; } });
     }
 
     // ── Reset ─────────────────────────────────────────────────────────────────
