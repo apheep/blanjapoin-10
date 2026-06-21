@@ -104,6 +104,27 @@
         #availableFilterNotice {
             transition: all .2s ease;
         }
+
+        /* Drag handle — enlarged touch target, disables native scroll on touch */
+        .drag-handle {
+            touch-action: none;
+            padding: 8px;
+            margin: -8px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Step-3 header: stack vertically on mobile */
+        @media (max-width: 639px) {
+            #editorHeaderRow {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            #editorActions {
+                align-self: flex-end;
+            }
+        }
+
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
@@ -170,19 +191,21 @@
             Kalau diisi, hanya berlaku untuk link yang spesifik itu saja.
         </p>
 
-        <div class="flex gap-2 items-center">
-            <span id="routePrefix" class="text-sm text-gray-400 font-mono shrink-0 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"></span>
-            <input
-                id="routeValueInput"
-                type="text"
-                placeholder="Kosongkan = berlaku untuk semua"
-                class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                oninput="onValueInput()"
-                onkeydown="if(event.key==='Enter') loadEditor()"
-            />
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div class="flex gap-2 items-center flex-1 min-w-0">
+                <span id="routePrefix" class="text-sm text-gray-400 font-mono shrink-0 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200"></span>
+                <input
+                    id="routeValueInput"
+                    type="text"
+                    placeholder="Kosongkan = berlaku untuk semua"
+                    class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                    oninput="onValueInput()"
+                    onkeydown="if(event.key==='Enter') loadEditor()"
+                />
+            </div>
             <button
                 onclick="loadEditor()"
-                class="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition shrink-0"
+                class="w-full sm:w-auto px-4 py-2 text-sm font-semibold rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition"
             >Tampilkan</button>
         </div>
 
@@ -196,12 +219,12 @@
     {{-- ── STEP 3: Editor drag-and-drop ── --}}
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5" id="editorPanel">
 
-        <div class="flex items-center justify-between mb-4">
+        <div id="editorHeaderRow" class="flex items-center justify-between mb-4">
             <div>
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Langkah 3 — Susun Urutan Kategori</p>
                 <p class="text-xs text-gray-500 mt-0.5" id="editorSubtitle">Pilih jenis halaman di atas untuk mulai mengatur.</p>
             </div>
-            <div id="editorActions" class="hidden flex gap-2">
+            <div id="editorActions" class="hidden flex gap-2 flex-shrink-0">
                 <button
                     onclick="resetScope()"
                     class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 transition"
@@ -473,7 +496,7 @@
 
         li.innerHTML = `
             <span class="cat-badge">${badgeNum}</span>
-            <span class="text-gray-300 cursor-grab shrink-0">
+            <span class="drag-handle text-gray-300 cursor-grab shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
                     <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
@@ -564,6 +587,110 @@
         currentCategories = newOrder;
     }
 
+    // ── Touch Drag & Drop ─────────────────────────────────────────────────────
+    const td = { el: null, clone: null, offsetY: 0, active: false };
+
+    function initTouchDragDrop() {
+        const list = document.getElementById('categoryList');
+        if (!list) return;
+
+        // Event delegation: only start drag when the user touches the drag handle
+        list.addEventListener('touchstart', function (e) {
+            const handle = e.target.closest('.drag-handle');
+            if (!handle) return;
+            const item = handle.closest('.cat-item');
+            if (!item) return;
+
+            const touch  = e.touches[0];
+            const rect   = item.getBoundingClientRect();
+            td.el        = item;
+            td.offsetY   = touch.clientY - rect.top;
+            td.active    = false;
+
+            // Short delay to let taps go through but still feel instant for drag
+            item._tdTimer = setTimeout(() => activateTouchDrag(touch), 80);
+        }, { passive: true });
+    }
+
+    function activateTouchDrag(touch) {
+        if (!td.el) return;
+        td.active = true;
+
+        const rect  = td.el.getBoundingClientRect();
+        const clone = td.el.cloneNode(true);
+        Object.assign(clone.style, {
+            position:     'fixed',
+            top:          rect.top  + 'px',
+            left:         rect.left + 'px',
+            width:        rect.width + 'px',
+            zIndex:       '9999',
+            opacity:      '0.9',
+            pointerEvents:'none',
+            boxShadow:    '0 10px 30px rgba(0,0,0,.22)',
+            transform:    'scale(1.03)',
+            borderRadius: '0.75rem',
+            background:   'white',
+            transition:   'none',
+        });
+        document.body.appendChild(clone);
+        td.clone = clone;
+        td.el.classList.add('dragging');
+    }
+
+    document.addEventListener('touchmove', function (e) {
+        if (!td.active || !td.el || !td.clone) return;
+        e.preventDefault(); // block page scroll while dragging
+
+        const touch  = e.touches[0];
+        const touchY = touch.clientY;
+        const touchX = touch.clientX;
+
+        // Move ghost clone with finger
+        td.clone.style.top = (touchY - td.offsetY) + 'px';
+
+        // Find the list item closest to the finger using bounding rects
+        const items = Array.from(document.querySelectorAll('#categoryList .cat-item'));
+        document.querySelectorAll('#categoryList .cat-item').forEach(el => el.classList.remove('drag-over'));
+
+        let target = null, minDist = Infinity;
+        for (const item of items) {
+            if (item === td.el) continue;
+            const r      = item.getBoundingClientRect();
+            const center = r.top + r.height / 2;
+            const dist   = Math.abs(touchY - center);
+            if (dist < minDist && touchX >= r.left - 16 && touchX <= r.right + 16) {
+                minDist = dist;
+                target  = item;
+            }
+        }
+
+        if (target) {
+            const r    = target.getBoundingClientRect();
+            const list = document.getElementById('categoryList');
+            if (touchY < r.top + r.height / 2) {
+                list.insertBefore(td.el, target);
+            } else {
+                list.insertBefore(td.el, target.nextSibling);
+            }
+            target.classList.add('drag-over');
+        }
+    }, { passive: false });
+
+    function endTouchDrag() {
+        if (td.el) {
+            clearTimeout(td.el._tdTimer);
+            td.el.classList.remove('dragging');
+            document.querySelectorAll('#categoryList .cat-item').forEach(el => el.classList.remove('drag-over'));
+            if (td.active) { syncCurrentOrder(); refreshBadges(); }
+        }
+        if (td.clone) { td.clone.remove(); td.clone = null; }
+        td.el     = null;
+        td.active = false;
+    }
+
+    document.addEventListener('touchend',    endTouchDrag, { passive: true });
+    document.addEventListener('touchcancel', endTouchDrag, { passive: true });
+
     // ── Save ──────────────────────────────────────────────────────────────────
     function saveOrder() {
         if (!currentRoute) return;
@@ -621,8 +748,9 @@
         .catch(() => showAlert('Gagal menghapus pengaturan. Coba lagi.', 'error'));
     }
 
-    // Auto-select first tab on page load
+    // Auto-select first tab on page load + initialize touch drag once
     document.addEventListener('DOMContentLoaded', () => {
+        initTouchDragDrop();
         const first = document.querySelector('.route-tab');
         if (first) first.click();
     });
