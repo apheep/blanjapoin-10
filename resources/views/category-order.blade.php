@@ -105,14 +105,6 @@
             transition: all .2s ease;
         }
 
-        /* Drag handle — enlarged touch target, disables native scroll on touch */
-        .drag-handle {
-            touch-action: none;
-            padding: 8px;
-            margin: -8px;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         /* Step-3 header: stack vertically on mobile */
         @media (max-width: 639px) {
             #editorHeaderRow {
@@ -124,6 +116,39 @@
                 align-self: flex-end;
             }
         }
+
+        /* ── Mobile tap-to-swap ── */
+        @keyframes touchBounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            35%       { transform: translateY(-7px) scale(1.02); }
+            65%       { transform: translateY(3px) scale(0.99); }
+        }
+        .cat-item.touch-selected {
+            box-shadow: 0 0 0 2.5px #F0B100, 0 6px 22px rgba(240,177,0,.28);
+            background: linear-gradient(to right, #fffbeb, #fff);
+            animation: touchBounce 1s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+        /* swap icon: hidden by default */
+        .swap-btn { display: none; }
+        /* show swap icon on non-selected items when list is in swap mode */
+        #categoryList.touch-swap-mode .cat-item:not(.touch-selected) .swap-btn {
+            display: inline-flex;
+        }
+        /* hide eye icon on non-selected items while in swap mode */
+        #categoryList.touch-swap-mode .cat-item:not(.touch-selected) .toggle-vis {
+            display: none;
+        }
+        /* tap highlight feedback on swap targets */
+        #categoryList.touch-swap-mode .cat-item:not(.touch-selected) {
+            cursor: pointer;
+        }
+        /* show/hide hints based on pointer type */
+        @media (pointer: fine)   { .hint-mobile  { display: none !important; } }
+        @media (pointer: coarse) { .hint-desktop { display: none !important; } }
+        /* hide drag handle dots on touch devices */
+        @media (pointer: coarse) { .drag-handle { display: none; } }
 
     </style>
 </head>
@@ -264,10 +289,19 @@
         </div>
 
         {{-- Usage hint (shown when editor is loaded) --}}
-        <div id="dragHint" class="hidden mb-3 px-4 py-3 rounded-xl bg-blue-50 ring-1 ring-blue-100 text-xs text-blue-700 flex flex-wrap gap-x-5 gap-y-1">
-            <span><i class="fa-solid fa-up-down mr-1.5 opacity-70"></i><strong>Seret</strong> kartu naik/turun untuk mengubah urutan</span>
-            <span><i class="fa-solid fa-eye-slash mr-1.5 opacity-70"></i>Klik <strong>Sembunyikan</strong> agar kategori tidak muncul di halaman</span>
-            <span><i class="fa-solid fa-eye mr-1.5 opacity-70"></i>Klik <strong>Tampilkan</strong> untuk memunculkan kembali kategori yang disembunyikan</span>
+        <div id="dragHint" class="hidden mb-3 px-4 py-3 rounded-xl bg-blue-50 ring-1 ring-blue-100 text-xs text-blue-700">
+            {{-- Desktop hint --}}
+            <div class="hint-desktop flex flex-wrap gap-x-5 gap-y-1">
+                <span><i class="fa-solid fa-up-down mr-1.5 opacity-70"></i><strong>Seret</strong> kartu naik/turun untuk mengubah urutan</span>
+                <span><i class="fa-solid fa-eye-slash mr-1.5 opacity-70"></i>Klik <strong>Sembunyikan</strong> agar kategori tidak muncul di halaman</span>
+                <span><i class="fa-solid fa-eye mr-1.5 opacity-70"></i>Klik <strong>Tampilkan</strong> untuk memunculkan kembali kategori yang disembunyikan</span>
+            </div>
+            {{-- Mobile hint --}}
+            <div class="hint-mobile flex flex-col gap-1">
+                <span><i class="fa-solid fa-hand-pointer mr-1.5 opacity-70"></i><strong>Ketuk</strong> kategori untuk memilihnya — kategori akan bergerak-gerak menandai pilihanmu</span>
+                <span><i class="fa-solid fa-arrows-up-down mr-1.5 opacity-70"></i>Ketuk kategori lain untuk <strong>menukar</strong> posisinya dengannya</span>
+                <span><i class="fa-solid fa-eye-slash mr-1.5 opacity-70"></i>Ketuk ikon <strong>mata</strong> untuk menyembunyikan atau menampilkan kategori</span>
+            </div>
         </div>
 
         {{-- Drag list --}}
@@ -470,6 +504,7 @@
 
     // ── Render list ───────────────────────────────────────────────────────────
     function renderList(categories) {
+        clearTouchSelection();
         const list = document.getElementById('categoryList');
         list.innerHTML = '';
         // If availableKeys filter is active, only show categories that have actual data
@@ -507,12 +542,16 @@
             <span class="cat-name flex-1 text-sm font-semibold text-gray-800">${cat.label}</span>
             <button
                 onclick="toggleVisibility('${cat.key}', this)"
-                class="${hideColor} text-xs transition shrink-0 flex items-center gap-1"
+                class="toggle-vis ${hideColor} text-xs transition shrink-0 flex items-center gap-1"
                 title="${hideLabel}"
             >
                 <i class="fa-solid ${hideIcon}"></i>
                 <span class="hidden sm:inline">${hideLabel}</span>
             </button>
+            <button
+                class="swap-btn items-center gap-1 text-orange-500 text-xs font-semibold shrink-0 px-2 py-1 rounded-lg bg-orange-50 border border-orange-200 active:bg-orange-200 transition"
+                title="Tukar ke sini"
+            ><i class="fa-solid fa-arrows-up-down"></i> Tukar</button>
         `;
         return li;
     }
@@ -538,15 +577,27 @@
         });
     }
 
-    // ── Drag & Drop ───────────────────────────────────────────────────────────
+    // ── Drag & Drop (desktop only) ────────────────────────────────────────────
+    function isTouchDevice() {
+        return window.matchMedia('(pointer: coarse)').matches;
+    }
+
     function initDragDrop() {
-        document.querySelectorAll('.cat-item').forEach(item => {
-            item.addEventListener('dragstart', onDragStart);
-            item.addEventListener('dragend',   onDragEnd);
-            item.addEventListener('dragover',  onDragOver);
-            item.addEventListener('dragleave', onDragLeave);
-            item.addEventListener('drop',      onDrop);
-        });
+        if (!isTouchDevice()) {
+            document.querySelectorAll('.cat-item').forEach(item => {
+                item.addEventListener('dragstart', onDragStart);
+                item.addEventListener('dragend',   onDragEnd);
+                item.addEventListener('dragover',  onDragOver);
+                item.addEventListener('dragleave', onDragLeave);
+                item.addEventListener('drop',      onDrop);
+            });
+        } else {
+            // On touch devices: disable draggable to avoid ghost image on long press
+            document.querySelectorAll('.cat-item').forEach(item => {
+                item.draggable = false;
+            });
+            initMobileTapSwap();
+        }
     }
 
     function onDragStart(e) {
@@ -587,109 +638,64 @@
         currentCategories = newOrder;
     }
 
-    // ── Touch Drag & Drop ─────────────────────────────────────────────────────
-    const td = { el: null, clone: null, offsetY: 0, active: false };
+    // ── Mobile tap-to-swap ────────────────────────────────────────────────────
+    let touchSelectedItem = null;
 
-    function initTouchDragDrop() {
-        const list = document.getElementById('categoryList');
-        if (!list) return;
-
-        // Event delegation: only start drag when the user touches the drag handle
-        list.addEventListener('touchstart', function (e) {
-            const handle = e.target.closest('.drag-handle');
-            if (!handle) return;
-            const item = handle.closest('.cat-item');
-            if (!item) return;
-
-            const touch  = e.touches[0];
-            const rect   = item.getBoundingClientRect();
-            td.el        = item;
-            td.offsetY   = touch.clientY - rect.top;
-            td.active    = false;
-
-            // Short delay to let taps go through but still feel instant for drag
-            item._tdTimer = setTimeout(() => activateTouchDrag(touch), 80);
-        }, { passive: true });
-    }
-
-    function activateTouchDrag(touch) {
-        if (!td.el) return;
-        td.active = true;
-
-        const rect  = td.el.getBoundingClientRect();
-        const clone = td.el.cloneNode(true);
-        Object.assign(clone.style, {
-            position:     'fixed',
-            top:          rect.top  + 'px',
-            left:         rect.left + 'px',
-            width:        rect.width + 'px',
-            zIndex:       '9999',
-            opacity:      '0.9',
-            pointerEvents:'none',
-            boxShadow:    '0 10px 30px rgba(0,0,0,.22)',
-            transform:    'scale(1.03)',
-            borderRadius: '0.75rem',
-            background:   'white',
-            transition:   'none',
+    function initMobileTapSwap() {
+        document.querySelectorAll('#categoryList .cat-item').forEach(item => {
+            item.addEventListener('click', onMobileTap);
         });
-        document.body.appendChild(clone);
-        td.clone = clone;
-        td.el.classList.add('dragging');
     }
 
-    document.addEventListener('touchmove', function (e) {
-        if (!td.active || !td.el || !td.clone) return;
-        e.preventDefault(); // block page scroll while dragging
+    function onMobileTap(e) {
+        const item = this;
 
-        const touch  = e.touches[0];
-        const touchY = touch.clientY;
-        const touchX = touch.clientX;
+        // Tapping the visibility toggle always works normally
+        if (e.target.closest('.toggle-vis')) return;
 
-        // Move ghost clone with finger
-        td.clone.style.top = (touchY - td.offsetY) + 'px';
-
-        // Find the list item closest to the finger using bounding rects
-        const items = Array.from(document.querySelectorAll('#categoryList .cat-item'));
-        document.querySelectorAll('#categoryList .cat-item').forEach(el => el.classList.remove('drag-over'));
-
-        let target = null, minDist = Infinity;
-        for (const item of items) {
-            if (item === td.el) continue;
-            const r      = item.getBoundingClientRect();
-            const center = r.top + r.height / 2;
-            const dist   = Math.abs(touchY - center);
-            if (dist < minDist && touchX >= r.left - 16 && touchX <= r.right + 16) {
-                minDist = dist;
-                target  = item;
-            }
+        if (!touchSelectedItem) {
+            // No item selected yet → select this one
+            selectTouchItem(item);
+            return;
         }
 
-        if (target) {
-            const r    = target.getBoundingClientRect();
-            const list = document.getElementById('categoryList');
-            if (touchY < r.top + r.height / 2) {
-                list.insertBefore(td.el, target);
-            } else {
-                list.insertBefore(td.el, target.nextSibling);
-            }
-            target.classList.add('drag-over');
+        if (touchSelectedItem === item) {
+            // Tapping the selected item again → deselect
+            clearTouchSelection();
+            return;
         }
-    }, { passive: false });
 
-    function endTouchDrag() {
-        if (td.el) {
-            clearTimeout(td.el._tdTimer);
-            td.el.classList.remove('dragging');
-            document.querySelectorAll('#categoryList .cat-item').forEach(el => el.classList.remove('drag-over'));
-            if (td.active) { syncCurrentOrder(); refreshBadges(); }
-        }
-        if (td.clone) { td.clone.remove(); td.clone = null; }
-        td.el     = null;
-        td.active = false;
+        // Tapping a different item → swap and clear selection
+        swapNodes(touchSelectedItem, item);
+        syncCurrentOrder();
+        refreshBadges();
+        clearTouchSelection();
     }
 
-    document.addEventListener('touchend',    endTouchDrag, { passive: true });
-    document.addEventListener('touchcancel', endTouchDrag, { passive: true });
+    function selectTouchItem(item) {
+        clearTouchSelection();
+        touchSelectedItem = item;
+        item.classList.add('touch-selected');
+        document.getElementById('categoryList').classList.add('touch-swap-mode');
+    }
+
+    function clearTouchSelection() {
+        if (touchSelectedItem) {
+            touchSelectedItem.classList.remove('touch-selected');
+            touchSelectedItem = null;
+        }
+        const list = document.getElementById('categoryList');
+        if (list) list.classList.remove('touch-swap-mode');
+    }
+
+    function swapNodes(a, b) {
+        // Swap two DOM nodes using a temporary placeholder
+        const temp = document.createElement('li');
+        a.parentNode.insertBefore(temp, a);
+        b.parentNode.insertBefore(a, b);
+        temp.parentNode.insertBefore(b, temp);
+        temp.parentNode.removeChild(temp);
+    }
 
     // ── Save ──────────────────────────────────────────────────────────────────
     function saveOrder() {
@@ -748,9 +754,8 @@
         .catch(() => showAlert('Gagal menghapus pengaturan. Coba lagi.', 'error'));
     }
 
-    // Auto-select first tab on page load + initialize touch drag once
+    // Auto-select first tab on page load
     document.addEventListener('DOMContentLoaded', () => {
-        initTouchDragDrop();
         const first = document.querySelector('.route-tab');
         if (first) first.click();
     });
