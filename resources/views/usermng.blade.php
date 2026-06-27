@@ -625,11 +625,26 @@
         window.location.search = params.toString();
       }
 
+      function filterUsersClientSide(q) {
+        const tbody = document.getElementById('users-tbody');
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr[data-user-id]');
+        const term = q.toLowerCase();
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = term === '' || text.includes(term) ? '' : 'none';
+        });
+      }
+
       searchInput?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
           performSearch();
         }
+      });
+
+      searchInput?.addEventListener('input', (e) => {
+        filterUsersClientSide(e.target.value.trim());
       });
 
       searchBtn?.addEventListener('click', (e) => {

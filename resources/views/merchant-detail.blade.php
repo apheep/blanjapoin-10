@@ -293,6 +293,7 @@
 
         const keywordSearchDetail = document.getElementById('keywordSearchDetail');
         const keywordSearchDetailClear = document.getElementById('keywordSearchDetailClear');
+        let keywordSearchDetailTimeout = null;
 
         keywordSearchDetail?.addEventListener('keydown', (event) => {
             if (event.key !== 'Enter') {
@@ -300,10 +301,12 @@
             }
             event.preventDefault();
             currentDetailKeywordQuery = event.target.value.trim();
-            // Reset to page 1 when searching
             currentDetailKeywordPage = '1';
-            fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
-            updateDetailKeywordUrlState();
+            if (keywordSearchDetailTimeout) clearTimeout(keywordSearchDetailTimeout);
+            keywordSearchDetailTimeout = setTimeout(() => {
+                fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
+                updateDetailKeywordUrlState();
+            }, 50);
         });
 
         keywordSearchDetail?.addEventListener('input', (event) => {
@@ -312,13 +315,13 @@
                 keywordSearchDetailClear.classList.toggle('hidden', value.length === 0);
             }
 
-            // Jika dikosongkan, reset hasil
-            if (value === '' && currentDetailKeywordQuery !== '') {
-                currentDetailKeywordQuery = '';
-                currentDetailKeywordPage = '1';
+            currentDetailKeywordQuery = value;
+            currentDetailKeywordPage = '1';
+            if (keywordSearchDetailTimeout) clearTimeout(keywordSearchDetailTimeout);
+            keywordSearchDetailTimeout = setTimeout(() => {
                 fetchDetailKeywordTable(buildDetailKeywordSearchRequestUrl());
                 updateDetailKeywordUrlState();
-            }
+            }, 300);
         });
 
         keywordSearchDetailClear?.addEventListener('click', () => {

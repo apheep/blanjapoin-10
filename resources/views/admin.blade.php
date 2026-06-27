@@ -922,18 +922,13 @@
 
         merchantSearchInput?.addEventListener('input', (event) => {
             const value = event.target.value.trim();
+            currentMerchantQuery = value;
 
-            if (value === '' && currentMerchantQuery !== '') {
-                currentMerchantQuery = '';
+            if (merchantSearchTimeout) clearTimeout(merchantSearchTimeout);
 
-                if (merchantSearchTimeout) {
-                    clearTimeout(merchantSearchTimeout);
-                }
-
-                merchantSearchTimeout = setTimeout(() => {
-                    fetchMerchantTable(buildMerchantSearchRequestUrl());
-                }, 50);
-            }
+            merchantSearchTimeout = setTimeout(() => {
+                fetchMerchantTable(buildMerchantSearchRequestUrl());
+            }, 300);
         });
 
         function buildMerchantSearchRequestUrl(sourceHref = null) {
@@ -1238,22 +1233,17 @@
 
         keywordSearchInput?.addEventListener('input', (event) => {
             const value = event.target.value.trim();
+            currentKeywordQuery = value;
+
             if (keywordSearchClear) {
                 keywordSearchClear.classList.toggle('hidden', value.length === 0);
             }
 
-            // Kalau dikosongkan, langsung reset ke semua data
-            if (value === '' && currentKeywordQuery !== '') {
-                currentKeywordQuery = '';
+            if (keywordSearchTimeout) clearTimeout(keywordSearchTimeout);
 
-                if (keywordSearchTimeout) {
-                    clearTimeout(keywordSearchTimeout);
-                }
-
-                keywordSearchTimeout = setTimeout(() => {
-                    fetchKeywordTable(buildKeywordSearchRequestUrl());
-                }, 50);
-            }
+            keywordSearchTimeout = setTimeout(() => {
+                fetchKeywordTable(buildKeywordSearchRequestUrl());
+            }, 300);
         });
 
         function buildKeywordSearchRequestUrl(sourceHref = null) {
