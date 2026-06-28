@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
  <head>
   <meta charset="utf-8">
@@ -1098,7 +1098,8 @@
     if (trimmedQuery.length === 0) {
      return;
     }
-    window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
+    // welcome page: source=welcome (global search, tidak ada scope territorial)
+    window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}&source=welcome`;
    }
 
    let searchNavTimeout = null;

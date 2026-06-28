@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -716,10 +716,11 @@
 
             // Client side Search Input listener
             const searchPageUrl = "{{ route('merchant.search') }}";
+            const searchScope = { source: 'reg', source_value: '{{ $location ?? "" }}' };
             window.goToSearchPage = function(query) {
                 const trimmedQuery = (query || '').trim();
                 if (trimmedQuery.length === 0) return;
-                window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
+                window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}&source=${encodeURIComponent(searchScope.source)}&source_value=${encodeURIComponent(searchScope.source_value)}`;
             }
 
             let searchNavTimeout = null;
