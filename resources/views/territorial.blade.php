@@ -772,36 +772,15 @@
             }
 
             // Client side Search Input listener
-            const searchPageUrl = "{{ route('merchant.search') }}";
-            window.goToSearchPage = function(query) {
-                const trimmedQuery = (query || '').trim();
-                if (trimmedQuery.length === 0) return;
-                window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
-            }
-
-            let searchNavTimeout = null;
-            function debouncedNavigate(value) {
-                if (searchNavTimeout) clearTimeout(searchNavTimeout);
-                searchNavTimeout = setTimeout(() => { goToSearchPage(value); }, 600);
-            }
-
             if (mobileSearchInput) {
                 mobileSearchInput.addEventListener('input', (e) => {
                     applyClientSearch(e.target.value);
-                    debouncedNavigate(e.target.value);
-                });
-                mobileSearchInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); if (searchNavTimeout) clearTimeout(searchNavTimeout); goToSearchPage(e.target.value); }
                 });
             }
 
             if (desktopSearchInput) {
                 desktopSearchInput.addEventListener('input', (e) => {
                     applyClientSearch(e.target.value);
-                    debouncedNavigate(e.target.value);
-                });
-                desktopSearchInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); if (searchNavTimeout) clearTimeout(searchNavTimeout); goToSearchPage(e.target.value); }
                 });
             }
 
