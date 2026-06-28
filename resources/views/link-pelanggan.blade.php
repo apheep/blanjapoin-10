@@ -207,19 +207,24 @@
     <script>
         (function () {
             const searchInput = document.getElementById('linkPelangganSearch');
+            const searchUrl = "{{ route('merchant.search') }}";
             if (!searchInput) return;
-
-            function filterVouchers(query) {
-                const q = query.toLowerCase().trim();
-                const cards = document.querySelectorAll('[data-voucher-card="true"]');
-                cards.forEach(function (card) {
-                    const name = (card.getAttribute('data-search-name') || '').toLowerCase();
-                    card.style.display = (q === '' || name.startsWith(q)) ? '' : 'none';
-                });
-            }
-
+            let searchTimeout = null;
             searchInput.addEventListener('input', function () {
-                filterVouchers(searchInput.value);
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    const q = searchInput.value.trim();
+                    if (q.length === 0) return;
+                    window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
+                }, 600);
+            });
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    const q = searchInput.value.trim();
+                    if (q.length > 0) window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
+                }
             });
         })();
     </script>
