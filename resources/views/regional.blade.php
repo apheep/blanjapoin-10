@@ -603,7 +603,7 @@
                 voucherCards.forEach(card => {
                     const name = (card.dataset.searchName || '').toLowerCase();
                     const cardLocation = (card.dataset.searchLocation || '').toLowerCase();
-                    const matchesName = query === '' || name.includes(query);
+                    const matchesName = query === '' || name.startsWith(query);
                     const matchesLocation = locationQuery === '' || cardLocation.includes(locationQuery);
                     card.style.display = (matchesName && matchesLocation) ? '' : 'none';
                 });
@@ -722,17 +722,29 @@
                 window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
             }
 
+            let searchNavTimeout = null;
+            function debouncedNavigate(value) {
+                if (searchNavTimeout) clearTimeout(searchNavTimeout);
+                searchNavTimeout = setTimeout(() => { goToSearchPage(value); }, 600);
+            }
+
             if (mobileSearchInput) {
-                mobileSearchInput.addEventListener('input', (e) => applyClientSearch(e.target.value));
+                mobileSearchInput.addEventListener('input', (e) => {
+                    applyClientSearch(e.target.value);
+                    debouncedNavigate(e.target.value);
+                });
                 mobileSearchInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); goToSearchPage(e.target.value); }
+                    if (e.key === 'Enter') { e.preventDefault(); if (searchNavTimeout) clearTimeout(searchNavTimeout); goToSearchPage(e.target.value); }
                 });
             }
 
             if (desktopSearchInput) {
-                desktopSearchInput.addEventListener('input', (e) => applyClientSearch(e.target.value));
+                desktopSearchInput.addEventListener('input', (e) => {
+                    applyClientSearch(e.target.value);
+                    debouncedNavigate(e.target.value);
+                });
                 desktopSearchInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); goToSearchPage(e.target.value); }
+                    if (e.key === 'Enter') { e.preventDefault(); if (searchNavTimeout) clearTimeout(searchNavTimeout); goToSearchPage(e.target.value); }
                 });
             }
 

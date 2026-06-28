@@ -155,6 +155,19 @@
             </div>
 
 
+            <!-- Search -->
+            <div class="mt-4">
+                <div class="relative max-w-md">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-neutral-400 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input id="linkPelangganSearch" type="text" placeholder="Cari voucher..."
+                        class="w-full rounded-xl bg-white py-2.5 pl-9 pr-4 text-sm text-neutral-900 placeholder:text-neutral-400 shadow-md ring-1 ring-neutral-200/50 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-shadow" />
+                </div>
+            </div>
+
             <!-- Merchant Sections by Category -->
             <div class="mt-6 md:mt-8">
                 @php
@@ -189,6 +202,32 @@
             </footer>
         </main>
     </div>
+
+    <!-- Search script -->
+    <script>
+        (function () {
+            const searchInput = document.getElementById('linkPelangganSearch');
+            const searchUrl = "{{ route('merchant.search') }}";
+            if (!searchInput) return;
+            let searchTimeout = null;
+            searchInput.addEventListener('input', function () {
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    const q = searchInput.value.trim();
+                    if (q.length === 0) return;
+                    window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
+                }, 600);
+            });
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    const q = searchInput.value.trim();
+                    if (q.length > 0) window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
+                }
+            });
+        })();
+    </script>
 
     <!-- Script untuk hide loading spinner -->
     <script>
