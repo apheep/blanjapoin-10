@@ -1050,35 +1050,192 @@ class KeywordController extends Controller
     {
         // Auto-disable keywords that have passed their end_date
         Keyword::autoDisableExpiredKeywords();
-        
-        $searchTerm = trim($request->get('q', ''));
 
-        $searchResults = Keyword::with('merchant')
+        $searchTerm  = trim($request->get('q', ''));
+        $source      = $request->get('source', '');       // 'u','reg','poin-tsel','cluster','city','welcome'
+        $sourceValue = trim($request->get('source_value', '')); // kode/slug masing-masing route
+
+        // ── Base query ─────────────────────────────────────────────────────────
+        $query = Keyword::with('merchant')
             ->where('status', 'approve')
-            ->where('is_active', 1)
-            ->whereHas('merchant', function ($query) {
-                $query->where('is_active', 1);
-            })
-            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
-                $query->where(function ($subQuery) use ($searchTerm) {
-                    $subQuery->where('nama_produk', 'like', "{$searchTerm}%")
-                        ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
-                            $merchantQuery->where('nama_merchant', 'like', "{$searchTerm}%");
-                        });
-                });
-            }, function ($query) {
-                $query->latest();
-            })
-            ->orderByDesc('created_at')
-            ->get();
+            ->where('is_active', 1);
 
-        $totalPoint = optional($request->user())->point ?? 0;
+        // ── Scope filter berdasarkan source ────────────────────────────────────
+        switch ($source) {
+
+            // /u/{code}  — hanya keyword dari 1 merchant
+            case 'u':
+                if ($sourceValue !== '') {
+                    $decodedCode = urldecode($sourceValue);
+                    $merchant = \App\Models\Merchant::where(function ($q) use ($decodedCode, $sourceValue) {
+                            $q->where('link_blanjapoin', 'like', '%dash/' . $decodedCode)
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '/%')
+                              ->orWhere('link_blanjapoin', 'like', '%dash/' . $decodedCode . '?%');
+                            if ($sourceValue !== $decodedCode) {
+                                $q->orWhere('link_blanjapoin', 'like', '%dash/' . $sourceValue)
+                                  ->orWhere('link_blanjapoin', 'like', '%dash/' . $sourceValue . '/%')
+                                  ->orWhere('link_blanjapoin', 'like', '%dash/' . $sourceValue . '?%');
+                            }
+                        })
+                        ->whereNotNull('link_blanjapoin')
+                        ->first();
+
+                    if ($merchant) {
+                        // /u/{code}: tidak ada filter is_active merchant (sama dengan linkPelanggan)
+                        $query->where('merchant_key', $merchant->id);
+                    } else {
+                        $query->whereRaw('0=1'); // merchant tidak ditemukan → no results
+                    }
+                }
+                break;
+
+            // /reg/{location}  — keyword dari semua merchant di regional tersebut
+            case 'reg':
+                if ($sourceValue !== '') {
+                    $locationName = getRegionalNameFromAlias($sourceValue);
+                    $cities = \App\Models\DimTeritorialNational::whereRaw(
+                            'LOWER(TRIM(regional)) = ?', [strtolower(trim($locationName))]
+                        )->distinct()->pluck('city')
+                        ->filter(fn($c) => !empty(trim($c)))
+                        ->map(fn($c) => trim($c))
+                        ->unique()->values()->toArray();
+
+                    if (empty($cities)) {
+                        $cities = \App\Models\DimTeritorialNational::whereRaw(
+                                'LOWER(TRIM(regional)) = ?', [strtolower(trim($sourceValue))]
+                            )->distinct()->pluck('city')
+                            ->filter(fn($c) => !empty(trim($c)))
+                            ->map(fn($c) => trim($c))
+                            ->unique()->values()->toArray();
+                    }
+
+                    $merchantIds = $this->getMerchantIdsByCities($cities);
+                    $query->whereIn('merchant_key', $merchantIds);
+                }
+                break;
+
+            // /poin-tsel/{location}  — keyword dari semua merchant di branch tersebut
+            case 'poin-tsel':
+                if ($sourceValue !== '') {
+                    $locationName = territorialNameGeneric($sourceValue);
+                    $cities = \App\Models\DimTeritorialNational::whereRaw(
+                            'LOWER(TRIM(branch)) = ?', [strtolower(trim($locationName))]
+                        )->distinct()->pluck('city')
+                        ->filter(fn($c) => !empty(trim($c)))
+                        ->map(fn($c) => trim($c))
+                        ->unique()->values()->toArray();
+
+                    if (empty($cities)) {
+                        $cities = \App\Models\DimTeritorialNational::whereRaw(
+                                'LOWER(TRIM(branch)) = ?', [strtolower(trim($sourceValue))]
+                            )->distinct()->pluck('city')
+                            ->filter(fn($c) => !empty(trim($c)))
+                            ->map(fn($c) => trim($c))
+                            ->unique()->values()->toArray();
+                    }
+
+                    $merchantIds = $this->getMerchantIdsByCities($cities);
+                    $query->whereIn('merchant_key', $merchantIds);
+                }
+                break;
+
+            // /cluster/{location}  — keyword dari semua merchant di cluster tersebut
+            case 'cluster':
+                if ($sourceValue !== '') {
+                    $locationName = territorialNameGeneric($sourceValue);
+                    $cities = \App\Models\DimTeritorialNational::whereRaw(
+                            'LOWER(TRIM(cluster)) = ?', [strtolower(trim($locationName))]
+                        )->distinct()->pluck('city')
+                        ->filter(fn($c) => !empty(trim($c)))
+                        ->map(fn($c) => trim($c))
+                        ->unique()->values()->toArray();
+
+                    if (empty($cities)) {
+                        $cities = \App\Models\DimTeritorialNational::whereRaw(
+                                'LOWER(TRIM(cluster)) = ?', [strtolower(trim($sourceValue))]
+                            )->distinct()->pluck('city')
+                            ->filter(fn($c) => !empty(trim($c)))
+                            ->map(fn($c) => trim($c))
+                            ->unique()->values()->toArray();
+                    }
+
+                    $merchantIds = $this->getMerchantIdsByCities($cities);
+                    $query->whereIn('merchant_key', $merchantIds);
+                }
+                break;
+
+            // /city/{location}  — keyword dari semua merchant di kota tersebut
+            case 'city':
+                if ($sourceValue !== '') {
+                    $allMerchants = \App\Models\Merchant::whereNotNull('daerah')
+                        ->where('daerah', '!=', '')
+                        ->get();
+                    $merchantIds = $allMerchants->filter(function ($merchant) use ($sourceValue) {
+                        $merchantTerritorial = extractKabupatenKota($merchant->daerah);
+                        $merchantSlug = territorialSlug($merchantTerritorial);
+                        return strtolower($merchantSlug) === strtolower($sourceValue);
+                    })->pluck('id')->toArray();
+
+                    $query->whereIn('merchant_key', $merchantIds);
+                }
+                break;
+
+            // 'welcome' atau source kosong  — global search
+            default:
+                $query->whereHas('merchant', function ($q) {
+                    $q->where('is_active', 1);
+                });
+                break;
+        }
+
+        // ── Keyword / merchant name search ─────────────────────────────────────
+        if ($searchTerm !== '') {
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('nama_produk', 'like', "{$searchTerm}%")
+                  ->orWhereHas('merchant', function ($mq) use ($searchTerm) {
+                      $mq->where('nama_merchant', 'like', "{$searchTerm}%");
+                  });
+            });
+        }
+
+        $searchResults = $query->orderByDesc('created_at')->get();
+        $totalPoint    = optional($request->user())->point ?? 0;
 
         return view('merchant.search', [
             'searchResults' => $searchResults,
-            'searchTerm' => $searchTerm,
-            'totalPoint' => $totalPoint,
+            'searchTerm'    => $searchTerm,
+            'totalPoint'    => $totalPoint,
+            'source'        => $source,
+            'sourceValue'   => $sourceValue,
         ]);
+    }
+
+    /**
+     * Helper: ambil merchant IDs dari daftar kota (case-insensitive, toleransi prefix Kota/Kabupaten)
+     */
+    private function getMerchantIdsByCities(array $cities): array
+    {
+        if (empty($cities)) {
+            return [];
+        }
+
+        $citiesNormalized = array_map(function ($city) {
+            return strtolower(trim(normalizeCityName($city)));
+        }, $cities);
+
+        return \App\Models\Merchant::whereNotNull('daerah')
+            ->where('daerah', '!=', '')
+            ->get()
+            ->filter(function ($merchant) use ($cities, $citiesNormalized) {
+                $merchantCity = trim(extractKabupatenKota($merchant->daerah));
+                if (empty($merchantCity)) return false;
+                $merchantCityNorm = strtolower(normalizeCityName($merchantCity));
+                if (in_array($merchantCityNorm, $citiesNormalized)) return true;
+                if (in_array($merchantCity, $cities)) return true;
+                return in_array(strtolower($merchantCity), array_map('strtolower', $cities));
+            })
+            ->pluck('id')
+            ->toArray();
     }
 
     public function approve($id)

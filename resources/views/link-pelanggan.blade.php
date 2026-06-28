@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 <!doctype html>
 <html lang="en">
 <head>
@@ -164,6 +164,7 @@
                         </svg>
                     </span>
                     <input id="linkPelangganSearch" type="text" placeholder="Cari voucher..."
+                        data-merchant-code="{{ isset($merchant) && $merchant->link_blanjapoin ? basename(parse_url($merchant->link_blanjapoin, PHP_URL_PATH)) : '' }}"
                         class="w-full rounded-xl bg-white py-2.5 pl-9 pr-4 text-sm text-neutral-900 placeholder:text-neutral-400 shadow-md ring-1 ring-neutral-200/50 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-shadow" />
                 </div>
             </div>
@@ -207,15 +208,24 @@
     <script>
         (function () {
             const searchInput = document.getElementById('linkPelangganSearch');
-            const searchUrl = "{{ route('merchant.search') }}";
+            const searchUrl   = "{{ route('merchant.search') }}";
+            const searchScope = { source: 'u', source_value: '{{ isset($merchant) ? urlencode($merchant->link_blanjapoin ? ltrim(parse_url($merchant->link_blanjapoin, PHP_URL_PATH), "/") : "") : "" }}' };
+            // Ambil code dari link_blanjapoin path: "blanjapoin.id/dash/{code}" -> "dash/{code}" -> kita perlu hanya {code}
+            // Namun source_value yang kita butuhkan adalah code route (/u/{code}), bukan full path
+            // Gunakan data-attribute dari PHP
+            const merchantCode = document.querySelector('[data-merchant-code]')?.dataset?.merchantCode || '';
             if (!searchInput) return;
             let searchTimeout = null;
+            function buildSearchUrl(q) {
+                const params = new URLSearchParams({ q, source: 'u', source_value: merchantCode });
+                return searchUrl + '?' + params.toString();
+            }
             searchInput.addEventListener('input', function () {
                 if (searchTimeout) clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(function () {
                     const q = searchInput.value.trim();
                     if (q.length === 0) return;
-                    window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
+                    window.location.href = buildSearchUrl(q);
                 }, 600);
             });
             searchInput.addEventListener('keydown', function (e) {
@@ -223,7 +233,7 @@
                     e.preventDefault();
                     if (searchTimeout) clearTimeout(searchTimeout);
                     const q = searchInput.value.trim();
-                    if (q.length > 0) window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
+                    if (q.length > 0) window.location.href = buildSearchUrl(q);
                 }
             });
         })();
