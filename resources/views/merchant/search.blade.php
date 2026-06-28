@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('content')
 @php
@@ -30,6 +30,13 @@
         </div>
         <!-- Search Form -->
         <form action="{{ route('merchant.search') }}" method="GET" class="mb-4 md:mb-5">
+            {{-- Pertahankan konteks scope saat user search ulang dari halaman ini --}}
+            @if(!empty($source))
+                <input type="hidden" name="source" value="{{ $source }}">
+            @endif
+            @if(!empty($sourceValue))
+                <input type="hidden" name="source_value" value="{{ $sourceValue }}">
+            @endif
             <div class="relative">
                 <input
                     type="text"
@@ -273,8 +280,17 @@
 
     (function () {
         const searchInput = document.querySelector('input[name="q"]');
-        const searchUrl = "{{ route('merchant.search') }}";
+        const searchUrl   = "{{ route('merchant.search') }}";
+        const scopeSource = "{{ $source ?? '' }}";
+        const scopeValue  = "{{ $sourceValue ?? '' }}";
         if (!searchInput) return;
+
+        function buildUrl(q) {
+            const params = new URLSearchParams({ q });
+            if (scopeSource) params.set('source', scopeSource);
+            if (scopeValue)  params.set('source_value', scopeValue);
+            return searchUrl + '?' + params.toString();
+        }
 
         let searchTimeout = null;
         searchInput.addEventListener('input', function () {
@@ -282,7 +298,7 @@
             searchTimeout = setTimeout(function () {
                 const q = searchInput.value.trim();
                 if (q.length === 0) return;
-                window.location.href = searchUrl + '?q=' + encodeURIComponent(q);
+                window.location.href = buildUrl(q);
             }, 500);
         });
     })();
