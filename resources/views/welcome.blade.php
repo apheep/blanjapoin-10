@@ -1101,12 +1101,24 @@
     window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
    }
 
+   let searchNavTimeout = null;
+   function debouncedSearch(value) {
+    if (searchNavTimeout) clearTimeout(searchNavTimeout);
+    searchNavTimeout = setTimeout(() => {
+     goToSearchPage(value);
+    }, 500);
+   }
+
    if (mobileSearchInput) {
     mobileSearchInput.addEventListener('keydown', (e) => {
      if (e.key === 'Enter') {
       e.preventDefault();
+      if (searchNavTimeout) clearTimeout(searchNavTimeout);
       goToSearchPage(e.target.value);
      }
+    });
+    mobileSearchInput.addEventListener('input', (e) => {
+     debouncedSearch(e.target.value);
     });
    }
 
@@ -1114,8 +1126,12 @@
     desktopSearchInput.addEventListener('keydown', (e) => {
      if (e.key === 'Enter') {
       e.preventDefault();
+      if (searchNavTimeout) clearTimeout(searchNavTimeout);
       goToSearchPage(e.target.value);
      }
+    });
+    desktopSearchInput.addEventListener('input', (e) => {
+     debouncedSearch(e.target.value);
     });
    }
 

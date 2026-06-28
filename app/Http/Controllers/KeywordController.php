@@ -1061,12 +1061,9 @@ class KeywordController extends Controller
             })
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
                 $query->where(function ($subQuery) use ($searchTerm) {
-                    $subQuery->where('nama_produk', 'like', "%{$searchTerm}%")
-                        ->orWhere('skb', 'like', "%{$searchTerm}%")
+                    $subQuery->where('nama_produk', 'like', "{$searchTerm}%")
                         ->orWhereHas('merchant', function ($merchantQuery) use ($searchTerm) {
-                            $merchantQuery->where('nama_merchant', 'like', "%{$searchTerm}%")
-                                ->orWhere('kategori', 'like', "%{$searchTerm}%")
-                                ->orWhere('daerah', 'like', "%{$searchTerm}%");
+                            $merchantQuery->where('nama_merchant', 'like', "{$searchTerm}%");
                         });
                 });
             }, function ($query) {
