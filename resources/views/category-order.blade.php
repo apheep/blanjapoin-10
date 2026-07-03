@@ -140,6 +140,10 @@
         #categoryList.touch-swap-mode .cat-item:not(.touch-selected) .toggle-vis {
             display: none;
         }
+        /* hide item-sort select on non-selected items while in swap mode */
+        #categoryList.touch-swap-mode .cat-item:not(.touch-selected) .item-sort-select {
+            display: none;
+        }
         /* tap highlight feedback on swap targets */
         #categoryList.touch-swap-mode .cat-item:not(.touch-selected) {
             cursor: pointer;
@@ -338,6 +342,8 @@
     const ROUTE_TYPES = @json($routeTypes);
     const CSRF        = document.querySelector('meta[name="csrf-token"]').content;
 
+    const ITEM_SORT_OPTIONS = @json(\App\Models\CategoryOrder::itemSortOptions());
+
     let currentRoute = null;       // e.g. 'u'
     let currentValue = '';         // e.g. 'sector1' or ''
     let currentCategories = [];
@@ -348,15 +354,23 @@
 
     // ── Dirty state / Sticky bar ──────────────────────────────────────────────
     function takeSnapshot(categories) {
-        return categories.map(c => ({ key: c.key, is_visible: !!c.is_visible }));
+        return categories.map(c => ({ key: c.key, is_visible: !!c.is_visible, item_sort: c.item_sort || 'none' }));
     }
 
     function isStateDirty() {
         if (!originalSnapshot || originalSnapshot.length !== currentCategories.length) return false;
         return currentCategories.some((cat, i) =>
             cat.key !== originalSnapshot[i].key ||
-            !!cat.is_visible !== originalSnapshot[i].is_visible
+            !!cat.is_visible !== originalSnapshot[i].is_visible ||
+            (cat.item_sort || 'none') !== originalSnapshot[i].item_sort
         );
+    }
+
+    function onItemSortChange(key, value) {
+        const cat = currentCategories.find(c => c.key === key);
+        if (!cat) return;
+        cat.item_sort = value;
+        checkDirty();
     }
 
     function checkDirty() {
@@ -594,6 +608,16 @@
             </span>
             <span class="text-xl leading-none shrink-0">${cat.emoji}</span>
             <span class="cat-name flex-1 text-sm font-semibold text-gray-800">${cat.label}</span>
+            <select
+                class="item-sort-select text-[11px] sm:text-xs rounded-lg border border-gray-200 px-2 py-1.5 shrink-0 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                title="Urutan item berdasarkan poin redeem untuk kategori ini"
+                onclick="event.stopPropagation()"
+                onchange="onItemSortChange('${cat.key}', this.value)"
+            >
+                ${Object.entries(ITEM_SORT_OPTIONS).map(([value, label]) =>
+                    `<option value="${value}" ${((cat.item_sort || 'none') === value) ? 'selected' : ''}>${label}</option>`
+                ).join('')}
+            </select>
             <button
                 onclick="toggleVisibility('${cat.key}', this)"
                 class="toggle-vis ${hideColor} text-xs transition shrink-0 flex items-center gap-1"
@@ -705,8 +729,8 @@
     function onMobileTap(e) {
         const item = this;
 
-        // Tapping the visibility toggle always works normally
-        if (e.target.closest('.toggle-vis')) return;
+        // Tapping the visibility toggle or item-sort select always works normally
+        if (e.target.closest('.toggle-vis') || e.target.closest('.item-sort-select')) return;
 
         if (!touchSelectedItem) {
             // No item selected yet → select this one
@@ -767,13 +791,14 @@
             body: JSON.stringify({
                 route_type:  currentRoute,
                 route_value: currentValue,
-                categories:  currentCategories.map(c => ({ key: c.key, is_visible: c.is_visible })),
+                categories:  currentCategories.map(c => ({ key: c.key, is_visible: c.is_visible, item_sort: c.item_sort || 'none' })),
             }),
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
                 showAlert(data.message, 'success');
+                originalSnapshot = takeSnapshot(currentCategories);
                 markClean();
                 document.getElementById('inheritanceNotice').classList.add('hidden');
                 if (currentRoute !== 'default') loadSavedValues(currentRoute);

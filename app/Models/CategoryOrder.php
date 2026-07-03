@@ -6,26 +6,41 @@ use Illuminate\Database\Eloquent\Model;
 
 class CategoryOrder extends Model
 {
-    protected $fillable = ['route_type', 'route_value', 'category_key', 'order_index', 'is_visible'];
+    protected $fillable = ['route_type', 'route_value', 'category_key', 'order_index', 'is_visible', 'item_sort'];
 
     protected $casts = ['is_visible' => 'boolean'];
 
     /**
-     * All known categories: key → [label, emoji, view partial]
+     * All known categories: key → [label, emoji, view partial, section]
+     * `section` matches the data-voucher-section attribute rendered on each
+     * category's card container, used to target the right cards when applying
+     * a per-category point sort on the client side.
      */
     public static function allCategories(): array
     {
         return [
-            'belanja'        => ['label' => 'Belanja',        'emoji' => '🛍️', 'view' => 'merchant.shop'],
-            'kuliner'        => ['label' => 'Kuliner',        'emoji' => '🍔', 'view' => 'merchant.food'],
-            'telkomsel'      => ['label' => 'Telkomsel',      'emoji' => '📱', 'view' => 'merchant.telkomsel'],
-            'hiburan'        => ['label' => 'Hiburan',        'emoji' => '🎬', 'view' => 'merchant.entertain'],
-            'liburan'        => ['label' => 'Liburan',        'emoji' => '✈️', 'view' => 'merchant.vacation'],
-            'kecantikan'     => ['label' => 'Kecantikan',     'emoji' => '💄', 'view' => 'merchant.beautyncare'],
-            'merchandise'    => ['label' => 'Merchandise',    'emoji' => '🎽', 'view' => 'merchant.merchandise'],
-            'paket_video'    => ['label' => 'Paket Video',    'emoji' => '🎥', 'view' => 'merchant.paketvideo'],
-            'paket_games'    => ['label' => 'Paket Games',    'emoji' => '🎮', 'view' => 'merchant.paketgames'],
-            'paket_internet' => ['label' => 'Paket Internet', 'emoji' => '🌐', 'view' => 'merchant.paketinternet'],
+            'belanja'        => ['label' => 'Belanja',        'emoji' => '🛍️', 'view' => 'merchant.shop',         'section' => 'shop'],
+            'kuliner'        => ['label' => 'Kuliner',        'emoji' => '🍔', 'view' => 'merchant.food',          'section' => 'food'],
+            'telkomsel'      => ['label' => 'Telkomsel',      'emoji' => '📱', 'view' => 'merchant.telkomsel',     'section' => 'telkomsel'],
+            'hiburan'        => ['label' => 'Hiburan',        'emoji' => '🎬', 'view' => 'merchant.entertain',     'section' => 'entertain'],
+            'liburan'        => ['label' => 'Liburan',        'emoji' => '✈️', 'view' => 'merchant.vacation',      'section' => 'vacation'],
+            'kecantikan'     => ['label' => 'Kecantikan',     'emoji' => '💄', 'view' => 'merchant.beautyncare',   'section' => 'beauty'],
+            'merchandise'    => ['label' => 'Merchandise',    'emoji' => '🎽', 'view' => 'merchant.merchandise',   'section' => 'merchandise'],
+            'paket_video'    => ['label' => 'Paket Video',    'emoji' => '🎥', 'view' => 'merchant.paketvideo',    'section' => 'paketvideo'],
+            'paket_games'    => ['label' => 'Paket Games',    'emoji' => '🎮', 'view' => 'merchant.paketgames',    'section' => 'paketgames'],
+            'paket_internet' => ['label' => 'Paket Internet', 'emoji' => '🌐', 'view' => 'merchant.paketinternet', 'section' => 'paketinternet'],
+        ];
+    }
+
+    /**
+     * Valid values for item_sort: how vouchers within each category are ordered by redeem point.
+     */
+    public static function itemSortOptions(): array
+    {
+        return [
+            'none'        => 'Tidak diurutkan (default)',
+            'redeem_desc' => 'Poin Tertinggi ke Terendah',
+            'redeem_asc'  => 'Poin Terendah ke Tertinggi',
         ];
     }
 
@@ -65,7 +80,11 @@ class CategoryOrder extends Model
 
         return $rows
             ->filter(fn($r) => $r->is_visible && isset($allDefs[$r->category_key]))
-            ->map(fn($r) => array_merge(['key' => $r->category_key], $allDefs[$r->category_key], ['is_visible' => true]))
+            ->map(fn($r) => array_merge(
+                ['key' => $r->category_key],
+                $allDefs[$r->category_key],
+                ['is_visible' => true, 'item_sort' => static::normalizeItemSort($r->item_sort)]
+            ))
             ->values()
             ->all();
     }
@@ -92,18 +111,26 @@ class CategoryOrder extends Model
 
         $result = $rows->map(fn($r) => array_merge(
             ['key' => $r->category_key],
-            $allDefs[$r->category_key] ?? ['label' => $r->category_key, 'emoji' => '📦', 'view' => ''],
-            ['is_visible' => (bool) $r->is_visible]
+            $allDefs[$r->category_key] ?? ['label' => $r->category_key, 'emoji' => '📦', 'view' => '', 'section' => $r->category_key],
+            ['is_visible' => (bool) $r->is_visible, 'item_sort' => static::normalizeItemSort($r->item_sort)]
         ))->all();
 
         // Append any categories not in saved order
         foreach ($allDefs as $key => $def) {
             if (!$saved->has($key)) {
-                $result[] = array_merge(['key' => $key], $def, ['is_visible' => true]);
+                $result[] = array_merge(['key' => $key], $def, ['is_visible' => true, 'item_sort' => 'none']);
             }
         }
 
         return $result;
+    }
+
+    /**
+     * Ensure only known item_sort values are ever surfaced, defaulting to 'none'.
+     */
+    private static function normalizeItemSort(?string $itemSort): string
+    {
+        return $itemSort !== null && array_key_exists($itemSort, static::itemSortOptions()) ? $itemSort : 'none';
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────
@@ -142,7 +169,7 @@ class CategoryOrder extends Model
     private static function hardcodedDefaults(array $allDefs): array
     {
         return collect($allDefs)
-            ->map(fn($def, $key) => array_merge(['key' => $key], $def, ['is_visible' => true]))
+            ->map(fn($def, $key) => array_merge(['key' => $key], $def, ['is_visible' => true, 'item_sort' => 'none']))
             ->values()
             ->all();
     }

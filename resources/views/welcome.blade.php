@@ -351,6 +351,12 @@
         // Get ordered category list from DB (falls back: specific → generic → default → hardcoded)
         $orderedCategories = \App\Models\CategoryOrder::getOrderedCategories($currentRouteType, $currentRouteValue);
 
+        // Admin-configured default sort for vouchers within each category (by redeem point),
+        // keyed by the category's data-voucher-section value so JS can target the right cards.
+        $categoryItemSortMap = collect($orderedCategories)
+            ->mapWithKeys(fn($cat) => [($cat['section'] ?? $cat['key']) => ($cat['item_sort'] ?? 'none')])
+            ->all();
+
         // Helper: check if a category has displayable data
         $hasCategoryData = function($category) use ($keywords) {
             return $keywords->filter(function ($keyword) use ($category) {
@@ -787,6 +793,43 @@
    let currentLocationFilter = '';
    let currentPointSort = 'Lowest';
    let mobilePointFilter = 'Lowest';
+   const CATEGORY_ITEM_SORT = @json($categoryItemSortMap ?? []);
+   let defaultItemSortApplied = false;
+
+   // Apply each category's own admin-configured point sort (if any) to its section only.
+   function applyDefaultItemSorts() {
+    if (voucherSections.size === 0) registerVoucherSections();
+    let appliedAny = false;
+
+    voucherSections.forEach((containerInfos, sectionKey) => {
+     const order = CATEGORY_ITEM_SORT[sectionKey];
+     if (order !== 'redeem_desc' && order !== 'redeem_asc') return;
+     appliedAny = true;
+
+     const cards = [];
+     containerInfos.forEach(info => cards.push(...info.element.querySelectorAll('[data-voucher-card="true"]')));
+     if (cards.length === 0) return;
+
+     const sortedCards = cards.slice().sort((a, b) => {
+      const aPoint = parseFloat(cardPointValue(a)) || 0;
+      const bPoint = parseFloat(cardPointValue(b)) || 0;
+      return order === 'redeem_asc' ? aPoint - bPoint : bPoint - aPoint;
+     });
+
+     let cursor = 0;
+     containerInfos.forEach(info => {
+      const slice = sortedCards.slice(cursor, cursor + info.slotCount);
+      cursor += info.slotCount;
+      info.element.innerHTML = '';
+      slice.forEach(card => info.element.appendChild(card));
+     });
+    });
+
+    if (appliedAny) {
+     refreshVoucherCards();
+     applyVoucherFilters();
+    }
+   }
 
    function renderLocationOptions(filter = '', dropdownElement, inputElement) {
     dropdownElement.innerHTML = buildGroupedLocationListHtml(filter);
@@ -1198,8 +1241,13 @@
     
     refreshVoucherCards();
     registerVoucherSections();
+
+    if (!defaultItemSortApplied) {
+     defaultItemSortApplied = true;
+     applyDefaultItemSorts();
+    }
    }
-   
+
    // Run immediately and also after a short delay to catch any dynamically loaded content
    initializeFiltersAndSorting();
    setTimeout(initializeFiltersAndSorting, 500);
