@@ -42,7 +42,7 @@ class CategoryOrderController extends Controller
 
     /**
      * POST /category-order/save
-     * Body: { route_type, route_value, categories: [{key, is_visible}] }
+     * Body: { route_type, route_value, categories: [{key, is_visible, item_sort}] }
      */
     public function save(Request $request): JsonResponse
     {
@@ -52,6 +52,7 @@ class CategoryOrderController extends Controller
             'categories'              => 'required|array|min:1',
             'categories.*.key'        => 'required|string',
             'categories.*.is_visible' => 'required|boolean',
+            'categories.*.item_sort'  => 'nullable|string|in:' . implode(',', array_keys(CategoryOrder::itemSortOptions())),
         ]);
 
         $routeType  = $request->route_type;
@@ -77,6 +78,7 @@ class CategoryOrderController extends Controller
                 'category_key' => $category['key'],
                 'order_index'  => $index,
                 'is_visible'   => (bool) $category['is_visible'],
+                'item_sort'    => $category['item_sort'] ?? 'none',
             ]);
         }
 
