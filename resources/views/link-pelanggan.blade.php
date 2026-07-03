@@ -179,11 +179,17 @@
                             $baseCondition = $keyword->merchant && $keywordCategory === $category
                                 && $keyword->status === 'approve'
                                 && $keyword->is_active == 1;
-                            return $isLinkPelanggan 
-                                ? $baseCondition 
+                            return $isLinkPelanggan
+                                ? $baseCondition
                                 : ($baseCondition && $keyword->merchant->is_active == 1);
                         })->isNotEmpty();
                     };
+
+                    // Admin-configured default sort for vouchers within each category (by redeem point),
+                    // keyed by the category's data-voucher-section value so JS can target the right cards.
+                    $categoryItemSortMap = collect($orderedCategories)
+                        ->mapWithKeys(fn($cat) => [($cat['section'] ?? $cat['key']) => ($cat['item_sort'] ?? 'none')])
+                        ->all();
                 @endphp
 
                 @foreach($orderedCategories as $cat)
@@ -267,8 +273,37 @@
             checkUserLocationAndUpdateUI();
         });
 
+        // Admin-configured default sort for vouchers within each category (by redeem point).
+        const CATEGORY_ITEM_SORT = @json($categoryItemSortMap ?? []);
+
+        function cardPointValue(card) {
+            const pointValue = card?.dataset?.point ?? '0';
+            return pointValue.toString().replace(/[^\d.-]/g, '') || '0';
+        }
+
+        function applyDefaultItemSorts() {
+            document.querySelectorAll('[data-voucher-container="true"]').forEach(container => {
+                const sectionKey = container.dataset.voucherSection;
+                const order = CATEGORY_ITEM_SORT[sectionKey];
+                if (order !== 'redeem_desc' && order !== 'redeem_asc') return;
+
+                const cards = Array.from(container.querySelectorAll('[data-voucher-card="true"]'));
+                if (cards.length === 0) return;
+
+                const sortedCards = cards.slice().sort((a, b) => {
+                    const aPoint = parseFloat(cardPointValue(a)) || 0;
+                    const bPoint = parseFloat(cardPointValue(b)) || 0;
+                    return order === 'redeem_asc' ? aPoint - bPoint : bPoint - aPoint;
+                });
+
+                sortedCards.forEach(card => container.appendChild(card));
+            });
+        }
+
         // Animate cards on page load
         document.addEventListener('DOMContentLoaded', function() {
+            applyDefaultItemSorts();
+
             // Disable redeem buttons by default until location is checked
             if (merchantValidator) {
                 updateRedeemButtons();
