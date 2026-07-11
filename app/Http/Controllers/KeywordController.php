@@ -976,6 +976,8 @@ class KeywordController extends Controller
         $searchTerm = trim($request->get('q', ''));
         $status = $request->get('status');
         $merchantId = $request->get('merchant_id');
+        $sortKeyword = $request->get('sort_keyword');
+        $sortKeywordDir = $request->get('sort_keyword_dir') === 'desc' ? 'desc' : 'asc';
 
         $keywordsQuery = Keyword::with(['merchant', 'creator'])
             ->when($merchantId, function ($query) use ($merchantId) {
@@ -997,8 +999,38 @@ class KeywordController extends Controller
                                 ->orWhere('daerah', 'like', "%{$searchTerm}%");
                         });
                 });
-            })
-            ->orderBy('id', 'desc');
+            });
+
+        $sortKeywordMap = [
+            'is_active' => 'keywords.is_active',
+            'kategori_keyword' => 'keywords.kategori_keyword',
+            'nama_produk' => 'keywords.nama_produk',
+            'keyword_id' => 'keywords.keyword_id',
+            'stock' => 'keywords.stock',
+            'sisa_stock' => 'keywords.sisa_stock',
+        ];
+
+        if ($sortKeyword === 'approval_status') {
+            $keywordsQuery
+                ->orderByRaw("CASE keywords.status WHEN 'approve' THEN 1 WHEN 'pending' THEN 2 WHEN 'reject' THEN 3 ELSE 4 END {$sortKeywordDir}")
+                ->orderBy('keywords.id', 'desc');
+        } elseif ($sortKeyword === 'merchant') {
+            $keywordsQuery
+                ->leftJoin('merchants as sort_merchants', 'keywords.merchant_key', '=', 'sort_merchants.id')
+                ->select('keywords.*')
+                ->orderBy('sort_merchants.nama_merchant', $sortKeywordDir)
+                ->orderBy('keywords.id', 'desc');
+        } elseif ($sortKeyword === 'trx') {
+            $keywordsQuery
+                ->orderByRaw("COALESCE(CAST(NULLIF(keywords.trx, '') AS UNSIGNED), 0) {$sortKeywordDir}")
+                ->orderBy('keywords.id', 'desc');
+        } elseif (isset($sortKeywordMap[$sortKeyword])) {
+            $keywordsQuery
+                ->orderBy($sortKeywordMap[$sortKeyword], $sortKeywordDir)
+                ->orderBy('keywords.id', 'desc');
+        } else {
+            $keywordsQuery->orderBy('keywords.id', 'desc');
+        }
 
         // Paginate dengan parameter keyword_page yang terpisah
         // Let Laravel automatically read the page number from the request using the page name
