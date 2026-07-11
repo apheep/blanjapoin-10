@@ -1247,7 +1247,7 @@
         });
 
         function buildKeywordSearchRequestUrl(sourceHref = null) {
-            const base = new URL(sourceHref || '/keywords', window.location.origin);
+            const base = new URL(sourceHref || window.location.href, window.location.origin);
             const searchUrl = new URL('/keywords/search', window.location.origin);
 
             base.searchParams.forEach((value, key) => {
@@ -1365,6 +1365,9 @@
                 container.style.transform = 'translateY(0)';
             });
         }
+
+        window.buildKeywordSearchRequestUrl = buildKeywordSearchRequestUrl;
+        window.fetchKeywordTable = fetchKeywordTable;
 
         // Gunakan event delegation di level document untuk pagination keyword agar lebih robust
         // Event delegation di level document akan tetap bekerja meskipun container di-replace

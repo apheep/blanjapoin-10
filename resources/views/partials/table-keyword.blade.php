@@ -16,6 +16,15 @@
         $queryParams['merchant_page'] = request()->get('merchant_page');
     }
     $keywordPaginator = $keywords->appends($queryParams);
+    $activeKeywordSort = request('sort_keyword');
+    $activeKeywordSortDir = request('sort_keyword_dir', 'asc') === 'desc' ? 'desc' : 'asc';
+    $keywordSortIcon = function ($column) use ($activeKeywordSort, $activeKeywordSortDir) {
+        if ($activeKeywordSort !== $column) {
+            return 'fas fa-sort text-gray-400';
+        }
+
+        return 'fas fa-sort-' . ($activeKeywordSortDir === 'asc' ? 'up' : 'down') . ' text-orange-500';
+    };
 @endphp
 
 <div class="bg-white rounded-xl shadow overflow-hidden mt-4" style="position: relative; isolation: isolate;" id="keyword-table-container">
@@ -32,71 +41,71 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">No</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     @if(Auth::check() && Auth::user()->can_approve == 1)
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 2, 'text')" data-sortable="true" data-column-index="2">
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('approval_status', event)" data-sortable="true" data-column-index="2" data-sort-column="approval_status">
                             <div class="flex items-center gap-1">
                                 <span>Approval</span>
-                                <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('approval_status') }}"></i></span>
                             </div>
                         </th>
                     @endif
                     @if(Auth::check() && Auth::user()->can_approve == 0)
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 2, 'text')" data-sortable="true" data-column-index="2">
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('approval_status', event)" data-sortable="true" data-column-index="2" data-sort-column="approval_status">
                             <div class="flex items-center gap-1">
                                 <span>Status</span>
-                                <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                                <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('approval_status') }}"></i></span>
                             </div>
                         </th>
                     @endif
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 3, 'text')" data-sortable="true" data-column-index="3">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('is_active', event)" data-sortable="true" data-column-index="3" data-sort-column="is_active">
                         <div class="flex items-center gap-1">
                             <span>Status</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('is_active') }}"></i></span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 4, 'text')" data-sortable="true" data-column-index="4">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('merchant', event)" data-sortable="true" data-column-index="4" data-sort-column="merchant">
                         <div class="flex items-center gap-1">
                             <span>Merchant</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('merchant') }}"></i></span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 5, 'text')" data-sortable="true" data-column-index="5">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('kategori_keyword', event)" data-sortable="true" data-column-index="5" data-sort-column="kategori_keyword">
                         <div class="flex items-center gap-1">
                             <span>Kategori Keyword</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('kategori_keyword') }}"></i></span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 6, 'text')" data-sortable="true" data-column-index="6">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('nama_produk', event)" data-sortable="true" data-column-index="6" data-sort-column="nama_produk">
                         <div class="flex items-center gap-1">
                             <span>Nama Produk</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('nama_produk') }}"></i></span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 7, 'text')" data-sortable="true" data-column-index="7">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('keyword_id', event)" data-sortable="true" data-column-index="7" data-sort-column="keyword_id">
                         <div class="flex items-center gap-1">
                             <span>Keyword ID</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('keyword_id') }}"></i></span>
                         </div>
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">CTA LINK</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Redeem</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Diskon</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">SKB</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 12, 'number')" data-sortable="true" data-column-index="12">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('stock', event)" data-sortable="true" data-column-index="12" data-sort-column="stock">
                         <div class="flex items-center gap-1">
                             <span>Stock</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('stock') }}"></i></span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 13, 'number')" data-sortable="true" data-column-index="13">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('trx', event)" data-sortable="true" data-column-index="13" data-sort-column="trx">
                         <div class="flex items-center gap-1">
                             <span>TRX</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('trx') }}"></i></span>
                         </div>
                     </th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortTable('keyword-table-body', 14, 'number')" data-sortable="true" data-column-index="14">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors select-none" onclick="sortKeywordColumn('sisa_stock', event)" data-sortable="true" data-column-index="14" data-sort-column="sisa_stock">
                         <div class="flex items-center gap-1">
                             <span>Sisa Stock</span>
-                            <span class="sort-icon text-gray-400 text-[10px]"><i class="fas fa-sort"></i></span>
+                            <span class="sort-icon text-[10px]"><i class="{{ $keywordSortIcon('sisa_stock') }}"></i></span>
                         </div>
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Lock Lokasi</th>
@@ -639,7 +648,106 @@
         }
     };
 
+    function sortKeywordColumn(column, event) {
+        if (event) {
+            event.preventDefault();
+        }
+
+        const allowedColumns = new Set([
+            'approval_status',
+            'is_active',
+            'merchant',
+            'kategori_keyword',
+            'nama_produk',
+            'keyword_id',
+            'stock',
+            'trx',
+            'sisa_stock'
+        ]);
+
+        if (!allowedColumns.has(column)) {
+            return;
+        }
+
+        const currentUrl = new URL(window.location.href);
+        const currentSort = currentUrl.searchParams.get('sort_keyword');
+        const currentDir = currentUrl.searchParams.get('sort_keyword_dir') === 'desc' ? 'desc' : 'asc';
+        let nextDir = 'asc';
+        let shouldClearSort = false;
+
+        if (currentSort === column && currentDir === 'asc') {
+            nextDir = 'desc';
+        } else if (currentSort === column && currentDir === 'desc') {
+            shouldClearSort = true;
+        }
+
+        const requestUrl = new URL('/keywords/search', window.location.origin);
+        currentUrl.searchParams.forEach((value, key) => {
+            if (['page', 'keyword_page', 'keyword_search', 'q', 'sort_keyword', 'sort_keyword_dir'].includes(key)) {
+                return;
+            }
+            requestUrl.searchParams.set(key, value);
+        });
+
+        const searchValue = (document.getElementById('keywordSearch')?.value || currentUrl.searchParams.get('keyword_search') || currentUrl.searchParams.get('q') || '').trim();
+        if (searchValue) {
+            requestUrl.searchParams.set('q', searchValue);
+        }
+
+        requestUrl.searchParams.set('tab', 'keyword');
+        requestUrl.searchParams.set('keyword_page', '1');
+
+        const browserUrl = new URL(window.location.href);
+        browserUrl.searchParams.set('tab', 'keyword');
+        browserUrl.searchParams.set('keyword_page', '1');
+        if (searchValue) {
+            browserUrl.searchParams.set('keyword_search', searchValue);
+        } else {
+            browserUrl.searchParams.delete('keyword_search');
+        }
+        browserUrl.searchParams.delete('q');
+
+        if (shouldClearSort) {
+            requestUrl.searchParams.delete('sort_keyword');
+            requestUrl.searchParams.delete('sort_keyword_dir');
+            browserUrl.searchParams.delete('sort_keyword');
+            browserUrl.searchParams.delete('sort_keyword_dir');
+        } else {
+            requestUrl.searchParams.set('sort_keyword', column);
+            requestUrl.searchParams.set('sort_keyword_dir', nextDir);
+            browserUrl.searchParams.set('sort_keyword', column);
+            browserUrl.searchParams.set('sort_keyword_dir', nextDir);
+        }
+
+        window.history.replaceState({}, '', browserUrl.toString());
+
+        if (typeof window.fetchKeywordTable === 'function') {
+            window.fetchKeywordTable(requestUrl.toString());
+        } else {
+            window.location.href = requestUrl.toString();
+        }
+    }
+
     function sortTable(tableBodyId, columnIndex, dataType) {
+        if (tableBodyId === 'keyword-table-body') {
+            const keywordColumnMap = {
+                2: 'approval_status',
+                3: 'is_active',
+                4: 'merchant',
+                5: 'kategori_keyword',
+                6: 'nama_produk',
+                7: 'keyword_id',
+                12: 'stock',
+                13: 'trx',
+                14: 'sisa_stock'
+            };
+
+            if (keywordColumnMap[columnIndex]) {
+                sortKeywordColumn(keywordColumnMap[columnIndex]);
+                return;
+            }
+        }
+
         const tbody = document.getElementById(tableBodyId);
         if (!tbody) return;
 
@@ -794,5 +902,6 @@
     }
 
     // Make function globally available
+    window.sortKeywordColumn = sortKeywordColumn;
     window.sortTable = sortTable;
 </script>
