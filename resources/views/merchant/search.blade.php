@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('content')
 @php
@@ -18,17 +18,25 @@
 
         <!-- Header with Back Button and Points -->
         <div class="flex items-center justify-between mb-4 md:mb-6">
-            <a href="{{ url()->previous() }}" class="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors">
+            <a href="{{ route('home') }}" onclick="if(history.length > 1){ event.preventDefault(); history.back(); }" class="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors">
                 <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm hover:shadow-md transition-shadow">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </span>
+                <span class="text-sm font-medium">Back</span>
             </a>
             
         </div>
         <!-- Search Form -->
         <form action="{{ route('merchant.search') }}" method="GET" class="mb-4 md:mb-5">
+            {{-- Pertahankan konteks scope saat user search ulang dari halaman ini --}}
+            @if(!empty($source))
+                <input type="hidden" name="source" value="{{ $source }}">
+            @endif
+            @if(!empty($sourceValue))
+                <input type="hidden" name="source_value" value="{{ $sourceValue }}">
+            @endif
             <div class="relative">
                 <input
                     type="text"
@@ -74,11 +82,10 @@
                     <div class="lg:hidden flex flex-col h-full">
                         <div class="relative">
                             <div class="aspect-[4/3] rounded-t-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden">
-                                <img 
-                                    src="{{ $result->image ? asset('storage/' . $result->image) : asset('storage/promo/promo-default.jpg') }}" 
-                                    alt="{{ $productName }}" 
-                                    class="w-full h-full object-cover" 
-                                    loading="lazy"
+                                <img
+                                    src="{{ $result->image ? asset('storage/' . $result->image) : asset('storage/promo/promo-default.jpg') }}"
+                                    alt="{{ $productName }}"
+                                    class="w-full h-full object-cover"
                                 >
                             </div>
                         </div>
@@ -173,11 +180,10 @@
                         <!-- Image with Stock Overlay -->
                         <div class="relative px-3 md:px-4 pt-3 pb-2 flex-shrink-0">
                             <div class="aspect-[10/5] rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 shadow-inner overflow-hidden group-hover:shadow-md transition-shadow duration-300">
-                                <img 
-                                    src="{{ $result->image ? asset('storage/' . $result->image) : asset('storage/promo/promo-default.jpg') }}" 
-                                    alt="{{ $productName }}" 
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                    loading="lazy"
+                                <img
+                                    src="{{ $result->image ? asset('storage/' . $result->image) : asset('storage/promo/promo-default.jpg') }}"
+                                    alt="{{ $productName }}"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 >
                             </div>
                             <div class="absolute bottom-1.5 right-3 md:bottom-2 md:right-4 bg-gradient-to-r from-black/60 to-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-lg text-[10px] md:text-xs font-bold shadow-lg border border-white/10">
@@ -271,6 +277,31 @@
             spinner.style.display = 'none';
         }, 300);
     });
+
+    (function () {
+        const searchInput = document.querySelector('input[name="q"]');
+        const searchUrl   = "{{ route('merchant.search') }}";
+        const scopeSource = "{{ $source ?? '' }}";
+        const scopeValue  = "{{ $sourceValue ?? '' }}";
+        if (!searchInput) return;
+
+        function buildUrl(q) {
+            const params = new URLSearchParams({ q });
+            if (scopeSource) params.set('source', scopeSource);
+            if (scopeValue)  params.set('source_value', scopeValue);
+            return searchUrl + '?' + params.toString();
+        }
+
+        let searchTimeout = null;
+        searchInput.addEventListener('input', function () {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function () {
+                const q = searchInput.value.trim();
+                if (q.length === 0) return;
+                window.location.href = buildUrl(q);
+            }, 500);
+        });
+    })();
 </script>
 
 <!-- Bottom Sheet / Modal (Responsive) -->

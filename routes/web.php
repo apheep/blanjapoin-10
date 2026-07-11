@@ -13,6 +13,7 @@ use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PortalAuthController;
 use App\Http\Controllers\KeywordController;
+use App\Http\Controllers\CategoryOrderController;
 use App\Http\Controllers\SpesialPromoController;
 use App\Models\Keyword;
 use App\Models\Merchant;
@@ -31,11 +32,17 @@ Route::get('/', function () {
             $query->where('is_active', 1);
         })
         ->get();
-    // Get iklans - only show general iklans (all location fields are null) for home page
+    // Get iklans - only show general iklans (all location/merchant fields are null) for home page
     $iklans = Iklan::whereNull('territorial')
         ->whereNull('regional')
         ->whereNull('branch')
         ->whereNull('cluster')
+        ->whereNull('merchant_key')
+        ->where(function ($q) {
+            $q->whereNull('merchant_keys')
+              ->orWhere('merchant_keys', '[]')
+              ->orWhere('merchant_keys', '');
+        })
         ->where('is_active', 1)
         ->orderBy('order', 'asc')
         ->get();
@@ -228,8 +235,17 @@ Route::middleware(['auth'])->group(function () {
                 $query->where('is_active', 1);
             })
             ->get();
-        // Get iklans - only show iklans without territorial (null) for home page
+        // Get iklans - only show general iklans (all location/merchant fields are null) for home page
     $iklans = Iklan::whereNull('territorial')
+        ->whereNull('regional')
+        ->whereNull('branch')
+        ->whereNull('cluster')
+        ->whereNull('merchant_key')
+        ->where(function ($q) {
+            $q->whereNull('merchant_keys')
+              ->orWhere('merchant_keys', '[]')
+              ->orWhere('merchant_keys', '');
+        })
         ->where('is_active', 1)
         ->orderBy('order', 'asc')
         ->get();
@@ -352,6 +368,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/keywords/{id}/download-image', [KeywordController::class, 'downloadImage'])->name('keyword.image.download');
 
     // Iklan management
+    Route::get('/merchant/{merchant}/keywords-for-banner', [MerchantController::class, 'keywordsForBanner'])->name('merchant.keywords-for-banner');
     Route::get('/iklan', [IklanController::class, 'index'])->name('iklan.index');
     Route::post('/iklan', [IklanController::class, 'store'])->name('iklan.store');
     Route::patch('/iklan/{iklan}', [IklanController::class, 'update'])->name('iklan.update');
@@ -379,6 +396,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Spesial Promo Form
     Route::get('/spesial-promo-form', [KeywordController::class, 'spesialPromoForm'])->name('spesial-promo.form');
+
+    // Urutan Kategori (hanya maha admin)
+    Route::get('/category-order', [CategoryOrderController::class, 'index'])->name('category-order.index');
+    Route::post('/category-order/save', [CategoryOrderController::class, 'save'])->name('category-order.save');
+    Route::post('/category-order/reset', [CategoryOrderController::class, 'reset'])->name('category-order.reset');
+    Route::get('/api/category-order/{routeType}', [CategoryOrderController::class, 'getByRouteType'])->name('category-order.get');
+    Route::get('/api/category-order/{routeType}/saved-values', [CategoryOrderController::class, 'savedValues'])->name('category-order.saved-values');
+    Route::get('/api/category-order/{routeType}/available-categories', [CategoryOrderController::class, 'availableCategories'])->name('category-order.available-categories');
 
     // History All (requires login)
     Route::get('/history-all/{code}', [MerchantController::class, 'linkHistoryAll'])->name('link.history.all');

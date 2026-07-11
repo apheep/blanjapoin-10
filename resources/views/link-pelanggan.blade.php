@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 <!doctype html>
 <html lang="en">
 <head>
@@ -155,6 +155,20 @@
             </div>
 
 
+            <!-- Search -->
+            <div class="mt-4">
+                <div class="relative max-w-md">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-neutral-400 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input id="linkPelangganSearch" type="text" placeholder="Cari voucher..."
+                        data-merchant-code="{{ isset($merchant) && $merchant->link_blanjapoin ? basename(parse_url($merchant->link_blanjapoin, PHP_URL_PATH)) : '' }}"
+                        class="w-full rounded-xl bg-white py-2.5 pl-9 pr-4 text-sm text-neutral-900 placeholder:text-neutral-400 shadow-md ring-1 ring-neutral-200/50 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-shadow" />
+                </div>
+            </div>
+
             <!-- Merchant Sections by Category -->
             <div class="mt-6 md:mt-8">
                 @php
@@ -165,52 +179,24 @@
                             $baseCondition = $keyword->merchant && $keywordCategory === $category
                                 && $keyword->status === 'approve'
                                 && $keyword->is_active == 1;
-                            return $isLinkPelanggan 
-                                ? $baseCondition 
+                            return $isLinkPelanggan
+                                ? $baseCondition
                                 : ($baseCondition && $keyword->merchant->is_active == 1);
                         })->isNotEmpty();
                     };
+
+                    // Admin-configured default sort for vouchers within each category (by redeem point),
+                    // keyed by the category's data-voucher-section value so JS can target the right cards.
+                    $categoryItemSortMap = collect($orderedCategories)
+                        ->mapWithKeys(fn($cat) => [($cat['section'] ?? $cat['key']) => ($cat['item_sort'] ?? 'none')])
+                        ->all();
                 @endphp
 
-                @if($hasCategoryData('paket_video'))
-                    @include('merchant.paketvideo')
-                @endif
-
-                @if($hasCategoryData('belanja'))
-                    @include('merchant.shop')
-                @endif
-
-                @if($hasCategoryData('merchandise'))
-                    @include('merchant.merchandise')
-                @endif
-                
-                @if($hasCategoryData('paket_internet'))
-                    @include('merchant.paketinternet')
-                @endif
-
-                @if($hasCategoryData('paket_games'))
-                    @include('merchant.paketgames')
-                @endif
-                
-                @if($hasCategoryData('kuliner'))
-                    @include('merchant.food')
-                @endif
-
-                @if($hasCategoryData('telkomsel'))
-                    @include('merchant.telkomsel')
-                @endif
-
-                @if($hasCategoryData('hiburan'))
-                    @include('merchant.entertain')
-                @endif
-
-                @if($hasCategoryData('liburan'))
-                    @include('merchant.vacation')
-                @endif
-
-                @if($hasCategoryData('kecantikan'))
-                    @include('merchant.beautyncare')
-                @endif
+                @foreach($orderedCategories as $cat)
+                    @if($hasCategoryData($cat['key']))
+                        @include($cat['view'])
+                    @endif
+                @endforeach
             </div>
 
 
@@ -223,6 +209,41 @@
             </footer>
         </main>
     </div>
+
+    <!-- Search script -->
+    <script>
+        (function () {
+            const searchInput = document.getElementById('linkPelangganSearch');
+            const searchUrl   = "{{ route('merchant.search') }}";
+            const searchScope = { source: 'u', source_value: '{{ isset($merchant) ? urlencode($merchant->link_blanjapoin ? ltrim(parse_url($merchant->link_blanjapoin, PHP_URL_PATH), "/") : "") : "" }}' };
+            // Ambil code dari link_blanjapoin path: "blanjapoin.id/dash/{code}" -> "dash/{code}" -> kita perlu hanya {code}
+            // Namun source_value yang kita butuhkan adalah code route (/u/{code}), bukan full path
+            // Gunakan data-attribute dari PHP
+            const merchantCode = document.querySelector('[data-merchant-code]')?.dataset?.merchantCode || '';
+            if (!searchInput) return;
+            let searchTimeout = null;
+            function buildSearchUrl(q) {
+                const params = new URLSearchParams({ q, source: 'u', source_value: merchantCode });
+                return searchUrl + '?' + params.toString();
+            }
+            searchInput.addEventListener('input', function () {
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    const q = searchInput.value.trim();
+                    if (q.length === 0) return;
+                    window.location.href = buildSearchUrl(q);
+                }, 600);
+            });
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    const q = searchInput.value.trim();
+                    if (q.length > 0) window.location.href = buildSearchUrl(q);
+                }
+            });
+        })();
+    </script>
 
     <!-- Script untuk hide loading spinner -->
     <script>
@@ -252,8 +273,37 @@
             checkUserLocationAndUpdateUI();
         });
 
+        // Admin-configured default sort for vouchers within each category (by redeem point).
+        const CATEGORY_ITEM_SORT = @json($categoryItemSortMap ?? []);
+
+        function cardPointValue(card) {
+            const pointValue = card?.dataset?.point ?? '0';
+            return pointValue.toString().replace(/[^\d.-]/g, '') || '0';
+        }
+
+        function applyDefaultItemSorts() {
+            document.querySelectorAll('[data-voucher-container="true"]').forEach(container => {
+                const sectionKey = container.dataset.voucherSection;
+                const order = CATEGORY_ITEM_SORT[sectionKey];
+                if (order !== 'redeem_desc' && order !== 'redeem_asc') return;
+
+                const cards = Array.from(container.querySelectorAll('[data-voucher-card="true"]'));
+                if (cards.length === 0) return;
+
+                const sortedCards = cards.slice().sort((a, b) => {
+                    const aPoint = parseFloat(cardPointValue(a)) || 0;
+                    const bPoint = parseFloat(cardPointValue(b)) || 0;
+                    return order === 'redeem_asc' ? aPoint - bPoint : bPoint - aPoint;
+                });
+
+                sortedCards.forEach(card => container.appendChild(card));
+            });
+        }
+
         // Animate cards on page load
         document.addEventListener('DOMContentLoaded', function() {
+            applyDefaultItemSorts();
+
             // Disable redeem buttons by default until location is checked
             if (merchantValidator) {
                 updateRedeemButtons();

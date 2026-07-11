@@ -741,6 +741,67 @@
                         }, 100);
                     }
                 });
+
+                // Live search: debounce 300ms on every keystroke
+                let specialPromoSearchTimeout = null;
+                specialPromoSearchInput.addEventListener('input', function() {
+                    if (specialPromoSearchTimeout) clearTimeout(specialPromoSearchTimeout);
+                    specialPromoSearchTimeout = setTimeout(() => {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const q = specialPromoSearchInput.value.trim();
+                        if (q) {
+                            urlParams.set('q', q);
+                        } else {
+                            urlParams.delete('q');
+                        }
+                        urlParams.set('page', 1);
+
+                        window.history.pushState({}, '', '?' + urlParams.toString());
+
+                        const loadingOverlay = document.getElementById('sortLoadingOverlay');
+                        const tableBody = document.getElementById('keywordTableBody');
+                        const tableContainer = document.getElementById('tableContainer');
+
+                        if (loadingOverlay && tableBody && tableContainer) {
+                            loadingOverlay.classList.remove('hidden');
+
+                            fetch('{{ route("spesial-promo.form") }}?' + urlParams.toString(), {
+                                method: 'GET',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
+                            })
+                            .then(r => r.text())
+                            .then(html => {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                const newTableBody = doc.getElementById('keywordTableBody');
+                                const newPagination = doc.querySelector('.bg-white.px-4.py-4.border-t.flex');
+
+                                if (newTableBody) {
+                                    tableBody.style.opacity = '0';
+                                    tableBody.style.transition = 'opacity 0.2s';
+                                    setTimeout(() => {
+                                        tableBody.innerHTML = newTableBody.innerHTML;
+                                        document.querySelectorAll('.toggle-special-promo').forEach(toggle => {
+                                            toggle.addEventListener('change', (e) => {
+                                                const keywordId = e.target.dataset.keywordId;
+                                                if (keywordId) toggleSpecialPromo(keywordId);
+                                            });
+                                        });
+                                        const currentPagination = document.querySelector('.bg-white.px-4.py-4.border-t.flex');
+                                        if (currentPagination && newPagination) {
+                                            currentPagination.outerHTML = newPagination.outerHTML;
+                                        }
+                                        tableBody.style.opacity = '1';
+                                        loadingOverlay.classList.add('hidden');
+                                    }, 200);
+                                } else {
+                                    loadingOverlay.classList.add('hidden');
+                                }
+                            })
+                            .catch(() => { loadingOverlay.classList.add('hidden'); });
+                        }
+                    }, 300);
+                });
             }
         });
         

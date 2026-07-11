@@ -19,9 +19,13 @@
       </div>
 
       <div class="px-6 pb-6 pt-4">
-        @if(session('success'))
-          <div class="mb-4 rounded-xl bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm">
-            {{ session('success') }}
+        @php $successMsg = session('success') ?? session('otp_success_message'); @endphp
+        @if($successMsg)
+          <div class="mb-4 rounded-xl bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 shrink-0 text-green-500">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
+            </svg>
+            {{ $successMsg }}
           </div>
         @endif
 
@@ -76,7 +80,7 @@
             @csrf
             <input type="hidden" name="no_hp" id="no_hp_hidden" value="">
             <input type="hidden" name="otp_type" id="otp_type_hidden" value="">
-            <button type="submit" id="sendOtpBtn" class="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg bg-gradient-to-r from-blue-500 to-blue-600 ring-1 ring-white/30 transition-all hover:shadow-xl hover:scale-105 active:scale-95">Kirim OTP</button>
+            <button type="submit" id="sendOtpBtn" class="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg bg-gradient-to-r from-blue-500 to-blue-600 ring-1 ring-white/30 transition-all hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none">Kirim OTP</button>
           </form>
           
           @if($errors->has('no_hp') || $errors->has('otp_type'))
@@ -100,7 +104,7 @@
             <div class="relative">
               <label for="otp" class="block text-xs font-semibold text-neutral-700 mb-1">Kode OTP</label>
               <div class="relative">
-                <input type="text" id="otp" name="otp" placeholder="Masukkan 6 digit OTP" maxlength="6" pattern="[0-9]{6}" value="{{ old('otp') }}" required class="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2 pl-10 text-sm outline-none ring-0 focus:border-orange-400 focus:ring-2 focus:ring-orange-400">
+                <input type="text" id="otp" name="otp" placeholder="Masukkan 6 digit OTP" maxlength="6" pattern="[0-9]{6}" value="{{ old('otp') }}" required autocomplete="one-time-code" class="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2 pl-10 text-sm outline-none ring-0 focus:border-orange-400 focus:ring-2 focus:ring-orange-400">
                 <div class="absolute left-3 top-2.5 text-neutral-400">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
                     <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd"/>
@@ -232,10 +236,54 @@ document.addEventListener('DOMContentLoaded', function() {
     const btn = document.getElementById('sendOtpBtn');
     btn.disabled = true;
     btn.textContent = 'Mengirim...';
-    
+
+    // Simpan waktu kirim ke localStorage untuk cooldown
+    localStorage.setItem('otp_sent_at', Date.now().toString());
+
     // Form will submit normally and redirect will work
     return true;
   });
+
+  // ── Cooldown timer ──
+  const COOLDOWN_MS = 60 * 1000; // 60 detik
+  const OTP_KEY     = 'otp_sent_at';
+
+  function startCooldownUI(remainingMs) {
+    const btn = document.getElementById('sendOtpBtn');
+    if (!btn) return;
+
+    btn.disabled = true;
+
+    const interval = setInterval(function () {
+      remainingMs -= 1000;
+      if (remainingMs <= 0) {
+        clearInterval(interval);
+        btn.disabled = false;
+        btn.textContent = 'Kirim OTP';
+        localStorage.removeItem(OTP_KEY);
+      } else {
+        const secs = Math.ceil(remainingMs / 1000);
+        btn.textContent = 'Tunggu ' + secs + ' detik...';
+      }
+    }, 1000);
+
+    // Tampilkan sisa waktu langsung
+    const secsNow = Math.ceil(remainingMs / 1000);
+    btn.textContent = 'Tunggu ' + secsNow + ' detik...';
+  }
+
+  // Cek apakah masih dalam masa cooldown saat halaman dimuat
+  (function checkCooldownOnLoad() {
+    const sentAt = parseInt(localStorage.getItem(OTP_KEY) || '0', 10);
+    if (!sentAt) return;
+    const elapsed   = Date.now() - sentAt;
+    const remaining = COOLDOWN_MS - elapsed;
+    if (remaining > 0) {
+      startCooldownUI(remaining);
+    } else {
+      localStorage.removeItem(OTP_KEY);
+    }
+  })();
 
   // Auto focus OTP field after sending
   const otpInput = document.getElementById('otp');

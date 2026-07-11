@@ -1,16 +1,16 @@
-<div id="uploadModalMerchant" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+<div id="uploadModalMerchant" class="hidden fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
     <div id="uploadModalMerchantOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
 
-    <div id="uploadModalMerchantPanel" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden opacity-0 scale-95 translate-y-4 transition-all duration-300">
+    <div id="uploadModalMerchantPanel" class="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden opacity-0 scale-95 translate-y-4 transition-all duration-300">
         {{-- Header --}}
-        <div class="sticky top-0 z-10 flex justify-between items-center px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
-            <h3 class="text-xl font-bold text-gray-800">
+        <div class="sticky top-0 z-10 flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-800">
                 Tambah Merchant Baru
             </h3>
             <button type="button"
                     onclick="closeUploadMerchant()"
-                    class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/50 rounded-lg">
-                <i class="fas fa-times text-xl"></i>
+                    class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/50 rounded-lg flex-shrink-0">
+                <i class="fas fa-times text-lg sm:text-xl"></i>
             </button>
         </div>
 
@@ -22,7 +22,7 @@
       class="flex-1 overflow-y-auto">
 
     @csrf
-            <div class="p-6 space-y-6">
+            <div class="p-4 sm:p-6 space-y-5 sm:space-y-6">
                 {{-- Section 1: Informasi Dasar --}}
                 <div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -91,12 +91,15 @@
                                 Link Blanjapoin
                             </label>
                             <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent">
-                                <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">blanjapoin.id/dash/</span>
+                                <span class="px-2 sm:px-4 py-3 bg-gray-50 text-xs sm:text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">
+                                    <span class="hidden sm:inline">blanjapoin.id/dash/</span>
+                                    <span class="sm:hidden">/dash/</span>
+                                </span>
                                 <input type="text"
                                        name="link_blanjapoin_code"
                                        id="linkBlanjapoinCode"
                                        oninput="updateLinkBlanjapoin()"
-                                       class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
+                                       class="flex-1 min-w-0 px-3 sm:px-4 py-3 h-12 border-0 focus:outline-none text-sm"
                                        placeholder="Code">
                                 <input type="hidden" name="link_blanjapoin" id="linkBlanjapoinFull">
                             </div>
@@ -142,12 +145,12 @@
                                 WhatsApp PIC
                             </label>
                             <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent" id="waPicContainer">
-                                <span class="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">+62</span>
+                                <span class="px-3 sm:px-4 py-3 bg-gray-50 text-sm text-gray-600 border-r border-gray-300 whitespace-nowrap">+62</span>
                                 <input type="text"
                                        name="wa_pic_code"
                                        id="waPicCode"
                                        oninput="validateWaPic(); updateWaPic(); this.value = this.value.replace(/[^0-9]/g, '')"
-                                       class="flex-1 px-4 py-3 h-12 border-0 focus:outline-none text-sm"
+                                       class="flex-1 min-w-0 px-3 sm:px-4 py-3 h-12 border-0 focus:outline-none text-sm"
                                        placeholder="81234567890">
                                 <input type="hidden" name="wa_pic" id="waPicFull">
                             </div>
@@ -441,21 +444,60 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Section 6: Top Banner --}}
+                <div id="topBannerSection" class="pt-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Top Banner</h4>
+                    <p class="text-sm text-gray-500 mb-4">Atur banner yang tampil di halaman link merchant ini.</p>
+
+                    <div class="space-y-3">
+                        {{-- Opsi mode banner --}}
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="banner_mode" value="general" checked
+                                   class="mt-0.5 h-4 w-4 text-orange-600 border-neutral-300 focus:ring-orange-500">
+                            <div>
+                                <span class="text-sm font-semibold text-neutral-800">Ikut General</span>
+                                <p class="text-xs text-neutral-500 mt-0.5">Banner mengikuti city, branch, atau regional di mana merchant ini berada.</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50">
+                            <input type="radio" name="banner_mode" value="keyword"
+                                   id="bannerModeKeyword"
+                                   class="mt-0.5 h-4 w-4 text-orange-600 border-neutral-300 focus:ring-orange-500">
+                            <div>
+                                <span class="text-sm font-semibold text-neutral-800">Otomatis dari Keyword</span>
+                                <p class="text-xs text-neutral-500 mt-0.5">Pilih maks 5 keyword aktif merchant ini. Banner dibuat otomatis dari gambar keyword.</p>
+                            </div>
+                        </label>
+
+                        {{-- Keyword checklist (muncul kalau mode = keyword) --}}
+                        <div id="bannerKeywordSection" class="hidden pl-1">
+                            <p class="text-xs font-semibold text-neutral-600 mb-2">Pilih Keyword (maks 5):</p>
+                            <div id="bannerKeywordList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                <p class="text-xs text-neutral-400 italic">Simpan merchant terlebih dahulu untuk memilih keyword.</p>
+                            </div>
+                            <input type="hidden" name="banner_keyword_ids" id="bannerKeywordIds" value="">
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {{-- Footer dengan tombol --}}
-            <div class="sticky bottom-0 z-10 flex justify-end items-center gap-3 px-6 py-4 border-t bg-white">
-                <button type="button"
-                        onclick="closeUploadMerchant()"
-                        class="px-6 py-2.5 text-sm font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="px-6 py-2.5 text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white rounded-lg hover:shadow-lg transition-all active:scale-95">
-                    <i class="fas fa-save mr-2"></i>Simpan
-                </button>
-            </div>
         </form>
+
+        {{-- Footer dengan tombol - di luar form tapi dalam panel --}}
+        <div class="flex-shrink-0 flex justify-end items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t bg-white">
+            <button type="button"
+                    onclick="closeUploadMerchant()"
+                    class="px-4 sm:px-6 py-2.5 text-sm font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                Cancel
+            </button>
+            <button type="submit"
+                    form="formUploadMerchant"
+                    class="px-4 sm:px-6 py-2.5 text-sm font-semibold bg-gradient-to-r from-[#F81611] to-[#F0B100] text-white rounded-lg hover:shadow-lg transition-all active:scale-95">
+                <i class="fas fa-save mr-2"></i>Simpan
+            </button>
+        </div>
     </div>
 </div>
 
@@ -1990,4 +2032,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Top Banner — toggle keyword section
+(function() {
+    const modeKeyword = document.getElementById('bannerModeKeyword');
+    const keywordSec  = document.getElementById('bannerKeywordSection');
+    document.querySelectorAll('input[name="banner_mode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (modeKeyword && modeKeyword.checked) {
+                keywordSec?.classList.remove('hidden');
+            } else {
+                keywordSec?.classList.add('hidden');
+            }
+        });
+    });
+})();
 </script>

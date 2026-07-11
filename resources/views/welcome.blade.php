@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
  <head>
   <meta charset="utf-8">
@@ -342,11 +342,26 @@
         // Ensure $keywords is available (fallback to empty collection if not set)
         $keywords = $keywords ?? collect();
 
-        // Helper function to check if category has data
+        // Determine route type and specific value for category ordering
+        $routeSegment = request()->segment(1);
+        $routeTypeMap = ['u' => 'u', 'reg' => 'reg', 'poin-tsel' => 'poin-tsel', 'cluster' => 'cluster', 'city' => 'city'];
+        $currentRouteType  = $routeTypeMap[$routeSegment] ?? 'default';
+        $currentRouteValue = ($currentRouteType !== 'default') ? (request()->segment(2) ?? '') : '';
+
+        // Get ordered category list from DB (falls back: specific → generic → default → hardcoded)
+        $orderedCategories = \App\Models\CategoryOrder::getOrderedCategories($currentRouteType, $currentRouteValue);
+
+        // Admin-configured default sort for vouchers within each category (by redeem point),
+        // keyed by the category's data-voucher-section value so JS can target the right cards.
+        $categoryItemSortMap = collect($orderedCategories)
+            ->mapWithKeys(fn($cat) => [($cat['section'] ?? $cat['key']) => ($cat['item_sort'] ?? 'none')])
+            ->all();
+
+        // Helper: check if a category has displayable data
         $hasCategoryData = function($category) use ($keywords) {
             return $keywords->filter(function ($keyword) use ($category) {
                 $keywordCategory = !empty($keyword->kategori_keyword) ? $keyword->kategori_keyword : ($keyword->merchant->kategori ?? null);
-                return $keyword->merchant 
+                return $keyword->merchant
                     && $keywordCategory === $category
                     && $keyword->status === 'approve'
                     && $keyword->is_active == 1
@@ -355,75 +370,11 @@
         };
     @endphp
 
-    <!-- shop Section -->
-    @if($hasCategoryData('belanja'))
-    <div id="shopSection">
-     @include('merchant.shop')
-    </div>
-    @endif
- 
-    <!-- food Section -->
-    @if($hasCategoryData('kuliner'))
-    <div id="foodSection">
-     @include('merchant.food')
-    </div>
-    @endif
- 
-    <!-- telkomsel Section -->
-    @if($hasCategoryData('telkomsel'))
-    <div id="telkomselSection">
-     @include('merchant.telkomsel')
-    </div>
-    @endif
- 
-    <!-- entertain Section -->
-    @if($hasCategoryData('hiburan'))
-    <div id="entertainSection">
-     @include('merchant.entertain')
-    </div>
-    @endif
- 
-    <!-- vacation Section -->
-    @if($hasCategoryData('liburan'))
-    <div id="vacationSection">
-     @include('merchant.vacation')
-    </div>
-    @endif
- 
-    <!-- beauty Section -->
-    @if($hasCategoryData('kecantikan'))
-    <div id="beautySection">
-     @include('merchant.beautyncare')
-    </div>
-    @endif
-
-    <!-- merchandise Section -->
-    @if($hasCategoryData('merchandise'))
-    <div id="merchandiseSection">
-     @include('merchant.merchandise')
-    </div>
-    @endif
-
-    <!-- paketvideo Section -->
-    @if($hasCategoryData('paket_video'))
-    <div id="paketvideoSection">
-     @include('merchant.paketvideo')
-    </div>
-    @endif
-
-    <!-- paketgames Section -->
-    @if($hasCategoryData('paket_games'))
-    <div id="paketgamesSection">
-     @include('merchant.paketgames')
-    </div>
-    @endif
-
-    <!-- paketinternet Section -->
-    @if($hasCategoryData('paket_internet'))
-    <div id="paketinternetSection">
-     @include('merchant.paketinternet')
-    </div>
-    @endif
+    @foreach($orderedCategories as $cat)
+        @if($hasCategoryData($cat['key']))
+            @include($cat['view'])
+        @endif
+    @endforeach
    
 
     <footer class="mt-16 pb-12 text-center">
@@ -842,6 +793,43 @@
    let currentLocationFilter = '';
    let currentPointSort = 'Lowest';
    let mobilePointFilter = 'Lowest';
+   const CATEGORY_ITEM_SORT = @json($categoryItemSortMap ?? []);
+   let defaultItemSortApplied = false;
+
+   // Apply each category's own admin-configured point sort (if any) to its section only.
+   function applyDefaultItemSorts() {
+    if (voucherSections.size === 0) registerVoucherSections();
+    let appliedAny = false;
+
+    voucherSections.forEach((containerInfos, sectionKey) => {
+     const order = CATEGORY_ITEM_SORT[sectionKey];
+     if (order !== 'redeem_desc' && order !== 'redeem_asc') return;
+     appliedAny = true;
+
+     const cards = [];
+     containerInfos.forEach(info => cards.push(...info.element.querySelectorAll('[data-voucher-card="true"]')));
+     if (cards.length === 0) return;
+
+     const sortedCards = cards.slice().sort((a, b) => {
+      const aPoint = parseFloat(cardPointValue(a)) || 0;
+      const bPoint = parseFloat(cardPointValue(b)) || 0;
+      return order === 'redeem_asc' ? aPoint - bPoint : bPoint - aPoint;
+     });
+
+     let cursor = 0;
+     containerInfos.forEach(info => {
+      const slice = sortedCards.slice(cursor, cursor + info.slotCount);
+      cursor += info.slotCount;
+      info.element.innerHTML = '';
+      slice.forEach(card => info.element.appendChild(card));
+     });
+    });
+
+    if (appliedAny) {
+     refreshVoucherCards();
+     applyVoucherFilters();
+    }
+   }
 
    function renderLocationOptions(filter = '', dropdownElement, inputElement) {
     dropdownElement.innerHTML = buildGroupedLocationListHtml(filter);
@@ -1153,15 +1141,28 @@
     if (trimmedQuery.length === 0) {
      return;
     }
-    window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
+    // welcome page: source=welcome (global search, tidak ada scope territorial)
+    window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}&source=welcome`;
+   }
+
+   let searchNavTimeout = null;
+   function debouncedSearch(value) {
+    if (searchNavTimeout) clearTimeout(searchNavTimeout);
+    searchNavTimeout = setTimeout(() => {
+     goToSearchPage(value);
+    }, 500);
    }
 
    if (mobileSearchInput) {
     mobileSearchInput.addEventListener('keydown', (e) => {
      if (e.key === 'Enter') {
       e.preventDefault();
+      if (searchNavTimeout) clearTimeout(searchNavTimeout);
       goToSearchPage(e.target.value);
      }
+    });
+    mobileSearchInput.addEventListener('input', (e) => {
+     debouncedSearch(e.target.value);
     });
    }
 
@@ -1169,8 +1170,12 @@
     desktopSearchInput.addEventListener('keydown', (e) => {
      if (e.key === 'Enter') {
       e.preventDefault();
+      if (searchNavTimeout) clearTimeout(searchNavTimeout);
       goToSearchPage(e.target.value);
      }
+    });
+    desktopSearchInput.addEventListener('input', (e) => {
+     debouncedSearch(e.target.value);
     });
    }
 
@@ -1236,8 +1241,13 @@
     
     refreshVoucherCards();
     registerVoucherSections();
+
+    if (!defaultItemSortApplied) {
+     defaultItemSortApplied = true;
+     applyDefaultItemSorts();
+    }
    }
-   
+
    // Run immediately and also after a short delay to catch any dynamically loaded content
    initializeFiltersAndSorting();
    setTimeout(initializeFiltersAndSorting, 500);

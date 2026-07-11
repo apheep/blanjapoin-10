@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -367,57 +367,19 @@
                             : ($baseCondition && $keyword->merchant->is_active == 1);
                     })->isNotEmpty();
                 };
+
+                // Admin-configured default sort for vouchers within each category (by redeem point),
+                // keyed by the category's data-voucher-section value so JS can target the right cards.
+                $categoryItemSortMap = collect($orderedCategories)
+                    ->mapWithKeys(fn($cat) => [($cat['section'] ?? $cat['key']) => ($cat['item_sort'] ?? 'none')])
+                    ->all();
             @endphp
 
-            <!-- shop Section -->
-            @if($hasCategoryData('belanja'))
-                @include('merchant.shop')
-            @endif
-
-            <!-- food Section -->
-            @if($hasCategoryData('kuliner'))
-                @include('merchant.food')
-            @endif
-
-            <!-- telkomsel Section -->
-            @if($hasCategoryData('telkomsel'))
-                @include('merchant.telkomsel')
-            @endif
-
-            <!-- entertain Section -->
-            @if($hasCategoryData('hiburan'))
-                @include('merchant.entertain')
-            @endif
-
-            <!-- vacation Section -->
-            @if($hasCategoryData('liburan'))
-                @include('merchant.vacation')
-            @endif
-
-            <!-- beauty Section -->
-            @if($hasCategoryData('kecantikan'))
-                @include('merchant.beautyncare')
-            @endif
-
-            <!-- merchandise Section -->
-            @if($hasCategoryData('merchandise'))
-                @include('merchant.merchandise')
-            @endif
-
-            <!-- paketvideo Section -->
-            @if($hasCategoryData('paket_video'))
-                @include('merchant.paketvideo')
-            @endif
-
-            <!-- paketgames Section -->
-            @if($hasCategoryData('paket_games'))
-                @include('merchant.paketgames')
-            @endif
-
-            <!-- paketinternet Section -->
-            @if($hasCategoryData('paket_internet'))
-                @include('merchant.paketinternet')
-            @endif
+            @foreach($orderedCategories as $cat)
+                @if($hasCategoryData($cat['key']))
+                    @include($cat['view'])
+                @endif
+            @endforeach
 
 
 
@@ -616,6 +578,44 @@
             let currentLocationFilter = '';
             let currentPointSort = 'Lowest';
             let mobilePointFilter = 'Lowest';
+            const CATEGORY_ITEM_SORT = @json($categoryItemSortMap ?? []);
+            let defaultItemSortApplied = false;
+
+            // Apply each category's own admin-configured point sort (if any) to its section only.
+            function applyDefaultItemSorts() {
+                if (voucherSections.size === 0) registerVoucherSections();
+                let appliedAny = false;
+
+                voucherSections.forEach((containerInfos, sectionKey) => {
+                    const order = CATEGORY_ITEM_SORT[sectionKey];
+                    if (order !== 'redeem_desc' && order !== 'redeem_asc') return;
+                    appliedAny = true;
+
+                    const cards = [];
+                    containerInfos.forEach(info => cards.push(...info.element.querySelectorAll('[data-voucher-card="true"]')));
+                    if (cards.length === 0) return;
+
+                    const sortedCards = cards.slice().sort((a, b) => {
+                        const aPoint = parseFloat(cardPointValue(a)) || 0;
+                        const bPoint = parseFloat(cardPointValue(b)) || 0;
+                        return order === 'redeem_asc' ? aPoint - bPoint : bPoint - aPoint;
+                    });
+
+                    let cursor = 0;
+                    containerInfos.forEach(info => {
+                        const slice = sortedCards.slice(cursor, cursor + info.slotCount);
+                        cursor += info.slotCount;
+                        info.element.innerHTML = '';
+                        slice.forEach(card => info.element.appendChild(card));
+                    });
+                });
+
+                if (appliedAny) {
+                    refreshVoucherCards();
+                    const searchQ = (mobileSearchInput && mobileSearchInput.value) || (desktopSearchInput && desktopSearchInput.value) || '';
+                    applyClientSearch(searchQ);
+                }
+            }
 
             function refreshVoucherCards() {
                 voucherCards = Array.from(document.querySelectorAll('[data-voucher-card="true"]'));
@@ -649,7 +649,7 @@
                 voucherCards.forEach(card => {
                     const name = (card.dataset.searchName || '').toLowerCase();
                     const cardLocation = (card.dataset.searchLocation || '').toLowerCase();
-                    const matchesName = query === '' || name.includes(query);
+                    const matchesName = query === '' || name.startsWith(query);
                     const matchesLocation = locationQuery === '' || cardLocation.includes(locationQuery);
                     card.style.display = (matchesName && matchesLocation) ? '' : 'none';
                 });
@@ -807,23 +807,36 @@
 
             // Client side Search Input listener
             const searchPageUrl = "{{ route('merchant.search') }}";
+            const searchScope = { source: 'poin-tsel', source_value: '{{ $location ?? "" }}' };
             window.goToSearchPage = function(query) {
                 const trimmedQuery = (query || '').trim();
                 if (trimmedQuery.length === 0) return;
-                window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}`;
+                window.location.href = `${searchPageUrl}?q=${encodeURIComponent(trimmedQuery)}&source=${encodeURIComponent(searchScope.source)}&source_value=${encodeURIComponent(searchScope.source_value)}`;
+            }
+
+            let searchNavTimeout = null;
+            function debouncedNavigate(value) {
+                if (searchNavTimeout) clearTimeout(searchNavTimeout);
+                searchNavTimeout = setTimeout(() => { goToSearchPage(value); }, 600);
             }
 
             if (mobileSearchInput) {
-                mobileSearchInput.addEventListener('input', (e) => applyClientSearch(e.target.value));
+                mobileSearchInput.addEventListener('input', (e) => {
+                    applyClientSearch(e.target.value);
+                    debouncedNavigate(e.target.value);
+                });
                 mobileSearchInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); goToSearchPage(e.target.value); }
+                    if (e.key === 'Enter') { e.preventDefault(); if (searchNavTimeout) clearTimeout(searchNavTimeout); goToSearchPage(e.target.value); }
                 });
             }
 
             if (desktopSearchInput) {
-                desktopSearchInput.addEventListener('input', (e) => applyClientSearch(e.target.value));
+                desktopSearchInput.addEventListener('input', (e) => {
+                    applyClientSearch(e.target.value);
+                    debouncedNavigate(e.target.value);
+                });
                 desktopSearchInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); goToSearchPage(e.target.value); }
+                    if (e.key === 'Enter') { e.preventDefault(); if (searchNavTimeout) clearTimeout(searchNavTimeout); goToSearchPage(e.target.value); }
                 });
             }
 
@@ -847,6 +860,11 @@
 
                 refreshVoucherCards();
                 registerVoucherSections();
+
+                if (!defaultItemSortApplied) {
+                    defaultItemSortApplied = true;
+                    applyDefaultItemSorts();
+                }
             });
 
             // Category and Sheet logic
