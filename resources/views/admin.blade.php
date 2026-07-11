@@ -281,6 +281,16 @@
                         if (currentKeywordQuery) {
                             url.searchParams.set('q', currentKeywordQuery);
                         }
+
+                        const activeSort = new URL(window.location.href);
+                        const keywordSort = activeSort.searchParams.get('sort_keyword');
+                        const keywordSortDir = activeSort.searchParams.get('sort_keyword_dir');
+                        if (keywordSort) {
+                            url.searchParams.set('sort_keyword', keywordSort);
+                            if (keywordSortDir) {
+                                url.searchParams.set('sort_keyword_dir', keywordSortDir);
+                            }
+                        }
                         
                         // Langsung fetch dengan URL yang sudah dibuat
                         fetchKeywordTable(url.toString());
@@ -1296,6 +1306,15 @@
             const merchantPage = currentUrl.searchParams.get('merchant_page');
             if (merchantPage) {
                 searchUrl.searchParams.set('merchant_page', merchantPage);
+            }
+
+            const keywordSort = currentUrl.searchParams.get('sort_keyword');
+            const keywordSortDir = currentUrl.searchParams.get('sort_keyword_dir');
+            if (keywordSort) {
+                searchUrl.searchParams.set('sort_keyword', keywordSort);
+                if (keywordSortDir) {
+                    searchUrl.searchParams.set('sort_keyword_dir', keywordSortDir);
+                }
             }
 
             searchUrl.searchParams.set('tab', 'keyword');

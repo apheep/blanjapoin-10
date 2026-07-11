@@ -353,6 +353,43 @@ class MerchantController extends Controller
         }
     }
 
+    private function applyAdminKeywordSort($query, Request $request): void
+    {
+        $sortBy = $request->get('sort_keyword');
+        $sortDir = strtolower($request->get('sort_keyword_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        $columnMap = [
+            'is_active' => 'keywords.is_active',
+            'kategori_keyword' => 'keywords.kategori_keyword',
+            'nama_produk' => 'keywords.nama_produk',
+            'keyword_id' => 'keywords.keyword_id',
+            'stock' => 'keywords.stock',
+            'trx' => 'keywords.trx',
+            'sisa_stock' => 'keywords.sisa_stock',
+        ];
+
+        if ($sortBy === 'status') {
+            $query->orderByRaw("CASE keywords.status WHEN 'approve' THEN 1 WHEN 'pending' THEN 2 WHEN 'reject' THEN 3 ELSE 4 END {$sortDir}")
+                ->orderBy('keywords.id', 'desc');
+            return;
+        }
+
+        if ($sortBy === 'merchant') {
+            $query->leftJoin('merchants', 'keywords.merchant_key', '=', 'merchants.id')
+                ->orderBy('merchants.nama_merchant', $sortDir)
+                ->orderBy('keywords.id', 'desc');
+            return;
+        }
+
+        if (isset($columnMap[$sortBy])) {
+            $query->orderBy($columnMap[$sortBy], $sortDir)
+                ->orderBy('keywords.id', 'desc');
+            return;
+        }
+
+        $query->orderBy('keywords.id', 'desc');
+    }
+
     public function qrList(Request $request)
     {
         $merchants = Merchant::whereNotNull('link_blanjapoin')
@@ -443,10 +480,17 @@ class MerchantController extends Controller
         }
             
         // Let Laravel automatically read the page number from the request using the page name
+<<<<<<< HEAD
         $keywords = Keyword::with('merchant')
             ->select('keywords.*')
             // ->selectRaw('(SELECT COUNT(*) FROM tokodigi_tselpoin_redeem WHERE coupon = keywords.keyword_id ) as redeem_count')
             ->orderBy('id', 'desc')
+=======
+        $keywordsQuery = Keyword::with('merchant')
+            ->select('keywords.*');
+        $this->applyAdminKeywordSort($keywordsQuery, $request);
+        $keywords = $keywordsQuery
+>>>>>>> 5c9a2c8 (sort)
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         
@@ -1250,8 +1294,10 @@ class MerchantController extends Controller
         }
         
         // Let Laravel automatically read the page number from the request using the page name
-        $keywords = Keyword::with('merchant')
-            ->orderBy('id')
+        $keywordsQuery = Keyword::with('merchant')
+            ->select('keywords.*');
+        $this->applyAdminKeywordSort($keywordsQuery, $request);
+        $keywords = $keywordsQuery
             ->paginate(10, ['*'], 'keyword_page')
             ->appends($keywordQueryParams);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();

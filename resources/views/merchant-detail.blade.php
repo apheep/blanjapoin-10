@@ -357,6 +357,16 @@
                 searchUrl.searchParams.set(key, value);
             });
 
+            const currentUrl = new URL(window.location.href);
+            const keywordSort = currentUrl.searchParams.get('sort_keyword');
+            const keywordSortDir = currentUrl.searchParams.get('sort_keyword_dir');
+            if (keywordSort) {
+                searchUrl.searchParams.set('sort_keyword', keywordSort);
+                if (keywordSortDir) {
+                    searchUrl.searchParams.set('sort_keyword_dir', keywordSortDir);
+                }
+            }
+
             if (currentDetailKeywordQuery) {
                 searchUrl.searchParams.set('q', currentDetailKeywordQuery);
             } else {
@@ -621,7 +631,8 @@
             // If keyword_page is in URL (not page), trigger AJAX to load correct page
             // because initial load uses 'page' parameter, not 'keyword_page'
             const hasKeywordPage = urlParams.has('keyword_page');
-            const needsAjaxLoad = hasKeywordPage || detailSelectedStatus !== 'all' || currentDetailKeywordQuery;
+            const hasKeywordSort = urlParams.has('sort_keyword');
+            const needsAjaxLoad = hasKeywordPage || hasKeywordSort || detailSelectedStatus !== 'all' || currentDetailKeywordQuery;
             
             if (needsAjaxLoad) {
                 if (detailSelectedStatus !== 'all') {

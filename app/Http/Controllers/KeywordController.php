@@ -19,11 +19,55 @@ class KeywordController extends Controller
     public function index()
     {
         Keyword::autoDisableExpiredKeywords();
+<<<<<<< HEAD
         $keywords = Keyword::with(['merchant', 'creator'])->orderBy('id', 'desc')->paginate(10);
+=======
+        
+        $keywordsQuery = Keyword::with(['merchant', 'creator'])->select('keywords.*');
+        $this->applyKeywordSort($keywordsQuery, request());
+        $keywords = $keywordsQuery->paginate(10, ['*'], 'keyword_page')->appends(request()->query());
+>>>>>>> 5c9a2c8 (sort)
         
         $merchants = Merchant::orderBy('id')->paginate(10);
         $allMerchants = Merchant::orderBy('nama_merchant')->get();
         return view('admin', compact('keywords', 'merchants', 'allMerchants'));
+    }
+
+    private function applyKeywordSort($query, Request $request): void
+    {
+        $sortBy = $request->get('sort_keyword');
+        $sortDir = strtolower($request->get('sort_keyword_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        $columnMap = [
+            'is_active' => 'keywords.is_active',
+            'kategori_keyword' => 'keywords.kategori_keyword',
+            'nama_produk' => 'keywords.nama_produk',
+            'keyword_id' => 'keywords.keyword_id',
+            'stock' => 'keywords.stock',
+            'trx' => 'keywords.trx',
+            'sisa_stock' => 'keywords.sisa_stock',
+        ];
+
+        if ($sortBy === 'status') {
+            $query->orderByRaw("CASE keywords.status WHEN 'approve' THEN 1 WHEN 'pending' THEN 2 WHEN 'reject' THEN 3 ELSE 4 END {$sortDir}")
+                ->orderBy('keywords.id', 'desc');
+            return;
+        }
+
+        if ($sortBy === 'merchant') {
+            $query->leftJoin('merchants', 'keywords.merchant_key', '=', 'merchants.id')
+                ->orderBy('merchants.nama_merchant', $sortDir)
+                ->orderBy('keywords.id', 'desc');
+            return;
+        }
+
+        if (isset($columnMap[$sortBy])) {
+            $query->orderBy($columnMap[$sortBy], $sortDir)
+                ->orderBy('keywords.id', 'desc');
+            return;
+        }
+
+        $query->orderBy('keywords.id', 'desc');
     }
 
     public function store(Request $request)
@@ -975,6 +1019,7 @@ class KeywordController extends Controller
         $merchantId = $request->get('merchant_id');
 
         $keywordsQuery = Keyword::with(['merchant', 'creator'])
+            ->select('keywords.*')
             ->when($merchantId, function ($query) use ($merchantId) {
                 $query->where('merchant_key', $merchantId);
             })
@@ -994,8 +1039,9 @@ class KeywordController extends Controller
                                 ->orWhere('daerah', 'like', "%{$searchTerm}%");
                         });
                 });
-            })
-            ->orderBy('id', 'desc');
+            });
+
+        $this->applyKeywordSort($keywordsQuery, $request);
 
         // Paginate dengan parameter keyword_page yang terpisah
         // Let Laravel automatically read the page number from the request using the page name
